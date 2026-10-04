@@ -1,0 +1,23 @@
+{
+  "$schema":"https://openapi.vercel.sh/vercel.json",
+  "builds":[
+    {"src":"api-register.js","use":"@vercel/node"},
+    {"src":"api-status.js","use":"@vercel/node"},
+    {"src":"api-checkin.js","use":"@vercel/node"},
+    {"src":"api-gacha.js","use":"@vercel/node"},
+    {"src":"index.html","use":"@vercel/static"},
+    {"src":"style.css","use":"@vercel/static"},
+    {"src":"app.js","use":"@vercel/static"},
+    {"src":"gacha.js","use":"@vercel/static"},
+    {"src":"mio-awakening.mp3","use":"@vercel/static"},
+    {"src":"mio-blue-bg.png","use":"@vercel/static"}
+  ],
+  "routes":[
+    {"src":"/api/register","dest":"/api-register.js"},
+    {"src":"/api/status","dest":"/api-status.js"},
+    {"src":"/api/checkin","dest":"/api-checkin.js"},
+    {"src":"/api/gacha","dest":"/api-gacha.js"},
+    {"src":"/","dest":"/index.html"},
+    {"src":"/(.*)","dest":"/$1"}
+  ]
+}

@@ -1,0 +1,2 @@
+import {prepare,bridge,readSession,hash} from './bridge.js';
+export default async function handler(req,res){const cfg=prepare(req,res);if(!cfg)return;const s=readSession(req.headers.cookie,cfg.secret);if(!s)return res.status(401).json({ok:false,error:'この端末の登録情報がありません'});try{const d=await bridge('status',{participantId:s.id,tokenHash:hash(s.token)});if(d.participantId!==s.id)throw Error();res.status(200).json(d)}catch{res.status(502).json({ok:false,error:'参加状況を取得できませんでした。以前の情報は現在値として表示しません。'})}}
