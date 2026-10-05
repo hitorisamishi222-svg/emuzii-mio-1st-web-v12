@@ -139,7 +139,7 @@ function setupGacha_(){
  p.getRange('H1').setNote('数量上限に達すると抽選は安全のため停止します。確率の再配分などを運営で確認してください。');
  var g=ss.getSheetByName('emuzii_ガチャ');
  if(g){
-   g.getRange('C1:O1').setValues([['1ヶ月購入数','3ヶ月購入数','6ヶ月購入数','総ガチャ権利','通常ガチャ手動消費','総残り回数','ラキフェス解放','ラキフェス手動消費','ラキフェス残り候補','管理メモ','入力チェック','名前チェック','特別付与']]);
+   g.getRange('C1:O1').setValues([['1ヶ月購入数','3ヶ月購入数','6ヶ月購入数','総ガチャ権利','通常ガチャ手動消費','総残り回数','ラキフェス解放','ラキフェス手動消費','ラキフェス利用可残り（Web4回完了後）','管理メモ','入力チェック','名前チェック','特別付与']]);
    g.getRange('O2:O500').setDataValidation(SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(0).setAllowInvalid(false).setHelpText('運営が個別に追加するガチャ権利。0以上の整数。').build()).setNumberFormat('0');
    var used='COUNTIFS(\'emuzii_当選履歴\'!$C$2:$C,A2,\'emuzii_当選履歴\'!$K$2:$K,"確定")';
    var fest='COUNTIFS(\'emuzii_当選履歴\'!$C$2:$C,A2,\'emuzii_当選履歴\'!$E$2:$E,"ラキフェス",\'emuzii_当選履歴\'!$K$2:$K,"確定")';
@@ -148,7 +148,7 @@ function setupGacha_(){
      g.getRange(row,6).setFormula('=IF(B'+row+'="","",C'+row+'*\'emuzii_管理画面\'!$B$20+D'+row+'*\'emuzii_管理画面\'!$B$21+E'+row+'*\'emuzii_管理画面\'!$B$22+O'+row+')');
      g.getRange(row,8).setFormula('=IF(B'+row+'="","",MAX(F'+row+'-G'+row+'-J'+row+'-'+rowUsed+',0))');
      g.getRange(row,9).setFormula('=IF(B'+row+'="","",IF(F'+row+'>=\'emuzii_管理画面\'!$B$23,1,0))');
-     g.getRange(row,11).setFormula('=IF(B'+row+'="","",IF(F'+row+'>=\'emuzii_管理画面\'!$B$23,MAX(H'+row+',0),0))');
+     g.getRange(row,11).setFormula('=IF(B'+row+'="","",IF(AND(F'+row+'>=\'emuzii_管理画面\'!$B$23,'+rowUsed+'>=\'emuzii_管理画面\'!$B$23-1),MAX(H'+row+',0),0))');
      g.getRange(row,13).setFormula('=IF(B'+row+'="","",IF(OR(COUNT(C'+row+':E'+row+',G'+row+',J'+row+',O'+row+')<6,MIN(C'+row+':E'+row+',G'+row+',J'+row+',O'+row+')<0,C'+row+'<>INT(C'+row+'),D'+row+'<>INT(D'+row+'),E'+row+'<>INT(E'+row+'),G'+row+'<>INT(G'+row+'),J'+row+'<>INT(J'+row+'),O'+row+'<>INT(O'+row+'),G'+row+'+J'+row+'+'+rowUsed+'>F'+row+',AND(J'+row+'+'+rowFest+'>0,F'+row+'<\'emuzii_管理画面\'!$B$23)),"要確認","OK"))');
      g.getRange(row,14).setFormula('=IF(B'+row+'="","",IF(COUNTIF($B$2:$B$500,B'+row+')>1,"同名あり","OK"))');
    }
@@ -178,15 +178,15 @@ function gachaAction_(ss,r,d){
  var normal=catalog_(ss,'通常'),fest=catalog_(ss,'ラキフェス');
  var admin=ss.getSheetByName('emuzii_管理画面'),festAvailableFrom=admin?Number(admin.getRange('B23').getValue())||5:5;
  if(festAvailableFrom<1||Math.floor(festAvailableFrom)!==festAvailableFrom)festAvailableFrom=5;
- var festEntitled=total>=festAvailableFrom,festUnlocked=festEntitled&&used>=festAvailableFrom-1&&remaining>0;
- if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,normal:normal,fest:fest};
+ var festEntitled=total>=festAvailableFrom,festUnlocked=festEntitled&&history.length>=festAvailableFrom-1&&remaining>0;
+ if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normal:normal,fest:fest};
  if(!/^[a-f0-9]{32}$/.test(d.drawId||'')||['通常','ラキフェス'].indexOf(d.mode)<0)return {ok:false,error:'抽選要求が不正です'};
  var previous=rows_(ss,DRAW_TAB).filter(function(x){return x[0]===d.drawId});
  if(previous.length){var old=previous[0];if(previous.length!==1||old[1]!==r[0]||old[2]!==id||old[4]!==d.mode)return {ok:false,error:'抽選IDを確認できません'};return {ok:true,participantId:r[0],drawId:old[0],prize:old[6],mode:old[4],ordinal:old[9],rarity:String(old[11]||''),image:String(old[12]||''),remaining:Math.max(total-(manual+history.length),0),replayed:true};}
  if(!confirmed)return {ok:false,error:'メンシプ購入の確認をお待ちください'};
  if(remaining<1)return {ok:false,error:'残り回数がありません'};
  if(d.mode==='ラキフェス'&&!festEntitled)return {ok:false,error:'ラキフェスは総ガチャ権利'+festAvailableFrom+'回以上が対象です'};
- if(d.mode==='ラキフェス'&&used<festAvailableFrom-1)return {ok:false,error:'ラキフェスは'+festAvailableFrom+'回目の抽選から利用できます'};
+ if(d.mode==='ラキフェス'&&history.length<festAvailableFrom-1)return {ok:false,error:'ラキフェスはWebで'+(festAvailableFrom-1)+'回抽選後、'+festAvailableFrom+'回目の抽選から利用できます'};
  var c=d.mode==='通常'?normal:fest;if(!c.ready)return {ok:false,error:c.message};
  // 複数のUUIDのハッシュから32ビット値を作る。ブラウザーの抽選値は使用しない。
  var bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,Utilities.getUuid()+Utilities.getUuid());
