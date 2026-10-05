@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
 const attendanceDay=$('attendanceDay');
+let attendanceConfirmedDays=new Set(),attendanceLockedDays=new Set(),attendanceAchieved=false;
 const NAME_KEY='mioColorSingName';
 let registered=false;
 
@@ -7,6 +8,16 @@ if(attendanceDay){
   if(attendanceDay.options.length===0){for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=String(d);o.textContent=`10/${d}`;attendanceDay.appendChild(o)}}
   const now=new Date();attendanceDay.value=String(Math.min(31,Math.max(1,now.getMonth()===9?now.getDate():1)));
 }
+function syncAttendanceLock(){
+  const d=Number(attendanceDay?.value||0),done=attendanceConfirmedDays.has(d),locked=attendanceLockedDays.has(d),k=$('attendanceKeyword'),b=$('attendanceSubmit'),m=$('attendanceMessage');
+  if(attendanceDay){for(const o of attendanceDay.options){const n=Number(o.value);o.textContent=`10/${n}${attendanceConfirmedDays.has(n)?' ✓確認済み':attendanceLockedDays.has(n)?' 🔒入力終了':''}`}}
+  if(k){k.disabled=attendanceAchieved||done||locked;k.placeholder=done?'この日は確認済みです':locked?'入力回数の上限に達しました':'その日に発表された文字'}
+  if(b){b.disabled=attendanceAchieved||done||locked;b.textContent=done?'確認済み':locked?'入力不可':'確認文字を送信'}
+  if(done&&m)m.textContent=`10/${d} は確認済みです。再入力はできません。`;
+  else if(locked&&m)m.textContent='入力不可のためライバーにご連絡ください。';
+  else if(!attendanceAchieved&&m&&/(確認済み|入力不可)/.test(m.textContent||''))m.textContent='';
+}
+attendanceDay?.addEventListener('change',syncAttendanceLock);
 try{const saved=localStorage.getItem(NAME_KEY);if(saved&&$('name'))$('name').value=saved}catch{}
 
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error)}
@@ -33,15 +44,16 @@ function display(d){
     showMeta('predictionMeta',p.predictionAt?`提出：${formatServerDate(p.predictionAt)}`:'');
     $('attendance').textContent=p.attendanceAchieved?'皆勤達成':'確認中';
     showMeta('attendanceMeta',p.attendanceTodayDone?'今日の確認：済':'');
-    $('attendanceMessage').textContent=p.attendanceTodayDone?'今日は確認済みです':'';
-    $('attendanceKeyword').disabled=!!p.attendanceAchieved;
-    $('attendanceSubmit').disabled=!!p.attendanceAchieved;
+    attendanceAchieved=!!p.attendanceAchieved;
+    attendanceConfirmedDays=new Set(Array.isArray(p.attendanceConfirmedDays)?p.attendanceConfirmedDays.map(Number):[]);
+    attendanceLockedDays=new Set(Array.isArray(p.attendanceLockedDays)?p.attendanceLockedDays.map(Number):[]);
+    syncAttendanceLock();
     $('fa').textContent=(Number(p.fa)||0)+'作品';
     const faBits=[];if(p.faLastAt)faBits.push(`最終応募：${formatServerDate(p.faLastAt)}`);if(p.faLatestStatus)faBits.push(p.faLatestStatus);showMeta('faMeta',faBits.join('／'));
     $('remaining').textContent=(Number(p.gacha?.remaining)||0)+'回';
     showMeta('remainingMeta',p.gacha?.confirmed?'利用可能':'確認待ち');
     $('gachaDetail').textContent=p.gacha?.confirmed
-      ?'付与 '+p.gacha.total+'回 ／ 使用 '+p.gacha.used+'回。'+(p.gacha.remaining===0?'残り回数はありません。':p.gacha.total>=5?'通常／ラキフェスを選べます。':'総ガチャ権利5回以上でラキフェスが解放されます。')
+      ?'付与 '+p.gacha.total+'回 ／ 使用 '+p.gacha.used+'回。'+(p.gacha.remaining===0?'残り回数はありません。':p.gacha.total>=5?(p.gacha.used>=4?'5回目以降なのでラキフェスを選べます。':'ラキフェス対象です。5回目の抽選から選べます。'):'総ガチャ権利5回以上でラキフェス対象になります。')
       :'メンシプの購入内容を管理者が確認中です。';
   }
   message(d.status==='承認済み'?'最新の参加状況を表示しています。':'登録は保存済みです。管理者の照合・承認をお待ちください。');
@@ -71,7 +83,7 @@ $('register')?.addEventListener('submit',async e=>{
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
 
-$('attendanceSubmit')?.addEventListener('click',async()=>{const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword');if(!k.value.trim()){m.textContent='確認文字を入力してください';return}b.disabled=true;m.textContent='確認しています…';try{const d=await post('/api/checkin',{keyword:k.value.trim(),day:Number($('attendanceDay').value)});m.textContent=d.message||'確認を受け付けました';k.value='';await refresh()}catch(e){m.textContent=e.message||'確認できませんでした'}finally{b.disabled=false}});
+$('attendanceSubmit')?.addEventListener('click',async()=>{const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword'),day=Number($('attendanceDay').value);if(attendanceConfirmedDays.has(day)){m.textContent=`10/${day} は確認済みです。`;syncAttendanceLock();return}if(attendanceLockedDays.has(day)){m.textContent='入力不可のためライバーにご連絡ください。';syncAttendanceLock();return}if(!k.value.trim()){m.textContent='確認文字を入力してください';return}b.disabled=true;m.textContent='確認しています…';try{const d=await post('/api/checkin',{keyword:k.value.trim(),day});attendanceConfirmedDays.add(day);m.textContent=d.message||'確認を受け付けました';k.value='';syncAttendanceLock();await refresh()}catch(e){m.textContent=e.message||'確認できませんでした';if(/入力不可/.test(m.textContent))attendanceLockedDays.add(day);syncAttendanceLock()}finally{if(!attendanceConfirmedDays.has(day)&&!attendanceLockedDays.has(day)&&!attendanceAchieved)b.disabled=false}});
 
 const mioBgm=$('mioBgm'),musicToggle=$('musicToggle'),musicVolume=$('musicVolume'),musicStatus=$('musicStatus');
 if(mioBgm&&musicToggle){
