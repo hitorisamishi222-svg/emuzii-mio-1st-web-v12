@@ -25,6 +25,16 @@ function backupEnsureLog_(ss){
   return sh;
 }
 
+function backupEnsureRecovery_(ss){
+  var sh=ss.getSheetByName('emuzii_復旧チェック');
+  if(!sh){
+    sh=ss.insertSheet('emuzii_復旧チェック');
+    sh.getRange('A1:J1').setValues([['参加者ID','ColorSing名','正本ガチャ権利','正本残数','正本FA数','正本皆勤日数','第二保存確認','照合結果','最終確認','備考']]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
 function backupHash_(text){
   var bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(text||''));
   return Utilities.base64EncodeWebSafe(bytes).replace(/=+$/,'');
@@ -42,7 +52,7 @@ function backupAttemptsState_(id){
   return out.length?out.map(function(x){return x[0]+':'+x[1]}).join(','):'なし';
 }
 
-function backupParticipantState_(ss,id,name){
+function backupParticipantMetrics_(ss,id,name){
   id=String(id||'');name=String(name||'');
   var g=rows_(ss,'emuzii_ガチャ').filter(function(x){return x[0]===id&&x[1]===name});
   var gr=g.length===1?g[0]:null;
@@ -51,8 +61,13 @@ function backupParticipantState_(ss,id,name){
   var fa=rows_(ss,'emuzii_FA').filter(function(x){return x[1]===name&&x[10]==='受付'}).length;
   var att=rows_(ss,'emuzii_皆勤31日').filter(function(x){return x[0]===id&&x[1]===name});
   var days=att.length===1?(Number(att[0][33])||0):0;
-  var web=(typeof webActualRows_==='function'?webActualRows_(ss.getSheetByName(WEB_TAB)):rows_(ss,WEB_TAB)).filter(function(x){return x[2]===name&&x[5]==='承認済み'&&x[7]===id});
-  return 'ガチャ'+total+'／残'+remaining+'／FA'+fa+'／皆勤'+days+'／Web承認'+web.length+'／確認文字試行'+backupAttemptsState_(id);
+  return [total,remaining,fa,days];
+}
+
+function backupParticipantState_(ss,id,name){
+  var m=backupParticipantMetrics_(ss,id,name);
+  var web=(typeof webActualRows_==='function'?webActualRows_(ss.getSheetByName(WEB_TAB)):rows_(ss,WEB_TAB)).filter(function(x){return x[2]===String(name||'')&&x[5]==='承認済み'&&x[7]===String(id||'')});
+  return 'ガチャ'+m[0]+'／残'+m[1]+'／FA'+m[2]+'／皆勤'+m[3]+'／Web承認'+web.length+'／確認文字試行'+backupAttemptsState_(id);
 }
 
 function backupWebState_(ss,webId,name){
@@ -80,11 +95,9 @@ function backupMatrixHash_(m){
   return backupHash_(JSON.stringify(m.data));
 }
 
-function backupMirrorOne_(primarySs,secondarySs,name){
-  var src=primarySs.getSheetByName(name),dst=secondarySs.getSheetByName(name);
-  if(!src)return {name:name,ok:false,error:'正本シートなし'};
+function backupMirrorMatrix_(secondarySs,name,m){
+  var dst=secondarySs.getSheetByName(name);
   if(!dst)dst=secondarySs.insertSheet(name);
-  var m=backupMatrix_(src);
   var clearRows=Math.max(dst.getLastRow(),m.rows,1),clearCols=Math.max(dst.getLastColumn(),m.cols,1);
   if(dst.getMaxRows()<clearRows)dst.insertRowsAfter(dst.getMaxRows(),clearRows-dst.getMaxRows());
   if(dst.getMaxColumns()<clearCols)dst.insertColumnsAfter(dst.getMaxColumns(),clearCols-dst.getMaxColumns());
@@ -92,48 +105,68 @@ function backupMirrorOne_(primarySs,secondarySs,name){
   if(m.rows&&m.cols)dst.getRange(1,1,m.rows,m.cols).setValues(m.data);
   SpreadsheetApp.flush();
   var copied=backupMatrix_(dst);
-  return {name:name,ok:m.rows===copied.rows&&m.cols===copied.cols&&backupMatrixHash_(m)===backupMatrixHash_(copied)};
+  return m.rows===copied.rows&&m.cols===copied.cols&&backupMatrixHash_(m)===backupMatrixHash_(copied);
 }
 
-function backupRefreshRecoveryCheck_(primarySs,ok,note){
-  var sh=primarySs.getSheetByName('emuzii_復旧チェック');
-  if(!sh||sh.getLastRow()<2)return;
-  var n=sh.getLastRow()-1,now=Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy/MM/dd HH:mm:ss');
-  var g=[],j=[];
-  for(var i=0;i<n;i++){
-    g.push([ok?'一致':'要確認']);
-    j.push([(note?String(note)+'／':'')+'第二保存最終同期 '+now]);
+function backupRefreshRecoveryCheck_(primarySs,secondarySs,globalOk,note){
+  var primarySh=backupEnsureRecovery_(primarySs);
+  var secondarySh=secondarySs?backupEnsureRecovery_(secondarySs):null;
+  var participants=rows_(primarySs,'emuzii_参加者').filter(function(p){return /^MIO-\d{4}$/.test(String(p[0]||''))&&String(p[1]||'').trim()!==''});
+  var now=new Date(),rows=[];
+  participants.forEach(function(p){
+    var id=String(p[0]),name=String(p[1]);
+    var pm=backupParticipantMetrics_(primarySs,id,name);
+    var sm=secondarySs?backupParticipantMetrics_(secondarySs,id,name):[-1,-1,-1,-1];
+    var same=!!globalOk&&JSON.stringify(pm)===JSON.stringify(sm);
+    var memo=(note?String(note)+'／':'')+'第二保存照合 '+Utilities.formatDate(now,'Asia/Tokyo','yyyy/MM/dd HH:mm:ss')+' JST';
+    if(id==='MIO-0004'&&name==='翠央(お試し)')memo+='／管理者テスト・承認済み維持';
+    rows.push([id,safeText_(name),pm[0],pm[1],pm[2],pm[3],same?'一致':'要確認',same?'一致':'要確認',now,memo]);
+  });
+
+  var clearPrimary=Math.max(primarySh.getLastRow()-1,0);
+  if(clearPrimary>0)primarySh.getRange(2,1,clearPrimary,10).clearContent();
+  if(rows.length)primarySh.getRange(2,1,rows.length,10).setValues(rows);
+
+  if(secondarySh){
+    var clearSecondary=Math.max(secondarySh.getLastRow()-1,0);
+    if(clearSecondary>0)secondarySh.getRange(2,1,clearSecondary,10).clearContent();
+    if(rows.length)secondarySh.getRange(2,1,rows.length,10).setValues(rows);
   }
-  sh.getRange(2,7,n,1).setValues(g);
-  sh.getRange(2,10,n,1).setValues(j);
 }
 
-function backupMirrorSelected_(primarySs,names,refreshStatus){
+function backupMirrorSelected_(primarySs,names,refreshStatus,force){
+  var secondary=null,bad=[],changed=[],props=PropertiesService.getScriptProperties();
   try{
-    var secondary=SpreadsheetApp.openById(SECONDARY_SHEET_ID),bad=[];
+    secondary=SpreadsheetApp.openById(SECONDARY_SHEET_ID);
     names.forEach(function(name){
-      var result=backupMirrorOne_(primarySs,secondary,name);
-      if(!result.ok)bad.push(result.name);
+      var src=primarySs.getSheetByName(name);
+      if(!src){bad.push(name);return;}
+      var m=backupMatrix_(src),hash=backupMatrixHash_(m),key='BACKUP_TAB_HASH:'+name;
+      if(!force&&props.getProperty(key)===hash)return;
+      if(backupMirrorMatrix_(secondary,name,m)){
+        props.setProperty(key,hash);
+        changed.push(name);
+      }else bad.push(name);
     });
     var ok=bad.length===0;
     if(refreshStatus){
-      backupRefreshRecoveryCheck_(primarySs,ok,ok?'重要シート同期一致':'不一致:'+bad.join(','));
+      backupRefreshRecoveryCheck_(primarySs,secondary,ok,ok?'重要シート同期一致':'不一致:'+bad.join(','));
       var cfg=primarySs.getSheetByName('emuzii_連携設定');
       if(cfg){
         cfg.getRange('B30').setValue(ok?'第二保存 同期正常':'第二保存 要確認');
-        cfg.getRange('C30').setValue(Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy/MM/dd HH:mm:ss')+' JST'+(bad.length?' / '+bad.join(','):' / 重要シート照合済み'));
+        cfg.getRange('C30').setValue(Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy/MM/dd HH:mm:ss')+' JST / '+(changed.length?changed.join(','):'変更なし')+(bad.length?' / 不一致:'+bad.join(','):''));
       }
-      if(ok)PropertiesService.getScriptProperties().setProperty('BACKUP_LAST_MIRROR',new Date().toISOString());
+      if(ok)props.setProperty('BACKUP_LAST_MIRROR',new Date().toISOString());
     }
-    return {ok:ok,bad:bad};
+    return {ok:ok,bad:bad,changed:changed};
   }catch(err){
-    if(refreshStatus)backupRefreshRecoveryCheck_(primarySs,false,'第二保存本体同期失敗');
-    return {ok:false,bad:['SECONDARY_OPEN_OR_SYNC']};
+    if(refreshStatus)backupRefreshRecoveryCheck_(primarySs,null,false,'第二保存本体同期失敗');
+    return {ok:false,bad:['SECONDARY_OPEN_OR_SYNC'],changed:changed};
   }
 }
 
-function backupMirrorCritical_(primarySs){
-  return backupMirrorSelected_(primarySs,BACKUP_MIRROR_TABS,true);
+function backupMirrorCritical_(primarySs,force){
+  return backupMirrorSelected_(primarySs,BACKUP_MIRROR_TABS,true,!!force);
 }
 
 function backupAppend_(primarySs,id,name,dataType,operation,note){
@@ -175,7 +208,7 @@ function backupAfterWebMutation_(ss,webId,name,operation,note){
   var current=(typeof webActualRows_==='function'?webActualRows_(web):rows_(ss,WEB_TAB)).filter(function(x){return x[0]===webId});
   var id=current.length===1?String(current[0][7]||current[0][10]||webId):String(webId||'');
   var logged=backupAppend_(ss,id,name,'Web登録',operation,note||'');
-  var mirrored=backupMirrorSelected_(ss,['emuzii_Web登録','emuzii_参加者'],false);
+  var mirrored=backupMirrorSelected_(ss,['emuzii_Web登録','emuzii_参加者'],false,false);
   return logged&&mirrored.ok;
 }
 
@@ -186,7 +219,7 @@ function backupAfterParticipantMutation_(ss,id,name,dataType,operation,note){
   else if(String(dataType).indexOf('皆勤')>=0)tabs=['emuzii_皆勤31日'];
   else if(String(dataType).indexOf('FA')>=0)tabs=['emuzii_FA'];
   else tabs=['emuzii_参加者'];
-  var mirrored=backupMirrorSelected_(ss,tabs,false);
+  var mirrored=backupMirrorSelected_(ss,tabs,false,false);
   return logged&&mirrored.ok;
 }
 
@@ -203,9 +236,9 @@ function backupSweep_(){
       var hash=backupHash_(state);
       if(props.getProperty('BACKUP_STATE:'+id)!==hash)changes.push({id:id,name:name,state:state,hash:hash});
     });
-    var mirrored=backupMirrorCritical_(ss);
+    var mirrored=backupMirrorCritical_(ss,false);
     changes.forEach(function(x){
-      if(backupAppend_(ss,x.id,x.name,'定期保存','差分スナップショット','管理画面・フォーム・Web更新の差分回収／本体同期'+(mirrored.ok?'一致':'要確認'))){
+      if(backupAppend_(ss,x.id,x.name,'定期保存','差分スナップショット','差分回収／本体同期'+(mirrored.ok?'一致':'要確認'))){
         props.setProperty('BACKUP_STATE:'+x.id,x.hash);
       }
     });
@@ -216,7 +249,7 @@ function backupSweep_(){
 
 function verifyBackupV187_(){
   var ss=SpreadsheetApp.openById(SHEET_ID);
-  return backupMirrorSelected_(ss,BACKUP_MIRROR_TABS,true);
+  return backupMirrorCritical_(ss,true);
 }
 
 function setupBackupV187_(){
@@ -227,11 +260,11 @@ function setupBackupV187_(){
     if(t.getHandlerFunction()==='backupSweep_')ScriptApp.deleteTrigger(t);
   });
   ScriptApp.newTrigger('backupSweep_').timeBased().everyMinutes(BACKUP_SWEEP_MINUTES).create();
-  var mirrored=backupMirrorCritical_(ss);
+  var mirrored=backupMirrorCritical_(ss,true);
   backupSweep_();
   var cfg=ss.getSheetByName('emuzii_連携設定');
   if(cfg){
     cfg.getRange('B31').setValue('GAS v1.8.7 自動二重保存 稼働');
-    cfg.getRange('C31').setValue('即時変更シート同期＋5分全体照合'+(mirrored.ok?'':'（要確認）'));
+    cfg.getRange('C31').setValue('即時変更シート同期＋5分差分照合'+(mirrored.ok?'':'（要確認）'));
   }
 }
