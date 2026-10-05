@@ -29,3 +29,14 @@
 .gacha-stage.rarity-ur.reveal{animation:stage-impact .6s cubic-bezier(.2,.85,.25,1),screen-shake .3s linear 3,ur-rainbow 1.1s linear 2}
 @keyframes stage-pan{from{background-position:45% 35%,center}to{background-position:58% 15%,center}}
 @keyframes screen-shake{0%,100%{transform:translate(0) scale(1)}20%{transform:translate(-5px,2px) scale(1.01)}40%{transform:translate(5px,-2px) scale(1.015)}60%{transform:translate(-3px,-1px) scale(1.01)}80%{transform:translate(3px,2px) scale(1.005)}}
+
+/* 上の皆勤賞カードは表示専用。下の入力フォームには触れない */
+.events article:nth-child(3){position:relative;overflow:hidden;isolation:isolate;border-color:#9feaff88;background:radial-gradient(circle at 18% 20%,#7ce7ff2b,transparent 30%),radial-gradient(circle at 82% 22%,#fff4a62b,transparent 28%),linear-gradient(145deg,#0a3067e8,#07183cec);box-shadow:inset 0 0 34px #80e8ff24,0 0 22px #79ddff25}
+.events article:nth-child(3)::before{content:"💎  🐳  ✨  💎  🐳  ✦  💎  🐳  ✨  💎  🐳  ✦  💎  🐳  ✨  💎  🐳  ✦";position:absolute;inset:-18px -28px;z-index:0;pointer-events:none;font-size:23px;line-height:2.15;word-spacing:13px;letter-spacing:4px;opacity:.24;transform:rotate(-8deg) scale(1.1);filter:drop-shadow(0 0 8px #8de8ff);animation:attendance-jewel-float 4.5s ease-in-out infinite alternate}
+.events article:nth-child(3)::after{content:"💎 🐳 💎 🐳";position:absolute;right:10px;top:9px;z-index:0;pointer-events:none;font-size:18px;letter-spacing:5px;opacity:.68;text-shadow:0 0 8px #fff,0 0 16px #78ddff;animation:attendance-jewel-glow 1.4s ease-in-out infinite alternate}
+.events article:nth-child(3)>*{position:relative;z-index:1}
+.events article:nth-child(3) .secondary{pointer-events:none;cursor:default;font-size:0;background:linear-gradient(120deg,#8fe8ff26,#fff1a51d,#8fe8ff26);border-color:#c7f4ff88;box-shadow:inset 0 0 15px #9deaff24,0 0 16px #8fe9ff24}
+.events article:nth-child(3) .secondary::after{content:"💎 🐳 皆勤賞チャレンジ 🐳 💎";font-size:14px;color:#effbff;text-shadow:0 0 8px #8eeaff}
+@keyframes attendance-jewel-float{from{transform:rotate(-8deg) translateY(-4px) scale(1.1)}to{transform:rotate(-6deg) translateY(7px) scale(1.13)}}
+@keyframes attendance-jewel-glow{from{opacity:.45;filter:brightness(.9)}to{opacity:.9;filter:brightness(1.3)}}
+@media(prefers-reduced-motion:reduce){.events article:nth-child(3)::before,.events article:nth-child(3)::after{animation:none!important}}
