@@ -1,0 +1,30 @@
+name: Validate Apps Script
+
+on:
+  push:
+    paths:
+      - 'APPS_SCRIPT_Code_v1.8.7.gs'
+      - 'APPS_SCRIPT_DeviceRecovery_v1.8.7.gs'
+      - '.github/workflows/validate-apps-script.yml'
+  pull_request:
+    paths:
+      - 'APPS_SCRIPT_Code_v1.8.7.gs'
+      - 'APPS_SCRIPT_DeviceRecovery_v1.8.7.gs'
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Apps Script JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in APPS_SCRIPT_Code_v1.8.7.gs APPS_SCRIPT_DeviceRecovery_v1.8.7.gs; do
+            test -f "$f"
+            cp "$f" "/tmp/$(basename "$f" .gs).js"
+            node --check "/tmp/$(basename "$f" .gs).js"
+          done
