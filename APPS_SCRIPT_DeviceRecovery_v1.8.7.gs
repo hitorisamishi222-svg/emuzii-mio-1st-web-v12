@@ -1,8 +1,9 @@
 /**
- * 翠央1周年 v1.8.7 端末変更・復旧アドオン
+ * 翠央1周年 v1.8.7 運用・端末復旧アドオン
  * APPS_SCRIPT_Code_v1.8.7.gs と同じ既存Apps Scriptプロジェクトへ追加する。
- * 管理者が emuzii_Web登録 の「登録承認」を承認済みに変更した時だけ動作する。
+ * 管理者が emuzii_Web登録 の「登録承認」を承認済みに変更した時だけ端末整理を行う。
  * 「翠央(お試し)」は自動却下しない。
+ * 秘密鍵はバックアップシートへ保存しない。
  */
 
 function setupV187Complete(){
@@ -68,4 +69,78 @@ function webRecoveryOnEdit_(e){
 
   SpreadsheetApp.flush();
   try{backupAfterWebMutation_(ss,webId,name,'端末復旧承認',name==='翠央(お試し)'?'管理者テスト保護・旧端末自動却下なし':id+'へ統合・同一ID旧端末を整理')}catch(ignore){}
+}
+
+function latestBackupStateForParticipant_(participantId){
+  var sources=[SpreadsheetApp.openById(SHEET_ID),SpreadsheetApp.openById(SECONDARY_SHEET_ID)];
+  for(var s=0;s<sources.length;s++){
+    var sh=sources[s].getSheetByName(BACKUP_LOG_TAB);
+    if(!sh||sh.getLastRow()<2)continue;
+    var data=sh.getRange(2,1,sh.getLastRow()-1,Math.max(sh.getLastColumn(),10)).getValues();
+    for(var i=data.length-1;i>=0;i--){
+      if(String(data[i][2]||'')===participantId&&String(data[i][6]||'').indexOf('確認文字試行')>=0)return String(data[i][6]);
+    }
+  }
+  return '';
+}
+
+function restoreCheckinAttemptsFromBackupV187_(participantId){
+  participantId=String(participantId||'');
+  if(!/^MIO-\d{4}$/.test(participantId))return {ok:false,error:'invalid participantId'};
+  var state=latestBackupStateForParticipant_(participantId);
+  if(!state)return {ok:false,error:'復旧できる確認文字試行履歴がありません'};
+
+  var props=PropertiesService.getScriptProperties();
+  var all=props.getProperties(),prefix='CHECKIN_ATTEMPTS:'+participantId+':';
+  Object.keys(all).forEach(function(k){if(k.indexOf(prefix)===0)props.deleteProperty(k)});
+
+  var marker='確認文字試行',text=state.slice(state.indexOf(marker)+marker.length).trim();
+  var restored=[];
+  if(text&&text!=='なし'){
+    text.split(',').forEach(function(part){
+      var m=String(part).match(/^(\d{1,2}):(\d+)$/);
+      if(!m)return;
+      var day=Number(m[1]),count=Number(m[2]);
+      if(day>=1&&day<=31&&Number.isSafeInteger(count)&&count>0){
+        setCheckinAttempts_(participantId,day,count);
+        restored.push({day:day,count:count});
+      }
+    });
+  }
+  return {ok:true,participantId:participantId,restored:restored,state:state};
+}
+
+function restoreAllCheckinAttemptsFromBackupV187_(){
+  var ss=SpreadsheetApp.openById(SHEET_ID),results=[];
+  rows_(ss,'emuzii_参加者').forEach(function(p){
+    var id=String(p[0]||'');
+    if(/^MIO-\d{4}$/.test(id))results.push(restoreCheckinAttemptsFromBackupV187_(id));
+  });
+  return results;
+}
+
+function verifyV187Ready_(){
+  var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
+  var webRows=web?webActualRows_(web):[];
+  var badWeb=[];
+  webRows.forEach(function(r){
+    if(r[5]==='承認済み'&&!webIntegrityOk_(r))badWeb.push({webId:String(r[0]||''),name:String(r[2]||''),h:String(r[7]||''),k:String(r[10]||''),p:String(r[15]||''),confirm:String(r[11]||'')});
+  });
+
+  var normal=catalog_(ss,'通常'),fest=catalog_(ss,'ラキフェス');
+  var backup=verifyBackupV187_();
+  var triggerNames=ScriptApp.getProjectTriggers().map(function(t){return t.getHandlerFunction()});
+
+  return {
+    ok:badWeb.length===0&&normal.ready&&fest.ready&&backup.ok&&triggerNames.indexOf('backupSweep_')>=0&&triggerNames.indexOf('webRecoveryOnEdit_')>=0,
+    webActualCount:web?webActualCount_(web):0,
+    webIntegrityIssues:badWeb,
+    normalReady:normal.ready,
+    normalProbability:normal.total,
+    luckyFestivalReady:fest.ready,
+    luckyFestivalProbability:fest.total,
+    secondSaveOk:backup.ok,
+    secondSaveIssues:backup.bad||[],
+    triggers:triggerNames
+  };
 }
