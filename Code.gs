@@ -1,5 +1,5 @@
 /**
- * 翠央1周年 v1.7.1 / Google Apps Script
+ * 翠央1周年 統合修正版 v6 / Google Apps Script
  * 名前・回答・画像URLは匿名の公開APIへ出さない。
  * Vercelサーバーのsecretと端末用tokenHashを両方確認。
  */
