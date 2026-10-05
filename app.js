@@ -2,15 +2,21 @@ const $=id=>document.getElementById(id);
 const attendanceDay=$('attendanceDay');
 let attendanceConfirmedDays=new Set(),attendanceLockedDays=new Set(),attendanceAchieved=false;
 const NAME_KEY='mioColorSingName';
+const ATTEMPT_KEY='mioAttendanceAttemptsV1';
 let registered=false;
+
+function readLocalAttempts(){try{const v=JSON.parse(localStorage.getItem(ATTEMPT_KEY)||'{}');return v&&typeof v==='object'?v:{}}catch{return {}}}
+function localAttempts(day){return Number(readLocalAttempts()[String(day)]||0)}
+function setLocalAttempts(day,count){try{const v=readLocalAttempts();v[String(day)]=Math.max(0,Math.min(2,Number(count)||0));localStorage.setItem(ATTEMPT_KEY,JSON.stringify(v))}catch{}}
 
 if(attendanceDay){
   if(attendanceDay.options.length===0){for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=String(d);o.textContent=`10/${d}`;attendanceDay.appendChild(o)}}
   const now=new Date();attendanceDay.value=String(Math.min(31,Math.max(1,now.getMonth()===9?now.getDate():1)));
 }
 function syncAttendanceLock(){
-  const d=Number(attendanceDay?.value||0),done=attendanceConfirmedDays.has(d),locked=attendanceLockedDays.has(d),k=$('attendanceKeyword'),b=$('attendanceSubmit'),m=$('attendanceMessage');
-  if(attendanceDay){for(const o of attendanceDay.options){const n=Number(o.value);o.textContent=`10/${n}${attendanceConfirmedDays.has(n)?' ✓確認済み':attendanceLockedDays.has(n)?' 🔒入力終了':''}`}}
+  const d=Number(attendanceDay?.value||0),done=attendanceConfirmedDays.has(d),locked=attendanceLockedDays.has(d)||localAttempts(d)>=2,k=$('attendanceKeyword'),b=$('attendanceSubmit'),m=$('attendanceMessage');
+  if(locked)attendanceLockedDays.add(d);
+  if(attendanceDay){for(const o of attendanceDay.options){const n=Number(o.value);o.textContent=`10/${n}${attendanceConfirmedDays.has(n)?' ✓確認済み':attendanceLockedDays.has(n)||localAttempts(n)>=2?' 🔒入力終了':''}`}}
   if(k){k.disabled=attendanceAchieved||done||locked;k.placeholder=done?'この日は確認済みです':locked?'入力回数の上限に達しました':'その日に発表された文字'}
   if(b){b.disabled=attendanceAchieved||done||locked;b.textContent=done?'確認済み':locked?'入力不可':'確認文字を送信'}
   if(done&&m)m.textContent=`10/${d} は確認済みです。再入力はできません。`;
@@ -45,8 +51,8 @@ function display(d){
     $('attendance').textContent=p.attendanceAchieved?'皆勤達成':'確認中';
     showMeta('attendanceMeta',p.attendanceTodayDone?'今日の確認：済':'');
     attendanceAchieved=!!p.attendanceAchieved;
-    attendanceConfirmedDays=new Set(Array.isArray(p.attendanceConfirmedDays)?p.attendanceConfirmedDays.map(Number):[]);
-    attendanceLockedDays=new Set(Array.isArray(p.attendanceLockedDays)?p.attendanceLockedDays.map(Number):[]);
+    if(Array.isArray(p.attendanceConfirmedDays))attendanceConfirmedDays=new Set(p.attendanceConfirmedDays.map(Number));
+    if(Array.isArray(p.attendanceLockedDays))attendanceLockedDays=new Set(p.attendanceLockedDays.map(Number));
     syncAttendanceLock();
     $('fa').textContent=(Number(p.fa)||0)+'作品';
     const faBits=[];if(p.faLastAt)faBits.push(`最終応募：${formatServerDate(p.faLastAt)}`);if(p.faLatestStatus)faBits.push(p.faLatestStatus);showMeta('faMeta',faBits.join('／'));
@@ -83,7 +89,27 @@ $('register')?.addEventListener('submit',async e=>{
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
 
-$('attendanceSubmit')?.addEventListener('click',async()=>{const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword'),day=Number($('attendanceDay').value);if(attendanceConfirmedDays.has(day)){m.textContent=`10/${day} は確認済みです。`;syncAttendanceLock();return}if(attendanceLockedDays.has(day)){m.textContent='入力不可のためライバーにご連絡ください。';syncAttendanceLock();return}if(!k.value.trim()){m.textContent='確認文字を入力してください';return}b.disabled=true;m.textContent='確認しています…';try{const d=await post('/api/checkin',{keyword:k.value.trim(),day});attendanceConfirmedDays.add(day);m.textContent=d.message||'確認を受け付けました';k.value='';syncAttendanceLock();await refresh()}catch(e){m.textContent=e.message||'確認できませんでした';if(/入力不可/.test(m.textContent))attendanceLockedDays.add(day);syncAttendanceLock()}finally{if(!attendanceConfirmedDays.has(day)&&!attendanceLockedDays.has(day)&&!attendanceAchieved)b.disabled=false}});
+$('attendanceSubmit')?.addEventListener('click',async()=>{
+  const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword'),day=Number($('attendanceDay').value);
+  if(attendanceConfirmedDays.has(day)){m.textContent=`10/${day} は確認済みです。`;syncAttendanceLock();return}
+  if(attendanceLockedDays.has(day)||localAttempts(day)>=2){attendanceLockedDays.add(day);m.textContent='入力不可のためライバーにご連絡ください。';syncAttendanceLock();return}
+  if(!k.value.trim()){m.textContent='確認文字を入力してください';return}
+  b.disabled=true;m.textContent='確認しています…';
+  try{
+    const d=await post('/api/checkin',{keyword:k.value.trim(),day});
+    attendanceConfirmedDays.add(day);setLocalAttempts(day,2);m.textContent=d.message||'確認を受け付けました';k.value='';syncAttendanceLock();await refresh();
+  }catch(e){
+    const text=e.message||'確認できませんでした';
+    if(/確認文字が違います/.test(text)){
+      const n=Math.min(2,localAttempts(day)+1);setLocalAttempts(day,n);
+      if(n>=2){attendanceLockedDays.add(day);m.textContent='入力不可のためライバーにご連絡ください。'}
+      else m.textContent='確認文字が違います。入力できるのはあと1回です。';
+    }else if(/入力不可/.test(text)){
+      setLocalAttempts(day,2);attendanceLockedDays.add(day);m.textContent='入力不可のためライバーにご連絡ください。';
+    }else m.textContent=text;
+    syncAttendanceLock();
+  }finally{if(!attendanceConfirmedDays.has(day)&&!attendanceLockedDays.has(day)&&localAttempts(day)<2&&!attendanceAchieved)b.disabled=false}
+});
 
 const mioBgm=$('mioBgm'),musicToggle=$('musicToggle'),musicVolume=$('musicVolume'),musicStatus=$('musicStatus');
 if(mioBgm&&musicToggle){
