@@ -1,17 +1,45 @@
 const attendanceDay=document.getElementById('attendanceDay');
-if(attendanceDay){for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=String(d);o.textContent=`10/${d}`;attendanceDay.appendChild(o)}const now=new Date();attendanceDay.value=String(Math.min(31,Math.max(1,now.getMonth()===9?now.getDate():1)));}
-import {updateGacha} from './gacha.js';
+if(attendanceDay){
+  // 日付はHTMLにも直書きしてあるので、JS/APIが失敗しても空欄にならない。
+  if(attendanceDay.options.length===0){for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=String(d);o.textContent=`10/${d}`;attendanceDay.appendChild(o)}}
+  const now=new Date();attendanceDay.value=String(Math.min(31,Math.max(1,now.getMonth()===9?now.getDate():1)));
+}
+// ガチャ側の一時的な不具合で、名前登録・皆勤・BGMまで止まらないよう動的読込にする。
+let updateGacha=async()=>{};
+void import('./gacha.js').then(m=>{if(typeof m.updateGacha==='function')updateGacha=m.updateGacha}).catch(e=>console.warn('gacha module unavailable',e));
 const $=id=>document.getElementById(id);
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error)}
-function parseApiResponse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'接続先の応答を確認できませんでした'}}
+function parseApiResponse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'接続先の応答を確認できませんでした'}}}
 function xhrPost(path,body={}){return new Promise((resolve,reject)=>{const x=new XMLHttpRequest();x.open('POST',path,true);x.setRequestHeader('Content-Type','application/json');x.setRequestHeader('Accept','application/json');x.timeout=20000;x.withCredentials=true;x.onload=()=>{const d=parseApiResponse(x.responseText);if(x.status>=200&&x.status<300){resolve(d);return}const e=Error(d.error||`接続できませんでした (${x.status})`);e.status=x.status;reject(e)};x.onerror=()=>reject(Error('通信に失敗しました。もう一度お試しください'));x.ontimeout=()=>reject(Error('通信がタイムアウトしました。もう一度お試しください'));x.send(JSON.stringify(body))})}
 async function post(path,body={}){try{const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body),credentials:'same-origin',cache:'no-store'});const d=parseApiResponse(await r.text());if(!r.ok){const e=Error(d.error||'接続できませんでした');e.status=r.status;throw e}return d}catch(e){if(e&&typeof e.status==='number')throw e;console.warn('fetch failed; retrying with XHR',e);return await xhrPost(path,body)}}
-function display(d){updateGacha(d.participantId,d.status==='承認済み');$('register').hidden=true;$('personal').hidden=false;$('status').textContent=d.status;$('greeting').textContent=d.name+' さん';$('participantId').textContent='登録ID：'+d.participantId;$('counts').hidden=!d.progress;$('gachaDetail').textContent='';if(d.progress){const p=d.progress;$('prediction').textContent=p.prediction?'提出済':'未提出';$('attendance').textContent=p.attendanceAchieved?'達成':'確認中';$('attendanceMessage').textContent=p.attendanceTodayDone?'今日は確認済みです':'';$('attendanceKeyword').disabled=!!p.attendanceAchieved;$('attendanceSubmit').disabled=!!p.attendanceAchieved;$('fa').textContent=p.fa+'作品';$('remaining').textContent=p.gacha.remaining+'回';$('gachaDetail').textContent=p.gacha.confirmed?'付与 '+p.gacha.total+'回 ／ 使用 '+p.gacha.used+'回。'+(p.gacha.remaining===0?'残り回数はありません。':p.gacha.total>=5?'通常／ラキフェスを選べます。':'総ガチャ権利5回以上でラキフェスが解放されます。'):'メンシプの購入内容を管理者が確認中です。'}message(d.status==='承認済み'?'シートの最新情報を反映しました。':'登録は保存済みです。管理者の照合・承認をお待ちください。')}
+function display(d){
+  Promise.resolve(updateGacha(d.participantId,d.status==='承認済み')).catch(e=>console.warn('gacha update failed',e));
+  $('register').hidden=true;
+  $('personal').hidden=false;
+  $('status').textContent=d.status;
+  $('greeting').textContent=d.name+' さん';
+  $('participantId').textContent='登録ID：'+d.participantId;
+  $('counts').hidden=!d.progress;
+  $('gachaDetail').textContent='';
+  if(d.progress){
+    const p=d.progress;
+    $('prediction').textContent=p.prediction?'提出済':'未提出';
+    $('attendance').textContent=p.attendanceAchieved?'達成':'確認中';
+    $('attendanceMessage').textContent=p.attendanceTodayDone?'今日は確認済みです':'';
+    $('attendanceKeyword').disabled=!!p.attendanceAchieved;
+    $('attendanceSubmit').disabled=!!p.attendanceAchieved;
+    $('fa').textContent=p.fa+'作品';
+    $('remaining').textContent=p.gacha.remaining+'回';
+    $('gachaDetail').textContent=p.gacha.confirmed
+      ?'付与 '+p.gacha.total+'回 ／ 使用 '+p.gacha.used+'回。'+(p.gacha.remaining===0?'残り回数はありません。':p.gacha.total>=5?'通常／ラキフェスを選べます。':'総ガチャ権利5回以上でラキフェスが解放されます。')
+      :'メンシプの購入内容を管理者が確認中です。';
+  }
+  message(d.status==='承認済み'?'シートの最新情報を反映しました。':'登録は保存済みです。管理者の照合・承認をお待ちください。');
+}
 async function refresh(){message('参加状況を確認しています…');$('counts').hidden=true;$('gachaDetail').textContent='';$('refresh').disabled=true;try{display(await post('/api/status'))}catch(e){$('personal').hidden=true;if(e.status===401){$('register').hidden=false;message('初めての方は登録してください。')}else{$('register').hidden=false;message(e.status===503?'参加状況のWeb連携は準備中です。予想・FAは上のフォームから応募できます。':e.message,true)}}finally{$('refresh').disabled=false}}
 $('register').addEventListener('submit',async e=>{e.preventDefault();const name=$('name').value.trim();if(!name)return;$('registerButton').disabled=true;message('登録を保存しています…');try{await post('/api/register',{name});await refresh()}catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}});
 $('refresh').addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
-await refresh();
 
 $('attendanceSubmit')?.addEventListener('click',async()=>{const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword');if(!k.value.trim()){m.textContent='確認文字を入力してください';return}b.disabled=true;m.textContent='確認しています…';try{const d=await post('/api/checkin',{keyword:k.value.trim(),day:Number($('attendanceDay').value)});m.textContent=d.message||'確認を受け付けました';k.value='';await refresh()}catch(e){m.textContent=e.message||'確認できませんでした'}finally{b.disabled=false}});
 
@@ -171,3 +199,6 @@ if(mioBgm&&musicToggle){
 
   syncMusicUi('ボタンを押すと再生します。');
 }
+
+// APIが落ちていても画面部品は先に使える。参加状況の取得は最後に非同期で開始。
+void refresh();
