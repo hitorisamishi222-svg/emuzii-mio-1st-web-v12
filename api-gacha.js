@@ -1,13 +1,32 @@
 import {prepare,bridge,readSession,hash} from './bridge.js';
 
-function festGate(c){
+function historyCount(h){
+ const list=Array.isArray(h?.history)?h.history:null;
+ return list?list.length:NaN;
+}
+
+function festGate(c,h){
  const start=Number(c?.festAvailableFrom)||5;
- const used=Number(c?.used);
  const remaining=Number(c?.remaining);
  const explicitTotal=Number(c?.total);
- const total=Number.isFinite(explicitTotal)?explicitTotal:(Number.isFinite(used)&&Number.isFinite(remaining)?used+remaining:NaN);
+ const reportedUsed=Number(c?.used);
+ const total=Number.isFinite(explicitTotal)?explicitTotal:(Number.isFinite(reportedUsed)&&Number.isFinite(remaining)?reportedUsed+remaining:NaN);
  const entitled=c?.festEntitled===true||(c?.festEntitled==null&&Number.isFinite(total)&&total>=start);
- return {start,used,remaining,total,entitled,unlocked:entitled&&Number.isFinite(used)&&used>=start-1&&Number.isFinite(remaining)&&remaining>0};
+ const webUsed=historyCount(h);
+ return {
+  start,remaining,total,entitled,webUsed,
+  unlocked:entitled&&Number.isFinite(webUsed)&&webUsed>=start-1&&Number.isFinite(remaining)&&remaining>0
+ };
+}
+
+async function readGateState(ident){
+ const c=await bridge('catalog',ident);
+ if(c.participantId!==ident.participantId)throw Error('登録を確認できません');
+ const h=await bridge('history',ident);
+ if(h.participantId!==ident.participantId)throw Error('登録を確認できません');
+ const g=festGate(c,h);
+ if(!Number.isFinite(g.webUsed))throw Error('抽選履歴を確認できません');
+ return {c,h,g};
 }
 
 export default async function handler(req,res){
@@ -20,10 +39,19 @@ export default async function handler(req,res){
  if(b.action==='draw'&&(!/^[a-f0-9]{32}$/.test(b.drawId||'')||!['通常','ラキフェス'].includes(b.mode)))return res.status(400).json({ok:false,error:'抽選要求が不正です'});
  const ident={participantId:s.id,tokenHash:hash(s.token)};
  try{
+  if(b.action==='catalog'){
+   const {c,g}=await readGateState(ident);
+   return res.status(200).json({
+    ...c,
+    festEntitled:g.entitled,
+    festUnlocked:g.unlocked,
+    festAvailableFrom:g.start,
+    nextOrdinal:g.webUsed+1,
+    webDrawsUsed:g.webUsed
+   });
+  }
   if(b.action==='draw'&&b.mode==='ラキフェス'){
-   const c=await bridge('catalog',ident);
-   if(c.participantId!==s.id)throw Error('登録を確認できません');
-   const g=festGate(c);
+   const {g}=await readGateState(ident);
    if(!g.entitled)throw Error(`ラキフェスは総ガチャ権利${g.start}回以上が対象です`);
    if(!g.unlocked)throw Error(`ラキフェスは${g.start}回目の抽選から利用できます`);
   }
