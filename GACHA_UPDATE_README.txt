@@ -1,9 +1,9 @@
-v1.8.5 本番仕様メモ
+v1.8.6 本番仕様メモ
 
 【ガチャ権利】
 ・1ヶ月メンシプ = 1回
-・3ヶ月メンシプ = 2回
-・6ヶ月メンシプ = 3回
+・3ヶ月メンシプ = 3回
+・6ヶ月メンシプ = 5回
 ・運営の特別付与は emuzii_ガチャ「特別付与」で加算
 
 【ラキフェス】
@@ -11,6 +11,13 @@ v1.8.5 本番仕様メモ
 ・手動消費では解放しない
 ・Webで実際に4回の抽選を完了した後、5回目の抽選からラキフェスを選択可能
 ・画面ボタン、Vercel API、Google Sheets管理表示の3段階で制御
+
+【Web参加者MIO-ID統合】
+・予想フォーム未回答でもWeb登録から参加者マスターへ追加し、MIO-IDを発行できる
+・ColorSing名が一意に一致する場合のみWeb登録H/K列へMIO-IDを自動接続する
+・同名が複数ある場合は自動確定せず「重複要確認」とする
+・登録承認、メンシプ確認は自動化せず運営確認を維持する
+・登録直後の数式反映が遅れた場合は status / catalog / history / draw / checkin 時に再照合して自己修復する
 
 【景品設定】
 ・正本は Google Sheets「emuzii_景品設定」
@@ -48,4 +55,5 @@ v1.8.5 本番仕様メモ
 ・mio-awakening.mp3 と mio-blue-bg.png は維持
 
 【注意】
-・GitHubの古い Code.gs は過去版が残っているため、Apps Scriptを更新する場合は APPS_SCRIPT_Code_v1.8.5.gs を基準にし、現行のVercel API側ラキフェス制御を維持すること。
+・GitHubの古い Code.gs は過去版が残っているため、Apps Scriptを更新する場合は APPS_SCRIPT_Code_v1.8.6.gs を基準にし、現行のVercel API側ラキフェス制御を維持すること。
+・GitHub上のApps Script参照ファイルを更新しても、公開中のGoogle Apps Script Webアプリは自動更新されない。ライブGAS側へコード反映・再デプロイ後に本番反映となる。
