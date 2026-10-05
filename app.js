@@ -18,6 +18,15 @@ const musicToggle=document.getElementById('musicToggle');
 const musicVolume=document.getElementById('musicVolume');
 const musicStatus=document.getElementById('musicStatus');
 if(mioBgm&&musicToggle){
+  // iOS/SafariでWeb Audioをバックグラウンド継続させるため、
+  // AudioContext作成前にAudio Sessionを明示的にplaybackへ固定する。
+  // 非対応ブラウザでは無視される。
+  try{
+    if('audioSession' in navigator && navigator.audioSession){
+      navigator.audioSession.type='playback';
+    }
+  }catch{}
+
   // 音源は1ファイルだけ。音量違いの別MP3は使わない。
   // Web Audio の GainNode でサイト内音量を調整しつつ、
   // HTMLAudioElement 自体はループ・Media Session対応のまま使う。
@@ -59,6 +68,11 @@ if(mioBgm&&musicToggle){
   }
 
   async function ensureWebAudio(){
+    try{
+      if('audioSession' in navigator && navigator.audioSession){
+        navigator.audioSession.type='playback';
+      }
+    }catch{}
     if(webAudioReady){
       if(audioContext?.state==='suspended'){
         try{await audioContext.resume()}catch{}
@@ -131,6 +145,11 @@ if(mioBgm&&musicToggle){
 
   // 画面へ戻った時にWeb Audioが停止していたら復帰を試す。
   document.addEventListener('visibilitychange',()=>{
+    try{
+      if('audioSession' in navigator && navigator.audioSession){
+        navigator.audioSession.type='playback';
+      }
+    }catch{}
     if(!document.hidden&&!mioBgm.paused&&audioContext?.state==='suspended'){
       void audioContext.resume().catch(()=>{});
     }

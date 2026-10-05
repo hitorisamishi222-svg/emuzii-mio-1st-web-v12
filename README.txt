@@ -1,17 +1,14 @@
-翠央1周年・皆勤賞反映修正
+翠央1周年サイト バックグラウンド再生修正 v5
 
-1) Google Sheets側
-- emuzii_管理画面 10/1〜10/31 の確認文字を 1〜31 に設定済み。
-- emuzii_皆勤31日 の MIO-0499 / えむじー🐱 行は存在確認済み。
+GitHub の emuzii-mio-1st-web-v12 直下にある app.js を、この app.js で上書きしてください。
 
-2) GitHub/Vercel側
-- app.js を同名で上書き。皆勤送信を共通post()経由に変更し、Cookie送信/キャッシュなしを明示。
-- api-checkin.js は確認用。同名で上書きしても可。
+変更点:
+- 既存の皆勤賞修正を維持
+- mio-awakening.mp3 1ファイル再生を維持
+- Web音量スライダーを維持
+- loop再生を維持
+- Media Sessionを維持
+- iOS/Safariで navigator.audioSession.type='playback' を AudioContext作成前・再開時に設定
+- バックグラウンド移行時のWeb Audio停止を抑制
 
-3) Google Apps Script側（重要）
-- Code.gs を Apps Scriptプロジェクトの Code.gs に置換。
-- 保存後「デプロイ」→「デプロイを管理」→既存Webアプリの編集→新しいバージョン→デプロイ。
-- URLは変えない。既存 /exec URLを継続利用。
-
-症状「unauthorized」は、参加状況(status)は動くのに checkin だけ古いApps Script側で未対応のときに起きる。
-このCode.gsは checkin を許可し、承認済みWeb登録→照合参加者ID→皆勤31日へ○を保存する。
+アップロード後は Commit changes。VercelのGit連携が正常なら自動デプロイされます。
