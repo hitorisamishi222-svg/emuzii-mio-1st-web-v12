@@ -18,43 +18,69 @@ const musicToggle=document.getElementById('musicToggle');
 const musicVolume=document.getElementById('musicVolume');
 const musicStatus=document.getElementById('musicStatus');
 if(mioBgm&&musicToggle){
-  // iPhone SafariではHTMLMediaElement.volumeが効かないことがあるため、
-  // Web Audio APIのGainNodeでサイト内音量を調整する。
+  // バックグラウンド再生を優先して、Web Audio APIは使わない。
+  // HTMLMediaElementのネイティブ再生なら、再生開始後に画面ロックや
+  // 他アプリへ移動してもブラウザが許す範囲で再生を継続できる。
   mioBgm.loop=true;
-  let audioCtx=null,sourceNode=null,gainNode=null;
-  async function ensureAudioGraph(){
-    if(!audioCtx){
-      const AC=window.AudioContext||window.webkitAudioContext;
-      if(AC){
-        audioCtx=new AC();
-        sourceNode=audioCtx.createMediaElementSource(mioBgm);
-        gainNode=audioCtx.createGain();
-        gainNode.gain.value=Number(musicVolume?.value||0.7);
-        sourceNode.connect(gainNode).connect(audioCtx.destination);
-      }
-    }
-    if(audioCtx?.state==='suspended')await audioCtx.resume();
+  mioBgm.preload='metadata';
+
+  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+
+  if(isiOS && musicVolume){
+    // iOS Safari/WebViewはHTMLMediaElement.volumeをWebページ側から
+    // 変更できないことがあるため、端末の音量ボタンを使う。
+    musicVolume.disabled=true;
+    const volumeLabel=document.querySelector('label[for="musicVolume"]');
+    if(volumeLabel) volumeLabel.textContent='音量（端末ボタンで調整）';
   }
+
+  // ロック画面・通知領域に曲情報と再生/停止を出せる端末向け。
+  if('mediaSession' in navigator){
+    try{
+      navigator.mediaSession.metadata=new MediaMetadata({
+        title:'翠の覚醒-MIO-',
+        artist:'翠央 1周年企画',
+        album:'翠央 1周年',
+        artwork:[
+          {src:'/mio-blue-bg.png',sizes:'512x512',type:'image/png'}
+        ]
+      });
+      navigator.mediaSession.setActionHandler('play',async()=>{
+        try{await mioBgm.play()}catch{}
+      });
+      navigator.mediaSession.setActionHandler('pause',()=>mioBgm.pause());
+    }catch{}
+  }
+
+  function syncMusicUi(){
+    if(mioBgm.paused){
+      musicToggle.textContent='▶ 再生';
+      musicStatus.textContent='一時停止中';
+    }else{
+      musicToggle.textContent='⏸ 一時停止';
+      musicStatus.textContent='翠の覚醒-MIO- バックグラウンド・ループ再生中';
+    }
+  }
+
   musicToggle.addEventListener('click',async()=>{
     try{
-      await ensureAudioGraph();
-      if(mioBgm.paused){
-        await mioBgm.play();
-        musicToggle.textContent='⏸ 一時停止';
-        musicStatus.textContent='翠の覚醒-MIO- ループ再生中';
-      }else{
-        mioBgm.pause();
-        musicToggle.textContent='▶ 再生';
-        musicStatus.textContent='一時停止中';
-      }
+      if(mioBgm.paused) await mioBgm.play();
+      else mioBgm.pause();
+      syncMusicUi();
     }catch{
       musicStatus.textContent='再生できませんでした。もう一度再生ボタンを押してください。';
     }
   });
+
   musicVolume?.addEventListener('input',()=>{
-    const v=Number(musicVolume.value);
-    if(gainNode)gainNode.gain.value=v;
-    else{try{mioBgm.volume=v}catch{}}
+    if(isiOS) return;
+    try{mioBgm.volume=Number(musicVolume.value)}catch{}
   });
-  mioBgm.addEventListener('play',()=>{musicStatus.textContent='翠の覚醒-MIO- ループ再生中';});
+
+  mioBgm.addEventListener('play',syncMusicUi);
+  mioBgm.addEventListener('pause',syncMusicUi);
+  mioBgm.addEventListener('error',()=>{
+    musicStatus.textContent='音源を読み込めませんでした。MP3のファイル名を確認してください。';
+  });
 }
