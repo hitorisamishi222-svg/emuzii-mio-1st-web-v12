@@ -11,7 +11,7 @@ $('refresh').addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
 await refresh();
 
-$('attendanceSubmit')?.addEventListener('click',async()=>{const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword');if(!k.value.trim()){m.textContent='今日の確認文字を入力してください';return}b.disabled=true;m.textContent='確認しています…';try{const r=await fetch('/api/checkin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keyword:k.value,day:Number($('attendanceDay').value)})});const d=await r.json();if(!r.ok)throw Error(d.error||'確認できませんでした');m.textContent=d.message||'今日の確認を受け付けました';k.value='';k.disabled=true;b.disabled=true;await refresh()}catch(e){m.textContent=e.message;b.disabled=false}});
+$('attendanceSubmit')?.addEventListener('click',async()=>{const b=$('attendanceSubmit'),m=$('attendanceMessage'),k=$('attendanceKeyword');if(!k.value.trim()){m.textContent='確認文字を入力してください';return}b.disabled=true;m.textContent='確認しています…';try{const d=await post('/api/checkin',{keyword:k.value.trim(),day:Number($('attendanceDay').value)});m.textContent=d.message||'確認を受け付けました';k.value='';await refresh()}catch(e){m.textContent=e.message||'確認できませんでした'}finally{b.disabled=false}});
 
 const mioBgm=document.getElementById('mioBgm');
 const musicToggle=document.getElementById('musicToggle');
