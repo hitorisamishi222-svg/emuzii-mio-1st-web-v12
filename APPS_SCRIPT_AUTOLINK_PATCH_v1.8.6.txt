@@ -1,0 +1,112 @@
+# APPS_SCRIPT v1.8.6 Web参加者 MIO-ID自動接続パッチ
+
+対象: `APPS_SCRIPT_Code_v1.8.5.gs`
+目的: 予想フォーム未回答の新規Web参加者でも、Web登録後に `emuzii_参加者` が発行した MIO-ID を自動で `emuzii_Web登録` H/K列へ接続する。
+
+安全条件:
+- ColorSing名の完全一致が1人だけの場合のみ自動接続
+- 重複名は自動接続しない
+- 登録承認(F列)・メンシプ確認(G列)は自動で承認しない
+- L列（みお確認）は「確認待ち」のまま
+- 既存MIO-IDは変更しない
+- 新しいリポジトリ / Vercelプロジェクトは作らない
+
+## 1. `jstYmd_` の直後に追加
+
+```javascript
+function autoLinkWebParticipant_(ss,web,participantId,tokenHash,name){
+  name=String(name||'').trim();
+  if(!name)return '';
+  var last=Math.max(web.getLastRow(),2),values=web.getRange(2,1,last-1,Math.max(web.getLastColumn(),13)).getValues(),row=0;
+  for(var i=0;i<values.length;i++){
+    if(values[i][0]===participantId&&equal_(values[i][1],tokenHash)){row=i+2;break}
+  }
+  if(!row)return '';
+
+  var matched=[];
+  for(var attempt=0;attempt<6;attempt++){
+    SpreadsheetApp.flush();
+    if(attempt>0)Utilities.sleep(150);
+    matched=rows_(ss,'emuzii_参加者').filter(function(p){
+      return p[1]===name&&/^MIO-\d{4}$/.test(String(p[0]||''));
+    });
+    if(matched.length===1)break;
+  }
+
+  if(matched.length===1){
+    var id=String(matched[0][0]);
+    web.getRange(row,8).setValue(id);      // H 照合参加者ID
+    web.getRange(row,10).setValue('既存一致');
+    web.getRange(row,11).setValue(id);     // K 統合参加者ID
+    web.getRange(row,9).setValue('MIO-ID自動接続（'+id+'）・運営確認待ち');
+    web.getRange(row,12).setValue('確認待ち');
+    SpreadsheetApp.flush();
+    return id;
+  }
+
+  if(matched.length>1){
+    web.getRange(row,10).setValue('重複要確認');
+    web.getRange(row,12).setValue('確認待ち');
+    SpreadsheetApp.flush();
+  }
+  return '';
+}
+```
+
+## 2. `register` の既存登録分岐を置換
+
+旧:
+```javascript
+if(found.length) {
+  if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
+  return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5]});
+}
+```
+
+新:
+```javascript
+if(found.length) {
+  if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
+  var healedId=found[0][7]||autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
+  return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||''});
+}
+```
+
+## 3. 新規 `appendRow` 後を置換
+
+旧:
+```javascript
+web.appendRow([d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),'承認待ち','未確認',linked,duplicates.length?'同名Web登録あり・みお確認待ち':'',matchState,linked||d.participantId,'確認待ち','']);
+SpreadsheetApp.flush();
+var saved=rows_(ss,WEB_TAB).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
+return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち'});
+```
+
+新:
+```javascript
+web.appendRow([d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),'承認待ち','未確認',linked,duplicates.length?'同名Web登録あり・みお確認待ち':'',matchState,linked||d.participantId,'確認待ち','']);
+SpreadsheetApp.flush();
+if(!linked)linked=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,name);
+var saved=rows_(ss,WEB_TAB).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
+return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||''});
+```
+
+## 4. register 分岐の直後、action許可判定の前に自己修復を追加
+
+```javascript
+if(found.length===1&&equal_(found[0][1],d.tokenHash)&&!found[0][7]){
+  var repairedId=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
+  if(repairedId){
+    all=rows_(ss,WEB_TAB);
+    found=all.filter(function(r){return r[0]===d.participantId});
+  }
+}
+```
+
+これにより、登録直後に数式再計算が間に合わなかった場合でも、次回の status / catalog / history / draw / checkin 呼び出し時にH列を再照合して自己修復する。
+
+## 想定結果
+- 予想回答あり + Web登録: 既存MIO-IDへ即時接続
+- 予想回答なし + Web登録: Web行追加 → 参加者マスター反映 → MIO-ID自動接続
+- 同名が複数: `重複要確認` のまま自動接続しない
+- 承認・メンシプ確認: 従来どおり運営が確認
