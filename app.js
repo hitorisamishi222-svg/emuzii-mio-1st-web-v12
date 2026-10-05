@@ -27,12 +27,30 @@ if(mioBgm&&musicToggle){
   const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
 
+  let iosMuteButton=null;
   if(isiOS && musicVolume){
-    // iOS Safari/WebViewはHTMLMediaElement.volumeをWebページ側から
-    // 変更できないことがあるため、端末の音量ボタンを使う。
-    musicVolume.disabled=true;
+    // バックグラウンド再生を安定させるため、iPhone/iPadでは
+    // Web Audio APIを使わない。iOSではページ側から細かな音量を
+    // 変えられないため、サイト内ではミュート切替、本体ボタンで音量調整する。
     const volumeLabel=document.querySelector('label[for="musicVolume"]');
-    if(volumeLabel) volumeLabel.textContent='音量（端末ボタンで調整）';
+    if(volumeLabel) volumeLabel.textContent='音量';
+    musicVolume.hidden=true;
+    musicVolume.disabled=false;
+    iosMuteButton=document.createElement('button');
+    iosMuteButton.type='button';
+    iosMuteButton.className='button';
+    iosMuteButton.id='musicMute';
+    iosMuteButton.textContent='🔊 音あり';
+    musicVolume.insertAdjacentElement('afterend',iosMuteButton);
+    const note=document.createElement('span');
+    note.className='muted';
+    note.textContent='細かな音量はiPhone本体の音量ボタンで調整';
+    iosMuteButton.insertAdjacentElement('afterend',note);
+    iosMuteButton.addEventListener('click',()=>{
+      mioBgm.muted=!mioBgm.muted;
+      iosMuteButton.textContent=mioBgm.muted?'🔇 ミュート中':'🔊 音あり';
+      musicStatus.textContent=mioBgm.muted?'ミュート中':'音量はiPhone本体の音量ボタンで調整できます。';
+    });
   }
 
   // ロック画面・通知領域に曲情報と再生/停止を出せる端末向け。
