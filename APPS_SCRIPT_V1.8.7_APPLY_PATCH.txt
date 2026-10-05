@@ -1,0 +1,172 @@
+翠央1周年 既存Apps Script v1.8.6 → v1.8.7 適用差分
+====================================================
+
+【絶対条件】
+- 新しいApps Scriptプロジェクトを作らない。
+- 現在スプレッドシートに紐付く既存Apps Scriptへ適用する。
+- 既存WebアプリURLを維持する。
+- APPS_SCRIPT_BackupModule_v1.8.7.gs と APPS_SCRIPT_WebIntegrity_v1.8.7.gs を同じ既存Apps Scriptプロジェクトへ追加する。
+- 変更後、既存の setup() を1回実行して認可・5分トリガー・第二保存照合を有効化する。
+
+第二保存ID:
+1rEInhrjUOhBajdq-6uOqdIQ5-8VFguutgdmfK9iVa6w
+
+----------------------------------------------------
+1. setup() の末尾へ追加
+----------------------------------------------------
+BRIDGE_SECRET設定の直後、setup() の閉じ括弧の前へ追加:
+
+  ensureWebDerivedExisting_(ss);
+  setupBackupV187_();
+
+----------------------------------------------------
+2. autoLinkWebParticipant_() の実データ行判定を変更
+----------------------------------------------------
+変更前:
+  var last=Math.max(web.getLastRow(),2);
+  var values=web.getRange(2,1,last-1,Math.max(web.getLastColumn(),13)).getValues();
+
+変更後:
+  var last=Math.max(webActualLastRow_(web),2);
+  var values=last>=2?web.getRange(2,1,last-1,Math.max(web.getLastColumn(),20)).getValues():[];
+
+既存一致でIDを書き込んで SpreadsheetApp.flush(); の直前へ追加:
+  ensureWebDerivedRow_(web,row);
+
+重複要確認で SpreadsheetApp.flush(); の直前へ追加:
+  ensureWebDerivedRow_(web,row);
+
+----------------------------------------------------
+3. doPost() のWeb登録読み込みを実データ行だけに変更
+----------------------------------------------------
+変更前:
+  var all=rows_(ss,WEB_TAB),found=all.filter(function(r){return r[0]===d.participantId});
+
+変更後:
+  var all=webActualRows_(web),found=all.filter(function(r){return r[0]===d.participantId});
+
+----------------------------------------------------
+4. register既存端末の自動修復後に第二保存
+----------------------------------------------------
+register内の既存found処理を以下へ置換:
+
+      if(found.length) {
+        if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
+        var healedId=found[0][7]||autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
+        try{backupAfterWebMutation_(ss,d.participantId,found[0][2],'既存登録再照合',healedId?'MIO-ID確認済み':'照合待ち')}catch(ignore){}
+        return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||''});
+      }
+
+----------------------------------------------------
+5. register新規登録をappendRowから実データ次行指定へ変更
+----------------------------------------------------
+変更前:
+      if(all.length>=499)return json_({ok:false,error:'登録上限です。運営に確認してください'});
+
+変更後:
+      if(webActualCount_(web)>=499)return json_({ok:false,error:'登録上限です。運営に確認してください'});
+
+変更前:
+      web.appendRow([d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),'承認待ち','未確認',linked,duplicates.length?'同名Web登録あり・みお確認待ち':'',matchState,linked||d.participantId,'確認待ち','']);
+      SpreadsheetApp.flush();
+
+変更後:
+      var newRow=webNextRow_(web);
+      if(!newRow)return json_({ok:false,error:'登録上限です。運営に確認してください'});
+      web.getRange(newRow,1,1,13).setValues([[d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),'承認待ち','未確認',linked,duplicates.length?'同名Web登録あり・みお確認待ち':'',matchState,linked||d.participantId,'確認待ち','']]);
+      ensureWebDerivedRow_(web,newRow);
+      SpreadsheetApp.flush();
+
+autoLinkWebParticipant_() 実行後、saved取得の前へ追加:
+      try{backupAfterWebMutation_(ss,d.participantId,name,'新規登録',linked?'既存MIO-IDへ接続':'運営照合待ち')}catch(ignore){}
+
+saved取得も実データ行だけに変更:
+変更前:
+      var saved=rows_(ss,WEB_TAB).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
+変更後:
+      var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
+
+----------------------------------------------------
+6. register以外の自動修復後も第二保存
+----------------------------------------------------
+修復ブロックを以下へ変更:
+
+    if(found.length===1&&equal_(found[0][1],d.tokenHash)&&!found[0][7]){
+      var repairedId=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
+      if(repairedId){
+        try{backupAfterWebMutation_(ss,d.participantId,found[0][2],'MIO-ID自動修復',repairedId)}catch(ignore){}
+        all=webActualRows_(web);
+        found=all.filter(function(r){return r[0]===d.participantId});
+      }
+    }
+
+----------------------------------------------------
+7. H/K/P/L整合ゲートを追加
+----------------------------------------------------
+以下の直後:
+    var r=found[0];
+
+追加:
+    if(!webIntegrityOk_(r))return json_({ok:false,error:'参加者IDの整合を運営が確認中です'});
+
+これにより承認済み端末は H=K=P かつ L=確認済み でない限り、status/catalog/draw/history/checkinを進めない。
+承認待ち・却下は既存の各処理ルールを維持する。
+
+----------------------------------------------------
+8. checkinAction_() 誤入力の試行回数も第二保存履歴へ残す
+----------------------------------------------------
+以下の直後:
+    setCheckinAttempts_(r[7],day,attempts);
+
+追加:
+    try{backupAfterParticipantMutation_(ss,r[7],r[2],'皆勤試行','10/'+day+' 誤入力'+attempts+'回目','残り入力回数 '+Math.max(CHECKIN_MAX_ATTEMPTS-attempts,0))}catch(ignore){}
+
+----------------------------------------------------
+9. checkinAction_() 成功後に第二保存
+----------------------------------------------------
+変更前:
+  cell.setValue('○');
+  SpreadsheetApp.flush();
+  return {ok:true,participantId:r[0],todayDone:true,message:'10/'+day+' の確認を受け付けました'};
+
+変更後:
+  cell.setValue('○');
+  SpreadsheetApp.flush();
+  try{backupAfterParticipantMutation_(ss,r[7],r[2],'皆勤','10/'+day+'確認','確認文字一致')}catch(ignore){}
+  return {ok:true,participantId:r[0],todayDone:true,message:'10/'+day+' の確認を受け付けました'};
+
+----------------------------------------------------
+10. gachaAction_() 抽選確定後に第二保存
+----------------------------------------------------
+変更前:
+  ss.getSheetByName(DRAW_TAB).appendRow([d.drawId,r[0],id,safeText_(r[2]),d.mode,winner.id,safeText_(winner.name),winner.chance,new Date(),used+1,'確定',safeText_(winner.rarity),winner.image]);
+  SpreadsheetApp.flush();
+
+  return {ok:true,participantId:r[0],drawId:d.drawId,prize:winner.name,mode:d.mode,ordinal:used+1,rarity:winner.rarity,image:winner.image,remaining:remaining-1,replayed:false};
+
+変更後:
+  ss.getSheetByName(DRAW_TAB).appendRow([d.drawId,r[0],id,safeText_(r[2]),d.mode,winner.id,safeText_(winner.name),winner.chance,new Date(),used+1,'確定',safeText_(winner.rarity),winner.image]);
+  SpreadsheetApp.flush();
+  try{backupAfterParticipantMutation_(ss,id,r[2],'ガチャ','抽選確定',d.mode+'／'+winner.id+'／'+winner.name)}catch(ignore){}
+
+  return {ok:true,participantId:r[0],drawId:d.drawId,prize:winner.name,mode:d.mode,ordinal:used+1,rarity:winner.rarity,image:winner.image,remaining:remaining-1,replayed:false};
+
+----------------------------------------------------
+11. 適用後の確認
+----------------------------------------------------
+A. setup()を1回実行。
+B. emuzii_連携設定 B31 が「GAS v1.8.7 自動二重保存 稼働」になること。
+C. emuzii_連携設定 B30 が「第二保存 同期正常」になること。
+D. emuzii_復旧チェック H列が「一致」、G列が「一致」であること。
+E. Apps Scriptトリガーに backupSweep_ / 5分 が1件だけあること。
+F. 新規Web登録はA列の実データ次行へ入り、N/O/P/Tの判定式はその登録行だけに入ること。
+G. 空行N:P/Tへ数式を事前投入しないこと。
+H. 既存WebアプリURLを変えないこと。
+I. 「翠央(お試し) / MIO-0004」は管理者テストとして承認済みを維持し、自動却下しないこと。
+
+----------------------------------------------------
+ロールバック
+----------------------------------------------------
+問題が出た場合は、Apps Script本体を v1.8.6 へ戻す。
+第二保存スプレッドシート自体は削除しない。
+Web登録の実データ、MIO-ID、当選履歴、皆勤実績は変更せず保持する。
