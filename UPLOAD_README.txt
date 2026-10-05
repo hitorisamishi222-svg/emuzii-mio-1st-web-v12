@@ -1,18 +1,14 @@
-バックグラウンド再生＋音量操作 修正版 v2
+iPhoneでもWeb音量調整＋バックグラウンド再生を両立する修正版 v3
 
-修正内容:
-- 前版でiPhoneの音量スライダーを disabled にしてしまった問題を修正
-- iPhone/iPadでは「ミュート/音あり」ボタンを表示
-- 細かな音量はiPhone本体の音量ボタンで調整
-- Android/PCでは従来どおりサイト内の音量スライダーが動作
-- HTMLMediaElementのネイティブ再生を維持し、バックグラウンド再生を優先
-- ループ再生とMedia Session（対応端末のロック画面再生/停止）を維持
+GitHub の emuzii-mio-1st-web-v12 直下へ、次の5ファイルをアップロードしてください。
+- app.js（上書き）
+- mio-awakening.mp3
+- mio-awakening-v25.mp3
+- mio-awakening-v50.mp3
+- mio-awakening-v75.mp3
 
-反映方法:
-1. GitHub の emuzii-mio-1st-web-v12 に app.js を上書きアップロード
-2. Commit changes
-3. Vercel の自動デプロイが Ready になるまで待つ
-4. 固定URLをSafariで開き直し、再生ボタンを押す
+Webの音量スライダーは 0 / 25 / 50 / 75 / 100% の5段階です。
+0%はミュート。25〜100%は音量違いのMP3へ現在位置を保って切り替えます。
+Web Audio APIを使わないため、通常のaudio要素のバックグラウンド再生を維持しやすい方式です。
 
-重要:
-MP3ファイル名は mio-awakening.mp3 のままにしてください。
+アップロード後、Commit changes → Vercelの自動デプロイがReadyになるのを待ってください。
