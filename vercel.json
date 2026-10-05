@@ -1,23 +1,191 @@
 {
-  "$schema":"https://openapi.vercel.sh/vercel.json",
-  "builds":[
-    {"src":"api-register.js","use":"@vercel/node"},
-    {"src":"api-status.js","use":"@vercel/node"},
-    {"src":"api-checkin.js","use":"@vercel/node"},
-    {"src":"api-gacha.js","use":"@vercel/node"},
-    {"src":"index.html","use":"@vercel/static"},
-    {"src":"style.css","use":"@vercel/static"},
-    {"src":"app.js","use":"@vercel/static"},
-    {"src":"gacha.js","use":"@vercel/static"},
-    {"src":"mio-awakening.mp3","use":"@vercel/static"},
-    {"src":"mio-blue-bg.png","use":"@vercel/static"}
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "builds": [
+    {
+      "src": "api-register.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-status.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-checkin.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-gacha.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "style.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "app.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-awakening.mp3",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-blue-bg.png",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-page.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-01.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-02.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-03.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-04.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-05.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-06.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-07.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-08.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-09.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-10.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-11.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-12.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-13.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-14.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-15.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-mem-16.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-09.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-10.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-11.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-12.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-13.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-14.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-15.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-16.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-17.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-18.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-lf-19.jpg",
+      "use": "@vercel/static"
+    }
   ],
-  "routes":[
-    {"src":"/api/register","dest":"/api-register.js"},
-    {"src":"/api/status","dest":"/api-status.js"},
-    {"src":"/api/checkin","dest":"/api-checkin.js"},
-    {"src":"/api/gacha","dest":"/api-gacha.js"},
-    {"src":"/","dest":"/index.html"},
-    {"src":"/(.*)","dest":"/$1"}
+  "routes": [
+    {
+      "src": "/api/register",
+      "dest": "/api-register.js"
+    },
+    {
+      "src": "/api/status",
+      "dest": "/api-status.js"
+    },
+    {
+      "src": "/api/checkin",
+      "dest": "/api-checkin.js"
+    },
+    {
+      "src": "/api/gacha",
+      "dest": "/api-gacha.js"
+    },
+    {
+      "src": "/gacha.html",
+      "dest": "/gacha.html"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
   ]
 }
