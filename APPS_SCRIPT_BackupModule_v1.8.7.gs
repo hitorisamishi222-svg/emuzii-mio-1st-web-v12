@@ -31,12 +31,15 @@ function backupHash_(text){
 }
 
 function backupAttemptsState_(id){
-  var out=[];
-  for(var d=1;d<=31;d++){
-    var n=checkinAttempts_(id,d);
-    if(n>0)out.push(d+':'+n);
-  }
-  return out.length?out.join(','):'なし';
+  var props=PropertiesService.getScriptProperties().getProperties();
+  var prefix='CHECKIN_ATTEMPTS:'+String(id)+':',out=[];
+  Object.keys(props).forEach(function(k){
+    if(k.indexOf(prefix)!==0)return;
+    var d=Number(k.slice(prefix.length)),n=Number(props[k]||0);
+    if(Number.isSafeInteger(d)&&d>=1&&d<=31&&n>0)out.push([d,n]);
+  });
+  out.sort(function(a,b){return a[0]-b[0]});
+  return out.length?out.map(function(x){return x[0]+':'+x[1]}).join(','):'なし';
 }
 
 function backupParticipantState_(ss,id,name){
@@ -48,12 +51,13 @@ function backupParticipantState_(ss,id,name){
   var fa=rows_(ss,'emuzii_FA').filter(function(x){return x[1]===name&&x[10]==='受付'}).length;
   var att=rows_(ss,'emuzii_皆勤31日').filter(function(x){return x[0]===id&&x[1]===name});
   var days=att.length===1?(Number(att[0][33])||0):0;
-  var web=rows_(ss,WEB_TAB).filter(function(x){return x[2]===name&&x[5]==='承認済み'&&x[7]===id});
+  var web=(typeof webActualRows_==='function'?webActualRows_(ss.getSheetByName(WEB_TAB)):rows_(ss,WEB_TAB)).filter(function(x){return x[2]===name&&x[5]==='承認済み'&&x[7]===id});
   return 'ガチャ'+total+'／残'+remaining+'／FA'+fa+'／皆勤'+days+'／Web承認'+web.length+'／確認文字試行'+backupAttemptsState_(id);
 }
 
 function backupWebState_(ss,webId,name){
-  var list=rows_(ss,WEB_TAB).filter(function(x){return x[0]===webId});
+  var web=ss.getSheetByName(WEB_TAB);
+  var list=(typeof webActualRows_==='function'?webActualRows_(web):rows_(ss,WEB_TAB)).filter(function(x){return x[0]===webId});
   if(list.length!==1)return 'Web登録未確認';
   var r=list[0];
   var integrated=String(r[7]||r[10]||'未接続');
@@ -104,26 +108,32 @@ function backupRefreshRecoveryCheck_(primarySs,ok,note){
   sh.getRange(2,10,n,1).setValues(j);
 }
 
-function backupMirrorCritical_(primarySs){
+function backupMirrorSelected_(primarySs,names,refreshStatus){
   try{
     var secondary=SpreadsheetApp.openById(SECONDARY_SHEET_ID),bad=[];
-    BACKUP_MIRROR_TABS.forEach(function(name){
+    names.forEach(function(name){
       var result=backupMirrorOne_(primarySs,secondary,name);
       if(!result.ok)bad.push(result.name);
     });
     var ok=bad.length===0;
-    backupRefreshRecoveryCheck_(primarySs,ok,ok?'重要シート同期一致':'不一致:'+bad.join(','));
-    var cfg=primarySs.getSheetByName('emuzii_連携設定');
-    if(cfg){
-      cfg.getRange('B30').setValue(ok?'第二保存 同期正常':'第二保存 要確認');
-      cfg.getRange('C30').setValue(Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy/MM/dd HH:mm:ss')+' JST'+(bad.length?' / '+bad.join(','):' / 重要シート照合済み'));
+    if(refreshStatus){
+      backupRefreshRecoveryCheck_(primarySs,ok,ok?'重要シート同期一致':'不一致:'+bad.join(','));
+      var cfg=primarySs.getSheetByName('emuzii_連携設定');
+      if(cfg){
+        cfg.getRange('B30').setValue(ok?'第二保存 同期正常':'第二保存 要確認');
+        cfg.getRange('C30').setValue(Utilities.formatDate(new Date(),'Asia/Tokyo','yyyy/MM/dd HH:mm:ss')+' JST'+(bad.length?' / '+bad.join(','):' / 重要シート照合済み'));
+      }
+      if(ok)PropertiesService.getScriptProperties().setProperty('BACKUP_LAST_MIRROR',new Date().toISOString());
     }
-    if(ok)PropertiesService.getScriptProperties().setProperty('BACKUP_LAST_MIRROR',new Date().toISOString());
     return {ok:ok,bad:bad};
   }catch(err){
-    backupRefreshRecoveryCheck_(primarySs,false,'第二保存本体同期失敗');
+    if(refreshStatus)backupRefreshRecoveryCheck_(primarySs,false,'第二保存本体同期失敗');
     return {ok:false,bad:['SECONDARY_OPEN_OR_SYNC']};
   }
+}
+
+function backupMirrorCritical_(primarySs){
+  return backupMirrorSelected_(primarySs,BACKUP_MIRROR_TABS,true);
 }
 
 function backupAppend_(primarySs,id,name,dataType,operation,note){
@@ -151,27 +161,32 @@ function backupAppend_(primarySs,id,name,dataType,operation,note){
 
 function backupWebIntegrity_(r){
   if(!r)return false;
-  if(r[5]==='却下')return true;
-  if(r[5]==='承認待ち')return true;
+  if(r[5]==='却下'||r[5]==='承認待ち')return true;
   if(r[5]!=='承認済み')return false;
   var h=String(r[7]||''),k=String(r[10]||''),p=String(r[15]||'');
   if(!h)return false;
   if(k&&k!==h)return false;
   if(p&&p!==h)return false;
-  return true;
+  return r[11]==='確認済み';
 }
 
 function backupAfterWebMutation_(ss,webId,name,operation,note){
-  var current=rows_(ss,WEB_TAB).filter(function(x){return x[0]===webId});
+  var web=ss.getSheetByName(WEB_TAB);
+  var current=(typeof webActualRows_==='function'?webActualRows_(web):rows_(ss,WEB_TAB)).filter(function(x){return x[0]===webId});
   var id=current.length===1?String(current[0][7]||current[0][10]||webId):String(webId||'');
   var logged=backupAppend_(ss,id,name,'Web登録',operation,note||'');
-  var mirrored=backupMirrorCritical_(ss);
+  var mirrored=backupMirrorSelected_(ss,['emuzii_Web登録','emuzii_参加者'],false);
   return logged&&mirrored.ok;
 }
 
 function backupAfterParticipantMutation_(ss,id,name,dataType,operation,note){
   var logged=backupAppend_(ss,id,name,dataType,operation,note||'');
-  var mirrored=backupMirrorCritical_(ss);
+  var tabs=[];
+  if(String(dataType).indexOf('ガチャ')>=0)tabs=['emuzii_当選履歴','emuzii_ガチャ'];
+  else if(String(dataType).indexOf('皆勤')>=0)tabs=['emuzii_皆勤31日'];
+  else if(String(dataType).indexOf('FA')>=0)tabs=['emuzii_FA'];
+  else tabs=['emuzii_参加者'];
+  var mirrored=backupMirrorSelected_(ss,tabs,false);
   return logged&&mirrored.ok;
 }
 
@@ -199,6 +214,11 @@ function backupSweep_(){
   }
 }
 
+function verifyBackupV187_(){
+  var ss=SpreadsheetApp.openById(SHEET_ID);
+  return backupMirrorSelected_(ss,BACKUP_MIRROR_TABS,true);
+}
+
 function setupBackupV187_(){
   var ss=SpreadsheetApp.openById(SHEET_ID);
   backupEnsureLog_(ss);
@@ -212,6 +232,6 @@ function setupBackupV187_(){
   var cfg=ss.getSheetByName('emuzii_連携設定');
   if(cfg){
     cfg.getRange('B31').setValue('GAS v1.8.7 自動二重保存 稼働');
-    cfg.getRange('C31').setValue('即時保存＋5分差分スナップショット＋重要シート本体同期'+(mirrored.ok?'':'（要確認）'));
+    cfg.getRange('C31').setValue('即時変更シート同期＋5分全体照合'+(mirrored.ok?'':'（要確認）'));
   }
 }
