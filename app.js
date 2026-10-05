@@ -18,87 +18,85 @@ const musicToggle=document.getElementById('musicToggle');
 const musicVolume=document.getElementById('musicVolume');
 const musicStatus=document.getElementById('musicStatus');
 if(mioBgm&&musicToggle){
-  // iPhoneでもWeb上で音量を変えつつ、バックグラウンド再生を優先する方式。
-  // iOSはHTMLMediaElement.volumeの細かな変更が効かないため、
-  // 音量違いのMP3へ切り替える。Web Audio APIは使わない。
+  // 音源は1ファイルだけ。音量違いの別MP3は使わない。
+  // Web Audio の GainNode でサイト内音量を調整しつつ、
+  // HTMLAudioElement 自体はループ・Media Session対応のまま使う。
+  const AUDIO_SRC='/mio-awakening.mp3';
+  mioBgm.src=AUDIO_SRC;
   mioBgm.loop=true;
   mioBgm.preload='metadata';
+  mioBgm.playsInline=true;
+  mioBgm.volume=1;
 
-  const volumeFiles={
-    25:'/mio-awakening-v25.mp3',
-    50:'/mio-awakening-v50.mp3',
-    75:'/mio-awakening-v75.mp3',
-    100:'/mio-awakening.mp3'
-  };
-  let currentLevel=75;
-  let switching=false;
+  let audioContext=null;
+  let sourceNode=null;
+  let gainNode=null;
+  let webAudioReady=false;
 
+  const saved=Number(localStorage.getItem('mioBgmVolume'));
+  const initialVolume=Number.isFinite(saved)?Math.max(0,Math.min(1,saved)):0.7;
   if(musicVolume){
     musicVolume.hidden=false;
     musicVolume.disabled=false;
     musicVolume.min='0';
     musicVolume.max='1';
-    musicVolume.step='0.25';
-    musicVolume.value='0.75';
+    musicVolume.step='0.05';
+    musicVolume.value=String(initialVolume);
   }
 
-  function levelFromSlider(v){
-    const n=Math.max(0,Math.min(1,Number(v)||0));
-    if(n<=0)return 0;
-    if(n<=0.375)return 25;
-    if(n<=0.625)return 50;
-    if(n<=0.875)return 75;
-    return 100;
+  function shownVolume(){
+    return Math.round((Number(musicVolume?.value??initialVolume)||0)*100);
   }
 
   function syncMusicUi(extra=''){
-    const vol=levelFromSlider(musicVolume?.value??0.75);
     if(mioBgm.paused){
       musicToggle.textContent='▶ 再生';
-      musicStatus.textContent=extra||`一時停止中・音量 ${vol}%`;
+      musicStatus.textContent=extra||`一時停止中・音量 ${shownVolume()}%`;
     }else{
       musicToggle.textContent='⏸ 一時停止';
-      musicStatus.textContent=extra||`翠の覚醒-MIO- ループ再生中・音量 ${vol}%`;
+      musicStatus.textContent=extra||`翠の覚醒-MIO- ループ再生中・音量 ${shownVolume()}%`;
     }
   }
 
-  async function switchVolume(level){
-    if(switching)return;
-    if(level===0){
-      mioBgm.muted=true;
-      syncMusicUi('ミュート中・ループ設定は維持されています');
-      return;
-    }
-    mioBgm.muted=false;
-    if(level===currentLevel){
-      syncMusicUi();
-      return;
-    }
-    const nextSrc=volumeFiles[level];
-    if(!nextSrc)return;
-
-    switching=true;
-    const wasPlaying=!mioBgm.paused;
-    const pos=Number.isFinite(mioBgm.currentTime)?mioBgm.currentTime:0;
-    currentLevel=level;
-    musicStatus.textContent=`音量 ${level}% に切り替えています…`;
-
-    const restore=async()=>{
-      try{
-        if(Number.isFinite(mioBgm.duration)&&mioBgm.duration>0){
-          mioBgm.currentTime=Math.min(pos,Math.max(0,mioBgm.duration-0.2));
-        }
-      }catch{}
-      if(wasPlaying){
-        try{await mioBgm.play()}catch{}
+  async function ensureWebAudio(){
+    if(webAudioReady){
+      if(audioContext?.state==='suspended'){
+        try{await audioContext.resume()}catch{}
       }
-      switching=false;
-      syncMusicUi();
-    };
+      return true;
+    }
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return false;
+    try{
+      audioContext=new AC({latencyHint:'playback'});
+      sourceNode=audioContext.createMediaElementSource(mioBgm);
+      gainNode=audioContext.createGain();
+      gainNode.gain.value=Number(musicVolume?.value??initialVolume);
+      sourceNode.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      webAudioReady=true;
+      if(audioContext.state==='suspended'){
+        try{await audioContext.resume()}catch{}
+      }
+      return true;
+    }catch(err){
+      console.warn('Web Audio init failed',err);
+      return false;
+    }
+  }
 
-    mioBgm.addEventListener('loadedmetadata',restore,{once:true});
-    mioBgm.src=nextSrc;
-    mioBgm.load();
+  async function applyVolume(){
+    const v=Math.max(0,Math.min(1,Number(musicVolume?.value??initialVolume)||0));
+    localStorage.setItem('mioBgmVolume',String(v));
+    const ok=await ensureWebAudio();
+    if(ok&&gainNode&&audioContext){
+      try{gainNode.gain.setValueAtTime(v,audioContext.currentTime)}catch{gainNode.gain.value=v}
+    }else{
+      // Android/PC等ではこちらでも動く。iPhoneはGainNode側を優先。
+      try{mioBgm.volume=v}catch{}
+      mioBgm.muted=v===0;
+    }
+    syncMusicUi();
   }
 
   if('mediaSession' in navigator){
@@ -109,34 +107,46 @@ if(mioBgm&&musicToggle){
         album:'翠央 1周年',
         artwork:[{src:'/mio-blue-bg.png',sizes:'512x512',type:'image/png'}]
       });
-      navigator.mediaSession.setActionHandler('play',async()=>{try{await mioBgm.play()}catch{}});
+      navigator.mediaSession.setActionHandler('play',async()=>{
+        try{await ensureWebAudio();await mioBgm.play()}catch{}
+      });
       navigator.mediaSession.setActionHandler('pause',()=>mioBgm.pause());
     }catch{}
   }
 
   musicToggle.addEventListener('click',async()=>{
     try{
-      if(mioBgm.paused)await mioBgm.play();
+      await ensureWebAudio();
+      await applyVolume();
+      if(mioBgm.paused) await mioBgm.play();
       else mioBgm.pause();
       syncMusicUi();
     }catch{
-      musicStatus.textContent='再生できませんでした。音源ファイルを確認してください。';
+      musicStatus.textContent='再生できませんでした。mio-awakening.mp3 を確認してください。';
     }
   });
 
-  musicVolume?.addEventListener('input',()=>{
-    const level=levelFromSlider(musicVolume.value);
-    void switchVolume(level);
+  musicVolume?.addEventListener('input',()=>{void applyVolume()});
+  musicVolume?.addEventListener('change',()=>{void applyVolume()});
+
+  // 画面へ戻った時にWeb Audioが停止していたら復帰を試す。
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&!mioBgm.paused&&audioContext?.state==='suspended'){
+      void audioContext.resume().catch(()=>{});
+    }
+  });
+  window.addEventListener('pageshow',()=>{
+    if(!mioBgm.paused&&audioContext?.state==='suspended'){
+      void audioContext.resume().catch(()=>{});
+    }
   });
 
   mioBgm.addEventListener('play',()=>syncMusicUi());
   mioBgm.addEventListener('pause',()=>syncMusicUi());
   mioBgm.addEventListener('ended',()=>syncMusicUi());
   mioBgm.addEventListener('error',()=>{
-    switching=false;
-    musicStatus.textContent='音源を読み込めませんでした。4つのMP3がアップロードされているか確認してください。';
+    musicStatus.textContent='音源を読み込めませんでした。mio-awakening.mp3 がGitHubにあるか確認してください。';
   });
 
-  // 初期音量75%版から開始。
-  mioBgm.src=volumeFiles[75];
+  syncMusicUi('ボタンを押すと再生します。');
 }
