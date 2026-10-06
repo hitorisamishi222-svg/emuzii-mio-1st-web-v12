@@ -1,6 +1,6 @@
 /**
- * 翠央1周年 v1.8.7 運用・端末復旧アドオン
- * APPS_SCRIPT_Code_v1.8.7.gs と同じ既存Apps Scriptプロジェクトへ追加する。
+ * 翠央1周年 v1.8.7 NO-BACKUP 運用・端末復旧アドオン
+ * APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs と同じ既存Apps Scriptプロジェクトへ追加する。
  * 管理者が emuzii_Web登録 の「登録承認」を承認済みに変更した時だけ端末整理を行う。
  * 「翠央(お試し)」は自動却下しない。
  * 二重保存・第二保存にはアクセスしない。
@@ -70,9 +70,6 @@ function webRecoveryOnEdit_(e){
 
   SpreadsheetApp.flush();
 }
-
-
-
 
 function verifyV187Ready_(){
   var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
