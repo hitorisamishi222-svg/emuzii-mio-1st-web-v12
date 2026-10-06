@@ -5,11 +5,15 @@ on:
     paths:
       - 'APPS_SCRIPT_Code_v1.8.7.gs'
       - 'APPS_SCRIPT_DeviceRecovery_v1.8.7.gs'
+      - 'APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs'
+      - 'APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs'
       - '.github/workflows/validate-apps-script.yml'
   pull_request:
     paths:
       - 'APPS_SCRIPT_Code_v1.8.7.gs'
       - 'APPS_SCRIPT_DeviceRecovery_v1.8.7.gs'
+      - 'APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs'
+      - 'APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs'
 
 permissions:
   contents: read
@@ -23,8 +27,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in APPS_SCRIPT_Code_v1.8.7.gs APPS_SCRIPT_DeviceRecovery_v1.8.7.gs; do
+          for f in \
+            APPS_SCRIPT_Code_v1.8.7.gs \
+            APPS_SCRIPT_DeviceRecovery_v1.8.7.gs \
+            APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs \
+            APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs; do
             test -f "$f"
             cp "$f" "/tmp/$(basename "$f" .gs).js"
             node --check "/tmp/$(basename "$f" .gs).js"
           done
+
+      - name: Ensure NO-BACKUP release has no secondary-save dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R -E 'SECONDARY_SHEET_ID|setupBackupV187_|verifyBackupV187_|backupAfter|backupMirror|backupAppend_|latestBackupStateForParticipant_|restoreCheckinAttemptsFromBackupV187_' \
+            APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs \
+            APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs
