@@ -84,8 +84,11 @@ function verifyV188Ready_(){
   var triggerNames=ScriptApp.getProjectTriggers().map(function(t){return t.getHandlerFunction()});
   var recoveryCount=triggerNames.filter(function(x){return x==='webRecoveryOnEdit_'}).length;
   var backupCount=triggerNames.filter(function(x){return x==='backupSweep_'}).length;
-  var admin=ss.getSheetByName(GACHA_ADMIN_TAB),grantHistory=ss.getSheetByName(GACHA_GRANT_HISTORY_TAB);
-  var gachaAdminReady=!!(admin&&grantHistory),gate=gachaAdminReady?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
+  var adminTab=typeof GACHA_ADMIN_TAB==='undefined'?'emuzii_管理画面':GACHA_ADMIN_TAB;
+  var grantTab=typeof GACHA_GRANT_HISTORY_TAB==='undefined'?'emuzii_ガチャ付与履歴':GACHA_GRANT_HISTORY_TAB;
+  var admin=ss.getSheetByName(adminTab),grantHistory=ss.getSheetByName(grantTab);
+  var gachaAdminReady=!!(admin&&grantHistory&&typeof gachaOpenState_==='function');
+  var gate=gachaAdminReady?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
 
   return {
     ok:badWeb.length===0&&normal.ready&&fest.ready&&recoveryCount===1&&backupCount===0&&gachaAdminReady,
