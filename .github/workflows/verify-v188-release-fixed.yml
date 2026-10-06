@@ -1,0 +1,17 @@
+name: Verify Fixed v1.8.8 Release
+
+on:
+  push:
+    branches:
+      - feature/v1.8.8-gacha-no-duplicates
+    paths:
+      - .github/workflows/verify-v188-release-fixed.yml
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fixed release candidate
+        uses: actions/checkout@v4
+        with:
+          ref: f0036212e2c807
