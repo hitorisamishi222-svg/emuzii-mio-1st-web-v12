@@ -11,11 +11,95 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out fixed release candidate
+      - name: Check out fixed release branch
         uses: actions/checkout@v4
         with:
-          ref: f0036212e2c807d0fa2fa6d53211eca1692dfe00
+          ref: release/v1.8.8-no-backup-gacha-controls
+          fetch-depth: 1
+
+      - name: Verify fixed release HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "f0036212e2c807d0fa2fa6d53211eca1692dfe00"
 
       - name: Verify fixed blob SHAs
         shell: bash
-       
+        run: |
+          set -euo pipefail
+          test "$(git hash-object APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs)" = "6e1ca0061979da1c7e02bd2ed3545e434b28bb84"
+          test "$(git hash-object APPS_SCRIPT_GachaAdmin_v1.8.8.gs)" = "be7d3cc5078dbe133c298f10c5a06c371c0622a5"
+          test "$(git hash-object APPS_SCRIPT_DeviceRecovery_v1.8.8.gs)" = "404fe2a0c5b6066ee68a3a5d301ff3aac6c3eeb1"
+          test "$(git hash-object gacha-page.v1.8.8_PREP.js)" = "84a9c55a7515560836d53a2c534ceeaf589d9b0d"
+          test "$(git hash-object V1.8.8_GACHA_ADMIN_PREP_HANDOFF.md)" = "3bbc1c66aae4ea3c6b748c1d23c9b65597977cbb"
+
+      - name: Validate syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs /tmp/core.js
+          cp APPS_SCRIPT_GachaAdmin_v1.8.8.gs /tmp/admin.js
+          cp APPS_SCRIPT_DeviceRecovery_v1.8.8.gs /tmp/recovery.js
+          node --check /tmp/core.js
+          node --check /tmp/admin.js
+          node --check /tmp/recovery.js
+          node --check gacha-page.v1.8.8_PREP.js
+
+      - name: Ensure double-save implementation is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R -E 'SECONDARY_SHEET_ID|BACKUP_SWEEP_MINUTES|setupBackupV187_|verifyBackupV187_|backupAfter|backupMirror|backupAppend_' \
+            APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs \
+            APPS_SCRIPT_GachaAdmin_v1.8.8.gs \
+            APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+          ! grep -R -E 'function[[:space:]]+backupSweep_[[:space:]]*\(' \
+            APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs \
+            APPS_SCRIPT_GachaAdmin_v1.8.8.gs \
+            APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+
+      - name: Verify preserved v1.8.7 improvements
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'function webActualLastRow_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'function webActualRows_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'function webActualCount_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'function webNextRow_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'CHECKIN_MAX_ATTEMPTS = 2' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q "getRange('B23')" APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q "name!=='翠央(お試し)'" APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+          grep -q 'secondSaveEnabled:false' APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+
+      - name: Verify v1.8.8 gacha controls and safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'function wonDuplicateKeys_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'function participantCatalog_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q '取得済み景品は除外済み' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q '獲得可能な景品がありません' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q "GACHA_NORMAL_SWITCH='J17'" APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q "GACHA_FEST_SWITCH='J18'" APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q "GACHA_GRANT_ID='J21'" APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q "GACHA_GRANT_AMOUNT='J23'" APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q "GACHA_GRANT_REASON='J24'" APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q "GACHA_GRANT_EXECUTE='J25'" APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q 'changed&&!historySaved' APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q 'function setupV188Complete' APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+          grep -q 'function verifyV188Ready_' APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+          grep -q "typeof gachaOpenState_==='function'" APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+          grep -q 'gachaAdminReady:gachaAdminReady' APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+          grep -q 'normalOpen' gacha-page.v1.8.8_PREP.js
+          grep -q 'festOpen' gacha-page.v1.8.8_PREP.js
+          grep -q '停止中' gacha-page.v1.8.8_PREP.js
+
+      - name: Verify manifest hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '6e1ca0061979da1c7e02bd2ed3545e434b28bb84' V1.8.8_RELEASE_MANIFEST.md
+          grep -q 'be7d3cc5078dbe133c298f10c5a06c371c0622a5' V1.8.8_RELEASE_MANIFEST.md
+          grep -q '404fe2a0c5b6066ee68a3a5d301ff3aac6c3eeb1' V1.8.8_RELEASE_MANIFEST.md
+          grep -q '84a9c55a7515560836d53a2c534ceeaf589d9b0d' V1.8.8_RELEASE_MANIFEST.md
+          grep -q '3bbc1c66aae4ea3c6b748c1d23c9b65597977cbb' V1.8.8_RELEASE_MANIFEST.md
