@@ -50,10 +50,12 @@ export default async function handler(req,res){
     webDrawsUsed:g.webUsed
    });
   }
-  if(b.action==='draw'&&b.mode==='ラキフェス'){
-   const {g}=await readGateState(ident);
-   if(!g.entitled)throw Error(`ラキフェスは総ガチャ権利${g.start}回以上が対象です`);
-   if(!g.unlocked)throw Error(`ラキフェスは${g.start}回目の抽選から利用できます`);
+  if(b.action==='draw'){
+   const {c,g}=await readGateState(ident);
+   if(b.mode==='通常'&&c.normalOpen!==true)throw Error('メンシプガチャは現在停止中です');
+   if(b.mode==='ラキフェス'&&c.festOpen!==true)throw Error('ラキフェスガチャは現在停止中です');
+   if(b.mode==='ラキフェス'&&!g.entitled)throw Error(`ラキフェスは総ガチャ権利${g.start}回以上が対象です`);
+   if(b.mode==='ラキフェス'&&!g.unlocked)throw Error(`ラキフェスは${g.start}回目の抽選から利用できます`);
   }
   const d=await bridge(b.action,{...ident,...(b.action==='draw'?{drawId:b.drawId,mode:b.mode}:{})});
   if(d.participantId!==s.id)throw Error('登録を確認できません');
