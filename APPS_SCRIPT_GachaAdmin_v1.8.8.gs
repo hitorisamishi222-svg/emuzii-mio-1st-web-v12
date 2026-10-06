@@ -108,7 +108,7 @@ function grantGachaFromAdmin_(ss){
     return;
   }
 
-  var specialCell=null,before=0,changed=false;
+  var specialCell=null,before=0,changed=false,historySaved=false;
   try{
     var id=String(admin.getRange(GACHA_GRANT_ID).getDisplayValue()||'').trim();
     var amount=Number(admin.getRange(GACHA_GRANT_AMOUNT).getValue());
@@ -144,13 +144,14 @@ function grantGachaFromAdmin_(ss){
     var total=Number(gacha.getRange(row,6).getValue())||0;
     var remaining=Number(gacha.getRange(row,8).getValue())||0;
     history.appendRow([new Date(),id,safeText_(name),amount,safeText_(reason),before,after,total,remaining]);
+    historySaved=true;
 
     admin.getRange(GACHA_GRANT_AMOUNT).clearContent();
     admin.getRange(GACHA_GRANT_REASON).clearContent();
     admin.getRange(GACHA_GRANT_EXECUTE).setValue(false);
     admin.getRange(GACHA_GRANT_STATUS).setValue('✅ '+name+' +'+amount+'回 / 残り'+remaining+'回');
   }catch(err){
-    if(changed&&specialCell){
+    if(changed&&!historySaved&&specialCell){
       try{
         specialCell.setValue(before);
         SpreadsheetApp.flush();

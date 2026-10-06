@@ -394,6 +394,21 @@ function wonDuplicateKeys_(ss,id){
   return won;
 }
 
+function participantCatalog_(catalog,wonKeys){
+  var available=(catalog.prizes||[]).filter(function(p){return !wonKeys[p.duplicateKey]});
+  var units=available.reduce(function(sum,p){return sum+p.units},0);
+  var prizes=available.map(function(p){
+    var effective=units>0?Math.round((p.units/units)*10000)/100:0;
+    return {id:p.id,name:p.name,rarity:p.rarity,chance:effective,stock:p.stock,image:p.image,duplicateKey:p.duplicateKey};
+  });
+  return {
+    ready:catalog.ready&&available.length>0,
+    message:!catalog.ready?catalog.message:available.length?'抽選できます（取得済み景品は除外済み）':'対象景品をすべて獲得済みです',
+    total:available.length?100:0,
+    prizes:prizes
+  };
+}
+
 function catalog_(ss,mode){
   var all=rows_(ss,PRIZE_TAB);
   var active=all.filter(function(x){return x[0]===mode&&x[5]===true});
@@ -453,9 +468,11 @@ function gachaAction_(ss,r,d){
 
   var festEntitled=total>=festAvailableFrom;
   var festUnlocked=festEntitled&&history.length>=festAvailableFrom-1&&remaining>0;
-  var gate=gachaOpenState_(ss);
+  var gate=typeof gachaOpenState_==='function'?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
+  var wonKeys=wonDuplicateKeys_(ss,id);
+  var participantNormal=participantCatalog_(normal,wonKeys),participantFest=participantCatalog_(fest,wonKeys);
 
-  if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normalOpen:gate.normalOpen,festOpen:gate.festOpen,normal:normal,fest:fest};
+  if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normalOpen:gate.normalOpen,festOpen:gate.festOpen,normal:participantNormal,fest:participantFest};
 
   if(!/^[a-f0-9]{32}$/.test(d.drawId||'')||['通常','ラキフェス'].indexOf(d.mode)<0)return {ok:false,error:'抽選要求が不正です'};
 
@@ -476,7 +493,6 @@ function gachaAction_(ss,r,d){
   var c=d.mode==='通常'?normal:fest;
   if(!c.ready)return {ok:false,error:c.message};
 
-  var wonKeys=wonDuplicateKeys_(ss,id);
   var available=c.prizes.filter(function(p){return !wonKeys[p.duplicateKey]});
   if(!available.length)return {ok:false,error:'獲得可能な景品がありません。すべての対象景品を獲得済みです'};
 
