@@ -1,0 +1,152 @@
+# 翠央1周年 v1.8.7 第二保存・型保持修正
+
+## 原因
+
+2026-10-06 の本番検証で `verifyV187Ready_()` が `secondSaveOk:false` となった原因を調査。
+正本と第二保存の実データを直接比較した結果、第二保存へ `Range.setValues()` した際に、正本で文字列として保持されている日付風文字列が Google Sheets によって日付型へ自動変換されていた。
+
+確認済み例:
+
+- `emuzii_Web登録`
+  - 正本: `2026/10/05 16:47:00` = string
+  - 第二保存: 日付シリアル値へ変換
+- `emuzii_管理画面`
+  - 正本: `2026/10/10 23:59` = string
+  - 第二保存: date
+  - 正本: `10/1`〜`10/31` = string
+  - 第二保存: date
+- `emuzii_皆勤31日`
+  - 正本ヘッダー `10/1`〜`10/31` = string
+  - 第二保存: date
+- `emuzii_予想ランキング`
+  - 現在の値・先頭〜末尾の数式を比較し一致を確認。前回検証時の一時的不一致の可能性が高い。
+
+正本データの破損ではない。第二保存のコピー／検証実装上の型変換が原因。
+
+---
+
+## 修正対象
+
+`APPS_SCRIPT_Code_v1.8.7.gs` の以下3関数を置換する。
+
+- `backupMatrix_`
+- `backupMatrixHash_`
+- `backupMirrorMatrix_`
+
+目的:
+
+1. 非数式の文字列セルは書き込み時だけ Plain text (`@`) にして型変換を防ぐ。
+2. 書き込み後は正本の元number formatへ戻す。
+3. ハッシュ比較は型を含めて正規化し、数値の微小な浮動小数誤差で誤判定しない。
+4. 数式は数式文字列のまま比較する。
+
+---
+
+## 置換コード
+
+```javascript
+function backupMatrix_(sh){
+  var lastRow=sh.getLastRow(),lastCol=sh.getLastColumn();
+  if(lastRow<1||lastCol<1)return {rows:0,cols:0,data:[],numberFormats:[],writeFormats:[]};
+
+  var rg=sh.getRange(1,1,lastRow,lastCol);
+  var values=rg.getValues();
+  var formulas=rg.getFormulas();
+  var numberFormats=rg.getNumberFormats();
+  var data=[];
+  var writeFormats=[];
+
+  for(var r=0;r<values.length;r++){
+    data[r]=[];
+    writeFormats[r]=[];
+    for(var c=0;c<values[r].length;c++){
+      if(formulas[r][c]){
+        data[r][c]=formulas[r][c];
+        writeFormats[r][c]=numberFormats[r][c];
+      }else{
+        data[r][c]=values[r][c];
+        // setValues() による「10/1」「2026/10/05 16:47:00」等の
+        // 自動日付変換を防ぐ。書込後に元formatへ戻す。
+        writeFormats[r][c]=(typeof values[r][c]==='string')?'@':numberFormats[r][c];
+      }
+    }
+  }
+
+  return {
+    rows:lastRow,
+    cols:lastCol,
+    data:data,
+    numberFormats:numberFormats,
+    writeFormats:writeFormats
+  };
+}
+
+function backupCanonicalCell_(v){
+  if(v instanceof Date)return ['date',v.getTime()];
+  if(typeof v==='number'){
+    if(!isFinite(v))return ['number',String(v)];
+    return ['number',Math.round(v*1e12)/1e12];
+  }
+  if(typeof v==='boolean')return ['boolean',v?1:0];
+  if(typeof v==='string')return ['string',v];
+  if(v===null||typeof v==='undefined')return ['blank',''];
+  return [typeof v,String(v)];
+}
+
+function backupMatrixHash_(m){
+  var normalized=[];
+  for(var r=0;r<m.data.length;r++){
+    normalized[r]=[];
+    for(var c=0;c<m.data[r].length;c++)normalized[r][c]=backupCanonicalCell_(m.data[r][c]);
+  }
+  return backupHash_(JSON.stringify(normalized));
+}
+
+function backupMirrorMatrix_(secondarySs,name,m){
+  var dst=secondarySs.getSheetByName(name);
+  if(!dst)dst=secondarySs.insertSheet(name);
+
+  var clearRows=Math.max(dst.getLastRow(),m.rows,1);
+  var clearCols=Math.max(dst.getLastColumn(),m.cols,1);
+  if(dst.getMaxRows()<clearRows)dst.insertRowsAfter(dst.getMaxRows(),clearRows-dst.getMaxRows());
+  if(dst.getMaxColumns()<clearCols)dst.insertColumnsAfter(dst.getMaxColumns(),clearCols-dst.getMaxColumns());
+
+  dst.getRange(1,1,clearRows,clearCols).clearContent();
+
+  if(m.rows&&m.cols){
+    var target=dst.getRange(1,1,m.rows,m.cols);
+    // 文字列は一度Plain textとして書き、Google Sheetsの自動型変換を防ぐ。
+    target.setNumberFormats(m.writeFormats);
+    target.setValues(m.data);
+    // 値の型を確定した後で、正本のnumber formatを戻す。
+    target.setNumberFormats(m.numberFormats);
+  }
+
+  SpreadsheetApp.flush();
+  var copied=backupMatrix_(dst);
+  return m.rows===copied.rows&&m.cols===copied.cols&&backupMatrixHash_(m)===backupMatrixHash_(copied);
+}
+```
+
+---
+
+## 再適用時の確認順
+
+1. 既存 `emuzii 翠央1周年 Web連携 v1.2` のみを使用する。
+2. 新しいApps Scriptプロジェクト／デプロイIDを作らない。
+3. v1.8.7本体へ上記3関数を反映する。
+4. `APPS_SCRIPT_DeviceRecovery_v1.8.7.gs` は既存のものを使用する。
+5. `setupV187Complete()` を1回実行。
+6. `verifyV187Ready_()` を実行。
+7. `secondSaveOk:true` と `ok:true` を確認する。
+8. `secondSaveIssues` が空であることを確認する。
+9. 通常ガチャ100%、ラキフェス100%、Web整合エラー0、2トリガー存在を再確認する。
+10. 合格後のみ、同じ既存deployment IDでWebアプリを更新する。
+11. 本番疎通後のみ公開画面をv1.8.7へ上げる。
+
+## 絶対保護
+
+- `MIO-0004 / 翠央(お試し)` は承認済みを維持し、自動却下しない。
+- MIO-0003 のガチャ6 / 使用2 / 残4を維持。
+- 当選履歴、皆勤、Web登録を削除しない。
+- Vercel URL、GitHub repo、Apps Script project、deployment IDを変更しない。
