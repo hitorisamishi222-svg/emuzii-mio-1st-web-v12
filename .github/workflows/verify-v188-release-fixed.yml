@@ -14,4 +14,8 @@ jobs:
       - name: Check out fixed release candidate
         uses: actions/checkout@v4
         with:
-          ref: f0036212e2c807
+          ref: f0036212e2c807d0fa2fa6d53211eca1692dfe00
+
+      - name: Verify fixed blob SHAs
+        shell: bash
+       
