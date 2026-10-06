@@ -47,7 +47,13 @@ function setupGachaAdminV188_(){
 
   var idRule=SpreadsheetApp.newDataValidation().requireValueInRange(gacha.getRange('A2:A500'),true).setAllowInvalid(false).build();
   admin.getRange(GACHA_GRANT_ID).setDataValidation(idRule);
-  admin.getRange(GACHA_GRANT_AMOUNT).setDataValidation(SpreadsheetApp.newDataValidation().requireNumberBetween(1,100).setAllowInvalid(false).setHelpText('1〜100の整数。通常は1/3/5などを入力').build()).setNumberFormat('0');
+  admin.getRange(GACHA_GRANT_AMOUNT).setDataValidation(
+    SpreadsheetApp.newDataValidation()
+      .requireValueInList(['1','3','5'],true)
+      .setAllowInvalid(true)
+      .setHelpText('1/3/5は候補から選択。それ以外は1〜100の整数を直接入力できます。')
+      .build()
+  ).setNumberFormat('0');
   var executeValue=admin.getRange(GACHA_GRANT_EXECUTE).getValue()===true;
   admin.getRange(GACHA_GRANT_EXECUTE).insertCheckboxes().setValue(executeValue);
 
@@ -58,6 +64,7 @@ function setupGachaAdminV188_(){
 
   admin.getRange(GACHA_NORMAL_SWITCH).setNote('OFF中はリスナー画面でもメンシプガチャを実行できません。権利・履歴は保持します。');
   admin.getRange(GACHA_FEST_SWITCH).setNote('OFF中はリスナー画面でもラキフェスを実行できません。権利・履歴は保持します。');
+  admin.getRange(GACHA_GRANT_AMOUNT).setNote('1/3/5はプルダウン候補。それ以外の1〜100の整数も直接入力できます。');
   admin.getRange(GACHA_GRANT_EXECUTE).setNote('参加者ID・追加回数・付与理由を確認してからチェック。付与後は自動でOFFへ戻ります。');
   admin.setColumnWidth(9,140);
   admin.setColumnWidth(10,150);
@@ -100,6 +107,8 @@ function grantGachaFromAdmin_(ss){
     admin.getRange(GACHA_GRANT_STATUS).setValue('⚠ 処理中です。少し待って再実行');
     return;
   }
+
+  var specialCell=null,before=0,changed=false;
   try{
     var id=String(admin.getRange(GACHA_GRANT_ID).getDisplayValue()||'').trim();
     var amount=Number(admin.getRange(GACHA_GRANT_AMOUNT).getValue());
@@ -109,6 +118,10 @@ function grantGachaFromAdmin_(ss){
     if(!reason||reason.length>100)throw new Error('付与理由を100文字以内で入力してください');
 
     var gacha=ss.getSheetByName('emuzii_ガチャ');
+    var history=ss.getSheetByName(GACHA_GRANT_HISTORY_TAB);
+    if(!gacha)throw new Error('ガチャ管理シートがありません');
+    if(!history)throw new Error('付与履歴シートがありません。setupV188Completeを実行してください');
+
     var last=Math.max(gacha.getLastRow(),2);
     var values=gacha.getRange(2,1,last-1,17).getValues();
     var row=0,name='';
@@ -121,16 +134,15 @@ function grantGachaFromAdmin_(ss){
     }
     if(!row)throw new Error('ガチャ管理に対象参加者がいません');
 
-    var specialCell=gacha.getRange(row,15);
-    var before=Number(specialCell.getValue())||0;
+    specialCell=gacha.getRange(row,15);
+    before=Number(specialCell.getValue())||0;
     var after=before+amount;
     specialCell.setValue(after);
+    changed=true;
     SpreadsheetApp.flush();
 
     var total=Number(gacha.getRange(row,6).getValue())||0;
     var remaining=Number(gacha.getRange(row,8).getValue())||0;
-    var history=ss.getSheetByName(GACHA_GRANT_HISTORY_TAB);
-    if(!history)throw new Error('付与履歴シートがありません。setupV188Completeを実行してください');
     history.appendRow([new Date(),id,safeText_(name),amount,safeText_(reason),before,after,total,remaining]);
 
     admin.getRange(GACHA_GRANT_AMOUNT).clearContent();
@@ -138,6 +150,12 @@ function grantGachaFromAdmin_(ss){
     admin.getRange(GACHA_GRANT_EXECUTE).setValue(false);
     admin.getRange(GACHA_GRANT_STATUS).setValue('✅ '+name+' +'+amount+'回 / 残り'+remaining+'回');
   }catch(err){
+    if(changed&&specialCell){
+      try{
+        specialCell.setValue(before);
+        SpreadsheetApp.flush();
+      }catch(rollbackErr){}
+    }
     admin.getRange(GACHA_GRANT_EXECUTE).setValue(false);
     admin.getRange(GACHA_GRANT_STATUS).setValue('⚠ '+String(err&&err.message||err));
   }finally{
