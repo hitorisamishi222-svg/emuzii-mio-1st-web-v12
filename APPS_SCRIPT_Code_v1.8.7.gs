@@ -549,13 +549,52 @@ function backupState_(ss,id,name){
 
 function backupMatrix_(sh){
   var lastRow=sh.getLastRow(),lastCol=sh.getLastColumn();
-  if(lastRow<1||lastCol<1)return {rows:0,cols:0,data:[]};
-  var rg=sh.getRange(1,1,lastRow,lastCol),values=rg.getValues(),formulas=rg.getFormulas();
-  for(var r=0;r<values.length;r++)for(var c=0;c<values[r].length;c++)if(formulas[r][c])values[r][c]=formulas[r][c];
-  return {rows:lastRow,cols:lastCol,data:values};
+  if(lastRow<1||lastCol<1)return {rows:0,cols:0,data:[],numberFormats:[],writeFormats:[]};
+
+  var rg=sh.getRange(1,1,lastRow,lastCol);
+  var values=rg.getValues();
+  var formulas=rg.getFormulas();
+  var numberFormats=rg.getNumberFormats();
+  var data=[];
+  var writeFormats=[];
+
+  for(var r=0;r<values.length;r++){
+    data[r]=[];
+    writeFormats[r]=[];
+    for(var c=0;c<values[r].length;c++){
+      if(formulas[r][c]){
+        data[r][c]=formulas[r][c];
+        writeFormats[r][c]=numberFormats[r][c];
+      }else{
+        data[r][c]=values[r][c];
+        writeFormats[r][c]=(typeof values[r][c]==='string')?'@':numberFormats[r][c];
+      }
+    }
+  }
+
+  return {rows:lastRow,cols:lastCol,data:data,numberFormats:numberFormats,writeFormats:writeFormats};
 }
 
-function backupMatrixHash_(m){return backupHash_(JSON.stringify(m.data))}
+function backupCanonicalCell_(v){
+  if(v instanceof Date)return ['date',v.getTime()];
+  if(typeof v==='number'){
+    if(!isFinite(v))return ['number',String(v)];
+    return ['number',Math.round(v*1e12)/1e12];
+  }
+  if(typeof v==='boolean')return ['boolean',v?1:0];
+  if(typeof v==='string')return ['string',v];
+  if(v===null||typeof v==='undefined')return ['blank',''];
+  return [typeof v,String(v)];
+}
+
+function backupMatrixHash_(m){
+  var normalized=[];
+  for(var r=0;r<m.data.length;r++){
+    normalized[r]=[];
+    for(var c=0;c<m.data[r].length;c++)normalized[r][c]=backupCanonicalCell_(m.data[r][c]);
+  }
+  return backupHash_(JSON.stringify(normalized));
+}
 
 function backupMirrorMatrix_(secondarySs,name,m){
   var dst=secondarySs.getSheetByName(name);
@@ -564,7 +603,12 @@ function backupMirrorMatrix_(secondarySs,name,m){
   if(dst.getMaxRows()<clearRows)dst.insertRowsAfter(dst.getMaxRows(),clearRows-dst.getMaxRows());
   if(dst.getMaxColumns()<clearCols)dst.insertColumnsAfter(dst.getMaxColumns(),clearCols-dst.getMaxColumns());
   dst.getRange(1,1,clearRows,clearCols).clearContent();
-  if(m.rows&&m.cols)dst.getRange(1,1,m.rows,m.cols).setValues(m.data);
+  if(m.rows&&m.cols){
+    var target=dst.getRange(1,1,m.rows,m.cols);
+    target.setNumberFormats(m.writeFormats);
+    target.setValues(m.data);
+    target.setNumberFormats(m.numberFormats);
+  }
   SpreadsheetApp.flush();
   var copied=backupMatrix_(dst);
   return m.rows===copied.rows&&m.cols===copied.cols&&backupMatrixHash_(m)===backupMatrixHash_(copied);
