@@ -1,0 +1,53 @@
+name: Finalize v1.8.8 Prep
+
+on:
+  push:
+    branches:
+      - feature/v1.8.8-gacha-no-duplicates
+    paths:
+      - .github/workflows/finalize-v188-prep.yml
+      - tools/finalize_v188_prep.py
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply final prep patch
+        run: python tools/finalize_v188_prep.py
+      - name: Validate syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs /tmp/core.js
+          cp APPS_SCRIPT_GachaAdmin_v1.8.8.gs /tmp/admin.js
+          cp APPS_SCRIPT_DeviceRecovery_v1.8.8.gs /tmp/recovery.js
+          node --check /tmp/core.js
+          node --check /tmp/admin.js
+          node --check /tmp/recovery.js
+          node --check gacha-page.v1.8.8_PREP.js
+      - name: Validate requirements
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -E 'SECONDARY_SHEET_ID|BACKUP_SWEEP_MINUTES|setupBackupV187_|verifyBackupV187_|backupAfter|backupMirror|backupAppend_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q 'webActualLastRow_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'CHECKIN_MAX_ATTEMPTS = 2' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q "getRange('B23')" APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'participantCatalog_' APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q "typeof gachaOpenState_==='function'" APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs
+          grep -q 'historySaved=true' APPS_SCRIPT_GachaAdmin_v1.8.8.gs
+          grep -q 'normalOpen' gacha-page.v1.8.8_PREP.js
+          grep -q 'backupTriggerCount:backupCount' APPS_SCRIPT_DeviceRecovery_v1.8.8.gs
+      - name: Commit prepared files
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add APPS_SCRIPT_Code_v1.8.8_NO_DUPLICATES.gs APPS_SCRIPT_GachaAdmin_v1.8.8.gs V1.8.8_GACHA_ADMIN_PREP_HANDOFF.md
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Finalize v1.8.8 production prep'
+          git push
