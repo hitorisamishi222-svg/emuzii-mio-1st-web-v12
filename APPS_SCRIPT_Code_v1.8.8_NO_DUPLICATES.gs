@@ -399,7 +399,7 @@ function participantCatalog_(catalog,wonKeys){
   var units=available.reduce(function(sum,p){return sum+p.units},0);
   var prizes=available.map(function(p){
     var effective=units>0?Math.round((p.units/units)*10000)/100:0;
-    return {id:p.id,name:p.name,rarity:p.rarity,chance:effective,stock:p.stock,image:p.image,duplicateKey:p.duplicateKey};
+    return {id:p.id,name:p.name,rarity:p.rarity,chance:effective,stock:p.stock,image:p.image};
   });
   return {
     ready:catalog.ready&&available.length>0,
