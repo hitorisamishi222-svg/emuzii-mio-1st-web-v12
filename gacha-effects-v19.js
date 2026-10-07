@@ -72,19 +72,45 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*(1-i/len);
     const src=ctx.createBufferSource(),g=ctx.createGain();src.buffer=buf;g.gain.value=gain;src.connect(g).connect(ctx.destination);src.start();
   };
-  const sfxStart=(fest=false)=>{noise(.12,.026);tone(fest?180:150,.16,'square',.028);tone(fest?260:220,.18,'triangle',.022,.08)};
-  const sfxTick=()=>{noise(.035,.012);tone(180+Math.random()*90,.045,'triangle',.012)};
-  const sfxRarity=k=>{
-    if(k==='ur'){[523,659,784,1047].forEach((f,i)=>tone(f,.34,'sine',.055,i*.1));noise(.22,.03)}
-    else if(k==='sr'){[440,554,659].forEach((f,i)=>tone(f,.25,'triangle',.04,i*.085))}
-    else if(k==='r'){tone(523,.18,'triangle',.032);tone(659,.2,'triangle',.028,.1)}
-    else tone(392,.11,'sine',.02);
+  const sparkle=(base=660)=>{tone(base,.11,'sine',.022);tone(base*1.5,.09,'sine',.012,.045)};
+  const sfxStart=(fest=false)=>{
+    noise(.09,.016);
+    tone(fest?330:294,.18,'sine',.026);
+    tone(fest?415:370,.18,'triangle',.018,.07);
+    sparkle(fest?554:494);
   };
-  const sfxDrop=()=>{noise(.1,.035);tone(130,.18,'sine',.028)};
+  const sfxTick=()=>{
+    const f=330+Math.random()*170;
+    tone(f,.055,'sine',.008);
+    if(Math.random()>.62)tone(f*2,.035,'triangle',.004,.025);
+  };
+  const sfxRarity=k=>{
+    if(k==='ur'){
+      [523,659,784,988,1175].forEach((f,i)=>tone(f,.34,'sine',.052,i*.095));
+      [784,988,1319].forEach((f,i)=>tone(f,.2,'triangle',.018,.18+i*.08));
+      noise(.16,.018);
+    }else if(k==='sr'){
+      [440,554,659,880].forEach((f,i)=>tone(f,.24,'sine',.034,i*.08));
+    }else if(k==='r'){
+      tone(523,.17,'sine',.026);tone(659,.18,'sine',.023,.085);sparkle(784);
+    }else{
+      tone(392,.1,'sine',.014);tone(494,.09,'sine',.011,.06);
+    }
+  };
+  const sfxDrop=()=>{
+    tone(220,.11,'sine',.018);
+    noise(.055,.014);
+    setTimeout(()=>sparkle(659),70);
+  };
   const startBgm=fest=>{
     stopBgm();if(!audioOn)return;
-    const seq=fest?[220,277,330,415,330,277]:[196,247,294,330,294,247];
-    bgmStep=0;bgmTimer=setInterval(()=>{tone(seq[bgmStep++%seq.length],.19,'triangle',.011)},230);
+    const seq=fest?[392,494,587,659,587,494,440,554]:[330,392,494,440,392,330,294,370];
+    bgmStep=0;
+    bgmTimer=setInterval(()=>{
+      const f=seq[bgmStep++%seq.length];
+      tone(f,.2,'sine',.0085);
+      if(bgmStep%4===0)tone(f*2,.12,'triangle',.0035,.03);
+    },250);
   };
   const stopBgm=()=>{if(bgmTimer){clearInterval(bgmTimer);bgmTimer=0}};
 
