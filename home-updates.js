@@ -1,6 +1,9 @@
 const HOME_API='/api/home-info';
+const HOME_CACHE_KEY='mioHomeUpdatesV1';
 const home$=id=>document.getElementById(id);
 let homeRefreshTimer=0;
+function homeReadCache(){try{const d=JSON.parse(localStorage.getItem(HOME_CACHE_KEY)||'null');return d&&Date.now()-Number(d.at||0)<86400000?d:null}catch{return null}}
+function homeWriteCache(d){try{localStorage.setItem(HOME_CACHE_KEY,JSON.stringify({at:Date.now(),notices:d.notices||[],schedules:d.schedules||[]}))}catch{}}
 
 function homeEsc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function homeSafeUrl(v=''){try{const u=new URL(String(v),location.origin);return u.protocol==='https:'?u.href:''}catch{return''}}
@@ -55,11 +58,18 @@ async function loadHomeUpdates(){
     }
     renderHomeNews(Array.isArray(d.notices)?d.notices:[]);
     renderHomeSchedules(Array.isArray(d.schedules)?d.schedules:[]);
-    if(status)status.textContent='最新情報';
+    if(!demo)homeWriteCache(d);
+    if(status)status.textContent=demo?'表示デモ':'最新情報';
   }catch{
-    if(home$('homeNewsList'))home$('homeNewsList').innerHTML='<p class="home-empty">お知らせを読み込めませんでした。</p>';
-    if(home$('homeScheduleList'))home$('homeScheduleList').innerHTML='<p class="home-empty">配信予定を読み込めませんでした。</p>';
-    if(status)status.textContent='再読み込みしてください';
+    const cached=homeReadCache();
+    if(cached){
+      renderHomeNews(cached.notices||[]);renderHomeSchedules(cached.schedules||[]);
+      if(status)status.textContent='前回取得した情報';
+    }else{
+      if(home$('homeNewsList'))home$('homeNewsList').innerHTML='<p class="home-empty">お知らせを読み込めませんでした。</p>';
+      if(home$('homeScheduleList'))home$('homeScheduleList').innerHTML='<p class="home-empty">配信予定を読み込めませんでした。</p>';
+      if(status)status.textContent='再読み込みしてください';
+    }
   }
 }
 function scheduleHomeRefresh(){clearInterval(homeRefreshTimer);homeRefreshTimer=setInterval(()=>{if(!document.hidden)void loadHomeUpdates()},60000)}
