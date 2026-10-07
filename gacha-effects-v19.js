@@ -134,13 +134,18 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   }
 
   window.addEventListener('mio:gacha-animation-start',e=>{
-    const fest=e.detail?.mode==='ラキフェス';syncMachine();setRarityState('n');sfxStart(fest);startBgm(fest);
+    const fest=e.detail?.mode==='ラキフェス';syncMachine();setRarityState('n');capsule.classList.remove('v191-drop');sfxStart(fest);startBgm(fest);
     let ticks=0;const t=setInterval(()=>{if(!stage.classList.contains('draw-active')||ticks++>14){clearInterval(t);return}sfxTick()},180);
-    setTimeout(()=>sfxDrop(),1250);
   });
 
   window.addEventListener('mio:gacha-result-ready',e=>{
     const k=rarityKey(e.detail?.rarity);setRarityState(k);sfxRarity(k);
+    const dropDelay=k==='ur'?1450:k==='sr'?850:k==='r'?420:220;
+    setTimeout(()=>{
+      if(stage.classList.contains('draw-active')){
+        capsule.classList.remove('v191-drop');void capsule.offsetWidth;capsule.classList.add('v191-drop');sfxDrop();
+      }
+    },dropDelay);
     // 結果カードを見せる前に兆候を出す。URは回転中に確定演出まで見せる。
     if(k==='ur'){
       const fest=e.detail?.mode==='ラキフェス';
