@@ -79,7 +79,9 @@ async function execute(pending){
     const totalWait=Math.max(0,minMs-(performance.now()-started));
     const afterReadyWait=Math.max(0,postReadyMs-(performance.now()-readyAt));
     const wait=Math.max(totalWait,afterReadyWait);if(wait)await sleep(wait);
-    clearTimeout(mid);renderResult(d);forget();
+    clearTimeout(mid);
+    window.dispatchEvent(new CustomEvent('mio:gacha-final-reveal',{detail:{mode:d.mode||pending.mode,rarity:d.rarity||'',ordinal:d.ordinal||0}}));
+    renderResult(d);forget();
     window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{mode:d.mode||pending.mode,rarity:d.rarity||'',ordinal:d.ordinal||0}}));
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
