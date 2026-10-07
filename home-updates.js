@@ -37,10 +37,12 @@ function renderHomeSchedules(items=[]){
   const now=Date.now();
   items=items.filter(s=>{const end=homeDate(s.endAt);return !end||end.getTime()>now});
   if(!items.length){root.innerHTML='<p class="home-empty">現在登録されている配信予定はありません。</p>';return}
-  root.innerHTML=items.slice(0,5).map((s,i)=>{
+  items=items.slice(0,5);
+  const nextIndex=items.findIndex(s=>{const start=homeDate(s.startAt);return start&&start.getTime()>now});
+  root.innerHTML=items.map((s,i)=>{
     const start=homeDate(s.startAt),end=homeDate(s.endAt);
     const live=start&&start.getTime()<=now&&(!end||end.getTime()>now);
-    const next=!live&&i===0;
+    const next=!live&&i===nextIndex;
     const cls=live?'is-live':next?'is-next':'';
     const state=live?'<span class="home-live-pulse"></span>LIVE':next?'NEXT LIVE':'SCHEDULE';
     const link=homeSafeUrl(s.url);
