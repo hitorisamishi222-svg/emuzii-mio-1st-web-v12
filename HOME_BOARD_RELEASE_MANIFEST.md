@@ -49,10 +49,10 @@
 ## Apps Script
 追加ファイル:
 - `home-info-gas-v10.gs`
-既存 `doPost(e)` の action 取得直後へ追加:
+既存 `doPost(e)` の **APPS_SCRIPT_SECRET検証を通過した後** の action 分岐へ追加:
 - `if (action === 'homeInfo') return homeInfoResponseV10_();`
 
-この1行以外、既存 register / status / checkin / catalog / draw / history 分岐は変更しない。
+この1行以外、既存 register / status / checkin / catalog / draw / history 分岐は変更しない。秘密鍵検証より前には置かない。
 
 ## 公開前手順
 1. Apps Scriptへ `home-info-gas-v10.gs` を追加。
@@ -68,3 +68,12 @@
 - Web異常: mainを `0aafe90cc8ca01eebca2650a25969108d7b26a31` へ戻す
 - Apps Script異常: 既存doPostからhomeInfo分岐1行を外し、直前のApps Scriptデプロイ版へ戻す
 - Sheet管理欄は表示OFFなら公開へ影響しない
+
+## 完了済み追加検証
+- ローカルChromium 375px / 430px: 横はみ出し0
+- 長文 / 空表示 / LIVE / NEXT LIVE: PASS
+- HTML/script文字列のエスケープ: PASS
+- javascript: URL拒否: PASS
+- 期限切れキャッシュ除外: PASS
+- 最大5件制限: PASS
+- 豪華ガチャ統合Preview: Vercel success
