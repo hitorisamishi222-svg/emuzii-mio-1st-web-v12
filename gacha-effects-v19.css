@@ -3,8 +3,17 @@
 .v19-fx-root{position:absolute;inset:0;z-index:12;pointer-events:none;overflow:hidden;border-radius:inherit}
 .v19-sparkles{position:absolute;inset:-4%;background:url('/gacha-v19-sparkles.svg') center/cover no-repeat;opacity:.18;animation:v191-twinkle 2.2s ease-in-out infinite alternate}
 .v19-aura{position:absolute;left:50%;top:45%;width:280px;height:280px;border-radius:50%;transform:translate(-50%,-50%);background:#5ddfff20;box-shadow:0 0 45px #67e6ff55,0 0 110px #3f87ff35;opacity:.72;animation:v191-aura 1.6s ease-in-out infinite alternate}
-.v191-ball-chamber{position:absolute;left:50%;top:38.5%;width:min(57%,228px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);overflow:hidden;z-index:3;opacity:.25;transition:opacity .25s ease;filter:drop-shadow(0 0 12px #6eeeffaa)}
-.v191-ball{position:absolute;width:38px;height:38px;border-radius:50%;left:var(--x);top:var(--y);background:radial-gradient(circle at 32% 27%,#fff 0 8%,var(--c1) 18%,var(--c2) 68%,#04183c 100%);border:2px solid #ffffffcc;box-shadow:inset -5px -7px 11px #00163d88,0 0 12px var(--glow);transform:translate(-50%,-50%)}
+.v191-ball-chamber{position:absolute;left:50%;top:39%;width:min(54%,220px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);overflow:hidden;z-index:3;opacity:.28;transition:opacity .25s ease;filter:drop-shadow(0 0 12px #6eeeffaa)}
+.v191-gem{position:absolute;left:var(--x);top:var(--y);width:54px;height:46px;transform:translate(-50%,-50%);clip-path:polygon(50% 0,92% 33%,72% 100%,28% 100%,8% 33%);background:linear-gradient(145deg,#f4ffff 0 8%,#87f4ff 20%,#38bfff 48%,#2a73dd 72%,#113d9b 100%);border:0;box-shadow:inset 0 0 0 2px #ffffffbb,0 0 13px #5eeaffcc;display:grid;place-items:center;color:white;font-weight:1000;font-size:16px;text-shadow:0 1px 3px #09265a,0 0 8px #fff;filter:drop-shadow(0 0 5px #82ecff)}
+.v191-gem::before{content:"";position:absolute;inset:5px 8px 18px;clip-path:polygon(50% 0,100% 55%,78% 100%,22% 100%,0 55%);background:linear-gradient(145deg,#ffffffdd,#b9f7ff66 38%,transparent 72%);opacity:.72}
+.v191-gem-label{position:relative;z-index:2;transform:translateY(3px)}
+.v191-gem[data-rarity="SR"]{background:linear-gradient(145deg,#fff9db,#9af5ff 18%,#4cc9ff 46%,#476ee7 72%,#34229b);box-shadow:inset 0 0 0 2px #fff3a4,0 0 14px #ffe26dcc}
+.v191-gem[data-rarity="UR"]{background:linear-gradient(135deg,#fff 0 8%,#ff91d4 22%,#ffe46a 40%,#66edff 58%,#a47aff 78%,#ff76bd 100%);box-shadow:inset 0 0 0 2px #fff,0 0 18px #fff,0 0 30px #8beaffaa}
+.v191-winning-gem{position:absolute;left:50%;top:41%;width:68px;height:58px;z-index:11;opacity:0;transform:translate(-50%,-50%) scale(.5);clip-path:polygon(50% 0,92% 33%,72% 100%,28% 100%,8% 33%);background:linear-gradient(145deg,#fff 0 8%,#8ff6ff 19%,#42c8ff 48%,#3478e5 72%,#163b9f);display:grid;place-items:center;color:#fff;font-size:21px;font-weight:1000;text-shadow:0 1px 3px #09265a,0 0 8px #fff;box-shadow:0 0 18px #7eeeff}
+.v191-winning-gem::before{content:"";position:absolute;inset:6px 10px 22px;clip-path:polygon(50% 0,100% 55%,78% 100%,22% 100%,0 55%);background:linear-gradient(145deg,#ffffffee,#b9f7ff55 38%,transparent 72%)}
+.v191-winning-gem span{position:relative;z-index:2;transform:translateY(4px)}
+.v191-winning-gem[data-rarity="SR"]{background:linear-gradient(145deg,#fff8c9,#8feeff 23%,#58bbff 48%,#745fe2 82%);box-shadow:0 0 22px #ffe46f,0 0 36px #77eaff88}
+.v191-winning-gem[data-rarity="UR"]{background:linear-gradient(135deg,#fff 0 8%,#ff77c6 22%,#ffe35a 40%,#61edff 58%,#9d70ff 78%,#ff68b7 100%);box-shadow:0 0 24px #fff,0 0 50px #73edff,0 0 72px #ff68c2aa}
 .v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.76);opacity:0;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1);z-index:4}
 .v19-capsule-img{position:absolute;left:50%;top:50%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff);z-index:8}
 .v191-handle{position:absolute;left:calc(50% + min(32vw,135px));top:52%;width:84px;height:84px;z-index:7;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 8px #00102f88)}
@@ -16,7 +25,7 @@
 .v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
 .gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-machine-shake .18s linear infinite}
 .gacha-stage.draw-active .v191-ball-chamber{opacity:.96}
-.gacha-stage.draw-active .v191-ball{animation:v191-ball-chaos var(--dur) cubic-bezier(.35,.05,.65,.95) infinite alternate;animation-delay:var(--delay)}
+.gacha-stage.draw-active .v191-gem{animation:v191-gem-chaos var(--dur) cubic-bezier(.35,.05,.65,.95) infinite alternate;animation-delay:var(--delay)}
 .v19-capsule-img.v191-drop{animation:v191-capsule-drop 1.18s cubic-bezier(.18,.75,.2,1) 1 forwards}
 .gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.75s}
 .gacha-stage.draw-active #crystal{opacity:.08}
@@ -25,7 +34,7 @@
 .gacha-stage.v191-rarity-sr .v19-aura{background:#ffd43b33;box-shadow:0 0 80px #ffe267aa,0 0 160px #ff9b2655}
 .gacha-stage.v191-rarity-ur .v191-ur-premonition{opacity:.88;animation:v191-rainbow-spin .9s linear infinite}
 .gacha-stage.v191-rarity-ur .v19-aura{background:#fff4;box-shadow:0 0 90px #fff,0 0 160px #6cefff99,0 0 220px #ff62c977}
-.gacha-stage.v191-rarity-ur .v191-ball{animation-duration:.16s;filter:brightness(1.45)}
+.gacha-stage.v191-rarity-ur .v191-gem{animation-duration:.16s;filter:brightness(1.45) drop-shadow(0 0 10px #fff)}
 .gacha-stage.v191-rarity-ur .v19-machine-img{animation:v191-ur-shake .11s linear infinite;filter:drop-shadow(0 0 20px #fff) drop-shadow(0 0 36px #60eaff)}
 .v19-reveal{position:absolute;inset:0;z-index:30;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle at 50% 50%,#1454a05a,#02091bea 68%);transition:opacity .14s ease,visibility .14s ease}
 .v19-reveal.show{visibility:visible;opacity:1}
@@ -55,15 +64,24 @@
 @keyframes v191-aura{to{transform:translate(-50%,-50%) scale(1.13);opacity:.52}}
 @keyframes v191-machine-shake{25%{transform:translate(-50%,-50%) scale(1) rotate(1.4deg)}75%{transform:translate(-50%,-50%) scale(1) rotate(-1.4deg)}}
 @keyframes v191-ur-shake{25%{transform:translate(-50%,-50%) scale(1.015) rotate(2deg)}75%{transform:translate(-50%,-50%) scale(1.015) rotate(-2deg)}}
-@keyframes v191-ball-chaos{0%{transform:translate(-50%,-50%) translate(-26px,34px) rotate(0deg) scale(.92)}25%{transform:translate(-50%,-50%) translate(30px,-25px) rotate(110deg) scale(1.03)}50%{transform:translate(-50%,-50%) translate(-15px,-42px) rotate(210deg) scale(.96)}75%{transform:translate(-50%,-50%) translate(38px,18px) rotate(300deg) scale(1.04)}100%{transform:translate(-50%,-50%) translate(-31px,7px) rotate(420deg) scale(.95)}}
+@keyframes v191-gem-chaos{0%{transform:translate(-50%,-50%) translate(-26px,34px) rotate(0deg) scale(.92)}25%{transform:translate(-50%,-50%) translate(30px,-25px) rotate(110deg) scale(1.03)}50%{transform:translate(-50%,-50%) translate(-15px,-42px) rotate(210deg) scale(.96)}75%{transform:translate(-50%,-50%) translate(38px,18px) rotate(300deg) scale(1.04)}100%{transform:translate(-50%,-50%) translate(-31px,7px) rotate(420deg) scale(.95)}}
 @keyframes v191-capsule-drop{0%,42%{opacity:0;transform:translate(-50%,-130%) scale(.22) rotate(0)}52%{opacity:1}82%{opacity:1;transform:translate(-50%,132%) scale(1.06) rotate(330deg)}100%{opacity:0;transform:translate(-50%,190%) scale(.75) rotate(420deg)}}
 @keyframes v191-ring{0%{opacity:.9;transform:scale(.25)}100%{opacity:0;transform:scale(7.5)}}
 @keyframes v191-pop{0%{opacity:0;transform:scale(.42)}72%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
 @keyframes v191-rainbow-spin{to{transform:rotate(360deg)}}
 @keyframes v191-rainbow-text{to{background-position:250% 0}}
 @keyframes v191-result-arrive{0%{opacity:0;transform:translateY(26px) scale(.72)}65%{opacity:1;transform:translateY(-5px) scale(1.05)}100%{opacity:1;transform:none}}
-@media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v191-ball-chamber{width:min(61%,205px)}.v191-ball{width:34px;height:34px}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
-@media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title,.v191-ball,.v191-ur-premonition{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
+@media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v191-ball-chamber{width:min(59%,205px)}.v191-gem{width:47px;height:40px}.v191-winning-gem{width:62px;height:52px}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
+@media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title,.v191-gem,.v191-winning-gem,.v191-ur-premonition{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
 
 @keyframes v191-handle-turn{0%{transform:translate(-8px,-50%) rotate(0)}70%,100%{transform:translate(-8px,-50%) rotate(360deg)}}
 @keyframes v191-ur-pulse{to{opacity:.38;transform:scale(1.08)}}
+
+.v191-winning-gem.v191-winner-drop{animation:v191-winner-gem-drop 1.28s cubic-bezier(.18,.76,.2,1) 1 forwards}
+@keyframes v191-winner-gem-drop{
+  0%{opacity:0;left:50%;top:38%;transform:translate(-50%,-50%) scale(.35) rotate(-12deg)}
+  16%{opacity:1;transform:translate(-50%,-50%) scale(.92) rotate(10deg)}
+  45%{opacity:1;left:50%;top:55%;transform:translate(-50%,-50%) scale(1.05) rotate(-8deg)}
+  72%{opacity:1;left:50%;top:78%;transform:translate(-50%,-50%) scale(1.08) rotate(5deg)}
+  100%{opacity:1;left:50%;top:88%;transform:translate(-50%,-50%) scale(1.18) rotate(0deg)}
+}
