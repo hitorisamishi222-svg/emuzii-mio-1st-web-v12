@@ -74,7 +74,7 @@ async function execute(pending){
     const d=await post('/api/gacha',{action:'draw',...pending});
     const key=rarityKey(d.rarity),readyAt=performance.now();
     const minMs=key==='ur'?(fest?5200:4400):key==='sr'?(fest?3800:3000):key==='r'?(fest?3200:2350):baseMinMs;
-    const postReadyMs=key==='ur'?2850:key==='sr'?1750:key==='r'?900:620;
+    const postReadyMs=key==='ur'?3050:key==='sr'?2300:key==='r'?1850:1650;
     window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{mode:d.mode||pending.mode,rarity:d.rarity||'',ordinal:d.ordinal||0,remaining:d.remaining}}));
     const totalWait=Math.max(0,minMs-(performance.now()-started));
     const afterReadyWait=Math.max(0,postReadyMs-(performance.now()-readyAt));
