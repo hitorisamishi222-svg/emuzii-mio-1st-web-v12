@@ -85,3 +85,16 @@
   72%{opacity:1;left:50%;top:78%;transform:translate(-50%,-50%) scale(1.08) rotate(5deg)}
   100%{opacity:1;left:50%;top:88%;transform:translate(-50%,-50%) scale(1.18) rotate(0deg)}
 }
+
+.v191-bubbles{position:absolute;inset:0;z-index:2;pointer-events:none}
+.v191-bubble{position:absolute;left:var(--bx);bottom:var(--by);width:var(--bs);height:var(--bs);border-radius:50%;border:2px solid #dffcffaa;background:radial-gradient(circle at 32% 30%,#fff9,#8eeaff22 45%,#4bbdff11 70%);box-shadow:0 0 10px #7beaff66;opacity:.38;animation:v191-bubble-rise var(--bd) ease-in infinite;animation-delay:var(--bdelay)}
+.v191-spout{position:absolute;left:50%;top:4%;width:96px;height:110px;z-index:1;transform:translateX(-50%);opacity:.38}
+.v191-spout::before,.v191-spout::after{content:"";position:absolute;bottom:5px;width:30px;height:88px;border-radius:70% 30% 65% 35%;background:linear-gradient(#e9ffffcc,#65dcff55 65%,transparent);filter:drop-shadow(0 0 9px #8eeaff99);transform-origin:50% 100%}
+.v191-spout::before{left:22px;transform:rotate(-24deg)}
+.v191-spout::after{right:22px;transform:rotate(24deg)}
+.gacha-stage.draw-active .v191-spout{opacity:.92;animation:v191-spout-pulse .46s ease-in-out infinite alternate}
+.gacha-stage.draw-active .v191-bubble{opacity:.82;animation-duration:calc(var(--bd) * .55)}
+.gacha-stage.is-fest .v191-bubble{border-color:#fff1a7aa;box-shadow:0 0 12px #ffd75c77}
+.gacha-stage.is-fest .v191-spout::before,.gacha-stage.is-fest .v191-spout::after{background:linear-gradient(#fff9ce,#ffd45a55 65%,transparent)}
+@keyframes v191-bubble-rise{0%{transform:translateY(15px) scale(.65);opacity:0}18%{opacity:.7}100%{transform:translateY(-420px) translateX(24px) scale(1.15);opacity:0}}
+@keyframes v191-spout-pulse{to{transform:translateX(-50%) scale(1.12);filter:brightness(1.3)}}
