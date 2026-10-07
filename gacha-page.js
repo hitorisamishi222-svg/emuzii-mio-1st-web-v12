@@ -72,10 +72,13 @@ async function execute(pending){
   const mid=setTimeout(()=>note(fest?'🌟 光が最高潮に…秘蔵ガチャ結果を解放！':'✨ レアリティ判定中…！'),fest?1350:900);
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});
-    const key=rarityKey(d.rarity);
+    const key=rarityKey(d.rarity),readyAt=performance.now();
     const minMs=key==='ur'?(fest?5200:4400):key==='sr'?(fest?3800:3000):key==='r'?(fest?3200:2350):baseMinMs;
+    const postReadyMs=key==='ur'?2850:key==='sr'?1750:key==='r'?900:620;
     window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{mode:d.mode||pending.mode,rarity:d.rarity||'',ordinal:d.ordinal||0,remaining:d.remaining}}));
-    const wait=Math.max(0,minMs-(performance.now()-started));if(wait)await sleep(wait);
+    const totalWait=Math.max(0,minMs-(performance.now()-started));
+    const afterReadyWait=Math.max(0,postReadyMs-(performance.now()-readyAt));
+    const wait=Math.max(totalWait,afterReadyWait);if(wait)await sleep(wait);
     clearTimeout(mid);renderResult(d);forget();
     window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{mode:d.mode||pending.mode,rarity:d.rarity||'',ordinal:d.ordinal||0}}));
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
