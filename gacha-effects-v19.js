@@ -7,6 +7,14 @@ const ordinalNode=document.getElementById('drawOrdinal');
 if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const root=document.createElement('div');root.className='v19-fx-root';root.setAttribute('aria-hidden','true');
   const sparkles=document.createElement('div');sparkles.className='v19-sparkles';
+  const bubbles=document.createElement('div');bubbles.className='v191-bubbles';
+  for(let i=0;i<14;i++){
+    const b=document.createElement('i');b.className='v191-bubble';
+    b.style.setProperty('--bx',(6+(i*17)%90)+'%');b.style.setProperty('--by',(2+(i*13)%28)+'%');
+    b.style.setProperty('--bs',(8+(i%5)*4)+'px');b.style.setProperty('--bd',(2.8+(i%4)*.55)+'s');b.style.setProperty('--bdelay',(-i*.31)+'s');
+    bubbles.append(b);
+  }
+  const spout=document.createElement('div');spout.className='v191-spout';
   const aura=document.createElement('div');aura.className='v19-aura';
   const chamber=document.createElement('div');chamber.className='v191-ball-chamber';
   const gemLabels=['N','R','N','SR','N','R','N','UR','N','R','N','SR'];
@@ -27,7 +35,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const title=document.createElement('div');title.className='v19-reveal-title';
   const caption=document.createElement('div');caption.className='v19-reveal-caption';
   reveal.append(frame,title,caption);
-  root.append(sparkles,aura,chamber,machine,handle,winnerGem,urPremonition,reveal);
+  root.append(sparkles,bubbles,spout,aura,chamber,machine,handle,winnerGem,urPremonition,reveal);
   stage.append(root);
 
   for(const img of [machine,frame]) img.addEventListener('error',()=>root.classList.add('v19-assets-missing'));
