@@ -138,15 +138,32 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
 
   window.addEventListener('mio:gacha-result-ready',e=>{
     const k=rarityKey(e.detail?.rarity);setRarityState(k);sfxRarity(k);
-    // UR/SR兆候は結果カードを見せる前から開始
+    // 結果カードを見せる前に兆候を出す。URは回転中に確定演出まで見せる。
     if(k==='ur'){
-      caption.textContent='虹色の反応を検知…';
-      setTimeout(()=>{if(stage.classList.contains('draw-active')){title.textContent='UR';caption.textContent='UR確定！'}},650);
+      const fest=e.detail?.mode==='ラキフェス';
+      frame.src='/gacha-v19-frame-ur.svg';
+      reveal.className='v19-reveal show ur v191-pre-reveal';
+      title.textContent='…';
+      caption.textContent=(fest?'LUCKY FESTIVAL · ':'')+'虹色の反応を検知…';
+      setTimeout(()=>{
+        if(stage.classList.contains('draw-active')&&currentRarity==='ur'){
+          title.textContent='UR';
+          caption.textContent=(fest?'LUCKY FESTIVAL · ':'')+'UR確定！';
+          title.style.animation='none';requestAnimationFrame(()=>{title.style.animation=''});
+        }
+      },650);
+    }else if(k==='sr'){
+      frame.src='/gacha-v19-frame-sr.svg';
+      reveal.className='v19-reveal show sr v191-pre-reveal';
+      title.textContent='…';caption.textContent='金色の反応…';
+      setTimeout(()=>{if(stage.classList.contains('draw-active')&&currentRarity==='sr')reveal.className='v19-reveal'},720);
     }
   });
 
   window.addEventListener('mio:gacha-result-shown',e=>{
-    const k=rarityKey(e.detail?.rarity);void showReveal(k);
+    const k=rarityKey(e.detail?.rarity);
+    reveal.className='v19-reveal';
+    void showReveal(k);
   });
   window.addEventListener('mio:gacha-animation-error',()=>{stopBgm();clearRarityState()});
 
