@@ -7,6 +7,12 @@
 .v191-ball{position:absolute;width:38px;height:38px;border-radius:50%;left:var(--x);top:var(--y);background:radial-gradient(circle at 32% 27%,#fff 0 8%,var(--c1) 18%,var(--c2) 68%,#04183c 100%);border:2px solid #ffffffcc;box-shadow:inset -5px -7px 11px #00163d88,0 0 12px var(--glow);transform:translate(-50%,-50%)}
 .v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.76);opacity:0;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1);z-index:4}
 .v19-capsule-img{position:absolute;left:50%;top:50%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff);z-index:8}
+.v191-handle{position:absolute;left:calc(50% + min(32vw,135px));top:52%;width:84px;height:84px;z-index:7;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 8px #00102f88)}
+.v191-handle::before{content:"";position:absolute;left:50%;top:50%;width:58px;height:16px;border-radius:999px;background:linear-gradient(90deg,#fff0a2,#c98c24,#fff3b3);transform-origin:8px 50%;transform:translate(-8px,-50%) rotate(0deg);box-shadow:0 0 0 3px #5a380a,0 0 12px #ffe28588}
+.v191-handle::after{content:"";position:absolute;left:4px;top:50%;width:28px;height:28px;border-radius:50%;transform:translateY(-50%);background:radial-gradient(circle at 35% 30%,#fff7cb,#e3a532 45%,#7a4307);border:3px solid #ffe8a0}
+.gacha-stage.draw-active .v191-handle::before{animation:v191-handle-turn .72s cubic-bezier(.3,.05,.25,1) infinite}
+.gacha-stage.is-fest .v191-handle{filter:drop-shadow(0 0 12px #ffe278aa) drop-shadow(0 6px 8px #1d0c00)}
+.gacha-stage.v191-rarity-ur::after{content:"";position:absolute;inset:-18%;z-index:10;pointer-events:none;background:radial-gradient(circle at 50% 42%,#fff9 0 5%,#7fefff55 18%,#ff6aca30 38%,transparent 67%);mix-blend-mode:screen;animation:v191-ur-pulse .46s ease-in-out infinite alternate}
 .v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
 .gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-machine-shake .18s linear infinite}
 .gacha-stage.draw-active .v191-ball-chamber{opacity:.96}
@@ -58,3 +64,6 @@
 @keyframes v191-result-arrive{0%{opacity:0;transform:translateY(26px) scale(.72)}65%{opacity:1;transform:translateY(-5px) scale(1.05)}100%{opacity:1;transform:none}}
 @media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v191-ball-chamber{width:min(61%,205px)}.v191-ball{width:34px;height:34px}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
 @media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title,.v191-ball,.v191-ur-premonition{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
+
+@keyframes v191-handle-turn{0%{transform:translate(-8px,-50%) rotate(0)}70%,100%{transform:translate(-8px,-50%) rotate(360deg)}}
+@keyframes v191-ur-pulse{to{opacity:.38;transform:scale(1.08)}}
