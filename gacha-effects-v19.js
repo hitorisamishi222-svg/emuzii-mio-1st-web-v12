@@ -205,6 +205,15 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     }
   });
 
+  window.addEventListener('mio:gacha-final-reveal',e=>{
+    const k=rarityKey(e.detail?.rarity);
+    stage.classList.add('v19-reveal-running');
+    reveal.className='v19-reveal show '+(k==='ur'?'ur':k==='sr'?'sr':'');
+    frame.src=k==='ur'?'/gacha-v19-frame-ur.svg':'/gacha-v19-frame-sr.svg';
+    title.textContent=k.toUpperCase();
+    caption.textContent=(e.detail?.mode==='ラキフェス'?'LUCKY FESTIVAL · ':'')+(k==='ur'?'景品を開封！':k==='sr'?'SUPER RARE！':k==='r'?'レア景品！':'景品を開封！');
+  });
+
   window.addEventListener('mio:gacha-result-shown',e=>{
     const k=rarityKey(e.detail?.rarity);
     winnerGem.style.opacity='0';
