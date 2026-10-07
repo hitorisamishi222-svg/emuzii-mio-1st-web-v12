@@ -156,6 +156,42 @@
     {
       "src": "gacha-lf-19.jpg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-effects-v19.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-effects-v19.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-machine-blue.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-machine-gold.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-capsule.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-diamond.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-sparkles.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-frame-sr.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v19-frame-ur.svg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
