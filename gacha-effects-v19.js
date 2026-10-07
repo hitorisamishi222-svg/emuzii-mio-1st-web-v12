@@ -20,13 +20,14 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   }
   const machine=document.createElement('img');machine.className='v19-machine-img';machine.alt='';
   const capsule=document.createElement('img');capsule.className='v19-capsule-img';capsule.alt='';capsule.src='/gacha-v19-capsule.svg';
+  const handle=document.createElement('div');handle.className='v191-handle';
   const urPremonition=document.createElement('div');urPremonition.className='v191-ur-premonition';
   const reveal=document.createElement('div');reveal.className='v19-reveal';
   const frame=document.createElement('img');frame.className='v19-reveal-frame';frame.alt='';
   const title=document.createElement('div');title.className='v19-reveal-title';
   const caption=document.createElement('div');caption.className='v19-reveal-caption';
   reveal.append(frame,title,caption);
-  root.append(sparkles,aura,chamber,machine,capsule,urPremonition,reveal);
+  root.append(sparkles,aura,chamber,machine,handle,capsule,urPremonition,reveal);
   stage.append(root);
 
   for(const img of [machine,capsule,frame]) img.addEventListener('error',()=>root.classList.add('v19-assets-missing'));
