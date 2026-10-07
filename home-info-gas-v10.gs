@@ -15,6 +15,11 @@ function homeDateV10_(v){
   var iso=m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2)+'T'+('0'+(m[4]||0)).slice(-2)+':'+(m[5]||'00')+':00+09:00';
   var d=new Date(iso);return isNaN(d.getTime())?null:d;
 }
+function homeTimeV10_(v){
+  if(v instanceof Date&&!isNaN(v.getTime()))return Utilities.formatDate(v,'Asia/Tokyo','HH:mm');
+  var s=String(v||'').trim(),m=s.match(/^(\d{1,2}):(\d{2})/);
+  return m?('0'+m[1]).slice(-2)+':'+m[2]:'';
+}
 function homeSafeUrlV10_(v){var s=String(v||'').trim();return /^https:\/\//i.test(s)?s:''}
 function homeNoticeRowsV10_(rows,now){
   var rank={'緊急':0,'重要':1,'通常':2};
@@ -28,8 +33,8 @@ function homeNoticeRowsV10_(rows,now){
 function homeScheduleRowsV10_(rows,now){
   return rows.map(function(r,i){
     var date=r[2] instanceof Date?Utilities.formatDate(r[2],'Asia/Tokyo','yyyy/MM/dd'):String(r[2]||'').trim();
-    var st=homeDateV10_(date+' '+String(r[3]||'00:00').trim());
-    var en=homeDateV10_(date+' '+String(r[4]||'23:59').trim());
+    var st=homeDateV10_(date+' '+(homeTimeV10_(r[3])||'00:00'));
+    var en=homeDateV10_(date+' '+(homeTimeV10_(r[4])||'23:59'));
     if(st&&en&&en<st)en=new Date(en.getTime()+86400000);
     return {id:String(r[0]||('LIVE-'+(i+1))),show:homeBoolV10_(r[1]),start:st,end:en,title:String(r[5]||''),body:String(r[6]||''),url:homeSafeUrlV10_(r[7])};
   }).filter(function(x){return x.show&&x.title&&x.start&&(!x.end||x.end.getTime()>now.getTime()-1800000)})
