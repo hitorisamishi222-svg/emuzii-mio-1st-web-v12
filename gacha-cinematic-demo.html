@@ -66,7 +66,7 @@ async function play(rarity,fest){
   window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode:fest?'ラキフェス':'通常'}}));
   await wait(1100);
   window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{mode:fest?'ラキフェス':'通常',rarity}}));
-  const pre=rarity==='UR'?2800:rarity==='SR'?1650:rarity==='R'?1100:800;
+  const pre=rarity==='UR'?3100:rarity==='SR'?2350:rarity==='R'?1900:1700;
   await wait(pre);
   $('drawRarity').textContent=rarity;
   $('drawPrizeName').textContent=rarity==='UR'?'1周年スペシャル景品':rarity==='SR'?'スペシャルレア景品':rarity==='R'?'レア景品':'ノーマル景品';
