@@ -37,7 +37,7 @@ function homeScheduleRowsV10_(rows,now){
     var en=homeDateV10_(date+' '+(homeTimeV10_(r[4])||'23:59'));
     if(st&&en&&en<st)en=new Date(en.getTime()+86400000);
     return {id:String(r[0]||('LIVE-'+(i+1))),show:homeBoolV10_(r[1]),start:st,end:en,title:String(r[5]||''),body:String(r[6]||''),url:homeSafeUrlV10_(r[7])};
-  }).filter(function(x){return x.show&&x.title&&x.start&&(!x.end||x.end.getTime()>now.getTime()-1800000)})
+  }).filter(function(x){return x.show&&x.title&&x.start&&(!x.end||x.end.getTime()>now.getTime())})
   .sort(function(a,b){return a.start-b.start}).slice(0,5)
   .map(function(x){return {id:x.id,startAt:x.start.toISOString(),endAt:x.end?x.end.toISOString():null,title:x.title,body:x.body,url:x.url}});
 }
