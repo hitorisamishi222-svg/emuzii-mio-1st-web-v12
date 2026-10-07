@@ -90,10 +90,13 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     updateAudioLabel();
   });
   row.append(audioBtn);
-  const caution=document.createElement('p');caution.className='v191-caution';
-  caution.innerHTML='<strong>お願い：</strong>演出中はボタンを連打せず、結果が表示されるまでそのままお待ちください。';
+  let caution=document.getElementById('gachaRapidCaution');
+  if(!caution){
+    caution=document.createElement('p');caution.id='gachaRapidCaution';caution.className='v191-caution';
+    caution.innerHTML='<strong>お願い：</strong>演出中はボタンを連打せず、結果が表示されるまでそのままお待ちください。';
+  }
   const balance=document.getElementById('drawRemaining');
-  if(balance){balance.insertAdjacentElement('afterend',row);row.insertAdjacentElement('afterend',caution)}
+  if(balance){balance.insertAdjacentElement('afterend',row);if(!caution.isConnected)row.insertAdjacentElement('afterend',caution)}
   else if(panel){panel.prepend(caution,row)}
 
   const rarityKey=v=>{
