@@ -28,7 +28,7 @@ function homeNoticeRowsV10_(rows,now){
     return {id:String(r[0]||('NEWS-'+(i+1))),show:homeBoolV10_(r[1]),level:String(r[2]||'通常'),title:String(r[3]||''),body:String(r[4]||''),start:st,end:en,url:homeSafeUrlV10_(r[7])};
   }).filter(function(x){return x.show&&x.title&&(!x.start||x.start<=now)&&(!x.end||x.end>=now)})
   .sort(function(a,b){var ra=rank[a.level]===undefined?2:rank[a.level],rb=rank[b.level]===undefined?2:rank[b.level];return ra!==rb?ra-rb:(b.start?b.start.getTime():0)-(a.start?a.start.getTime():0)})
-  .slice(0,5).map(function(x){return {id:x.id,level:x.level,title:x.title,body:x.body,publishedAt:x.start?x.start.toISOString():null,url:x.url}});
+  .slice(0,5).map(function(x){return {id:x.id,level:x.level,title:x.title,body:x.body,publishedAt:x.start?x.start.toISOString():null,expiresAt:x.end?x.end.toISOString():null,url:x.url}});
 }
 function homeScheduleRowsV10_(rows,now){
   return rows.map(function(r,i){
