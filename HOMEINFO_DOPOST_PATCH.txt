@@ -1,2 +1,4 @@
-// 既存 doPost(e) の action を取得した直後に1行だけ追加
+// 既存 doPost(e) の APPS_SCRIPT_SECRET 検証を通過した後、
+// action 分岐に次の1行だけ追加する。
+// 秘密鍵検証より前には置かない。
 if (action === 'homeInfo') return homeInfoResponseV10_();
