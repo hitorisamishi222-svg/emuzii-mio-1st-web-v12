@@ -5,6 +5,7 @@ const rarityNode=document.getElementById('drawRarity');
 const ordinalNode=document.getElementById('drawOrdinal');
 
 if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
+  stage.classList.add('v191-loaded');
   const root=document.createElement('div');root.className='v19-fx-root';root.setAttribute('aria-hidden','true');
   const sparkles=document.createElement('div');sparkles.className='v19-sparkles';
   const bubbles=document.createElement('div');bubbles.className='v191-bubbles';
@@ -22,7 +23,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const gem=document.createElement('i');gem.className='v191-gem';gem.dataset.rarity=gemLabels[i];
     const label=document.createElement('span');label.className='v191-gem-label';label.textContent=gemLabels[i];gem.append(label);
     gem.style.setProperty('--x',(18+(i*23)%68)+'%');gem.style.setProperty('--y',(18+(i*31)%66)+'%');
-    gem.style.setProperty('--dur',(0.34+(i%5)*0.06)+'s');gem.style.setProperty('--delay',(-i*0.055)+'s');
+    gem.style.setProperty('--dur',(0.34+(i%5)*0.06)+'s');gem.style.setProperty('--idleDur',(2.8+(i%5)*.42)+'s');gem.style.setProperty('--delay',(-i*0.19)+'s');
     chamber.append(gem);
   }
   const winnerGem=document.createElement('div');winnerGem.className='v191-winning-gem';winnerGem.dataset.rarity='N';
