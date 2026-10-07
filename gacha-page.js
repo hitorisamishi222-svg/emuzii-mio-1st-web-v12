@@ -32,7 +32,7 @@ function setButtons(c){
   $('retryDraw').hidden=!pending
 }
 function statusText(c){const start=Number(c.festAvailableFrom)||5,next=Number(c.nextOrdinal)||1;if(!c.confirmed)return 'メンシプ購入の確認をお待ちください。';if(c.remaining<1)return 'ガチャ権利をすべて使用済みです。';if(!c.normalOpen&&!c.festOpen)return 'メンシプガチャ／ラキフェスは現在停止中です。';if(!c.normal.ready&&!c.fest.ready)return '景品設定中です。';if(!c.festEntitled)return c.normalOpen?`メンシプガチャを利用できます。総ガチャ権利${start}回以上でラキフェス対象になります。`:'メンシプガチャは現在停止中です。';if(!c.festUnlocked)return c.normalOpen?`ラキフェス対象です。あと${Math.max(0,start-next)}回メンシプガチャを引くと、${start}回目からラキフェスを選べます。`:'メンシプガチャは現在停止中です。';if(c.normalOpen&&c.festOpen)return `${start}回目以降です。メンシプガチャ／ラキフェスを選んで抽選できます。`;if(c.festOpen)return 'ラキフェスのみ受付中です。';return 'メンシプガチャのみ受付中です。'}
-async function loadCatalog(){
+async function loadCatalog(includeHistory=true){
   if(busy)return false;
   busy=true;
   try{
@@ -43,6 +43,7 @@ async function loadCatalog(){
     setButtons(c);
     const pending=remember();
     note(pending?'前回の抽選結果が未確認です。「前回の抽選結果を確認」を押してください。':statusText(c));
+    if(!includeHistory)return true;
     const h=await post('/api/gacha',{action:'history'});
     $('drawHistory').replaceChildren();
     if(!h.history?.length){
@@ -83,7 +84,9 @@ async function execute(pending){
 }
 async function start(mode){
   if(!participant||busy||remember()||!lastCatalog)return;
-  if(!await loadCatalog()||!lastCatalog)return;
+  $('drawNormal').disabled=true;$('drawFest').disabled=true;
+  note('管理画面の受付と残り回数を確認しています…');
+  if(!await loadCatalog(false)||!lastCatalog)return;
   const c=lastCatalog;
   const available=mode==='通常'
     ?c.normalOpen===true&&c.normal.ready&&c.confirmed&&c.remaining>0
