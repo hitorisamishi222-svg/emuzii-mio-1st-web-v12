@@ -81,4 +81,5 @@ async function loadHomeUpdates(){
 }
 function scheduleHomeRefresh(){clearInterval(homeRefreshTimer);homeRefreshTimer=setInterval(()=>{if(!document.hidden)void loadHomeUpdates()},60000)}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void loadHomeUpdates()});
+if(window.__MIO_HOME_DEMO__)window.__MIO_HOME_DEMO_REFRESH__=()=>loadHomeUpdates();
 void loadHomeUpdates();scheduleHomeRefresh();
