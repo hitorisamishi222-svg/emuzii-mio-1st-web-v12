@@ -180,10 +180,12 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
 
   window.addEventListener('mio:gacha-result-shown',e=>{
     const k=rarityKey(e.detail?.rarity);
+    winnerGem.style.opacity='0';
+    winnerGem.classList.remove('v191-winner-drop');
     reveal.className='v19-reveal';
     void showReveal(k);
   });
-  window.addEventListener('mio:gacha-animation-error',()=>{stopBgm();clearRarityState()});
+  window.addEventListener('mio:gacha-animation-error',()=>{stopBgm();winnerGem.style.opacity='0';winnerGem.classList.remove('v191-winner-drop');clearRarityState()});
 
   const stageObserver=new MutationObserver(()=>syncMachine());
   stageObserver.observe(stage,{attributes:true,attributeFilter:['class']});
