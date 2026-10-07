@@ -192,6 +192,22 @@
     {
       "src": "gacha-v19-frame-ur.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-home-info.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "home-updates.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "home-updates.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "home-updates-demo.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -210,6 +226,10 @@
     {
       "src": "/api/gacha",
       "dest": "/api-gacha.js"
+    },
+    {
+      "src": "/api/home-info",
+      "dest": "/api-home-info.js"
     },
     {
       "src": "/gacha.html",
