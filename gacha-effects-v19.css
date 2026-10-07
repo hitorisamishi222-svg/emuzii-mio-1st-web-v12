@@ -14,7 +14,7 @@
 .v191-winning-gem span{position:relative;z-index:2;transform:translateY(4px)}
 .v191-winning-gem[data-rarity="SR"]{background:linear-gradient(145deg,#fff8c9,#8feeff 23%,#58bbff 48%,#745fe2 82%);box-shadow:0 0 22px #ffe46f,0 0 36px #77eaff88}
 .v191-winning-gem[data-rarity="UR"]{background:linear-gradient(135deg,#fff 0 8%,#ff77c6 22%,#ffe35a 40%,#61edff 58%,#9d70ff 78%,#ff68b7 100%);box-shadow:0 0 24px #fff,0 0 50px #73edff,0 0 72px #ff68c2aa}
-.v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.76);opacity:0;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1);z-index:4}
+.v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.94);opacity:1;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1);z-index:4;animation:v191-whale-float 3.2s ease-in-out infinite}
 .v19-capsule-img{position:absolute;left:50%;top:50%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff);z-index:8}
 .v191-handle{position:absolute;left:calc(50% + min(32vw,135px));top:52%;width:84px;height:84px;z-index:7;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 8px #00102f88)}
 .v191-handle::before{content:"";position:absolute;left:50%;top:50%;width:58px;height:16px;border-radius:999px;background:linear-gradient(90deg,#fff0a2,#c98c24,#fff3b3);transform-origin:8px 50%;transform:translate(-8px,-50%) rotate(0deg);box-shadow:0 0 0 3px #5a380a,0 0 12px #ffe28588}
@@ -24,7 +24,9 @@
 .gacha-stage.v191-rarity-ur::after{content:"";position:absolute;inset:-18%;z-index:10;pointer-events:none;background:radial-gradient(circle at 50% 42%,#fff9 0 5%,#7fefff55 18%,#ff6aca30 38%,transparent 67%);mix-blend-mode:screen;animation:v191-ur-pulse .46s ease-in-out infinite alternate}
 .v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
 .gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-machine-shake .18s linear infinite}
-.gacha-stage.draw-active .v191-ball-chamber{opacity:.96}
+.v191-ball-chamber{opacity:.72}
+.v191-gem{animation:v191-gem-idle var(--idleDur,3.6s) ease-in-out infinite alternate;animation-delay:var(--delay)}
+.gacha-stage.draw-active .v191-ball-chamber{opacity:.98}
 .gacha-stage.draw-active .v191-gem{animation:v191-gem-chaos var(--dur) cubic-bezier(.35,.05,.65,.95) infinite alternate;animation-delay:var(--delay)}
 .v19-capsule-img.v191-drop{animation:v191-capsule-drop 1.18s cubic-bezier(.18,.75,.2,1) 1 forwards}
 .gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.75s}
@@ -98,3 +100,24 @@
 .gacha-stage.is-fest .v191-spout::before,.gacha-stage.is-fest .v191-spout::after{background:linear-gradient(#fff9ce,#ffd45a55 65%,transparent)}
 @keyframes v191-bubble-rise{0%{transform:translateY(15px) scale(.65);opacity:0}18%{opacity:.7}100%{transform:translateY(-420px) translateX(24px) scale(1.15);opacity:0}}
 @keyframes v191-spout-pulse{to{transform:translateX(-50%) scale(1.12);filter:brightness(1.3)}}
+
+@keyframes v191-whale-float{
+  0%,100%{transform:translate(-50%,-50%) scale(.94) translateY(2px)}
+  50%{transform:translate(-50%,-50%) scale(.955) translateY(-6px)}
+}
+@keyframes v191-gem-idle{
+  0%{transform:translate(-50%,-50%) translate(-4px,4px) rotate(-4deg)}
+  50%{transform:translate(-50%,-50%) translate(5px,-6px) rotate(5deg)}
+  100%{transform:translate(-50%,-50%) translate(-2px,-10px) rotate(-2deg)}
+}
+
+.gacha-stage.v191-loaded #crystal{opacity:0!important;visibility:hidden}
+.gacha-stage.v191-loaded .effect-layer{opacity:.18}
+.gacha-stage.v191-loaded:not(.draw-active) .v191-handle{opacity:.82}
+.gacha-stage.v191-loaded:not(.draw-active) .v19-sparkles{opacity:.28}
+
+@media(max-width:560px){
+  .v191-bubble:nth-child(n+11){display:none}
+  .v191-gem{will-change:transform}
+  .v19-machine-img{will-change:transform}
+}
