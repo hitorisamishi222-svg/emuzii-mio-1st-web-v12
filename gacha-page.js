@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id);
-let participant='',busy=false,lastCatalog=null,lastResult=null;
+let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null;
 const pendingKey=()=>`mio_pending_draw_${participant||'unknown'}`;
 function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'応答を確認できませんでした'}}}
 async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});const d=parse(await r.text());if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}return d}
@@ -82,8 +82,47 @@ async function execute(pending){
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
   }
 }
+function confirmDraw(mode){
+  let overlay=$('gachaConfirmOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='gachaConfirmOverlay';
+    overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');
+    overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(1,8,24,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)';
+    const box=document.createElement('div');
+    box.style.cssText='width:min(100%,390px);border-radius:24px;padding:24px 20px;background:linear-gradient(180deg,#0b2f68,#061936);border:1px solid rgba(145,212,255,.65);box-shadow:0 22px 60px rgba(0,0,0,.55);text-align:center;color:#fff';
+    const title=document.createElement('h3');title.id='gachaConfirmTitle';title.style.cssText='margin:0 0 12px;font-size:23px';
+    const body=document.createElement('p');body.id='gachaConfirmText';body.style.cssText='margin:0 0 20px;line-height:1.7;color:#d7ecff';
+    const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px';
+    const no=document.createElement('button');no.type='button';no.id='gachaConfirmNo';no.textContent='キャンセル';no.style.cssText='min-height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.28);background:#0b244d;color:#fff;font-weight:800;font-size:16px';
+    const yes=document.createElement('button');yes.type='button';yes.id='gachaConfirmYes';yes.textContent='1回引く';yes.style.cssText='min-height:52px;border-radius:16px;border:0;background:linear-gradient(135deg,#dffcff,#62d9ff);color:#06152e;font-weight:950;font-size:16px';
+    row.append(no,yes);box.append(title,body,row);overlay.append(box);document.body.append(overlay);
+  }
+  $('gachaConfirmTitle').textContent=mode==='通常'?'💎 メンシプガチャ':'✨ ラキフェスガチャ';
+  $('gachaConfirmText').textContent='ガチャ権利を1回消費して抽選します。よろしいですか？';
+  const yes=$('gachaConfirmYes'),no=$('gachaConfirmNo');
+  yes.style.background=mode==='ラキフェス'?'linear-gradient(135deg,#fff5bd,#e9b33b)':'linear-gradient(135deg,#dffcff,#62d9ff)';
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=value=>{
+      if(settled)return;
+      settled=true;
+      overlay.style.display='none';
+      document.removeEventListener('keydown',onKey);
+      resolve(value);
+    };
+    const onKey=e=>{if(e.key==='Escape')finish(false)};
+    yes.onclick=()=>finish(true);
+    no.onclick=()=>finish(false);
+    overlay.onclick=e=>{if(e.target===overlay)finish(false)};
+    document.addEventListener('keydown',onKey);
+    overlay.style.display='flex';
+    setTimeout(()=>yes.focus(),0);
+  });
+}
 async function start(mode){
-  if(!participant||busy||remember()||!lastCatalog)return;
+  if(!participant||busy||confirming||remember()||!lastCatalog)return;
   $('drawNormal').disabled=true;$('drawFest').disabled=true;
   note('管理画面の受付と残り回数を確認しています…');
   if(!await loadCatalog(false)||!lastCatalog)return;
@@ -92,13 +131,20 @@ async function start(mode){
     ?c.normalOpen===true&&c.normal.ready&&c.confirmed&&c.remaining>0
     :c.festOpen===true&&c.festUnlocked&&c.fest.ready&&c.confirmed&&c.remaining>0;
   if(!available){note(statusText(c));setButtons(c);return}
-  if(!confirm(`${mode==='通常'?'メンシプ':'ラキフェス'}ガチャを1回引きます。ガチャ権利を1回消費します。よろしいですか？`))return;
+  confirming=true;
+  let approved=false;
+  try{approved=await confirmDraw(mode)}finally{confirming=false}
+  if(!approved){setButtons(c);note(statusText(c));return}
   const p={drawId:makeId(),mode};
-  try{localStorage.setItem(pendingKey(),JSON.stringify(p))}catch{note('端末に抽選確認情報を保存できないため開始しません。');return}
+  try{localStorage.setItem(pendingKey(),JSON.stringify(p))}catch{
+    note('端末に抽選確認情報を保存できないため開始しません。');
+    setButtons(c);
+    return
+  }
   void execute(p)
 }
 $('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void execute(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
-function refreshOpenState(){if(!document.hidden&&!busy)void loadCatalog()}
+function refreshOpenState(){if(!document.hidden&&!busy&&!confirming)void loadCatalog()}
 window.setInterval(refreshOpenState,30000);
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
