@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06193e">
+<title>翠央1周年 ガチャ演出体験 v1.9.1</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/backgrounds.css">
+<link rel="stylesheet" href="/gacha-effects-v19.css">
+<style>
+body{min-height:100vh}
+.demo-wrap{width:min(100%,720px);margin:auto;padding:14px 12px 60px}
+.demo-head{text-align:center;padding:14px 8px}
+.demo-head h1{margin:4px 0 6px}.demo-safe{display:inline-block;padding:7px 12px;border-radius:999px;border:1px solid #89ddff77;background:#062a5c;color:#dff8ff;font-size:12px}
+.demo-controls{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0}
+.demo-controls button{min-height:46px;border:0;border-radius:14px;font-weight:900;background:linear-gradient(135deg,#e7fbff,#62d9ff);color:#06152e}
+.demo-controls button:last-child{background:linear-gradient(135deg,#fff4b8,#e9b13a)}
+.demo-controls button:disabled{opacity:.45}
+@media(max-width:520px){.demo-controls{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<main class="demo-wrap">
+<header class="demo-head">
+<div class="brand">翠央 1周年ガチャ</div>
+<h1>v1.9.1 演出体験</h1>
+<div class="demo-safe">安全デモ：抽選API未接続・回数消費なし</div>
+</header>
+<section class="glass" id="drawPanel">
+<h2>💎 演出だけ試す</h2>
+<p id="drawRemaining" class="gacha-balance">デモ残り ∞ 回</p>
+<div class="gacha-stage" id="gachaStage">
+  <div class="stage-lights" aria-hidden="true"></div>
+  <div class="effect-layer" id="effectLayer" aria-hidden="true"></div>
+  <div id="crystal" aria-hidden="true">💎</div>
+  <div class="draw-result-card" id="drawResultCard" hidden>
+    <img id="drawResultImage" alt="" hidden>
+    <span class="draw-rarity" id="drawRarity"></span>
+    <strong class="draw-prize-name" id="drawPrizeName"></strong>
+    <span class="draw-ordinal" id="drawOrdinal"></span>
+  </div>
+</div>
+<p id="demoMsg" class="message">下から演出を選んでください。</p>
+<div class="demo-controls">
+<button data-r="N">N</button>
+<button data-r="R">R</button>
+<button data-r="SR">SR</button>
+<button data-r="UR">UR</button>
+<button data-r="UR" data-fest="1">ラキUR</button>
+</div>
+<p class="muted">本番と同じ演出コードを使う確認用ページです。景品・回数・履歴は一切変更しません。</p>
+</section>
+</main>
+<script type="module" src="/gacha-effects-v19.js"></script>
+<script>
+const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
+let running=false,seq=0;
+async function play(rarity,fest){
+  if(running)return;running=true;
+  document.querySelectorAll('[data-r]').forEach(b=>b.disabled=true);
+  const stage=$('gachaStage'),card=$('drawResultCard');
+  card.hidden=true;card.classList.remove('result-pop');
+  stage.classList.toggle('is-fest',!!fest);stage.classList.add('draw-active');
+  $('demoMsg').textContent=(fest?'ラキフェス':'メンシプ')+'演出中…';
+  window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode:fest?'ラキフェス':'通常'}}));
+  await wait(1100);
+  window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{mode:fest?'ラキフェス':'通常',rarity}}));
+  const pre=rarity==='UR'?2800:rarity==='SR'?1650:rarity==='R'?1100:800;
+  await wait(pre);
+  $('drawRarity').textContent=rarity;
+  $('drawPrizeName').textContent=rarity==='UR'?'1周年スペシャル景品':rarity==='SR'?'スペシャルレア景品':rarity==='R'?'レア景品':'ノーマル景品';
+  $('drawOrdinal').textContent=(++seq)+'回目・デモ結果';
+  card.hidden=false;card.classList.add('result-pop');
+  window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{mode:fest?'ラキフェス':'通常',rarity,ordinal:seq}}));
+  stage.classList.remove('draw-active');
+  await wait(rarity==='UR'?2900:rarity==='SR'?1800:1100);
+  $('demoMsg').textContent='演出確認完了。何度でも試せます。';
+  document.querySelectorAll('[data-r]').forEach(b=>b.disabled=false);
+  running=false;
+}
+document.querySelectorAll('[data-r]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.r,b.dataset.fest==='1')));
+</script>
+</body></html>
