@@ -196,6 +196,14 @@
     {
       "src": "gacha-cinematic-demo.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v191-whale-blue.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v191-whale-gold.svg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
