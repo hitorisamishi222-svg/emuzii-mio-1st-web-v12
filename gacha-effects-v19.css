@@ -1,40 +1,55 @@
-/* 翠央1周年ガチャ v1.9 presentation layer only.
-   No draw/API/entitlement/history logic lives in this file. */
+/* 翠央1周年ガチャ v1.9.1 cinematic presentation layer */
 .gacha-stage{position:relative;overflow:hidden}
 .v19-fx-root{position:absolute;inset:0;z-index:12;pointer-events:none;overflow:hidden;border-radius:inherit}
-.v19-sparkles{position:absolute;inset:-4%;background:url('/gacha-v19-sparkles.svg') center/cover no-repeat;opacity:.22;animation:v19-twinkle 2.2s ease-in-out infinite alternate}
-.v19-aura{position:absolute;left:50%;top:46%;width:280px;height:280px;border-radius:50%;transform:translate(-50%,-50%);background:#5ddfff20;box-shadow:0 0 45px #67e6ff55,0 0 110px #3f87ff35;opacity:.72;animation:v19-aura 1.6s ease-in-out infinite alternate}
-.v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.76);opacity:0;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1)}
-.v19-capsule-img{position:absolute;left:50%;top:51%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff)}
-.gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v19-machine-shake .18s linear infinite}
-.gacha-stage.draw-active .v19-capsule-img{animation:v19-capsule-drop 1.45s cubic-bezier(.18,.75,.2,1) infinite}
-.gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.9s}
-.gacha-stage.draw-active #crystal{opacity:.12}
-.gacha-stage.is-fest .v19-aura{background:#ffd64b20;box-shadow:0 0 50px #ffe06666,0 0 120px #e68d1838}
+.v19-sparkles{position:absolute;inset:-4%;background:url('/gacha-v19-sparkles.svg') center/cover no-repeat;opacity:.18;animation:v191-twinkle 2.2s ease-in-out infinite alternate}
+.v19-aura{position:absolute;left:50%;top:45%;width:280px;height:280px;border-radius:50%;transform:translate(-50%,-50%);background:#5ddfff20;box-shadow:0 0 45px #67e6ff55,0 0 110px #3f87ff35;opacity:.72;animation:v191-aura 1.6s ease-in-out infinite alternate}
+.v191-ball-chamber{position:absolute;left:50%;top:38.5%;width:min(57%,228px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);overflow:hidden;z-index:3;opacity:.25;transition:opacity .25s ease;filter:drop-shadow(0 0 12px #6eeeffaa)}
+.v191-ball{position:absolute;width:38px;height:38px;border-radius:50%;left:var(--x);top:var(--y);background:radial-gradient(circle at 32% 27%,#fff 0 8%,var(--c1) 18%,var(--c2) 68%,#04183c 100%);border:2px solid #ffffffcc;box-shadow:inset -5px -7px 11px #00163d88,0 0 12px var(--glow);transform:translate(-50%,-50%)}
+.v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.76);opacity:0;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1);z-index:4}
+.v19-capsule-img{position:absolute;left:50%;top:50%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff);z-index:8}
+.v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
+.gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-machine-shake .18s linear infinite}
+.gacha-stage.draw-active .v191-ball-chamber{opacity:.96}
+.gacha-stage.draw-active .v191-ball{animation:v191-ball-chaos var(--dur) cubic-bezier(.35,.05,.65,.95) infinite alternate;animation-delay:var(--delay)}
+.gacha-stage.draw-active .v19-capsule-img{animation:v191-capsule-drop 1.55s cubic-bezier(.18,.75,.2,1) infinite}
+.gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.75s}
+.gacha-stage.draw-active #crystal{opacity:.08}
+.gacha-stage.is-fest .v19-aura{background:#ffd64b24;box-shadow:0 0 55px #ffe06677,0 0 130px #e68d1840}
+.gacha-stage.v191-rarity-r .v19-aura{box-shadow:0 0 75px #85eaff88,0 0 135px #398dff55}
+.gacha-stage.v191-rarity-sr .v19-aura{background:#ffd43b33;box-shadow:0 0 80px #ffe267aa,0 0 160px #ff9b2655}
+.gacha-stage.v191-rarity-ur .v191-ur-premonition{opacity:.88;animation:v191-rainbow-spin .9s linear infinite}
+.gacha-stage.v191-rarity-ur .v19-aura{background:#fff4;box-shadow:0 0 90px #fff,0 0 160px #6cefff99,0 0 220px #ff62c977}
+.gacha-stage.v191-rarity-ur .v191-ball{animation-duration:.16s;filter:brightness(1.45)}
+.gacha-stage.v191-rarity-ur .v19-machine-img{animation:v191-ur-shake .11s linear infinite;filter:drop-shadow(0 0 20px #fff) drop-shadow(0 0 36px #60eaff)}
 .v19-reveal{position:absolute;inset:0;z-index:30;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle at 50% 50%,#1454a05a,#02091bea 68%);transition:opacity .14s ease,visibility .14s ease}
 .v19-reveal.show{visibility:visible;opacity:1}
 .v19-reveal::before{content:"";position:absolute;width:64px;height:64px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 24px #fff,0 0 58px #66e4ff;opacity:0}
-.v19-reveal.show::before{animation:v19-ring 1.05s ease-out infinite}
-.v19-reveal.sr{background:radial-gradient(circle,#9c620a99,#160b00f0 68%)}
-.v19-reveal.ur{background:conic-gradient(from 0deg at 50% 50%,#ff4c9f36,#ffdb4a36,#57edff38,#9866ff44,#ff4c9f36),radial-gradient(circle,#ffffff22,#130020f2 66%)}
-.v19-reveal.ur::after{content:"";position:absolute;inset:-45%;background:conic-gradient(#ff4c9f00,#ff4c9f80,#ffdd4d88,#62f0ff88,#9c70ff88,#ff4c9f00);filter:blur(24px);animation:v19-rainbow-spin 1.25s linear infinite}
-.v19-reveal-frame{position:absolute;inset:5%;width:90%;height:90%;object-fit:fill;opacity:.88;z-index:1}
+.v19-reveal.show::before{animation:v191-ring 1.05s ease-out infinite}
+.v19-reveal.sr{background:radial-gradient(circle,#a4690aaa,#160b00f0 68%)}
+.v19-reveal.ur{background:conic-gradient(from 0deg at 50% 50%,#ff4c9f44,#ffdb4a44,#57edff44,#9866ff55,#ff4c9f44),radial-gradient(circle,#ffffff2d,#130020f2 66%)}
+.v19-reveal.ur::after{content:"";position:absolute;inset:-45%;background:conic-gradient(#ff4c9f00,#ff4c9f95,#ffdd4d99,#62f0ff99,#9c70ff99,#ff4c9f00);filter:blur(24px);animation:v191-rainbow-spin .78s linear infinite}
+.v19-reveal-frame{position:absolute;inset:5%;width:90%;height:90%;object-fit:fill;opacity:.9;z-index:1}
 .v19-reveal-title{position:relative;z-index:3;font-size:clamp(2.6rem,14vw,5.2rem);font-weight:1000;letter-spacing:.08em;color:#fff;text-shadow:0 0 8px #fff,0 0 25px #60ddff;transform:scale(.55);opacity:0}
-.v19-reveal.show .v19-reveal-title{animation:v19-pop .65s cubic-bezier(.16,1.35,.3,1) forwards}
-.v19-reveal.ur .v19-reveal-title{background:linear-gradient(90deg,#ff5ab1,#ffe05e,#5fefff,#a074ff,#ff5ab1);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 11px #fff);animation:v19-pop .65s cubic-bezier(.16,1.35,.3,1) forwards,v19-rainbow-text 1s linear .65s infinite}
+.v19-reveal.show .v19-reveal-title{animation:v191-pop .65s cubic-bezier(.16,1.35,.3,1) forwards}
+.v19-reveal.ur .v19-reveal-title{background:linear-gradient(90deg,#ff5ab1,#ffe05e,#5fefff,#a074ff,#ff5ab1);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 11px #fff);animation:v191-pop .65s cubic-bezier(.16,1.35,.3,1) forwards,v191-rainbow-text .75s linear .65s infinite}
 .v19-reveal-caption{position:absolute;left:10%;right:10%;bottom:14%;z-index:3;text-align:center;font-size:clamp(.95rem,4vw,1.3rem);font-weight:900;color:#fff4bc;text-shadow:0 0 12px #000}
 .gacha-stage.v19-reveal-running .draw-result-card{opacity:0!important;transform:scale(.86)!important;pointer-events:none}
-.gacha-stage.v19-reveal-finished .draw-result-card{animation:v19-result-arrive .72s cubic-bezier(.16,1.2,.3,1)}
+.gacha-stage.v19-reveal-finished .draw-result-card{animation:v191-result-arrive .72s cubic-bezier(.16,1.2,.3,1)}
+.v191-audio-row{display:flex;justify-content:center;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
+.v191-audio-toggle{appearance:none;border:1px solid #8edcff80;background:#082b60;color:#e7f8ff;border-radius:999px;padding:8px 14px;font-weight:800;font-size:.86rem}
+.v191-caution{margin:9px auto 14px;padding:10px 13px;border-radius:14px;border:1px solid #ffd86f66;background:#4b330b66;color:#fff0b8;font-size:.88rem;line-height:1.55;text-align:center}
+.v191-caution strong{color:#fff}
 .v19-assets-missing .v19-machine-img,.v19-assets-missing .v19-capsule-img,.v19-assets-missing .v19-reveal-frame{display:none}
-.v19-assets-missing .v19-aura,.v19-assets-missing .v19-sparkles{opacity:0}
-@keyframes v19-twinkle{to{opacity:.72;transform:scale(1.035) rotate(1.5deg)}}
-@keyframes v19-aura{to{transform:translate(-50%,-50%) scale(1.12);opacity:.5}}
-@keyframes v19-machine-shake{25%{transform:translate(-50%,-50%) scale(1) rotate(1.2deg)}75%{transform:translate(-50%,-50%) scale(1) rotate(-1.2deg)}}
-@keyframes v19-capsule-drop{0%,28%{opacity:0;transform:translate(-50%,-130%) scale(.25) rotate(0)}38%{opacity:1}82%{opacity:1;transform:translate(-50%,130%) scale(1.04) rotate(320deg)}100%{opacity:0;transform:translate(-50%,180%) scale(.78) rotate(390deg)}}
-@keyframes v19-ring{0%{opacity:.9;transform:scale(.25)}100%{opacity:0;transform:scale(7)}}
-@keyframes v19-pop{0%{opacity:0;transform:scale(.45)}72%{opacity:1;transform:scale(1.16)}100%{opacity:1;transform:scale(1)}}
-@keyframes v19-rainbow-spin{to{transform:rotate(360deg)}}
-@keyframes v19-rainbow-text{to{background-position:250% 0}}
-@keyframes v19-result-arrive{0%{opacity:0;transform:translateY(26px) scale(.72)}65%{opacity:1;transform:translateY(-4px) scale(1.04)}100%{opacity:1;transform:none}}
-@media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
-@media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
+@keyframes v191-twinkle{to{opacity:.78;transform:scale(1.045) rotate(1.8deg)}}
+@keyframes v191-aura{to{transform:translate(-50%,-50%) scale(1.13);opacity:.52}}
+@keyframes v191-machine-shake{25%{transform:translate(-50%,-50%) scale(1) rotate(1.4deg)}75%{transform:translate(-50%,-50%) scale(1) rotate(-1.4deg)}}
+@keyframes v191-ur-shake{25%{transform:translate(-50%,-50%) scale(1.015) rotate(2deg)}75%{transform:translate(-50%,-50%) scale(1.015) rotate(-2deg)}}
+@keyframes v191-ball-chaos{0%{transform:translate(-50%,-50%) translate(-26px,34px) rotate(0deg) scale(.92)}25%{transform:translate(-50%,-50%) translate(30px,-25px) rotate(110deg) scale(1.03)}50%{transform:translate(-50%,-50%) translate(-15px,-42px) rotate(210deg) scale(.96)}75%{transform:translate(-50%,-50%) translate(38px,18px) rotate(300deg) scale(1.04)}100%{transform:translate(-50%,-50%) translate(-31px,7px) rotate(420deg) scale(.95)}}
+@keyframes v191-capsule-drop{0%,42%{opacity:0;transform:translate(-50%,-130%) scale(.22) rotate(0)}52%{opacity:1}82%{opacity:1;transform:translate(-50%,132%) scale(1.06) rotate(330deg)}100%{opacity:0;transform:translate(-50%,190%) scale(.75) rotate(420deg)}}
+@keyframes v191-ring{0%{opacity:.9;transform:scale(.25)}100%{opacity:0;transform:scale(7.5)}}
+@keyframes v191-pop{0%{opacity:0;transform:scale(.42)}72%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+@keyframes v191-rainbow-spin{to{transform:rotate(360deg)}}
+@keyframes v191-rainbow-text{to{background-position:250% 0}}
+@keyframes v191-result-arrive{0%{opacity:0;transform:translateY(26px) scale(.72)}65%{opacity:1;transform:translateY(-5px) scale(1.05)}100%{opacity:1;transform:none}}
+@media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v191-ball-chamber{width:min(61%,205px)}.v191-ball{width:34px;height:34px}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
+@media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title,.v191-ball,.v191-ur-premonition{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
