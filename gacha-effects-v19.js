@@ -129,7 +129,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   let caution=document.getElementById('gachaRapidCaution');
   if(!caution){
     caution=document.createElement('p');caution.id='gachaRapidCaution';caution.className='v191-caution';
-    caution.innerHTML='<strong>お願い：</strong>演出中はボタンを連打せず、結果が表示されるまでそのままお待ちください。';
+    caution.innerHTML='<strong>お願い：</strong>演出中はボタンを連打せず、結果が表示されるまでそのままお待ちください。<br><span>クジラ内部のN / R / SR / URダイヤの数・配置は演出用で、実際の当選確率を表すものではありません。</span>';
   }
   const balance=document.getElementById('drawRemaining');
   if(balance){balance.insertAdjacentElement('afterend',row);if(!caution.isConnected)row.insertAdjacentElement('afterend',caution)}
