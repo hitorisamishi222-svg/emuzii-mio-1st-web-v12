@@ -156,6 +156,22 @@
     {
       "src": "gacha-lf-19.jpg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-effects-v19.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-effects-v19.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-effects-demo.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-effects-demo.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -182,6 +198,10 @@
     {
       "src": "/",
       "dest": "/index.html"
+    },
+    {
+      "src": "/gacha-effects-demo.html",
+      "dest": "/gacha-effects-demo.html"
     },
     {
       "src": "/(.*)",
