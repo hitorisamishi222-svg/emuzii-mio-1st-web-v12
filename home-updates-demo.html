@@ -1,0 +1,19 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#06193e"><title>お知らせ・配信予定 デモ</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/backgrounds.css"><link rel="stylesheet" href="/home-updates.css"></head>
+<body><main class="app"><header><span class="brand">翠央 1周年</span><span class="version">v1.9.2 DEMO</span><p>HOME INFORMATION PREVIEW</p></header>
+<div class="hero"><span>公開前プレビュー</span><h1>お知らせ・配信予定<br>表示デモ</h1><p>本番データには接続せず、見た目と表示順を確認できます。</p></div>
+<section class="glass home-updates" id="homeUpdates" aria-labelledby="homeUpdatesTitle"><div class="home-updates-head"><div><span class="home-updates-kicker">LATEST INFORMATION</span><h2 id="homeUpdatesTitle">📢 お知らせ・配信予定</h2></div><p class="home-updates-status" id="homeUpdatesStatus">読み込み中…</p></div><div class="home-update-grid">
+<section class="home-panel"><div class="home-panel-title"><h3>お知らせ掲示板</h3><small>NEWS</small></div><div class="home-news-list" id="homeNewsList"></div></section>
+<section class="home-panel"><div class="home-panel-title"><h3>配信スケジュール</h3><small>LIVE SCHEDULE</small></div><div class="home-schedule-list" id="homeScheduleList"></div></section>
+</div></section>
+<section class="glass"><h2>デモについて</h2><p class="muted">このページは表示確認専用です。参加者情報・ガチャ・皆勤・Apps Scriptには書き込みません。</p></section>
+</main>
+<script>
+window.__MIO_HOME_DEMO__={ok:true,notices:[
+{id:"NEWS-DEMO-1",level:"緊急",title:"本日の配信時間変更",body:"開始時間を22:00に変更しました。お間違えのないようご確認ください。",publishedAt:new Date(Date.now()-20*60*1000).toISOString(),url:""},
+{id:"NEWS-DEMO-2",level:"重要",title:"1周年企画のお知らせ",body:"今月の企画・ガチャ・ファンアートを開催中です。最新情報はこちらで随時更新します。",publishedAt:new Date(Date.now()-2*60*60*1000).toISOString(),url:"https://emuzii-mio-1st-web-v12.vercel.app/"},
+{id:"NEWS-DEMO-3",level:"通常",title:"お知らせ掲示板を追加しました",body:"配信変更やイベント情報をトップページですぐ確認できます。",publishedAt:new Date(Date.now()-4*24*60*60*1000).toISOString(),url:""}
+],schedules:[
+{id:"LIVE-DEMO-1",startAt:new Date(Date.now()-20*60*1000).toISOString(),endAt:new Date(Date.now()+100*60*1000).toISOString(),title:"1周年記念 歌枠",body:"現在配信中の表示イメージです。",url:"https://colorsing.com/"},
+{id:"LIVE-DEMO-2",startAt:new Date(Date.now()+24*60*60*1000).toISOString(),endAt:new Date(Date.now()+26*60*60*1000).toISOString(),title:"明日の配信予定",body:"歌・雑談を予定しています。",url:""}
+]};
+</script><script type="module" src="/home-updates.js"></script></body></html>
