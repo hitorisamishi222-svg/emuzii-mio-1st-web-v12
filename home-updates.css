@@ -32,3 +32,5 @@
 @media(min-width:520px){.home-update-grid{grid-template-columns:1.05fr .95fr;align-items:start}.home-updates{padding:24px}.home-panel{padding:18px}}
 @media(max-width:519px){.home-updates-head{align-items:flex-start;flex-direction:column}.home-updates-status{text-align:left}}
 @media(prefers-reduced-motion:reduce){.home-loading span,.home-live-pulse{animation:none}}
+
+.home-panel,.home-news-item,.home-live-card{min-width:0}.home-news-item h4,.home-news-item p,.home-live-card h4,.home-live-card p,.home-news-link,.home-live-link{overflow-wrap:anywhere;word-break:break-word}
