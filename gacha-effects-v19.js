@@ -96,13 +96,21 @@ if(stage&&resultCard){
   // Existing draw code adds draw-active while the server draw is running and
   // reveals drawResultCard only after the server result has been received.
   // We only react to that confirmed result.
-  let lastHidden=resultCard.hidden;
-  const observer=new MutationObserver(()=>{
-    const nowHidden=resultCard.hidden;
-    if(lastHidden&&!nowHidden)void showReveal();
-    lastHidden=nowHidden;
-  });
-  observer.observe(resultCard,{attributes:true,attributeFilter:['hidden']});
+  let lastPop=resultCard.classList.contains('result-pop');
+  let lastOrdinal='';
+  const ordinalNode=document.getElementById('drawOrdinal');
+  const triggerConfirmedReveal=()=>{
+    const pop=resultCard.classList.contains('result-pop');
+    const ordinal=String(ordinalNode?.textContent||'');
+    if(pop&&(!lastPop||ordinal!==lastOrdinal)){
+      lastOrdinal=ordinal;
+      void showReveal();
+    }
+    lastPop=pop;
+  };
+  const observer=new MutationObserver(triggerConfirmedReveal);
+  observer.observe(resultCard,{attributes:true,attributeFilter:['class','hidden'],childList:true,subtree:true});
+  if(ordinalNode)observer.observe(ordinalNode,{childList:true,subtree:true,characterData:true});
 
   window.addEventListener('pagehide',()=>{
     revealToken++;
