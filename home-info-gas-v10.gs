@@ -36,3 +36,7 @@ function homeScheduleRowsV10_(rows,now){
   .sort(function(a,b){return a.start-b.start}).slice(0,5)
   .map(function(x){return {id:x.id,startAt:x.start.toISOString(),endAt:x.end?x.end.toISOString():null,title:x.title,body:x.body,url:x.url}});
 }
+function homeInfoResponseV10_(){
+  return ContentService.createTextOutput(JSON.stringify(homeInfoV10_()))
+    .setMimeType(ContentService.MimeType.JSON);
+}
