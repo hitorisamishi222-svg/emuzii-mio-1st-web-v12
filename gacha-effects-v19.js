@@ -31,7 +31,8 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     gem.style.setProperty('--ny100',p(-ry));gem.style.setProperty('--ny92',p(-ry*.9239));gem.style.setProperty('--ny71',p(-ry*.7071));gem.style.setProperty('--ny38',p(-ry*.3827));
     const drawDur=2.45+ring*.38,idleDur=9.2+ring*1.3,phase=i/gemLabels.length;
     gem.style.setProperty('--dur',drawDur+'s');gem.style.setProperty('--idleDur',idleDur+'s');
-    gem.style.setProperty('--delay',(-phase*idleDur)+'s');
+    gem.style.setProperty('--idleDelay',(-phase*idleDur)+'s');
+    gem.style.setProperty('--drawDelay',(-phase*drawDur)+'s');
     gem.style.setProperty('--orbitDir',ring===1?'reverse':'normal');
     chamber.append(gem);
   }
