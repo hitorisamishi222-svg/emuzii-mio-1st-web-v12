@@ -114,7 +114,7 @@ function webIntegrityOk_(row){
 function activeWebDeviceErrorV189_(web,record){
   var registrationId=String(record[0]||'');
   if(String(record[16]||'')==='旧端末')return 'この登録は旧端末です。新しい端末をご利用ください。';
-  if(record[5]!=='承認済み')return '';
+  if(record[5]!=='承認済み'||String(record[2]||'')==='翠央(お試し)')return '';
   var mioId=String(record[7]||'');
   if(!/^MIO-\d{4}$/.test(mioId))return '';
   var approved=webActualRows_(web).filter(function(x){
