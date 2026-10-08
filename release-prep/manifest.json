@@ -1,0 +1,49 @@
+{
+  "version": "next-integrated-test-prep-0.1",
+  "phase": "isolated-preparation",
+  "productionReleaseApproved": false,
+  "productionWritesAllowed": false,
+  "sourceBaseline": "0aafe90cc8ca01eebca2650a25969108d7b26a31",
+  "streams": [
+    {
+      "key": "device-identity",
+      "owner": "separate-chat",
+      "branch": "feature/mio-device-switch-v189",
+      "status": "awaiting-production-validation",
+      "ready": false
+    },
+    {
+      "key": "security",
+      "branch": "feature/security-foundation-prep",
+      "status": "unit-tested-not-integrated",
+      "ready": false
+    },
+    {
+      "key": "community-gallery",
+      "branch": "feature/community-gallery-prep",
+      "status": "policy-unit-tested-no-database",
+      "ready": false
+    },
+    {
+      "key": "home-board",
+      "branch": "home-board-prep",
+      "status": "preview-preparation",
+      "ready": false
+    },
+    {
+      "key": "whale-gacha",
+      "branch": "release/v1.9.1-gacha-cinematic-prep",
+      "status": "awaiting-owner-confirmation",
+      "ready": false
+    }
+  ],
+  "gates": {
+    "isolatedTestData": false,
+    "separatePreviewCredentials": false,
+    "signedDeviceIdentityIntegrated": false,
+    "allAutomatedTestsPassed": false,
+    "mobileBrowserTestsPassed": false,
+    "rollbackVerified": false,
+    "ownerApprovedRelease": false
+  }
+}
