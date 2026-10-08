@@ -4,7 +4,7 @@
 .v19-sparkles{position:absolute;inset:-4%;background:url('/gacha-v19-sparkles.svg') center/cover no-repeat;opacity:.18;animation:v191-twinkle 2.2s ease-in-out infinite alternate}
 .v19-aura{position:absolute;left:50%;top:45%;width:280px;height:280px;border-radius:50%;transform:translate(-50%,-50%);background:#5ddfff20;box-shadow:0 0 45px #67e6ff55,0 0 110px #3f87ff35;opacity:.72;animation:v191-aura 1.6s ease-in-out infinite alternate}
 .v191-ball-chamber{position:absolute;left:50%;top:39%;width:min(54%,220px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);overflow:hidden;z-index:3;opacity:.28;transition:opacity .25s ease;filter:drop-shadow(0 0 12px #6eeeffaa)}
-.v191-gem{position:absolute;left:var(--x);top:var(--y);width:54px;height:46px;transform:translate(-50%,-50%);clip-path:polygon(50% 0,92% 33%,72% 100%,28% 100%,8% 33%);background:linear-gradient(145deg,#f4ffff 0 8%,#87f4ff 20%,#38bfff 48%,#2a73dd 72%,#113d9b 100%);border:0;box-shadow:inset 0 0 0 2px #ffffffbb,0 0 13px #5eeaffcc;display:grid;place-items:center;color:white;font-weight:1000;font-size:16px;text-shadow:0 1px 3px #09265a,0 0 8px #fff;filter:drop-shadow(0 0 5px #82ecff)}
+.v191-gem{position:absolute;left:50%;top:50%;width:54px;height:46px;transform:translate(-50%,-50%);clip-path:polygon(50% 0,92% 33%,72% 100%,28% 100%,8% 33%);background:linear-gradient(145deg,#f4ffff 0 8%,#87f4ff 20%,#38bfff 48%,#2a73dd 72%,#113d9b 100%);border:0;box-shadow:inset 0 0 0 2px #ffffffbb,0 0 13px #5eeaffcc;display:grid;place-items:center;color:white;font-weight:1000;font-size:16px;text-shadow:0 1px 3px #09265a,0 0 8px #fff;filter:drop-shadow(0 0 5px #82ecff)}
 .v191-gem::before{content:"";position:absolute;inset:5px 8px 18px;clip-path:polygon(50% 0,100% 55%,78% 100%,22% 100%,0 55%);background:linear-gradient(145deg,#ffffffdd,#b9f7ff66 38%,transparent 72%);opacity:.72}
 .v191-gem-label{position:relative;z-index:2;transform:translateY(3px)}
 .v191-gem[data-rarity="SR"]{background:linear-gradient(145deg,#f8ffff 0 8%,#96f4ff 20%,#42c8ff 48%,#3478e5 72%,#163b9f 100%);box-shadow:inset 0 0 0 2px #fff3a4,0 0 14px #ffe26d88}
@@ -24,11 +24,11 @@
 .gacha-stage.is-fest .v191-handle{filter:drop-shadow(0 0 12px #ffe278aa) drop-shadow(0 6px 8px #1d0c00)}
 .gacha-stage.v191-rarity-ur::after{content:"";position:absolute;inset:-18%;z-index:10;pointer-events:none;background:radial-gradient(circle at 50% 42%,#fff9 0 5%,#7fefff55 18%,#ff6aca30 38%,transparent 67%);mix-blend-mode:screen;animation:v191-ur-pulse .46s ease-in-out infinite alternate}
 .v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
-.gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-machine-shake .18s linear infinite}
+.gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-whale-active .72s ease-in-out infinite alternate}
 .v191-ball-chamber{opacity:.72}
-.v191-gem{animation:v191-gem-idle var(--idleDur,3.6s) ease-in-out infinite alternate;animation-delay:var(--delay)}
+.v191-gem{animation:v191-gem-orbit var(--idleDur,10s) linear infinite;animation-delay:var(--delay);will-change:transform}
 .gacha-stage.draw-active .v191-ball-chamber{opacity:.98}
-.gacha-stage.draw-active .v191-gem{animation:v191-gem-chaos var(--dur) cubic-bezier(.35,.05,.65,.95) infinite alternate;animation-delay:var(--delay)}
+.gacha-stage.draw-active .v191-gem{animation:v191-gem-orbit var(--dur,2.7s) linear infinite;animation-delay:var(--delay)}
 .v19-capsule-img.v191-drop{animation:v191-capsule-drop 1.18s cubic-bezier(.18,.75,.2,1) 1 forwards}
 .gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.75s}
 .gacha-stage.draw-active #crystal{opacity:.08}
@@ -37,8 +37,8 @@
 .gacha-stage.v191-rarity-sr .v19-aura{background:#ffd43b33;box-shadow:0 0 80px #ffe267aa,0 0 160px #ff9b2655}
 .gacha-stage.v191-rarity-ur .v191-ur-premonition{opacity:.88;animation:v191-rainbow-spin .9s linear infinite}
 .gacha-stage.v191-rarity-ur .v19-aura{background:#fff4;box-shadow:0 0 90px #fff,0 0 160px #6cefff99,0 0 220px #ff62c977}
-.gacha-stage.v191-rarity-ur .v191-gem{animation-duration:.16s;filter:brightness(1.45) drop-shadow(0 0 10px #fff)}
-.gacha-stage.v191-rarity-ur .v19-machine-img{animation:v191-ur-shake .11s linear infinite;filter:drop-shadow(0 0 20px #fff) drop-shadow(0 0 36px #60eaff)}
+.gacha-stage.v191-rarity-ur .v191-gem{animation-duration:1.45s;filter:brightness(1.45) drop-shadow(0 0 10px #fff)}
+.gacha-stage.v191-rarity-ur .v19-machine-img{animation:v191-whale-ur .42s ease-in-out infinite alternate;filter:drop-shadow(0 0 20px #fff) drop-shadow(0 0 36px #60eaff)}
 .v19-reveal{position:absolute;inset:0;z-index:30;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle at 50% 50%,#1454a05a,#02091bea 68%);transition:opacity .14s ease,visibility .14s ease}
 .v19-reveal.show{visibility:visible;opacity:1}
 .v19-reveal.v191-pre-reveal{background:radial-gradient(circle at 50% 44%,#ffffff12 0 16%,#14295a44 46%,#02071988 82%)}
@@ -121,4 +121,32 @@
   .v191-bubble:nth-child(n+11){display:none}
   .v191-gem{will-change:transform}
   .v19-machine-img{will-change:transform}
+}
+
+@keyframes v191-gem-orbit{
+  0%{transform:translate(-50%,-50%) translate(var(--rx),0) scale(.86)}
+  6.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.92),calc(var(--ry)*.38)) scale(.89)}
+  12.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.71),calc(var(--ry)*.71)) scale(.93)}
+  18.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.38),calc(var(--ry)*.92)) scale(.97)}
+  25%{transform:translate(-50%,-50%) translate(0,var(--ry)) scale(1)}
+  31.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.38),calc(var(--ry)*.92)) scale(1.04)}
+  37.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.71),calc(var(--ry)*.71)) scale(1.07)}
+  43.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.92),calc(var(--ry)*.38)) scale(1.09)}
+  50%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-1),0) scale(1.1)}
+  56.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.92),calc(var(--ry)*-.38)) scale(1.09)}
+  62.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.71),calc(var(--ry)*-.71)) scale(1.07)}
+  68.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.38),calc(var(--ry)*-.92)) scale(1.04)}
+  75%{transform:translate(-50%,-50%) translate(0,calc(var(--ry)*-1)) scale(1)}
+  81.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.38),calc(var(--ry)*-.92)) scale(.96)}
+  87.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.71),calc(var(--ry)*-.71)) scale(.92)}
+  93.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.92),calc(var(--ry)*-.38)) scale(.89)}
+  100%{transform:translate(-50%,-50%) translate(var(--rx),0) scale(.86)}
+}
+@keyframes v191-whale-active{
+  from{transform:translate(-50%,-50%) scale(.99) translateY(3px)}
+  to{transform:translate(-50%,-50%) scale(1.01) translateY(-5px)}
+}
+@keyframes v191-whale-ur{
+  from{transform:translate(-50%,-50%) scale(1.005)}
+  to{transform:translate(-50%,-50%) scale(1.025)}
 }
