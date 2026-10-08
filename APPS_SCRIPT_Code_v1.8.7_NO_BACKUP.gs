@@ -204,6 +204,8 @@ function doPost(e) {
       SpreadsheetApp.flush();
 
       if(!linked)linked=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,name);
+      // Update the private administrator review list when a new Web ID appears.
+      try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
       return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||''});
     }
