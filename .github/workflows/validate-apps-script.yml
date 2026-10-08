@@ -7,6 +7,7 @@ on:
       - 'APPS_SCRIPT_DeviceRecovery_v1.8.7.gs'
       - 'APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs'
       - 'APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs'
+      - 'test-device-switch-v189.cjs'
       - '.github/workflows/validate-apps-script.yml'
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - 'APPS_SCRIPT_DeviceRecovery_v1.8.7.gs'
       - 'APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs'
       - 'APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs'
+      - 'test-device-switch-v189.cjs'
 
 permissions:
   contents: read
@@ -36,6 +38,9 @@ jobs:
             cp "$f" "/tmp/$(basename "$f" .gs).js"
             node --check "/tmp/$(basename "$f" .gs).js"
           done
+
+      - name: Test device-switch safety rules
+        run: node test-device-switch-v189.cjs
 
       - name: Ensure NO-BACKUP release has no secondary-save dependency
         shell: bash
