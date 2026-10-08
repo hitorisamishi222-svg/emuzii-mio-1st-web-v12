@@ -120,7 +120,9 @@ function webRecoveryOnEdit_(e){
   });
   var id=people.length===1?String(people[0][0]):'';
   var existing=webActualRows_(sh).filter(function(r){
-    return String(r[0]||'')!==webId&&r[5]==='承認済み'&&
+    // Even two pending registrations require explicit selection. Never assume
+    // the first one approved is the rightful new device.
+    return String(r[0]||'')!==webId&&
       (String(r[2]||'')===name||(id&&String(r[7]||'')===id));
   });
   var linked=String(sh.getRange(row,8).getDisplayValue()||'');
@@ -128,7 +130,7 @@ function webRecoveryOnEdit_(e){
   if(!id||(linked&&linked!==id)||(linkedAlt&&/^MIO-\d{4}$/.test(linkedAlt)&&linkedAlt!==id)||existing.length){
     sh.getRange(row,6).setValue('承認待ち');
     sh.getRange(row,17).setValue('未指定');
-    sh.getRange(row,18).setValue('重複整理待ち：既存の承認済み端末は維持。管理者が専用シートで端末切替を選択');
+    sh.getRange(row,18).setValue('重複整理待ち：既存登録は維持。管理者が専用シートで利用端末を選択');
     sh.getRange(row,19).setValue(new Date());
     ensureWebDerivedRow_(sh,row);
     if(ss.getSheetByName(DUP_REVIEW_TAB_V189))refreshDuplicateReviewV189_();
