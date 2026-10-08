@@ -112,18 +112,13 @@ function webIntegrityOk_(row){
  * MIO ID and administrator approval, never a fingerprint or matching nickname.
  */
 function activeWebDeviceErrorV189_(web,record){
-  var registrationId=String(record[0]||'');
-  if(String(record[16]||'')==='旧端末')return 'この登録は旧端末です。新しい端末をご利用ください。';
-  if(record[5]!=='承認済み'||String(record[2]||'')==='翠央(お試し)')return '';
-  var mioId=String(record[7]||'');
-  if(!/^MIO-\d{4}$/.test(mioId))return '';
-  var approved=webActualRows_(web).filter(function(x){
-    return x[5]==='承認済み'&&String(x[7]||'')===mioId;
-  });
-  if(approved.length<=1)return '';
-  var active=approved.filter(function(x){return String(x[16]||'')==='使用中';});
-  if(active.length!==1)return '複数端末が承認されています。運営が端末切替を確認中です。';
-  return String(active[0][0]||'')===registrationId?'':'この登録は旧端末です。新しい端末をご利用ください。';
+  // A previously approved duplicate stays usable until a confirmed switch.
+  // Only an explicitly retired registration is blocked; no implicit winner.
+  var state=String(record[16]||'');
+  if(state==='旧端末')return 'この登録は旧端末です。新しい端末をご利用ください。';
+  if(record[5]==='却下'&&String(record[17]||'').indexOf('端末切替')!==-1)
+    return 'この登録は旧端末です。新しい端末をご利用ください。';
+  return '';
 }
 
 function autoLinkWebParticipant_(ss,web,participantId,tokenHash,name){
