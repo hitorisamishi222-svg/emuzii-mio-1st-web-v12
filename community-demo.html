@@ -50,6 +50,11 @@ dialog::backdrop{background:#000b}dialog h3{margin:6px 0;font-size:18px}.modal-a
 @media(min-width:530px){main{padding-left:20px;padding-right:20px}.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:355px){.cards{grid-template-columns:1fr}.role-hint{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.ticker-content{animation:none;padding-left:0}}
+
+.field{display:block;margin:10px 0;font-size:12px;font-weight:750;color:#cde6f7}
+.field input,.field select,.field textarea{margin-top:5px;display:block;width:100%;border:1px solid #8bcdfd70;background:#04182f;color:#fff;font:inherit;font-size:13px;padding:10px 11px;border-radius:10px;min-height:40px}
+.field textarea{min-height:76px;resize:vertical}.field input[type=file]{font-size:11px}.field small{display:block;margin:4px 0;color:#a3c7de;font-size:10px}
+.form-error{color:#ffd6e0;font-size:11px;margin:8px 0}.approval-note{background:#072f46;border:1px solid #8ddcfb5c;padding:10px 12px;border-radius:12px;font-size:12px;color:#cdeaff;margin-top:12px}
 </style></head>
 <body><main>
 <header><strong class="brand">翠央 1周年</strong><span class="demo-tag">COMMUNITY DEMO v0.1</span></header>
@@ -65,11 +70,26 @@ dialog::backdrop{background:#000b}dialog h3{margin:6px 0;font-size:18px}.modal-a
 <div class="message"><div class="message-top"><span class="name">🌸 みるく</span><span>10:24</span></div><p>みんなよろしくお願いします！</p></div>
 </div>
 <div class="composer"><label class="mini" for="messageInput">メッセージを書く（承認済みだけ）</label><textarea id="messageInput" maxlength="300" placeholder="メッセージを入力" disabled></textarea><div class="composer-footer"><span class="mini"><span id="charCount">0</span>/300文字</span><button id="sendButton" class="action" type="button" disabled>送信する →</button></div><p class="info" id="composeHint"></p></div><p class="notice">デモ上の送信は画面内だけに反映され、実際のチャットには公開されません。実運用では投稿権限とスパム対策をサーバー側でも検証します。</p></section>
-<section class="panel" id="videoPanel" hidden><div class="row between"><h2 class="section-title">🎬 みんなの動画</h2><span class="mini">外部リンク＋預かり動画</span></div><div id="videoCards" class="cards"></div><div class="row between" style="margin-top:15px"><p class="info">作品名・サムネ・投稿者ニックネームを表示</p><button type="button" class="outline" data-submit="video">動画を投稿する</button></div><p class="notice">外部動画は公式リンクへ移動。直接預かった動画は別ストレージで管理して公開審査します。</p></section>
-<section class="panel" id="photoPanel" hidden><div class="row between"><h2 class="section-title">🖼 みんなの画像</h2><span class="mini">サムネをタップで拡大</span></div><div id="photoCards" class="cards"></div><div class="row between" style="margin-top:15px"><p class="info">作品名・投稿者表示・説明付き</p><button type="button" class="outline" data-submit="photo">画像を投稿する</button></div><p class="notice">投稿者の掲載許可と運営審査が通った作品だけを公開します。</p></section>
+<section class="panel" id="videoPanel" hidden><div class="row between"><h2 class="section-title">🎬 みんなの動画</h2><span class="mini">外部リンク＋預かり動画</span></div><div id="videoCards" class="cards"></div><div class="row between" style="margin-top:15px"><p class="info">作品名・サムネ・投稿者ニックネームを表示</p><button type="button" class="outline" data-submit="video">動画を投稿する</button></div><p class="notice">外部動画は公式リンクへ移動。直接預かった動画は別ストレージで管理して公開審査します。</p><p class="mini" id="videoPending" aria-live="polite"></p></section>
+<section class="panel" id="photoPanel" hidden><div class="row between"><h2 class="section-title">🖼 みんなの画像</h2><span class="mini">サムネをタップで拡大</span></div><div id="photoCards" class="cards"></div><div class="row between" style="margin-top:15px"><p class="info">作品名・投稿者表示・説明付き</p><button type="button" class="outline" data-submit="photo">画像を投稿する</button></div><p class="notice">投稿者の掲載許可と運営審査が通った作品だけを公開します。</p><p class="mini" id="photoPending" aria-live="polite"></p></section>
 <p class="mini" style="text-align:center">これは本番に接続しないデモです。表示名と作品はすべてサンプル。</p>
 </main>
 <dialog id="mediaModal"><div class="modal-art" id="modalArt" aria-hidden="true">🐳</div><h3 id="modalTitle">作品</h3><p class="mini" id="modalAuthor"></p><p id="modalDescription" style="font-size:13px"></p><div class="dialog-actions"><button id="modalAction" class="action" type="button">動画リンクを開く</button><button id="modalClose" class="outline" type="button">閉じる</button></div></dialog>
+
+<dialog id="submitModal" aria-label="作品投稿申請デモ">
+<form id="submitForm" novalidate>
+<h3>作品を投稿する</h3><p class="mini">承認済みメンバー向けの申請デモ。データは保存されず、外部へアップロードされません。</p>
+<label class="field">作品タイトル<input id="submitTitle" type="text" maxlength="80" required placeholder="例：みお1周年の記念動画"></label>
+<label class="field">投稿者ニックネーム<input id="submitNick" type="text" maxlength="30" required placeholder="公開する表示名"></label>
+<label class="field">作品の登録方法<select id="submitSource"><option value="youtube">YouTubeの動画リンク</option><option value="tiktok">TikTokの動画リンク</option><option value="external">その他のHTTPSリンク</option><option value="file">直接預かったファイル</option></select></label>
+<label class="field" id="submitUrlWrap">作品のURL<input id="submitUrl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off"><small>動画や画像の正規URLを登録します。</small></label>
+<label class="field" id="submitFileWrap" hidden>作品ファイル（デモ・未送信）<input id="submitFile" type="file" accept="video/*,image/*"><small>ファイルは実際には送信・保存されません。</small></label>
+<label class="field">サムネイル画像URL（任意）<input id="submitThumb" type="url" inputmode="url" placeholder="https://..." autocomplete="off"><small>実運用時は画像検査・サムネ生成と公開審査を行います。</small></label>
+<label class="field">作品紹介<textarea id="submitDesc" maxlength="500" placeholder="作品についてひとこと"></textarea></label>
+<label class="row" style="font-size:11px;align-items:flex-start"><input type="checkbox" id="submitConsent" style="margin-top:4px"><span style="flex:1">作品の投稿・公開に必要な権利や本人からの許可を確認しました（デモ）</span></label>
+<p class="form-error" id="submitError" role="alert" hidden></p>
+<div class="dialog-actions"><button type="submit" class="action">審査を申請する</button><button type="button" id="submitClose" class="outline">閉じる</button></div>
+</form></dialog>
 <div id="toast" role="status" hidden></div>
 <script>
 (function(){
@@ -94,7 +114,57 @@ $("modalClose").addEventListener("click",()=>modal.close());
 document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const tab=t.dataset.tab;document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",String(x===t)));$("chatPanel").hidden=tab!=="chat";$("videoPanel").hidden=tab!=="video";$("photoPanel").hidden=tab!=="photo"}));
 role.addEventListener("change",setRole);input.addEventListener("input",()=>count.textContent=String(input.value.length));
 send.addEventListener("click",()=>{if(role.value!=="approved"){notify("承認済みの方のみ投稿できます");return}const body=input.value.trim();if(!body){notify("メッセージを入力してください");return}if(Date.now()-lastSend<5000){notify("続けて投稿する場合は5秒待ってね");return}lastSend=Date.now();const el=document.createElement("div");el.className="message mine";const top=document.createElement("div");top.className="message-top";const author=document.createElement("span");author.className="name";author.textContent="💙 デモ参加者";const time=document.createElement("span");time.textContent="いま";top.append(author,time);const p=document.createElement("p");p.textContent=body;el.append(top,p);$("chatWindow").appendChild(el);$("chatWindow").scrollTop=$("chatWindow").scrollHeight;input.value="";count.textContent="0";notify("デモ画面に投稿しました（保存されません）")});
-document.querySelectorAll("[data-submit]").forEach(b=>b.addEventListener("click",()=>notify(role.value==="approved"?"実アップロード・審査は次期版の接続後に使えます":"投稿申請は承認済みメンバー限定です")));
+
+const submitModal=$("submitModal"),submitForm=$("submitForm"),submitSource=$("submitSource"),submitError=$("submitError");
+let submitType="video";const pending={video:[],photo:[]};
+function updateSourceFields(){
+ const direct=submitSource.value==="file";
+ $("submitFileWrap").hidden=!direct;
+ $("submitUrlWrap").hidden=direct;
+ $("submitUrl").required=!direct;
+ $("submitFile").required=direct;
+}
+function openSubmission(type){
+ if(role.value!=="approved"){notify("作品投稿申請は承認済みメンバー限定です");return}
+ submitType=type;submitForm.reset();submitError.hidden=true;
+ $("submitTitle").value="";$("submitNick").value="デモ参加者";
+ submitSource.innerHTML="";
+ const choices=type==="video"
+   ?[["youtube","YouTubeの動画リンク"],["tiktok","TikTokの動画リンク"],["external","その他のHTTPSリンク"],["file","直接預かった動画"]]
+   :[["external","画像のHTTPSリンク"],["file","直接預かった画像"]];
+ for(const [value,title] of choices){const opt=document.createElement("option");opt.value=value;opt.textContent=title;submitSource.appendChild(opt)}
+ $("submitFile").accept=type==="video"?"video/*":"image/*";
+ updateSourceFields();submitModal.showModal();
+}
+submitSource.addEventListener("change",updateSourceFields);
+$("submitClose").addEventListener("click",()=>submitModal.close());
+submitForm.addEventListener("submit",event=>{
+ event.preventDefault();if(role.value!=="approved"){submitModal.close();notify("投稿権限がありません");return}
+ const title=$("submitTitle").value.trim(),nick=$("submitNick").value.trim(),kind=submitSource.value;
+ const value=$("submitUrl").value.trim(),file=$("submitFile").files[0];
+ let err="";
+ if(!title||!nick)err="作品名と投稿者ニックネームを入力してください";
+ else if(title.length>80||nick.length>30)err="入力文字数を確認してください";
+ else if(!$("submitConsent").checked)err="権利と掲載許可の確認が必要です";
+ else if(kind==="file"&&!file)err="動画または画像ファイルを選択してください";
+ else if(kind==="file"&&file&&!file.type.startsWith(submitType==="video"?"video/":"image/"))err="作品の種類とファイル形式が一致しません";
+ else if(kind!=="file"){
+   try{
+     const u=new URL(value);if(u.protocol!=="https:")throw Error();
+     const host=u.hostname.toLowerCase();
+     if(kind==="youtube"&&!["youtube.com","www.youtube.com","m.youtube.com","youtu.be"].includes(host))throw Error();
+     if(kind==="tiktok"&&!["www.tiktok.com","tiktok.com","m.tiktok.com","vm.tiktok.com","vt.tiktok.com"].includes(host))throw Error();
+   }catch{err="選択した媒体に合ったHTTPSのリンクを入力してください"}
+ }
+ const thumb=$("submitThumb").value.trim();
+ if(!err&&thumb){try{if(new URL(thumb).protocol!=="https:")throw Error()}catch{err="サムネイルはHTTPSのURLを指定してください"}}
+ submitError.hidden=!err;submitError.textContent=err;if(err)return;
+ pending[submitType].push({title, nick,kind});
+ $(submitType==="video"?"videoPending":"photoPending").textContent="この端末のデモ審査待ち： "+pending[submitType].length+"件（公開一覧には出ません）";
+ submitModal.close();notify("審査待ちとして受け付けたデモです。外部保存はされません");
+});
+document.querySelectorAll("[data-submit]").forEach(b=>b.addEventListener("click",()=>openSubmission(b.dataset.submit)));
+
 $("tickerToggle").addEventListener("click",()=>{const paused=$("ticker").classList.toggle("paused");$("tickerToggle").textContent=paused?"再開":"停止";$("tickerToggle").setAttribute("aria-pressed",String(paused))});
 setRole();
 })();
