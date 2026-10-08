@@ -50,3 +50,5 @@
 .page-back{display:inline-flex;align-items:center;gap:5px;margin-bottom:12px;color:#bdeaff;text-decoration:none;font-size:12px;font-weight:800}
 .page-list-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:14px}.page-list-head h1{font-size:25px;margin:3px 0}.page-list-head p{margin:0;font-size:11px;color:#9dbbd4}
 @media(max-width:360px){.home-top-links{grid-template-columns:1fr}.home-summary-card{min-height:112px}}
+
+.info-page .hero{padding:115px 5px 24px}.info-page .hero h1{font-size:29px;margin:14px 0 8px}@media(min-width:520px){.info-page .hero{padding-top:140px}}
