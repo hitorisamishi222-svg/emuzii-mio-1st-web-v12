@@ -90,4 +90,15 @@ function fakeSheet(rows){
   assert.equal(sandbox.activeWebDeviceErrorV189_(null,rows[0]),'');
   assert.equal(sandbox.activeWebDeviceErrorV189_(null,rows[1]),'');
 }
+{
+  const rows=[
+    make('PENDING-A','Maverick','MIO-0013','承認済み','未確認',''),
+    make('PENDING-B','Maverick','MIO-0013','承認待ち','未確認','')
+  ];
+  const {sheet}=fakeSheet(rows);
+  const range={getNumRows:()=>1,getNumColumns:()=>1,getSheet:()=>sheet,getRow:()=>2,getColumn:()=>6};
+  sandbox.webRecoveryOnEdit_({range,value:'承認済み',oldValue:'承認待ち'});
+  assert.equal(rows[0][5],'承認待ち','first of two pending registrations must be manager-reviewed');
+  assert.equal(rows[1][5],'承認待ち');
+}
 console.log('PASS: existing duplicates remain active, explicit safe switch, membership, same-name safety, audit');
