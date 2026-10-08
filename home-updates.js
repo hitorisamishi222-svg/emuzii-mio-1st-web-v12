@@ -106,8 +106,8 @@ function renderHomeSummary(notices=[],schedules=[]){
 
   const sched=home$('homeScheduleSummary');
   if(sched){
-    const s=live||next;
-    const label=live?'配信中':next?'NEXT LIVE':'SCHEDULE';
+    const s=next||live;
+    const label=next?'NEXT LIVE':live?'配信中':'SCHEDULE';
     sched.innerHTML=s
       ? `<span class="home-summary-kicker">${label}</span><strong>${homeEsc(s.title||'配信予定')}</strong><small>${homeEsc(homeFmtDate(s.startAt))} ${homeEsc(homeFmtTime(s.startAt))}〜 · 予定を見る →</small>`
       : '<span class="home-summary-kicker">SCHEDULE</span><strong>現在、登録されている配信予定はありません</strong><small>配信予定を見る →</small>';
