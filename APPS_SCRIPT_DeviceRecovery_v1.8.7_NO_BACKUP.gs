@@ -57,6 +57,8 @@ function setupV189DuplicateReview_(){
     audit.setFrozenRows(1);
   }
   review.getRange(1,1,1,13).setValues([['ColorSing名','照合MIO-ID','Web登録ID','承認状態','端末状態','登録日時','同名登録数','同MIO登録数','本人確認','端末切替操作','結果','処理日時','元シート行']]);
+  review.getRange('N1').setValue('一覧更新');
+  review.getRange('N2').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['更新'],true).setAllowInvalid(false).build());
   review.setFrozenRows(1);
   review.getRange('A1:M1').setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');
   review.getRange('I2:I500').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['未確認','確認済み'],true).setAllowInvalid(false).build());
@@ -86,6 +88,11 @@ function webRecoveryOnEdit_(e){
   if(!e||!e.range||e.range.getNumRows()!==1||e.range.getNumColumns()!==1)return;
   var sh=e.range.getSheet(),row=e.range.getRow(),col=e.range.getColumn();
   if(sh.getName()===DUP_REVIEW_TAB_V189){
+    if(row===2&&col===14&&String(e.value||'')==='更新'){
+      refreshDuplicateReviewV189_();
+      sh.getRange('N2').clearContent();
+      return;
+    }
     if(row<2||col!==10||String(e.value||'')!=='この端末へ切替')return;
     try{
       if(String(sh.getRange(row,9).getDisplayValue()||'')!=='確認済み')
