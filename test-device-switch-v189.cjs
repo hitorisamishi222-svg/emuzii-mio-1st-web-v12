@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const sandbox={console,Date,JSON,Number,Math,String,Array,Error};
 vm.createContext(sandbox);
-for(const name of ['APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs','APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs']){
+for(const name of ['APPS_SCRIPT_Code_v1.8.9_V188_INTEGRATED.gs','APPS_SCRIPT_DeviceRecovery_v1.8.9_V188_INTEGRATED.gs']){
   vm.runInContext(fs.readFileSync(name,'utf8'),sandbox,{filename:name});
 }
 const make=(webId,name,mioId,status,member,device,confirmed='確認済み')=>{
@@ -51,8 +51,8 @@ function fakeSheet(rows){
     make('OTHER','Maverick','MIO-0020','承認済み','確認済み','使用中')
   ];
   const {ss,auditLog}=fakeSheet(rows);
-  assert.equal(sandbox.activeWebDeviceErrorV189_(null,rows[0]),'');
-  assert.equal(sandbox.activeWebDeviceErrorV189_(null,rows[2]),'');
+  assert.equal(sandbox.activeWebDeviceErrorV189_(rows[0]),'');
+  assert.equal(sandbox.activeWebDeviceErrorV189_(rows[2]),'');
   const dup=sandbox.collectDuplicateReviewV189_(ss);
   assert.equal(dup.length,3);
   assert.equal(dup[0].sameName,3);
@@ -67,7 +67,7 @@ function fakeSheet(rows){
   assert.equal(rows[1][16],'使用中');
   assert.equal(rows[1][6],'確認済み','membership transferred');
   assert.equal(rows[2][5],'承認済み','same-name different MIO preserved');
-  assert.match(sandbox.activeWebDeviceErrorV189_(null,rows[0]),/旧端末/);
+  assert.match(sandbox.activeWebDeviceErrorV189_(rows[0]),/旧端末/);
   assert.equal(auditLog.at(-1)[6],'完了');
 }
 {
@@ -100,8 +100,8 @@ function fakeSheet(rows){
     make('B','Maverick','MIO-0013','承認済み','確認済み','使用中')
   ];
   fakeSheet(rows);
-  assert.equal(sandbox.activeWebDeviceErrorV189_(null,rows[0]),'');
-  assert.equal(sandbox.activeWebDeviceErrorV189_(null,rows[1]),'');
+  assert.equal(sandbox.activeWebDeviceErrorV189_(rows[0]),'');
+  assert.equal(sandbox.activeWebDeviceErrorV189_(rows[1]),'');
 }
 {
   const rows=[
@@ -114,4 +114,8 @@ function fakeSheet(rows){
   assert.equal(rows[0][5],'承認待ち','first of two pending registrations must be manager-reviewed');
   assert.equal(rows[1][5],'承認待ち');
 }
-console.log('PASS: existing duplicates remain active, explicit safe switch, membership, same-name safety, audit');
+const core=fs.readFileSync('APPS_SCRIPT_Code_v1.8.9_V188_INTEGRATED.gs','utf8');
+assert.match(core,/activeWebDeviceErrorV189_\(r\)/,'the doPost API must enforce retired-device rejection');
+assert.match(core,/refreshDuplicateReviewV189_\(\)/,'registration should refresh the admin review list');
+assert.doesNotMatch(core,/SECONDARY_SHEET_ID|function\s+backupSweep_\s*\(/,'no second-save code');
+console.log('PASS: v1.8.8 integration syntax, explicit safe switch, legacy protection, and API guard');
