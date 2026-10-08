@@ -25,9 +25,10 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const ring=i%3;
     gem.style.setProperty('--rx',(ring===0?72:ring===1?55:38)+'px');
     gem.style.setProperty('--ry',(ring===0?58:ring===1?43:30)+'px');
-    gem.style.setProperty('--dur',(2.35+ring*.32)+'s');
-    gem.style.setProperty('--idleDur',(8.8+ring*1.15)+'s');
-    gem.style.setProperty('--delay',(-(i/gemLabels.length)*(8.8+ring*1.15))+'s');
+    gem.style.setProperty('--dur',(2.45+ring*.38)+'s');
+    gem.style.setProperty('--idleDur',(9.2+ring*1.3)+'s');
+    gem.style.setProperty('--delay',(-(i/gemLabels.length)*(9.2+ring*1.3))+'s');
+    gem.style.setProperty('--orbitDir',ring===1?'reverse':'normal');
     chamber.append(gem);
   }
   const winnerGem=document.createElement('div');winnerGem.className='v191-winning-gem';winnerGem.dataset.rarity='N';
