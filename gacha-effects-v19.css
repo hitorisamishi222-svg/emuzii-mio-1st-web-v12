@@ -26,9 +26,9 @@
 .v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
 .gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-whale-active .72s ease-in-out infinite alternate}
 .v191-ball-chamber{opacity:.72}
-.v191-gem{animation:v191-gem-orbit var(--idleDur,10s) linear infinite;animation-delay:var(--delay);will-change:transform}
+.v191-gem{animation:v191-gem-orbit var(--idleDur,10s) linear infinite;animation-delay:var(--idleDelay);will-change:transform}
 .gacha-stage.draw-active .v191-ball-chamber{opacity:.98}
-.gacha-stage.draw-active .v191-gem{animation:v191-gem-orbit var(--dur,2.7s) linear infinite;animation-delay:var(--delay)}
+.gacha-stage.draw-active .v191-gem{animation:v191-gem-orbit var(--dur,2.7s) linear infinite;animation-delay:var(--drawDelay)}
 .v19-capsule-img.v191-drop{animation:v191-capsule-drop 1.18s cubic-bezier(.18,.75,.2,1) 1 forwards}
 .gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.75s}
 .gacha-stage.draw-active #crystal{opacity:.08}
