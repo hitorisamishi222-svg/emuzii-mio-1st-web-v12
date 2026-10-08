@@ -56,6 +56,64 @@ function renderHomeSchedules(items=[]){
   }).join('');
 }
 
+function renderHomeSummary(notices=[],schedules=[]){
+  const now=Date.now();
+
+  notices=notices.filter(n=>{
+    const start=homeDate(n.publishedAt),end=homeDate(n.expiresAt);
+    return (!start||start.getTime()<=now)&&(!end||end.getTime()>=now);
+  });
+
+  schedules=schedules.filter(s=>{
+    const start=homeDate(s.startAt),end=homeDate(s.endAt);
+    return start&&(!end||end.getTime()>now);
+  });
+
+  const live=schedules.find(s=>{
+    const start=homeDate(s.startAt),end=homeDate(s.endAt);
+    return start&&start.getTime()<=now&&(!end||end.getTime()>now);
+  });
+
+  const next=schedules.find(s=>{
+    const start=homeDate(s.startAt);
+    return start&&start.getTime()>now;
+  });
+
+  const liveWrap=home$('homeLiveBanner');
+  if(liveWrap){
+    if(!live){
+      liveWrap.hidden=true;
+      liveWrap.innerHTML='';
+    }else{
+      const link=homeSafeUrl(live.url);
+      liveWrap.hidden=false;
+      liveWrap.innerHTML=`<article class="home-top-live">
+        <div class="home-top-live-head"><span class="home-live-pulse"></span><strong>LIVE 配信中</strong><span>${homeEsc(homeFmtTime(live.startAt))}〜</span></div>
+        <h3>${homeEsc(live.title||'配信中')}</h3>
+        ${live.body?`<p>${homeEsc(live.body)}</p>`:''}
+        ${link?`<a class="home-top-live-button" href="${homeEsc(link)}" target="_blank" rel="noopener noreferrer">配信を見る →</a>`:''}
+      </article>`;
+    }
+  }
+
+  const news=home$('homeNewsSummary');
+  if(news){
+    const n=notices[0];
+    news.innerHTML=n
+      ? `<span class="home-summary-kicker">${n.level==='緊急'?'緊急':n.level==='重要'?'重要':'最新'}</span><strong>${homeEsc(n.title||'お知らせ')}</strong><small>${homeIsNew(n)?'NEW · ':''}お知らせを見る →</small>`
+      : '<span class="home-summary-kicker">NEWS</span><strong>現在、新しいお知らせはありません</strong><small>お知らせ一覧を見る →</small>';
+  }
+
+  const sched=home$('homeScheduleSummary');
+  if(sched){
+    const s=live||next;
+    const label=live?'配信中':next?'NEXT LIVE':'SCHEDULE';
+    sched.innerHTML=s
+      ? `<span class="home-summary-kicker">${label}</span><strong>${homeEsc(s.title||'配信予定')}</strong><small>${homeEsc(homeFmtDate(s.startAt))} ${homeEsc(homeFmtTime(s.startAt))}〜 · 予定を見る →</small>`
+      : '<span class="home-summary-kicker">SCHEDULE</span><strong>現在、登録されている配信予定はありません</strong><small>配信予定を見る →</small>';
+  }
+}
+
 async function loadHomeUpdates(){
   const status=home$('homeUpdatesStatus');
   try{
@@ -65,14 +123,17 @@ async function loadHomeUpdates(){
       const r=await fetch(HOME_API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:'{}',credentials:'same-origin',cache:'no-store'});
       d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'取得できませんでした');
     }
-    renderHomeNews(Array.isArray(d.notices)?d.notices:[]);
-    renderHomeSchedules(Array.isArray(d.schedules)?d.schedules:[]);
+    const notices=Array.isArray(d.notices)?d.notices:[];
+    const schedules=Array.isArray(d.schedules)?d.schedules:[];
+    renderHomeNews(notices);
+    renderHomeSchedules(schedules);
+    renderHomeSummary(notices,schedules);
     if(!demo)homeWriteCache(d);
     if(status)status.textContent=demo?'表示デモ':homeStatusTime(d.serverTime||new Date());
   }catch{
     const cached=homeReadCache();
     if(cached){
-      renderHomeNews(cached.notices||[]);renderHomeSchedules(cached.schedules||[]);
+      renderHomeNews(cached.notices||[]);renderHomeSchedules(cached.schedules||[]);renderHomeSummary(cached.notices||[],cached.schedules||[]);
       if(status)status.textContent='前回取得 '+homeFmtTime(new Date(cached.at));
     }else{
       if(home$('homeNewsList'))home$('homeNewsList').innerHTML='<p class="home-empty">お知らせを読み込めませんでした。</p>';
