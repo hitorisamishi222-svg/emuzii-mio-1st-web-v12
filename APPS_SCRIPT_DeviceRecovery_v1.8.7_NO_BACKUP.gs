@@ -7,21 +7,16 @@
  */
 
 
-/** Run on the existing spreadsheet Apps Script only; it never creates a second project. */
-function setupV187Complete(){
-  setup();
-  setupWebRecoveryV187_();
-  setupV189DuplicateReview_();
+/**
+ * Add only the v1.8.9 review sheets to the existing v1.8.8 project.
+ * Do not call setup(): it rewrites existing admin ranges and can disturb the
+ * v1.8.8 gacha controls. The existing webRecoveryOnEdit_ trigger is reused.
+ */
+function setupV189Complete(){
+  return setupV189DuplicateReview_();
 }
 var DUP_REVIEW_TAB_V189='emuzii_重複整理';
 var DUP_AUDIT_TAB_V189='emuzii_端末切替履歴';
-function setupWebRecoveryV187_(){
-  ScriptApp.getProjectTriggers().forEach(function(t){
-    var handler=t.getHandlerFunction();
-    if(handler==='webRecoveryOnEdit_'||handler==='backupSweep_')ScriptApp.deleteTrigger(t);
-  });
-  ScriptApp.newTrigger('webRecoveryOnEdit_').forSpreadsheet(SHEET_ID).onEdit().create();
-}
 
 /** Display duplicates without changing active Web registrations. */
 function collectDuplicateReviewV189_(ss){
@@ -73,11 +68,20 @@ function refreshDuplicateReviewV189_(){
   var review=ss.getSheetByName(DUP_REVIEW_TAB_V189);
   if(!review)throw Error('先にsetupV189DuplicateReview_を実行してください');
   var rows=collectDuplicateReviewV189_(ss),last=Math.max(review.getLastRow(),2);
+  var previous={};
+  if(last>=2){
+    review.getRange(2,1,last-1,13).getValues().forEach(function(r){
+      var webId=String(r[2]||''),mioId=String(r[1]||'');
+      if(webId)previous[webId]={mioId:mioId,status:String(r[3]||''),deviceState:String(r[4]||''),verified:String(r[8]||'')==='確認済み'};
+    });
+  }
   review.getRange(2,1,last-1,13).clearContent();
   if(rows.length){
     var view=rows.map(function(r){return [
       r.name,r.mioId,r.webId,r.status,r.deviceState,r.registeredAt,
-      r.sameName,r.sameMio,'未確認','保留','','',r.row
+      r.sameName,r.sameMio,
+      previous[r.webId]&&previous[r.webId].mioId===r.mioId&&previous[r.webId].status===r.status&&previous[r.webId].deviceState===r.deviceState&&/^MIO-\d{4}$/.test(r.mioId)&&previous[r.webId].verified?'確認済み':'未確認',
+      '保留','','',r.row
     ]});
     review.getRange(2,1,view.length,13).setValues(view);
   }
@@ -158,7 +162,7 @@ function switchApprovedWebRegistrationV189_(newWebId,expectedMioId){
     if(chosen.length!==1)throw Error('対象Web登録IDが一意ではありません');
     var target=chosen[0],v=target.r,id=String(v[7]||''),name=String(v[2]||'');
     if(!/^MIO-\d{4}$/.test(id)||id!==String(expectedMioId||''))throw Error('MIO-IDが一致しません');
-    if(name==='翠央(お試し)')throw Error('管理者テスト用端末は切替対象外です');
+    if(id==='MIO-0004'||name==='翠央(お試し)')throw Error('管理者テスト用端末は切替対象外です');
     if(v[5]!=='承認済み'&&v[5]!=='承認待ち')throw Error('切替対象の承認状態が不正です');
     if(String(v[10]||'')!==id||String(v[11]||'')!=='確認済み'||(v[15]&&String(v[15])!==id))
       throw Error('H/K/P/Lの本人照合が確定していません');
