@@ -23,11 +23,15 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const gem=document.createElement('i');gem.className='v191-gem';gem.dataset.rarity=gemLabels[i];
     const label=document.createElement('span');label.className='v191-gem-label';label.textContent=gemLabels[i];gem.append(label);
     const ring=i%3;
-    gem.style.setProperty('--rx',(ring===0?72:ring===1?55:38)+'px');
-    gem.style.setProperty('--ry',(ring===0?58:ring===1?43:30)+'px');
-    gem.style.setProperty('--dur',(2.45+ring*.38)+'s');
-    gem.style.setProperty('--idleDur',(9.2+ring*1.3)+'s');
-    gem.style.setProperty('--delay',(-(i/gemLabels.length)*(9.2+ring*1.3))+'s');
+    const rx=ring===0?72:ring===1?55:38, ry=ring===0?58:ring===1?43:30;
+    const p=(n)=>n.toFixed(2)+'px';
+    gem.style.setProperty('--x100',p(rx));gem.style.setProperty('--x92',p(rx*.9239));gem.style.setProperty('--x71',p(rx*.7071));gem.style.setProperty('--x38',p(rx*.3827));
+    gem.style.setProperty('--nx100',p(-rx));gem.style.setProperty('--nx92',p(-rx*.9239));gem.style.setProperty('--nx71',p(-rx*.7071));gem.style.setProperty('--nx38',p(-rx*.3827));
+    gem.style.setProperty('--y100',p(ry));gem.style.setProperty('--y92',p(ry*.9239));gem.style.setProperty('--y71',p(ry*.7071));gem.style.setProperty('--y38',p(ry*.3827));
+    gem.style.setProperty('--ny100',p(-ry));gem.style.setProperty('--ny92',p(-ry*.9239));gem.style.setProperty('--ny71',p(-ry*.7071));gem.style.setProperty('--ny38',p(-ry*.3827));
+    const drawDur=2.45+ring*.38,idleDur=9.2+ring*1.3,phase=i/gemLabels.length;
+    gem.style.setProperty('--dur',drawDur+'s');gem.style.setProperty('--idleDur',idleDur+'s');
+    gem.style.setProperty('--delay',(-phase*idleDur)+'s');
     gem.style.setProperty('--orbitDir',ring===1?'reverse':'normal');
     chamber.append(gem);
   }
