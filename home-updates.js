@@ -138,6 +138,7 @@ async function loadHomeUpdates(){
     }else{
       if(home$('homeNewsList'))home$('homeNewsList').innerHTML='<p class="home-empty">お知らせを読み込めませんでした。</p>';
       if(home$('homeScheduleList'))home$('homeScheduleList').innerHTML='<p class="home-empty">配信予定を読み込めませんでした。</p>';
+      renderHomeSummary([],[]);
       if(status)status.textContent='再読み込みしてください';
     }
   }
