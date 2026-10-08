@@ -57,7 +57,7 @@ function webRecoveryOnEdit_(e){
     var values=last>=2?sh.getRange(2,1,last-1,20).getValues():[];
     for(var i=0;i<values.length;i++){
       var otherRow=i+2,r=values[i];
-      if(otherRow===row||String(r[2]||'')!==name||r[5]!=='承認済み')continue;
+      if(otherRow===row||r[5]!=='承認済み')continue; // By MIO-ID, including approved nickname changes
       var otherId=String(r[7]||r[10]||r[15]||'');
       if(otherId!==id)continue;
       sh.getRange(otherRow,6).setValue('却下');
@@ -69,6 +69,55 @@ function webRecoveryOnEdit_(e){
   }
 
   SpreadsheetApp.flush();
+}
+
+/**
+ * Administrative repair for registrations which were already approved before
+ * the onEdit device-switch trigger was installed. Call with the exact Web ID.
+ * Requires an existing, confirmed MIO-ID-to-name link; no rows are deleted.
+ * Never expose this function as a public doPost action.
+ */
+function switchApprovedWebRegistrationV189_(newWebId){
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))throw Error('他の登録更新が実行中です');
+  try{
+    var ss=SpreadsheetApp.openById(SHEET_ID);
+    var web=ss.getSheetByName(WEB_TAB);
+    if(!web)throw Error('Web登録シートが見つかりません');
+    var rows=webActualRows_(web);
+    var matches=[];
+    for(var k=0;k<rows.length;k++){
+      if(String(rows[k][0]||'')===String(newWebId||''))matches.push({row:k+2,data:rows[k]});
+    }
+    if(matches.length!==1)throw Error('対象Web登録IDが一意に見つかりません');
+    var target=matches[0],record=target.data;
+    var name=String(record[2]||''),mioId=String(record[7]||'');
+    if(record[5]!=='承認済み')throw Error('新端末がまだ承認されていません');
+    if(!/^MIO-\d{4}$/.test(mioId)||record[11]!=='確認済み')throw Error('MIO-IDと本人照合が必要です');
+    var people=rows_(ss,'emuzii_参加者').filter(function(p){return String(p[0]||'')===mioId&&String(p[1]||'')===name;});
+    if(people.length!==1)throw Error('本人の登録が一意ではありません');
+    if(name==='翠央(お試し)')throw Error('管理者テスト端末は自動整理対象外です');
+
+    var retired=[];
+    for(var i=0;i<rows.length;i++){
+      var otherRow=i+2,other=rows[i];
+      if(otherRow===target.row||other[5]!=='承認済み'||String(other[7]||'')!==mioId)continue;
+      web.getRange(otherRow,6).setValue('却下');
+      web.getRange(otherRow,17).setValue('旧端末');
+      web.getRange(otherRow,18).setValue('端末切替 '+newWebId+' により旧端末扱い／'+mioId+'維持');
+      web.getRange(otherRow,19).setValue(new Date());
+      ensureWebDerivedRow_(web,otherRow);
+      retired.push(String(other[0]||''));
+    }
+    web.getRange(target.row,17).setValue('使用中');
+    web.getRange(target.row,18).setValue('管理者の端末切替確認済／'+mioId+'維持');
+    web.getRange(target.row,19).setValue(new Date());
+    ensureWebDerivedRow_(web,target.row);
+    SpreadsheetApp.flush();
+    return {ok:true,mioId:mioId,activeWebId:String(newWebId),retiredWebIds:retired};
+  }finally{
+    lock.releaseLock();
+  }
 }
 
 function verifyV187Ready_(){
