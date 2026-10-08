@@ -216,6 +216,10 @@
     {
       "src": "schedule.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "home-top-demo.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
