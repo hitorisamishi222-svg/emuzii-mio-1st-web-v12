@@ -155,3 +155,5 @@
   from{transform:translate(-50%,-50%) scale(1.005)}
   to{transform:translate(-50%,-50%) scale(1.025)}
 }
+
+.v191-gem{animation-direction:var(--orbitDir,normal)}
