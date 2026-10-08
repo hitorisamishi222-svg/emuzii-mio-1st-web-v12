@@ -107,6 +107,25 @@ function webIntegrityOk_(row){
   return row[11]==='確認済み';
 }
 
+/**
+ * Server-side single-active-browser guard. Account ownership is established by
+ * MIO ID and administrator approval, never a fingerprint or matching nickname.
+ */
+function activeWebDeviceErrorV189_(web,record){
+  var registrationId=String(record[0]||'');
+  if(String(record[16]||'')==='旧端末')return 'この登録は旧端末です。新しい端末をご利用ください。';
+  if(record[5]!=='承認済み')return '';
+  var mioId=String(record[7]||'');
+  if(!/^MIO-\d{4}$/.test(mioId))return '';
+  var approved=webActualRows_(web).filter(function(x){
+    return x[5]==='承認済み'&&String(x[7]||'')===mioId;
+  });
+  if(approved.length<=1)return '';
+  var active=approved.filter(function(x){return String(x[16]||'')==='使用中';});
+  if(active.length!==1)return '複数端末が承認されています。運営が端末切替を確認中です。';
+  return String(active[0][0]||'')===registrationId?'':'この登録は旧端末です。新しい端末をご利用ください。';
+}
+
 function autoLinkWebParticipant_(ss,web,participantId,tokenHash,name){
   name=String(name||'').trim();
   if(!name)return '';
@@ -204,6 +223,8 @@ function doPost(e) {
     if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
 
     var r=found[0];
+    var inactiveReason=activeWebDeviceErrorV189_(web,r);
+    if(inactiveReason)return json_({ok:false,error:inactiveReason});
     if(!webIntegrityOk_(r))return json_({ok:false,error:'参加者IDの整合を運営が確認中です'});
     if(d.action==='checkin')return json_(checkinAction_(ss,r,d));
     if(d.action!=='status')return json_(gachaAction_(ss,r,d));
