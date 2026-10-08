@@ -129,23 +129,23 @@
 }
 
 @keyframes v191-gem-orbit{
-  0%{transform:translate(-50%,-50%) translate(var(--rx),0) scale(.86)}
-  6.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.92),calc(var(--ry)*.38)) scale(.89)}
-  12.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.71),calc(var(--ry)*.71)) scale(.93)}
-  18.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.38),calc(var(--ry)*.92)) scale(.97)}
-  25%{transform:translate(-50%,-50%) translate(0,var(--ry)) scale(1)}
-  31.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.38),calc(var(--ry)*.92)) scale(1.04)}
-  37.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.71),calc(var(--ry)*.71)) scale(1.07)}
-  43.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.92),calc(var(--ry)*.38)) scale(1.09)}
-  50%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-1),0) scale(1.1)}
-  56.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.92),calc(var(--ry)*-.38)) scale(1.09)}
-  62.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.71),calc(var(--ry)*-.71)) scale(1.07)}
-  68.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*-.38),calc(var(--ry)*-.92)) scale(1.04)}
-  75%{transform:translate(-50%,-50%) translate(0,calc(var(--ry)*-1)) scale(1)}
-  81.25%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.38),calc(var(--ry)*-.92)) scale(.96)}
-  87.5%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.71),calc(var(--ry)*-.71)) scale(.92)}
-  93.75%{transform:translate(-50%,-50%) translate(calc(var(--rx)*.92),calc(var(--ry)*-.38)) scale(.89)}
-  100%{transform:translate(-50%,-50%) translate(var(--rx),0) scale(.86)}
+  0%{transform:translate(-50%,-50%) translate(var(--x100),0) scale(.86)}
+  6.25%{transform:translate(-50%,-50%) translate(var(--x92),var(--y38)) scale(.89)}
+  12.5%{transform:translate(-50%,-50%) translate(var(--x71),var(--y71)) scale(.93)}
+  18.75%{transform:translate(-50%,-50%) translate(var(--x38),var(--y92)) scale(.97)}
+  25%{transform:translate(-50%,-50%) translate(0,var(--y100)) scale(1)}
+  31.25%{transform:translate(-50%,-50%) translate(var(--nx38),var(--y92)) scale(1.04)}
+  37.5%{transform:translate(-50%,-50%) translate(var(--nx71),var(--y71)) scale(1.07)}
+  43.75%{transform:translate(-50%,-50%) translate(var(--nx92),var(--y38)) scale(1.09)}
+  50%{transform:translate(-50%,-50%) translate(var(--nx100),0) scale(1.1)}
+  56.25%{transform:translate(-50%,-50%) translate(var(--nx92),var(--ny38)) scale(1.09)}
+  62.5%{transform:translate(-50%,-50%) translate(var(--nx71),var(--ny71)) scale(1.07)}
+  68.75%{transform:translate(-50%,-50%) translate(var(--nx38),var(--ny92)) scale(1.04)}
+  75%{transform:translate(-50%,-50%) translate(0,var(--ny100)) scale(1)}
+  81.25%{transform:translate(-50%,-50%) translate(var(--x38),var(--ny92)) scale(.96)}
+  87.5%{transform:translate(-50%,-50%) translate(var(--x71),var(--ny71)) scale(.92)}
+  93.75%{transform:translate(-50%,-50%) translate(var(--x92),var(--ny38)) scale(.89)}
+  100%{transform:translate(-50%,-50%) translate(var(--x100),0) scale(.86)}
 }
 @keyframes v191-whale-active{
   from{transform:translate(-50%,-50%) scale(.99) translateY(3px)}
