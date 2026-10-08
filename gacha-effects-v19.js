@@ -22,8 +22,12 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   for(let i=0;i<gemLabels.length;i++){
     const gem=document.createElement('i');gem.className='v191-gem';gem.dataset.rarity=gemLabels[i];
     const label=document.createElement('span');label.className='v191-gem-label';label.textContent=gemLabels[i];gem.append(label);
-    gem.style.setProperty('--x',(18+(i*23)%68)+'%');gem.style.setProperty('--y',(18+(i*31)%66)+'%');
-    gem.style.setProperty('--dur',(0.34+(i%5)*0.06)+'s');gem.style.setProperty('--idleDur',(2.8+(i%5)*.42)+'s');gem.style.setProperty('--delay',(-i*0.19)+'s');
+    const ring=i%3;
+    gem.style.setProperty('--rx',(ring===0?72:ring===1?55:38)+'px');
+    gem.style.setProperty('--ry',(ring===0?58:ring===1?43:30)+'px');
+    gem.style.setProperty('--dur',(2.35+ring*.32)+'s');
+    gem.style.setProperty('--idleDur',(8.8+ring*1.15)+'s');
+    gem.style.setProperty('--delay',(-(i/gemLabels.length)*(8.8+ring*1.15))+'s');
     chamber.append(gem);
   }
   const winnerGem=document.createElement('div');winnerGem.className='v191-winning-gem';winnerGem.dataset.rarity='N';
