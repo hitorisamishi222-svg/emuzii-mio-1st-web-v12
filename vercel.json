@@ -192,6 +192,10 @@
     {
       "src": "gacha-v19-frame-ur.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "community-demo.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -218,6 +222,10 @@
     {
       "src": "/",
       "dest": "/index.html"
+    },
+    {
+      "src": "/community-demo.html",
+      "dest": "/community-demo.html"
     },
     {
       "src": "/(.*)",
