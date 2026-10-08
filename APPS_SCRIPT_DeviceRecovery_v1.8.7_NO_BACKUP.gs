@@ -162,31 +162,56 @@ function switchApprovedWebRegistrationV189_(newWebId,expectedMioId){
     var other=entries.map(function(x,i){return {r:x,row:i+2};}).filter(function(x){
       return x.row!==target.row&&x.r[5]==='承認済み'&&String(x.r[7]||'')===id;
     });
-    var oldStates=other.map(function(x){
-      return {row:x.row,webId:String(x.r[0]||''),status:String(x.r[5]||''),device:String(x.r[16]||'')};
+    var touched=other.concat([target]);
+    var snapshots=touched.map(function(x){
+      return {row:x.row,webId:String(x.r[0]||''),status:String(x.r[5]||''),
+        member:String(x.r[6]||''),device:String(x.r[16]||''),
+        memo:String(x.r[17]||''),updated:x.r[18]||''};
     });
+    var oldStates=snapshots.filter(function(x){return x.row!==target.row});
     var audit=ss.getSheetByName(DUP_AUDIT_TAB_V189);
     if(!audit)throw Error('管理者用の操作履歴シートがありません');
     var when=new Date();
     audit.appendRow([when,name,id,String(newWebId),oldStates.map(function(x){return x.webId}).join(','),
-      JSON.stringify(oldStates),'切替実行開始','本人確認済み／対象'+target.row+'行']);
+      JSON.stringify(snapshots),'切替実行開始','本人確認済み／対象'+target.row+'行']);
     var logRow=audit.getLastRow();
-    // Do not move attendance, awards, gacha counts, FA or history data.
-    other.forEach(function(x){
-      web.getRange(x.row,6).setValue('却下');
-      web.getRange(x.row,17).setValue('旧端末');
-      web.getRange(x.row,18).setValue('端末切替による無効化／後継 '+newWebId+'／'+id);
-      web.getRange(x.row,19).setValue(when);
-      ensureWebDerivedRow_(web,x.row);
-    });
-    web.getRange(target.row,6).setValue('承認済み');
-    web.getRange(target.row,17).setValue('使用中');
-    web.getRange(target.row,18).setValue('本人確認済み／端末切替確定／'+id);
-    web.getRange(target.row,19).setValue(when);
-    ensureWebDerivedRow_(web,target.row);
-    SpreadsheetApp.flush();
-    audit.getRange(logRow,7).setValue('完了');
+    var transferredMembership=other.some(function(x){return String(x.r[6]||'')==='確認済み';});
+    try{
+      // Preserve all MIO-ID keyed attendance, gacha grants and draws.
+      other.forEach(function(x){
+        web.getRange(x.row,6).setValue('却下');
+        web.getRange(x.row,17).setValue('旧端末');
+        web.getRange(x.row,18).setValue('端末切替による無効化／後継 '+newWebId+'／'+id);
+        web.getRange(x.row,19).setValue(when);
+        ensureWebDerivedRow_(web,x.row);
+      });
+      web.getRange(target.row,6).setValue('承認済み');
+      if(transferredMembership&&String(v[6]||'')!=='確認済み')
+        web.getRange(target.row,7).setValue('確認済み');
+      web.getRange(target.row,17).setValue('使用中');
+      web.getRange(target.row,18).setValue('本人確認済み／端末切替確定／'+id);
+      web.getRange(target.row,19).setValue(when);
+      ensureWebDerivedRow_(web,target.row);
+      SpreadsheetApp.flush();
+      audit.getRange(logRow,7).setValue('完了');
+    }catch(err){
+      // Best-effort rollback if an Apps Script/Sheets operation fails midway.
+      var rollbackIssues=[];
+      snapshots.forEach(function(x){
+        try{
+          web.getRange(x.row,6).setValue(x.status);
+          web.getRange(x.row,7).setValue(x.member);
+          web.getRange(x.row,17).setValue(x.device);
+          web.getRange(x.row,18).setValue(x.memo);
+          web.getRange(x.row,19).setValue(x.updated);
+          ensureWebDerivedRow_(web,x.row);
+        }catch(restoreErr){rollbackIssues.push(x.webId);}
+      });
+      try{audit.getRange(logRow,7).setValue(rollbackIssues.length?'復旧確認必要':'失敗・元に復旧');}catch(ignore){}
+      throw Error(rollbackIssues.length?'切替に失敗しました。復旧確認が必要です':String(err.message||err));
+    }
     return {ok:true,mioId:id,activeWebId:String(newWebId),retiredWebIds:oldStates.map(function(x){return x.webId})};
+
   }finally{
     lock.releaseLock();
   }
