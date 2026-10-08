@@ -1,0 +1,24 @@
+name: Security Foundation Tests
+on:
+  push:
+    paths:
+      - 'security/**'
+      - '.github/workflows/security-foundation.yml'
+  pull_request:
+    paths:
+      - 'security/**'
+      - '.github/workflows/security-foundation.yml'
+permissions:
+  contents: read
+jobs:
+  security-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify security module syntax
+        run: node --check security/guard.js
+      - name: Run security unit tests
+        run: node --test security/guard.test.js
