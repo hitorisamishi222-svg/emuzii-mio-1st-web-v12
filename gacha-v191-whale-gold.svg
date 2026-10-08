@@ -1,25 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700">
 <defs>
-  <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#416fb9"/><stop offset=".48" stop-color="#15346f"/><stop offset="1" stop-color="#071c4b"/></linearGradient>
-  <linearGradient id="trim"><stop stop-color="#fff7c4"/><stop offset=".35" stop-color="#ffca43"/><stop offset=".68" stop-color="#c1760c"/><stop offset="1" stop-color="#fff1a0"/></linearGradient>
-  <radialGradient id="glass"><stop stop-color="#fff6b922"/><stop offset=".72" stop-color="#ffc94218"/><stop offset="1" stop-color="#ffae2736"/></radialGradient>
-  <mask id="cut"><rect width="600" height="700" fill="white"/><ellipse cx="286" cy="330" rx="176" ry="166" fill="black"/></mask>
+  <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5276bd"/><stop offset=".48" stop-color="#173e7e"/><stop offset="1" stop-color="#081f50"/></linearGradient>
+  <linearGradient id="trim"><stop stop-color="#fff7c6"/><stop offset=".48" stop-color="#efb738"/><stop offset="1" stop-color="#fff7c6"/></linearGradient>
+  <radialGradient id="glass"><stop stop-color="#ffffff33"/><stop offset=".62" stop-color="#ffd96522"/><stop offset="1" stop-color="#ffd96555"/></radialGradient>
+  <filter id="soft"><feGaussianBlur stdDeviation="8"/></filter>
 </defs>
-<ellipse cx="302" cy="656" rx="232" ry="28" fill="#160b00" opacity=".5"/>
-<path d="M474 210q74-72 98-22q17 34-33 79q49 5 42 44q-9 50-99 16" fill="url(#body)" stroke="url(#trim)" stroke-width="10"/>
-<path d="M89 308q-54 13-57 58q-2 35 44 24" fill="url(#body)" stroke="url(#trim)" stroke-width="9"/>
-<path d="M101 319Q111 117 286 72Q456 93 501 284Q524 393 476 493Q438 572 304 600Q165 578 108 493Q64 426 101 319Z" fill="url(#body)" stroke="url(#trim)" stroke-width="14" mask="url(#cut)"/>
-<ellipse cx="286" cy="330" rx="184" ry="174" fill="url(#glass)" stroke="#fff5bd" stroke-width="8"/>
-<ellipse cx="286" cy="330" rx="171" ry="162" fill="none" stroke="#ffd958" stroke-opacity=".7" stroke-width="4"/>
-<path d="M166 184Q287 105 407 181" fill="none" stroke="#fff4bb" stroke-width="7" stroke-linecap="round"/>
-<ellipse cx="423" cy="225" rx="12" ry="18" fill="#03091a" transform="rotate(19 423 225)"/>
-<ellipse cx="430" cy="271" rx="23" ry="14" fill="#ffb679" opacity=".75"/>
-<path d="M394 250q27 21 54 0" fill="none" stroke="#fff7cf" stroke-width="5" stroke-linecap="round"/>
-<path d="M185 96l25 18l28-42l28 42l27-18l22 61H163Z" fill="#10285a" stroke="url(#trim)" stroke-width="7"/>
-<path d="M239 95l29 29l-29 28l-29-28z" fill="#ffd453" stroke="#fff7c4" stroke-width="4"/>
-<path d="M160 547Q171 510 210 514Q237 516 252 540Q270 507 304 510Q335 511 348 538Q365 510 398 514Q439 520 450 558L434 621Q402 655 301 661Q193 655 160 621Z" fill="#0e2c61" stroke="url(#trim)" stroke-width="12"/>
-<rect x="216" y="558" width="176" height="82" rx="25" fill="#170d02" stroke="url(#trim)" stroke-width="9"/>
-<path d="M237 557q48-41 97 0" fill="none" stroke="#fff1a0" stroke-width="10" stroke-linecap="round"/>
-<path d="M91 600q48-34 93 0q44 32 88 2q45-29 89 0q44 30 91 0q41-27 77 0" fill="none" stroke="#ffd85a" stroke-width="14" stroke-linecap="round"/>
-<g fill="#fff4b5"><path d="m93 148 8 20 20 8-20 8-8 20-8-20-20-8 20-8z"/><path d="m481 443 7 17 17 7-17 7-7 17-7-17-17-7 17-7z"/></g>
+
+<!-- soft shadow -->
+<ellipse cx="360" cy="640" rx="255" ry="28" fill="#00152f" opacity=".35"/>
+
+<!-- unmistakable whale tail on the left -->
+<path d="M126 300
+         C76 250 30 252 24 292
+         C19 330 60 345 105 335
+         C63 366 55 409 91 425
+         C132 443 164 392 171 342
+         Z"
+      fill="url(#body)" stroke="url(#trim)" stroke-width="11" stroke-linejoin="round"/>
+<path d="M120 308 C86 293 58 299 46 317" fill="none" stroke="#ffffff88" stroke-width="6" stroke-linecap="round"/>
+
+<!-- whale body: long side-profile silhouette -->
+<path d="M130 318
+         C151 185 274 115 425 126
+         C548 135 628 207 647 310
+         C665 406 620 505 531 554
+         C452 598 332 610 233 568
+         C155 535 112 463 118 388
+         C120 360 124 337 130 318 Z"
+      fill="url(#body)" stroke="url(#trim)" stroke-width="14"/>
+
+<!-- round forehead / snout -->
+<path d="M510 192 C608 211 664 279 647 344 C635 389 593 408 544 394"
+      fill="none" stroke="#ffffff33" stroke-width="8" stroke-linecap="round"/>
+
+<!-- clear belly window -->
+<ellipse cx="362" cy="353" rx="176" ry="165" fill="url(#glass)" stroke="#efffff" stroke-width="9"/>
+<ellipse cx="362" cy="353" rx="163" ry="152" fill="none" stroke="#ffd965" stroke-opacity=".75" stroke-width="4"/>
+<path d="M238 246 C296 198 389 183 466 219" fill="none" stroke="#ffffff99" stroke-width="8" stroke-linecap="round"/>
+<path d="M254 255 C307 222 370 210 421 222" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/>
+
+<!-- eye / cheek / smile: face is clearly on the right -->
+<ellipse cx="557" cy="259" rx="13" ry="17" fill="#071b48"/>
+<circle cx="552" cy="253" r="4" fill="#fff"/>
+<ellipse cx="578" cy="302" rx="25" ry="14" fill="#ffbf86" opacity=".78"/>
+<path d="M527 290 C548 309 576 311 599 290" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+<path d="M600 289 C609 285 617 278 623 269" fill="none" stroke="#ffffffaa" stroke-width="3" stroke-linecap="round"/>
+
+<!-- pectoral fin -->
+<path d="M499 460 C562 455 599 482 576 519 C553 555 493 532 461 490"
+      fill="url(#body)" stroke="url(#trim)" stroke-width="10" stroke-linejoin="round"/>
+<path d="M511 477 C536 480 553 489 560 503" fill="none" stroke="#ffffff77" stroke-width="5" stroke-linecap="round"/>
+
+<!-- blowhole -->
+<ellipse cx="452" cy="147" rx="22" ry="9" fill="#092a63" stroke="#fff7c6" stroke-width="5"/>
+
+<!-- cute small crown/fin accent -->
+<path d="M312 150 L331 113 L356 142 L382 105 L405 145 L430 119 L441 170 L309 170 Z"
+      fill="#173b79" stroke="url(#trim)" stroke-width="7" stroke-linejoin="round"/>
+<path d="M361 126 L382 146 L361 168 L340 146 Z" fill="#ffd965" stroke="#fff" stroke-width="4"/>
+
+<!-- gachapon outlet integrated in belly -->
+<path d="M273 520 C286 486 320 473 351 488 C376 465 416 467 438 491 C471 479 506 495 518 531
+         L505 596 C477 626 421 639 364 640 C306 639 251 626 224 596 L219 543
+         C232 520 251 512 273 520 Z"
+      fill="#0c2452" stroke="url(#trim)" stroke-width="12"/>
+<rect x="292" y="538" width="150" height="70" rx="24" fill="#170d02" stroke="url(#trim)" stroke-width="9"/>
+<path d="M320 538 C347 510 387 510 414 538" fill="none" stroke="#ffd965" stroke-width="9" stroke-linecap="round"/>
+
+<!-- whale belly line -->
+<path d="M180 471 C231 535 327 559 424 546 C496 537 550 511 584 474"
+      fill="none" stroke="#082b67" stroke-opacity=".45" stroke-width="5"/>
+
+<!-- sparkles -->
+<g fill="#fff7c6">
+  <path d="m170 175 8 21 21 8-21 8-8 21-8-21-21-8 21-8z"/>
+  <path d="m611 431 7 18 18 7-18 7-7 18-7-18-18-7 18-7z"/>
+</g>
+
+<!-- water line base -->
+<path d="M112 612 C158 579 202 579 247 611 C291 642 335 582 379 611 C424 642 470 582 514 611 C555 638 596 612 621 591"
+      fill="none" stroke="#ffd965" stroke-width="13" stroke-linecap="round"/>
 </svg>
