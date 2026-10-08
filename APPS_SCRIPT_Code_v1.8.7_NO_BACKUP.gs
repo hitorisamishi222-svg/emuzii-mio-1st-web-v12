@@ -112,11 +112,12 @@ function webIntegrityOk_(row){
  * MIO ID and administrator approval, never a fingerprint or matching nickname.
  */
 function activeWebDeviceErrorV189_(web,record){
-  // A previously approved duplicate stays usable until a confirmed switch.
-  // Only an explicitly retired registration is blocked; no implicit winner.
-  var state=String(record[16]||'');
-  if(state==='旧端末')return 'この登録は旧端末です。新しい端末をご利用ください。';
-  if(record[5]==='却下'&&String(record[17]||'').indexOf('端末切替')!==-1)
+  // Approved legacy duplicates remain usable until an explicit manager switch.
+  if(String(record[5]||'')==='承認済み')return '';
+  var note=String(record[17]||'');
+  if(String(record[5]||'')==='却下'&&
+      String(record[16]||'')==='旧端末'&&
+      (note.indexOf('端末切替')!==-1||note.indexOf('後継')!==-1))
     return 'この登録は旧端末です。新しい端末をご利用ください。';
   return '';
 }
