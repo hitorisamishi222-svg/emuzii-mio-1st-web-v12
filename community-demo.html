@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#061735">
+<title>みおコミュニティ｜操作デモ</title>
+<style>
+:root{color-scheme:dark;--ink:#ecfaff;--sub:#aecadd;--blue:#82dcff;--line:#8dd7ff4a;--gold:#ffe2a3}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:linear-gradient(155deg,#031a40e8,#06122af5 60%),radial-gradient(circle at 80% 0,#24c9ff48,transparent 55%),#04102c;color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.55}
+body::before{content:"";position:fixed;pointer-events:none;inset:0;background:radial-gradient(ellipse at 20% 5%,#78e1ff18,transparent 34%);z-index:-1}
+main{max-width:600px;margin:auto;padding:env(safe-area-inset-top) 14px 55px}
+header{display:flex;align-items:center;justify-content:space-between;padding:19px 4px 13px;gap:10px}
+.brand{font-size:17px;letter-spacing:.12em;font-weight:900}.demo-tag{font-size:10px;border:1px solid #91eaff88;padding:5px 9px;border-radius:99px;color:#ceefff}
+.hero{position:relative;overflow:hidden;border:1px solid #b5e8ff65;border-radius:25px;padding:28px 20px 22px;background:radial-gradient(circle at 95% 10%,#43e0ff3d,transparent 38%),linear-gradient(130deg,#124b89,#091d44 70%);box-shadow:0 15px 40px #000a2c99,inset 0 0 55px #4ddfff18}
+.hero::after{content:"✦  ✧  ♡  ✦";position:absolute;right:-24px;top:15px;color:#a5edff63;font-size:43px;transform:rotate(-22deg)}
+.kicker{font-size:10px;letter-spacing:.24em;font-weight:800;color:#89e2ff}.hero h1{font-size:28px;line-height:1.28;margin:10px 0}.hero p{font-size:12px;color:#d0ebff;margin:0}
+.panel{margin:14px 0;border:1px solid var(--line);border-radius:21px;background:#071e44d9;padding:16px;box-shadow:inset 0 0 25px #6adeff09}
+.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.between{justify-content:space-between}.mini{font-size:11px;color:var(--sub)}.section-title{font-size:17px;margin:0 0 12px}
+#roleSelect{border:1px solid #8ddfff88;border-radius:10px;background:#07152d;color:#fff;font:inherit;font-size:13px;padding:9px 11px}
+.role-hint{font-size:12px;color:#bad7ec;margin:9px 0 0}
+.ticker{margin:14px 0;border:1px solid #ffe1a973;border-radius:18px;background:linear-gradient(95deg,#423711b8,#0d2852);display:flex;align-items:center;gap:10px;padding:10px;overflow:hidden}
+.ticker-badge{flex:none;font-size:10px;background:#ffe8b1;color:#574011;border-radius:8px;padding:6px 8px;font-weight:900}.ticker-window{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+.ticker-content{display:inline-block;white-space:nowrap;font-size:12px;font-weight:750;animation:marquee 22s linear infinite;padding-left:100%}
+.ticker.paused .ticker-content{animation-play-state:paused}
+.ticker button{flex:none;border:1px solid #ffe1a955;border-radius:10px;background:#ffffff10;color:white;padding:6px 8px;font-size:11px}
+@keyframes marquee{to{transform:translateX(-100%)}}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:15px 0}.tab{border:1px solid #80c7ff66;border-radius:13px;background:#082653;color:#d3e9fc;font-size:12px;font-weight:850;min-height:47px;padding:8px 2px}
+.tab[aria-selected=true]{background:linear-gradient(115deg,#ddf9ff,#77d9ff);color:#06214a;box-shadow:0 0 20px #64ceff28}
+.chat-window{height:325px;overflow-y:auto;border-radius:15px;border:1px solid #ffffff20;background:#04142c90;padding:12px;display:flex;flex-direction:column;gap:11px}
+.message{max-width:91%;align-self:flex-start;background:#174078;border:1px solid #77caff38;border-radius:14px 14px 14px 3px;padding:10px 12px;overflow-wrap:anywhere}
+.message.mine{align-self:flex-end;background:#165d77;border-color:#91f0f770;border-radius:14px 14px 3px 14px}.message.admin{background:linear-gradient(130deg,#5a4519,#27294c);border-color:#ffe6a46d}
+.message-top{display:flex;align-items:center;gap:8px;color:#cdeaff;font-size:10px;margin-bottom:4px}.name{font-weight:900}.message p{white-space:pre-wrap;margin:0;font-size:13px}
+.composer{margin-top:11px}.composer textarea{width:100%;background:#061733;border:1px solid #86daff65;border-radius:13px;color:#fff;resize:vertical;min-height:76px;padding:12px;font:inherit;font-size:13px}
+button,a{touch-action:manipulation}.action{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;background:linear-gradient(110deg,#e0faff,#6dd4ff);color:#062045;min-height:42px;padding:9px 16px;font-weight:900;font-size:13px;text-decoration:none}
+.action:disabled{opacity:.4;cursor:not-allowed}.outline{border:1px solid #9de6ff8c;background:#15345b;color:#e0f6ff;min-height:38px;padding:8px 13px;border-radius:12px;font-weight:750;font-size:12px}
+.composer-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px}
+.info{font-size:11px;color:#aacee9;margin:8px 0}.notice{font-size:11px;padding:10px 12px;border:1px solid #9be6ff40;border-radius:11px;background:#062552}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.media-card{background:#061a39;border:1px solid #9fe2ff47;border-radius:17px;overflow:hidden;min-width:0;cursor:pointer;text-align:left;color:inherit;padding:0;font:inherit}
+.thumb{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1.35;background:radial-gradient(circle at 30% 20%,#56cfff77,transparent 48%),linear-gradient(140deg,#214c9b,#08203e);font-size:48px}
+.thumb.v2{background:radial-gradient(circle at 80% 0,#ffc2e170,transparent 35%),linear-gradient(140deg,#6244a3,#152554)}
+.thumb.v3{background:radial-gradient(circle at 25% 0,#ffdd8a88,transparent 45%),linear-gradient(140deg,#335aa0,#173053)}
+.media-type{position:absolute;left:8px;top:8px;border-radius:99px;background:#030c20ba;padding:4px 7px;color:#fff;font-size:9px;font-weight:850}
+.play{position:absolute;bottom:8px;right:8px;border-radius:50%;background:#e6faffea;color:#063b65;width:33px;height:33px;display:grid;place-items:center;font-size:15px}
+.media-caption{padding:11px}.media-caption strong{font-size:13px;display:block;overflow-wrap:anywhere}.media-caption span{display:block;font-size:10px;color:#b5d0e7;margin-top:5px}
+.empty{padding:18px;text-align:center;color:#b9d0df;font-size:12px}
+dialog{border:1px solid #8fe5ff80;border-radius:20px;background:#071b3a;color:#eafaff;width:calc(100% - 28px);max-width:470px;box-shadow:0 15px 60px #000b}
+dialog::backdrop{background:#000b}dialog h3{margin:6px 0;font-size:18px}.modal-art{display:grid;place-items:center;min-height:240px;font-size:100px;border-radius:15px;background:radial-gradient(circle,#75e1ff70,transparent 55%),linear-gradient(130deg,#15458b,#0d1b43)}
+.dialog-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);max-width:90vw;background:#e4faff;color:#093057;padding:10px 15px;font-size:12px;border-radius:99px;box-shadow:0 9px 30px #0009;z-index:99}
+[hidden]{display:none!important}
+@media(min-width:530px){main{padding-left:20px;padding-right:20px}.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:355px){.cards{grid-template-columns:1fr}.role-hint{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.ticker-content{animation:none;padding-left:0}}
+</style></head>
+<body><main>
+<header><strong class="brand">翠央 1周年</strong><span class="demo-tag">COMMUNITY DEMO v0.1</span></header>
+<section class="hero"><span class="kicker">MIO FAN COMMUNITY</span><h1>みんなでつながる<br>翠央コミュニティ</h1><p>配信のお知らせ、交流、みんなの作品をひとつに。<br>このページは保存しない操作デモです。</p></section>
+<div class="ticker" id="ticker"><span class="ticker-badge">📢 更新情報</span><div class="ticker-window"><div class="ticker-content" id="tickerText">🐳 ガチャ演出が進化！　✦　📢 お知らせを更新しました　✦　🎬 新しい動画作品が届きました　✦　📅 次回配信の予定を更新しました</div></div><button type="button" id="tickerToggle" aria-pressed="false">停止</button></div>
+<section class="panel"><div class="row between"><div><h2 class="section-title" style="margin:0">参加・閲覧モード</h2><div class="mini">閲覧は全員OK／書き込みは承認制</div></div><select id="roleSelect" aria-label="デモの参加状態"><option value="guest">未登録の訪問者</option><option value="pending">登録済み・承認待ち</option><option value="approved">承認済みメンバー</option></select></div><p class="role-hint" id="roleHint"></p></section>
+<div class="tabs" role="tablist" aria-label="表示切替"><button class="tab" data-tab="chat" role="tab" aria-selected="true">💬 チャット</button><button class="tab" data-tab="video" role="tab" aria-selected="false">🎬 動画</button><button class="tab" data-tab="photo" role="tab" aria-selected="false">🖼 画像</button></div>
+<section class="panel" id="chatPanel"><div class="row between"><h2 class="section-title">💬 みおトーク</h2><span class="mini">公開メッセージのみ表示</span></div>
+<div class="chat-window" id="chatWindow" aria-label="公開チャットのデモ">
+<div class="message admin"><div class="message-top"><span class="name">📣 運営</span><span>お知らせ</span></div><p>翠央1周年へようこそ！みんなで楽しく交流してね💕</p></div>
+<div class="message"><div class="message-top"><span class="name">💎 あおい</span><span>10:12</span></div><p>今日の歌枠も楽しみ〜！🎵</p></div>
+<div class="message"><div class="message-top"><span class="name">🐳 しずく</span><span>10:18</span></div><p>ファンアートできました！ギャラリーに載るのが楽しみ🥰</p></div>
+<div class="message"><div class="message-top"><span class="name">🌸 みるく</span><span>10:24</span></div><p>みんなよろしくお願いします！</p></div>
+</div>
+<div class="composer"><label class="mini" for="messageInput">メッセージを書く（承認済みだけ）</label><textarea id="messageInput" maxlength="300" placeholder="メッセージを入力" disabled></textarea><div class="composer-footer"><span class="mini"><span id="charCount">0</span>/300文字</span><button id="sendButton" class="action" type="button" disabled>送信する →</button></div><p class="info" id="composeHint"></p></div><p class="notice">デモ上の送信は画面内だけに反映され、実際のチャットには公開されません。実運用では投稿権限とスパム対策をサーバー側でも検証します。</p></section>
+<section class="panel" id="videoPanel" hidden><div class="row between"><h2 class="section-title">🎬 みんなの動画</h2><span class="mini">外部リンク＋預かり動画</span></div><div id="videoCards" class="cards"></div><div class="row between" style="margin-top:15px"><p class="info">作品名・サムネ・投稿者ニックネームを表示</p><button type="button" class="outline" data-submit="video">動画を投稿する</button></div><p class="notice">外部動画は公式リンクへ移動。直接預かった動画は別ストレージで管理して公開審査します。</p></section>
+<section class="panel" id="photoPanel" hidden><div class="row between"><h2 class="section-title">🖼 みんなの画像</h2><span class="mini">サムネをタップで拡大</span></div><div id="photoCards" class="cards"></div><div class="row between" style="margin-top:15px"><p class="info">作品名・投稿者表示・説明付き</p><button type="button" class="outline" data-submit="photo">画像を投稿する</button></div><p class="notice">投稿者の掲載許可と運営審査が通った作品だけを公開します。</p></section>
+<p class="mini" style="text-align:center">これは本番に接続しないデモです。表示名と作品はすべてサンプル。</p>
+</main>
+<dialog id="mediaModal"><div class="modal-art" id="modalArt" aria-hidden="true">🐳</div><h3 id="modalTitle">作品</h3><p class="mini" id="modalAuthor"></p><p id="modalDescription" style="font-size:13px"></p><div class="dialog-actions"><button id="modalAction" class="action" type="button">動画リンクを開く</button><button id="modalClose" class="outline" type="button">閉じる</button></div></dialog>
+<div id="toast" role="status" hidden></div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const role=$("roleSelect"),input=$("messageInput"),send=$("sendButton"),hint=$("roleHint"),count=$("charCount"),compose=$("composeHint"),modal=$("mediaModal"),toast=$("toast");
+let lastSend=0;
+const media=[
+{id:"v1",type:"video",source:"YouTube",title:"1周年の歌枠ダイジェスト",author:"💎 あおい",description:"YouTubeに投稿された動画をリンク登録する場合の見本です。",icon:"🎤",cls:"v2"},
+{id:"v2",type:"video",source:"TikTok",title:"みおちゃん応援ショート",author:"🐳 しずく",description:"TikTok動画の投稿リンクを紹介する場合の見本です。",icon:"🎬",cls:"v3"},
+{id:"v3",type:"video",source:"預かり動画",title:"お祝いメッセージ",author:"🌸 みるく",description:"運営が預かった動画を別ストレージに置く場合の見本です。",icon:"💌",cls:""},
+{id:"p1",type:"photo",source:"ファンアート",title:"翠の覚醒",author:"🐳 しずく",description:"作品画像をタップして拡大できる表示の見本です。",icon:"🧝‍♀️",cls:""},
+{id:"p2",type:"photo",source:"記念写真",title:"青い海の記念日",author:"💎 あおい",description:"投稿者名と作品説明を合わせて表示できます。",icon:"🌊",cls:"v2"},
+{id:"p3",type:"photo",source:"ファンアート",title:"1周年おめでとう",author:"🌸 みるく",description:"直接預かった作品のサムネイル表示の見本です。",icon:"🎨",cls:"v3"}];
+function notify(message){toast.textContent=message;toast.hidden=false;clearTimeout(notify.t);notify.t=setTimeout(()=>toast.hidden=true,2600)}
+function setRole(){const ok=role.value==="approved";input.disabled=!ok;send.disabled=!ok;input.placeholder=ok?"みんなにメッセージを送ろう":"承認済みのメンバーだけ書き込めます";hint.textContent=ok?"✅ 投稿が許可された状態のデモです。送信はこの画面内だけ。":role.value==="pending"?"⏳ 閲覧できます。運営の本人照合・承認後に書き込めます。":"👀 誰でも閲覧できます。書き込むには既存参加登録と運営承認が必要です。";compose.textContent=ok?"投稿はデモ内でのみ表示されます。":"現在は閲覧専用モードです。"}
+function card(item){const button=document.createElement("button");button.type="button";button.className="media-card";const thumb=document.createElement("div");thumb.className="thumb "+item.cls;const tag=document.createElement("span");tag.className="media-type";tag.textContent=item.source;const symbol=document.createElement("span");symbol.textContent=item.icon;thumb.append(tag,symbol);if(item.type==="video"){const play=document.createElement("span");play.className="play";play.textContent="▶";thumb.appendChild(play)}const cap=document.createElement("div");cap.className="media-caption";const strong=document.createElement("strong");strong.textContent=item.title;const small=document.createElement("span");small.textContent="投稿者 "+item.author;cap.append(strong,small);button.append(thumb,cap);button.addEventListener("click",()=>showMedia(item));return button}
+for(const m of media){$(m.type==="video"?"videoCards":"photoCards").appendChild(card(m))}
+function showMedia(item){$("modalArt").textContent=item.icon;$("modalTitle").textContent=item.title;$("modalAuthor").textContent="投稿者： "+item.author+" ／ "+item.source;$("modalDescription").textContent=item.description;$("modalAction").hidden=item.type==="photo";if(item.type==="video")$("modalAction").textContent="動画リンク（デモ）";modal.showModal()}
+$("modalAction").addEventListener("click",()=>notify("本番連携前のため外部動画には移動しません"));
+$("modalClose").addEventListener("click",()=>modal.close());
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{const tab=t.dataset.tab;document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",String(x===t)));$("chatPanel").hidden=tab!=="chat";$("videoPanel").hidden=tab!=="video";$("photoPanel").hidden=tab!=="photo"}));
+role.addEventListener("change",setRole);input.addEventListener("input",()=>count.textContent=String(input.value.length));
+send.addEventListener("click",()=>{if(role.value!=="approved"){notify("承認済みの方のみ投稿できます");return}const body=input.value.trim();if(!body){notify("メッセージを入力してください");return}if(Date.now()-lastSend<5000){notify("続けて投稿する場合は5秒待ってね");return}lastSend=Date.now();const el=document.createElement("div");el.className="message mine";const top=document.createElement("div");top.className="message-top";const author=document.createElement("span");author.className="name";author.textContent="💙 デモ参加者";const time=document.createElement("span");time.textContent="いま";top.append(author,time);const p=document.createElement("p");p.textContent=body;el.append(top,p);$("chatWindow").appendChild(el);$("chatWindow").scrollTop=$("chatWindow").scrollHeight;input.value="";count.textContent="0";notify("デモ画面に投稿しました（保存されません）")});
+document.querySelectorAll("[data-submit]").forEach(b=>b.addEventListener("click",()=>notify(role.value==="approved"?"実アップロード・審査は次期版の接続後に使えます":"投稿申請は承認済みメンバー限定です")));
+$("tickerToggle").addEventListener("click",()=>{const paused=$("ticker").classList.toggle("paused");$("tickerToggle").textContent=paused?"再開":"停止";$("tickerToggle").setAttribute("aria-pressed",String(paused))});
+setRole();
+})();
+</script></body></html>
