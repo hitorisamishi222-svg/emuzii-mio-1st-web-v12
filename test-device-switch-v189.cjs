@@ -71,6 +71,19 @@ function fakeSheet(rows){
   assert.equal(auditLog.at(-1)[6],'完了');
 }
 {
+  const rows=[make('TEST','翠央(お試し)','MIO-0004','承認済み','確認済み','使用中')];
+  fakeSheet(rows);
+  assert.throws(()=>sandbox.switchApprovedWebRegistrationV189_('TEST','MIO-0004'),/管理者テスト用端末/);
+  assert.equal(rows[0][5],'承認済み','MIO-0004 must remain approved');
+  assert.equal(rows[0][16],'使用中','MIO-0004 must remain in use');
+}
+{
+  const expected={ok:true};
+  sandbox.setup=()=>{throw Error('legacy setup must not run')};
+  sandbox.setupV189DuplicateReview_=()=>expected;
+  assert.equal(sandbox.setupV189Complete(),expected,'v1.8.9 setup must only add its review sheets');
+}
+{
   const rows=[
     make('OLD','Maverick','MIO-0013','承認済み','確認済み','使用中'),
     make('NEW','Maverick','MIO-0013','承認済み','未確認','')
