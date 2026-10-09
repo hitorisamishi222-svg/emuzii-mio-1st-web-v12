@@ -1,0 +1,25 @@
+name: Large Update Replica Safety
+on:
+  push:
+    branches:
+      - 'release/v2-next-integrated-replica'
+  pull_request:
+    paths:
+      - 'release-prep/**'
+      - 'security/**'
+      - 'community-policy*'
+      - 'vercel.json'
+permissions:
+  contents: read
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static preview safety gate
+        run: node --test release-prep/replica-safety.test.mjs
+      - name: Security & community rules
+        run: node --test security/guard.test.js security/authorization.test.js community-policy.test.js

@@ -1,4 +1,4 @@
-const HOME_API='/api/home-info';
+// No production data connection in replica preview.
 const HOME_CACHE_KEY='mioHomeUpdatesV1';
 const home$=id=>document.getElementById(id);
 let homeRefreshTimer=0;
@@ -117,12 +117,11 @@ function renderHomeSummary(notices=[],schedules=[]){
 async function loadHomeUpdates(){
   const status=home$('homeUpdatesStatus');
   try{
-    const demo=window.__MIO_HOME_DEMO__;
-    let d=demo;
-    if(!d){
-      const r=await fetch(HOME_API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:'{}',credentials:'same-origin',cache:'no-store'});
-      d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'取得できませんでした');
-    }
+    // NEXT TEST ONLY: deliberately never call a live API, even if this page lacks demo seed.
+    const demo=window.__MIO_HOME_DEMO__||{ok:true,serverTime:new Date().toISOString(),
+      notices:[{id:'next-demo',level:'通常',title:'次期版のお知らせ（架空）',body:'これは表示テストです。実際のお知らせではありません。',publishedAt:new Date().toISOString()}],
+      schedules:[]};
+    const d=demo;
     const notices=Array.isArray(d.notices)?d.notices:[];
     const schedules=Array.isArray(d.schedules)?d.schedules:[];
     renderHomeNews(notices);

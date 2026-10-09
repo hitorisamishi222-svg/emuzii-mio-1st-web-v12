@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+const read=x=>readFileSync(new URL('../'+x,import.meta.url),'utf8');
+const config=JSON.parse(read('vercel.json'));
+const src=config.builds.map(x=>x.src);
+test('preview only deploys allowlisted static files, never registration or gacha endpoints',()=>{
+ assert(src.length>12);
+ assert(src.every(x=>x&&!x.startsWith('api')&&x!=='bridge.js'&&x!=='index.html'&&x!=='gacha.html'&&!/\.gs$/i.test(x)));
+ assert(config.builds.every(x=>x.use==='@vercel/static'));
+ assert(config.routes.some(x=>x.src==='^/api(?:/.*)?$'&&x.status===404));
+ assert(config.routes.some(x=>x.src==='^/$'&&x.dest==='/next-preview.html'));
+});
+test('all included static sources are present in replica',()=>{
+ for(const file of src)assert(existsSync(new URL('../'+file,import.meta.url)),file);
+});
+test('public navigation cannot expose unregistered files or production APIs',()=>{
+ const routes=config.routes;
+ const destination=url=>routes.find(x=>new RegExp(x.src).test(url));
+ for(const path of ['/api/register','/api/checkin','/api/gacha','/api/status','/api/home-info','/bridge.js','/index.html','/gacha.html','/APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs']){
+  const found=destination(path);
+  assert(found&&found.status===404,path+' unexpectedly reachable');
+ }
+ assert.equal(destination('/').dest,'/next-preview.html');
+});
+test('home page JS cannot call production API and info pages are seeded with fake data',()=>{
+ const js=read('home-updates.js');
+ assert(!js.includes("fetch(HOME_API"));
+ assert(!js.includes("const HOME_API='/api/home-info'"));
+ for(const path of ['news.html','schedule.html','home-top-demo.html','home-updates-demo.html'])assert(read(path).includes('__MIO_HOME_DEMO__'),path);
+});
+test('community and whale demos have no write endpoint calls',()=>{
+ assert(!/fetch\s*\(/.test(read('community-demo.html')));
+ assert(!/fetch\s*\(/.test(read('gacha-cinematic-demo.html')));
+});
+test('replica includes source login ID recovery and moderation building blocks',()=>{
+ const js=read('app.js');const api=read('api-register.js');
+ assert(js.includes('mioLoginId'));assert(api.includes('loginId'));
+ for(const file of ['security/guard.js','security/authorization.js','community-policy.js'])assert(existsSync(new URL('../'+file,import.meta.url)));
+});
