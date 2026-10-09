@@ -50,3 +50,24 @@ test('replica includes source login ID recovery and moderation building blocks',
  assert(js.includes('mioLoginId'));assert(api.includes('loginId'));
  for(const file of ['security/guard.js','security/authorization.js','community-policy.js'])assert(existsSync(new URL('../'+file,import.meta.url)));
 });
+
+test('Starry Diamond skin loads exclusively in isolated previews and keeps safe mobile defaults',()=>{
+ const css=read('next-sparkle.css');
+ const themes=['next-preview.html','attendance-deluxe-demo.html','mypage-deluxe-demo.html','admin-center-demo.html'];
+ assert(src.includes('next-sparkle.css'),'static CSS must be in build allowlist');
+ assert(config.routes.some(x=>x.src==='^/next-sparkle\\.css$'&&x.dest==='/next-sparkle.css'));
+ for(const page of themes){
+  const html=read(page);
+  assert(html.includes('href="/next-sparkle.css"'),page+' is missing its theme');
+  assert(html.includes('class="next-experience')||html.includes('class="next-experience"'),page+' lacks the theme scope');
+  assert(html.includes('STARRY DIAMOND EDITION'),page+' is missing the edition label');
+  assert(html.includes('aria-hidden="true"'),page+' art should be decorative');
+  assert(!/fetch\\s*\\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage/.test(html),page+' should not connect to live data');
+ }
+ assert(css.includes('prefers-reduced-motion:reduce'),'animations must respect reduced motion');
+ assert(css.includes('max-width:540px'),'mobile adaptation required');
+ assert(!/fetch\\s*\\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage|@import|url\\s*\\(/.test(css),'CSS should not introduce network dependencies');
+ const registered=config.routes.find(x=>x.src==='^/next-sparkle\\.css$');
+ const denyApi=config.routes.findIndex(x=>x.src==='^/api(?:/.*)?$'&&x.status===404);
+ assert(registered&&denyApi>0&&config.routes.indexOf(registered)<denyApi,'CSS route must not expose APIs');
+});
