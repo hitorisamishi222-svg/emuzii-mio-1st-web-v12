@@ -250,3 +250,28 @@ body.next-experience .safety {
   0%,100% {opacity:.45;transform:scale(.85)}
   50% {opacity:1;transform:scale(1.16)}
 }
+
+/* Mobile touch and small-screen readability; NEXT replica only */
+body.next-experience .hero{min-width:0}
+body.next-experience .hero h1,body.next-experience .hero p{overflow-wrap:anywhere}
+body.next-experience .hero h1{position:relative;z-index:2}
+body.next-experience .hero-art{opacity:.58}
+body.next-experience .days .day{position:relative;min-width:0;min-height:44px;touch-action:manipulation}
+body.next-experience .day.done::after{right:3px;top:1px;transform:none}
+body.next-experience .button-row>a.button{display:inline-flex;align-items:center;justify-content:center;text-align:center;min-width:0;min-height:44px;overflow-wrap:anywhere}
+body.next-experience .tab{min-height:44px}
+body.next-experience .mod-card .button{min-height:44px}
+body.next-experience .stats{min-width:0}
+body.next-experience .stat{min-width:0}
+body.next-experience .stat span{overflow-wrap:anywhere}
+@media(max-width:390px){
+ body.next-experience .hero{padding:20px 14px}
+ body.next-experience .hero h1{font-size:clamp(23px,6.7vw,30px)}
+ body.next-experience .hero-art{opacity:.28}
+ body.next-experience .stats{gap:5px}
+ body.next-experience .stat{padding:11px 4px}
+ body.next-experience .days{gap:4px}
+ body.next-experience .day{font-size:12px}
+ body.next-experience .button-row{flex-direction:column}
+ body.next-experience .button-row .button{width:100%}
+}
