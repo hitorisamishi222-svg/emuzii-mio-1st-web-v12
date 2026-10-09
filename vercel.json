@@ -128,6 +128,18 @@
     {
       "src": "next-pages.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "next-integrated.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "next-integrated.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "next-integrated.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -262,6 +274,18 @@
     {
       "src": "^/next-pages\\.js$",
       "dest": "/next-pages.js"
+    },
+    {
+      "src": "^/next-integrated\\.html$",
+      "dest": "/next-integrated.html"
+    },
+    {
+      "src": "^/next-integrated\\.css$",
+      "dest": "/next-integrated.css"
+    },
+    {
+      "src": "^/next-integrated\\.js$",
+      "dest": "/next-integrated.js"
     },
     {
       "src": "^/api(?:/.*)?$",
