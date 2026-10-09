@@ -8,6 +8,7 @@ const js=readFileSync(new URL('../home-updates.js',import.meta.url),'utf8');
 const cfg=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
 const now=Date.parse('2026-10-10T12:00:00+09:00');
 const stamp=n=>new Date(now+n*60*1000).toISOString();
+const relative=n=>new Date(Date.now()+n*60*1000).toISOString();
 function contextWithDom(){
  const roots={};
  for(const id of ['homeNewsList','homeScheduleList','homeLiveBanner','homeNewsSummary','homeScheduleSummary','homeUpdatesStatus'])roots[id]={innerHTML:'',hidden:true,textContent:''};
@@ -44,15 +45,15 @@ test('programs: active first, future chronological, stale and malformed ignored'
 });
 test('news rendering escapes HTML and rejects javascript URL',()=>{
  const {f,roots}=contextWithDom();
- f.renderHomeNews([{title:'<script>x</script>',body:'<img onerror=1>',level:'重要',url:'javascript:alert(1)',publishedAt:stamp(-1)}]);
+ f.renderHomeNews([{title:'<script>x</script>',body:'<img onerror=1>',level:'重要',url:'javascript:alert(1)',publishedAt:relative(-1)}]);
  assert.match(roots.homeNewsList.innerHTML,/&lt;script&gt;/);
  assert.doesNotMatch(roots.homeNewsList.innerHTML,/<script|<img|javascript:/);
 });
 test('LIVE banner appears only for active program with an ending time',()=>{
  const {f,roots}=contextWithDom();
- f.renderHomeSummary([],[{startAt:stamp(-30),title:'Old with no end'}]);
+ f.renderHomeSummary([],[{startAt:relative(-30),title:'Old with no end'}]);
  assert.equal(roots.homeLiveBanner.hidden,true);
- f.renderHomeSummary([],[{startAt:stamp(-2),endAt:stamp(45),title:'Active'}]);
+ f.renderHomeSummary([],[{startAt:relative(-2),endAt:relative(45),title:'Active'}]);
  assert.equal(roots.homeLiveBanner.hidden,false);
  assert.match(roots.homeLiveBanner.innerHTML,/LIVE 配信中/);
 });
