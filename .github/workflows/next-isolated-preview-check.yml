@@ -1,0 +1,26 @@
+name: NEXT isolated preview checks
+on:
+  push:
+    branches:
+      - feature/next-home-easy-wins-20261010
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify isolated preview and its display behavior
+        run: |
+          node --test \
+            community-policy.test.js \
+            security/guard.test.js \
+            security/authorization.test.js \
+            release-prep/replica-safety.test.mjs \
+            release-prep/community-test-schema.test.mjs \
+            release-prep/home-display.test.mjs
