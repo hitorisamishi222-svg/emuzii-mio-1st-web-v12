@@ -1,0 +1,252 @@
+/* NEXT TEST ONLY — Starry Diamond Edition.
+ * Decorative, CSS-only enhancement for static replica previews.
+ * No network calls, user identity, API, local storage or production styles.
+ */
+body.next-experience {
+  --starlight:#e6faff;
+  --rose-light:#ffd4f3;
+  --twilight:#b9b6ff;
+  --glow:#8ceeff;
+  background:
+    radial-gradient(ellipse at 10% 8%,rgba(126,97,208,.22),transparent 35%),
+    radial-gradient(ellipse at 93% 18%,rgba(49,184,225,.29),transparent 38%),
+    radial-gradient(ellipse at 50% 110%,rgba(243,137,202,.12),transparent 55%),
+    linear-gradient(163deg,#06132d 0%,#0b2555 53%,#041129 100%);
+}
+body.next-experience::before {
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  opacity:.68;
+  background-image:
+    radial-gradient(circle at 12% 12%,#f1fcff 0 1px,transparent 2px),
+    radial-gradient(circle at 83% 8%,#f9d9ff 0 1.5px,transparent 2.5px),
+    radial-gradient(circle at 73% 32%,#c5ffff 0 1px,transparent 2px),
+    radial-gradient(circle at 9% 48%,#ffe8fb 0 1px,transparent 2px),
+    radial-gradient(circle at 89% 59%,#c8e5ff 0 1.5px,transparent 2.5px),
+    radial-gradient(circle at 18% 80%,#aff7ff 0 1px,transparent 2px),
+    radial-gradient(circle at 66% 89%,#fff2cb 0 1px,transparent 2px);
+}
+body.next-experience main {
+  position:relative;
+  z-index:1;
+}
+body.next-experience .mast,
+body.next-experience .head {
+  position:relative;
+  z-index:2;
+}
+body.next-experience .logo,
+body.next-experience .brand {
+  text-shadow:0 0 18px rgba(138,225,255,.38);
+}
+body.next-experience .chip,
+body.next-experience .tag {
+  background:linear-gradient(120deg,rgba(54,78,146,.55),rgba(107,55,128,.18));
+  border-color:rgba(255,218,161,.75);
+  box-shadow:inset 0 0 12px rgba(255,230,165,.08),0 0 16px rgba(255,228,153,.1);
+}
+body.next-experience .hero {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border-color:rgba(185,230,255,.76);
+  background:
+    radial-gradient(ellipse at 90% 8%,rgba(228,161,255,.30),transparent 48%),
+    radial-gradient(ellipse at 3% 100%,rgba(75,231,253,.20),transparent 50%),
+    linear-gradient(128deg,rgba(27,90,165,.96),rgba(13,47,104,.95) 61%,rgba(16,33,73,.98));
+  box-shadow:
+    0 18px 42px rgba(0,7,32,.48),
+    inset 0 1px 0 rgba(238,250,255,.36),
+    0 0 25px rgba(91,188,246,.13);
+}
+body.next-experience .hero::before {
+  content:"";
+  position:absolute;
+  inset:1px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(145deg,rgba(255,255,255,.10),transparent 38%,rgba(252,172,243,.045));
+}
+body.next-experience .hero > :not(.hero-art) {
+  position:relative;
+  z-index:2;
+}
+body.next-experience .hero h1 {
+  text-shadow:0 2px 18px rgba(0,18,57,.42);
+}
+body.next-experience .hero p {
+  color:#e0f2ff;
+}
+body.next-experience .design-edition {
+  display:inline-block;
+  margin:6px 0 0;
+  padding:3px 10px;
+  border:1px solid rgba(255,206,244,.55);
+  border-radius:999px;
+  background:rgba(61,33,115,.26);
+  color:#ffe0f7;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-shadow:0 0 12px rgba(255,179,244,.5);
+}
+body.next-experience .hero-art {
+  position:absolute;
+  top:3px;
+  right:2%;
+  width:153px;
+  height:156px;
+  z-index:1;
+  pointer-events:none;
+}
+body.next-experience .hero-gem {
+  position:absolute;
+  top:36px;
+  right:43px;
+  font-size:64px;
+  line-height:1;
+  filter:drop-shadow(0 0 22px rgba(116,220,255,.80));
+  animation:gemFloat 5.5s ease-in-out infinite;
+}
+body.next-experience .hero-orbit {
+  position:absolute;
+  inset:21px 16px;
+  border:1px solid rgba(193,246,255,.32);
+  border-radius:50%;
+  transform:rotate(-25deg) scaleY(.66);
+  box-shadow:0 0 22px rgba(110,202,255,.24),inset 0 0 20px rgba(251,188,247,.08);
+}
+body.next-experience .hero-spark {
+  position:absolute;
+  display:block;
+  color:#f5fdff;
+  text-shadow:0 0 13px rgba(235,246,255,.95);
+  animation:starTwinkle 4s ease-in-out infinite;
+}
+body.next-experience .hero-spark-a {top:15px;right:24px;font-size:32px}
+body.next-experience .hero-spark-b {top:103px;right:120px;font-size:24px;color:var(--rose-light);animation-delay:1.3s}
+body.next-experience .panel,
+body.next-experience .meta {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(145,208,248,.48);
+  background:linear-gradient(137deg,rgba(17,51,109,.94),rgba(7,28,66,.97));
+  box-shadow:0 12px 28px rgba(0,12,43,.32),inset 0 1px 0 rgba(220,246,255,.10);
+}
+body.next-experience .panel::before,
+body.next-experience .meta::before {
+  content:"";
+  position:absolute;
+  top:0;left:11%;right:11%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,220,252,.65),rgba(150,246,255,.7),transparent);
+  pointer-events:none;
+}
+body.next-experience .stat {
+  border-color:rgba(137,224,249,.43);
+  background:linear-gradient(150deg,rgba(13,45,89,.94),rgba(24,28,76,.87));
+  box-shadow:inset 0 1px 0 rgba(241,253,255,.13);
+}
+body.next-experience .stat strong {
+  color:#f0fcff;
+  text-shadow:0 0 14px rgba(99,213,255,.25);
+}
+body.next-experience .button:not(.warn):not(.ghost) {
+  background:linear-gradient(120deg,#e1fcff,#9ddaff 52%,#e9c6fa);
+  box-shadow:0 5px 16px rgba(91,192,253,.18);
+}
+body.next-experience .button,
+body.next-experience .tab {
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+body.next-experience .button:active,
+body.next-experience .tab:active {
+  transform:scale(.98);
+}
+body.next-experience .day.done {
+  background:linear-gradient(140deg,#187ebc,#1e548e 55%,#684587);
+  box-shadow:inset 0 1px 0 rgba(223,247,255,.22);
+}
+body.next-experience .day.active {
+  box-shadow:0 0 0 2px rgba(255,222,169,.20),0 0 17px rgba(255,198,239,.42);
+}
+body.next-experience .avatar {
+  background:radial-gradient(circle at 26% 20%,#d8ffff,#82caff 45%,#5752ac 100%);
+  box-shadow:0 0 0 4px rgba(175,226,255,.13),0 0 28px rgba(145,179,255,.24);
+}
+body.next-experience a.card {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(145,219,255,.56);
+  background:
+    radial-gradient(circle at 95% 2%,rgba(245,186,248,.18),transparent 55%),
+    linear-gradient(154deg,#185398,#112d69 75%,#101f4b);
+  box-shadow:0 12px 27px rgba(0,8,37,.42),inset 0 1px 0 rgba(235,250,255,.17);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+}
+body.next-experience a.card::before {
+  content:"✦";
+  position:absolute;
+  right:13px;
+  top:7px;
+  font-size:19px;
+  color:#fae6ff;
+  opacity:.78;
+  text-shadow:0 0 15px rgba(255,210,248,.65);
+}
+body.next-experience a.card:nth-child(3n+2) {
+  background:radial-gradient(circle at 98% 4%,rgba(124,220,255,.22),transparent 60%),linear-gradient(154deg,#1a4c90,#192d68 75%,#161f4a);
+}
+body.next-experience a.card .symbol {
+  filter:drop-shadow(0 0 9px rgba(143,238,255,.32));
+}
+body.next-experience a.card .status {
+  color:#d8f5ff;
+  font-weight:750;
+}
+body.next-experience .feedback {
+  border-color:rgba(139,240,233,.61);
+}
+body.next-experience .notice,
+body.next-experience .safety {
+  border-color:rgba(137,232,255,.66);
+  box-shadow:inset 0 1px 0 rgba(232,249,255,.08);
+}
+@media (hover:hover) and (pointer:fine) {
+  body.next-experience a.card:hover {
+    transform:translateY(-3px);
+    border-color:rgba(241,199,249,.85);
+    box-shadow:0 17px 32px rgba(0,8,37,.48),0 0 22px rgba(180,175,254,.17);
+  }
+  body.next-experience .button:hover {
+    box-shadow:0 7px 21px rgba(141,206,255,.21);
+  }
+}
+@media (max-width:540px) {
+  body.next-experience .hero-art {
+    top:11px;right:-15px;width:105px;height:110px;opacity:.65;
+  }
+  body.next-experience .hero-gem {font-size:43px;top:35px;right:38px}
+  body.next-experience .hero-orbit {inset:15px 11px}
+  body.next-experience .hero-spark-a {font-size:24px;right:17px}
+  body.next-experience .hero-spark-b {font-size:20px;top:75px;right:85px}
+  body.next-experience .design-edition {font-size:9px;letter-spacing:.04em}
+}
+@media (prefers-reduced-motion:reduce) {
+  body.next-experience .hero-gem,
+  body.next-experience .hero-spark {animation:none!important}
+  body.next-experience a.card,
+  body.next-experience .button,
+  body.next-experience .tab {transition:none!important}
+}
+@keyframes gemFloat {
+  0%,100% {transform:translateY(0) rotate(-5deg)}
+  50% {transform:translateY(-9px) rotate(5deg)}
+}
+@keyframes starTwinkle {
+  0%,100% {opacity:.45;transform:scale(.85)}
+  50% {opacity:1;transform:scale(1.16)}
+}
