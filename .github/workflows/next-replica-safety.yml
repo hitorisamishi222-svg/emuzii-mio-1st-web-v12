@@ -3,12 +3,16 @@ on:
   push:
     branches:
       - 'release/v2-next-integrated-replica'
+      - 'feature/next-sparkle-ux-20261009'
   pull_request:
     paths:
       - 'release-prep/**'
       - 'security/**'
       - 'community-policy*'
       - 'vercel.json'
+      - 'next-sparkle.css'
+      - 'next-preview.html'
+      - '*-deluxe-demo.html'
 permissions:
   contents: read
 jobs:
