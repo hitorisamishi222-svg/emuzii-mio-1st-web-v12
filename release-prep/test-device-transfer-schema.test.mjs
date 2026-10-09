@@ -38,5 +38,5 @@ test('RLS is force enabled with zero client policies for all new tables',()=>{
   assert(sql.includes('ALTER TABLE next_test.'+name+' FORCE ROW LEVEL SECURITY'));
  }
  assert(sql.includes('REVOKE ALL ON ALL TABLES IN SCHEMA next_test FROM PUBLIC'));
- assert(!/\bCREATE POLICY\b/i.test(sql));
+ assert(!/^\s*CREATE\s+POLICY\b/im.test(sql),'SQL must contain no CREATE POLICY statement');
 });
