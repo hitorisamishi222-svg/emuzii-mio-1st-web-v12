@@ -2,6 +2,7 @@ const $=id=>document.getElementById(id);
 const attendanceDay=$('attendanceDay');
 let attendanceConfirmedDays=new Set(),attendanceLockedDays=new Set(),attendanceAchieved=false;
 const NAME_KEY='mioColorSingName';
+const LOGIN_ID_KEY='mioLoginId';
 const ATTEMPT_KEY='mioAttendanceAttemptsV1';
 let registered=false;
 
@@ -25,6 +26,7 @@ function syncAttendanceLock(){
 }
 attendanceDay?.addEventListener('change',syncAttendanceLock);
 try{const saved=localStorage.getItem(NAME_KEY);if(saved&&$('name'))$('name').value=saved}catch{}
+try{const savedLoginId=localStorage.getItem(LOGIN_ID_KEY);if(savedLoginId&&$('loginId'))$('loginId').value=savedLoginId}catch{}
 
 function message(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error)}
 function parseApiResponse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'接続先の応答を確認できませんでした'}}}
@@ -39,9 +41,10 @@ function display(d){
   $('personal').hidden=false;
   $('status').textContent=d.status||'';
   $('greeting').textContent=(d.name||'')+' さん';
-  $('participantId').textContent='登録ID：'+d.participantId;
+  $('participantId').textContent='登録ID：'+d.participantId+(d.loginId?' ／ ログインID：'+d.loginId:'');
   if($('name')){$('name').value=d.name||$('name').value;$('registerButton').textContent='この名前で参加状況を更新'}
   try{if(d.name)localStorage.setItem(NAME_KEY,d.name)}catch{}
+  try{if(d.loginId){localStorage.setItem(LOGIN_ID_KEY,d.loginId);if($('loginId'))$('loginId').value=d.loginId}}catch{}
   $('counts').hidden=!d.progress;
   $('gachaDetail').textContent='';
   if(d.progress){
@@ -84,7 +87,9 @@ $('register')?.addEventListener('submit',async e=>{
   $('registerButton').disabled=true;
   if(registered){message('最新情報を読み込んでいます…');try{await refresh()}finally{$('registerButton').disabled=false};return}
   message('登録を保存しています…');
-  try{await post('/api/register',{name});await refresh()}catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}
+  const loginId=$('loginId')?$('loginId').value.trim():'';
+  try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
+  try{const d=await post('/api/register',{name,loginId});if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{};await refresh()}catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}
 });
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
