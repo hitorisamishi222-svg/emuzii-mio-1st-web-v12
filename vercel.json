@@ -144,6 +144,10 @@
     {
       "src": "next-return.css",
       "use": "@vercel/static"
+    },
+    {
+      "src": "next-premium.css",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -294,6 +298,10 @@
     {
       "src": "^/next-return\\.css$",
       "dest": "/next-return.css"
+    },
+    {
+      "src": "^/next-premium\\.css$",
+      "dest": "/next-premium.css"
     },
     {
       "src": "^/api(?:/.*)?$",
