@@ -11,6 +11,8 @@ on:
       - 'community-policy*'
       - 'vercel.json'
       - 'next-sparkle.css'
+      - 'next-premium-v2.css'
+      - '*-demo.html'
       - 'next-preview.html'
       - '*-deluxe-demo.html'
 permissions:
@@ -24,6 +26,6 @@ jobs:
         with:
           node-version: '22'
       - name: Static preview safety gate
-        run: node --test release-prep/replica-safety.test.mjs release-prep/community-test-schema.test.mjs release-prep/test-device-transfer-schema.test.mjs
+        run: node --test release-prep/replica-safety.test.mjs release-prep/community-test-schema.test.mjs release-prep/test-device-transfer-schema.test.mjs release-prep/premium-content-visuals.test.mjs
       - name: Security & community rules
         run: node --test security/guard.test.js security/authorization.test.js security/test-device-session.test.js security/test-device-transfer.test.js community-policy.test.js
