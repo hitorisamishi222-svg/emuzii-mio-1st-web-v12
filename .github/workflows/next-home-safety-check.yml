@@ -19,6 +19,7 @@ jobs:
         run: |
           node --test \
             release-prep/home-display.test.mjs \
+            release-prep/admin-preview.test.mjs \
             release-prep/replica-safety.test.mjs \
             release-prep/community-test-schema.test.mjs \
             community-policy.test.js \
