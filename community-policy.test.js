@@ -10,6 +10,25 @@ test('approved and active matched participant may post; all other identities den
  assert.equal(mayWrite({identity,permission:{...permission,participantId:'MIO-0002'}}),false);
  assert.equal(mayWrite({identity:null,permission}),false);
 });
+test('missing, empty, or malformed participant IDs never authorize community posting',()=>{
+ const validIdentity={verified:true,active:true,participantId:'MIO-0001'};
+ const validPermission={approved:true,participantId:'MIO-0001'};
+ const badIds=[undefined,null,'','   ',0,24,false,{},[]];
+ for(const badId of badIds){
+  const identity={...validIdentity,participantId:badId};
+  const permission={...validPermission,participantId:badId};
+  assert.equal(mayWrite({identity,permission}),false,'matching invalid IDs must be denied: '+String(badId));
+  assert.equal(mayWrite({identity,permission:validPermission}),false,'invalid identity ID must be denied');
+  assert.equal(mayWrite({identity:validIdentity,permission}),false,'invalid permission ID must be denied');
+ }
+ assert.equal(mayWrite({identity:{verified:true,active:true},permission:{approved:true}}),false,'both missing IDs must be denied');
+ assert.equal(mayWrite({identity:validIdentity,permission:undefined}),false);
+ assert.equal(mayWrite({identity:validIdentity,permission:{approved:true}}),false);
+ assert.equal(mayWrite({identity:validIdentity,permission:{...validPermission,approved:false}}),false);
+ assert.equal(mayWrite({identity:{...validIdentity,verified:false},permission:validPermission}),false);
+ assert.equal(mayWrite({identity:{...validIdentity,active:false},permission:validPermission}),false);
+ assert.equal(mayWrite({identity:validIdentity,permission:validPermission}),true,'verified matching IDs stay authorized');
+});
 test('message validation rejects HTML, URLs, control chars and excess length',()=>{
  assert.deepEqual(validatePublicMessage(' こんにちは '),{ok:true,body:'こんにちは'});
  for(const bad of ['',' '.repeat(8),'<script>alert(1)</script>','https://example.com','javascript:alert(1)','\u0000abc','a'.repeat(301)])
