@@ -7,6 +7,7 @@
 <meta name="description" content="翠央1周年大型更新の統合プレビュー。すべて架空データの表示デモです。">
 <title>翠央 1周年｜大型更新 統合ホーム TEST</title>
 <link rel="stylesheet" href="/next-integrated.css">
+<link rel="stylesheet" href="/next-premium.css">
 </head>
 <body class="next-integrated next-experience">
 <a class="skip-link" href="#main">本文へ移動</a>
@@ -20,24 +21,27 @@
  </div>
 </header>
 <main id="main">
- <section class="mio-hero" aria-label="翠央1周年の記念トップ画面">
+ <section class="mio-hero cinematic-hero" aria-label="翠央1周年の記念トップ画面">
   <picture class="hero-picture" aria-hidden="true">
    <source media="(max-width: 700px)" srcset="/assets/bg-top-mobile.webp">
    <img src="/assets/bg-top-desktop.webp" alt="" fetchpriority="high" decoding="async">
   </picture>
-  <div class="hero-shade"></div>
+  <div class="hero-shade" aria-hidden="true"></div>
+  <div class="cinema-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="hero-crest" aria-hidden="true"><span>✧</span><strong>01</strong><small>ANNIVERSARY</small></div>
   <div class="hero-copy">
-   <span class="hero-date">2026.10.01 — 10.31</span>
-   <span class="hero-edition">✦ STARRY DIAMOND EDITION ✦</span>
-   <h1>翠央と彩る、<br>1周年のひと月。</h1>
-   <p>歌と笑顔と、31日間の思い出。<br>今日も一緒に、特別な時間を。</p>
+   <span class="hero-date">OCTOBER 01 — 31 / 2026</span>
+   <span class="hero-edition">MIO 1ST ANNIVERSARY <b>✦</b> STARRY DIAMOND</span>
+   <h1>翠央と彩る、<br><em>一周年の物語。</em></h1>
+   <p>出会えた奇跡を、未来の宝物に。<br>歌と笑顔が輝く、31日間を一緒に。</p>
    <div class="hero-actions">
-    <a class="action-primary" href="/attendance-deluxe-demo.html">🏆 皆勤賞をみる <span aria-hidden="true">→</span></a>
-    <a class="action-secondary" href="#events">企画を楽しむ ↓</a>
+    <a class="action-primary" href="/attendance-deluxe-demo.html">1周年の軌跡を見る <span aria-hidden="true">↗</span></a>
+    <a class="action-secondary" href="#events">イベントを楽しむ <span aria-hidden="true">↓</span></a>
    </div>
   </div>
+  <div class="hero-foot" aria-hidden="true"><span>SCROLL TO EXPLORE</span><span class="hero-foot-line"></span><span>01 / 03</span></div>
  </section>
- <div class="content-wrap">
+<div class="content-wrap">
  <p class="demo-banner" role="note"><span aria-hidden="true">🛡️</span><span><strong>大型更新の統合テスト画面です。</strong> お知らせ・配信予定・参加状況は架空のサンプル。本番の登録・皆勤・ガチャ回数・管理データには接続していません。</span></p>
 
  <section id="latest" class="section-block" aria-labelledby="latestTitle">
@@ -58,24 +62,44 @@
   <p class="demo-description">※「配信中」「次回予定」は動作サンプルです。実際の翠央の配信状況ではありません。</p>
  </section>
 
- <section id="events" class="section-block" aria-labelledby="eventsTitle">
-  <div class="section-heading"><div><span class="eyebrow">ANNIVERSARY EVENTS</span><h2 id="eventsTitle">1周年イベント</h2></div><span class="section-star" aria-hidden="true">✧</span></div>
+ <section id="events" class="section-block premium-events" aria-labelledby="eventsTitle">
+  <div class="section-heading"><div><span class="eyebrow">THE ANNIVERSARY COLLECTION</span><h2 id="eventsTitle">この瞬間を、宝物に。</h2><p class="section-lead">記念の31日間と、特別なガチャ。思い出をひとつずつ重ねていこう。</p></div><span class="section-star" aria-hidden="true">✧</span></div>
   <div class="event-grid">
-   <a class="feature-card attendance" href="/attendance-deluxe-demo.html"><div class="feature-art" aria-hidden="true">🏆<span>✦</span></div><span class="feature-kicker">31 DAYS CHALLENGE</span><h3>1周年月間皆勤賞</h3><p>31日分の足あとをカレンダーで。達成への道のりをきらめく記録に。</p><span class="feature-cta">皆勤賞の画面を見る →</span></a>
-   <a class="feature-card gacha" href="/gacha-cinematic-demo.html"><div class="feature-art whale" aria-hidden="true">🐳<span>💎</span></div><span class="feature-kicker">DIAMOND GACHA</span><h3>豪華クジラガチャ</h3><p>メンシプ＆ラキフェス、ブルーとゴールドの特別演出を楽しもう。</p><span class="feature-cta">演出を体験する →</span></a>
+   <a class="feature-card attendance premium-feature" href="/attendance-deluxe-demo.html">
+    <div class="premium-art calendar-art" aria-hidden="true">
+     <div class="art-points">✦　·　✧</div>
+     <div class="calendar-glass"><span class="calendar-head">ANNIVERSARY / OCTOBER</span><div class="calendar-month"><span>OCT</span><strong>31</strong></div><div class="calendar-tiles"><span class="day-lit">1</span><span class="day-lit">2</span><span class="day-lit">3</span><span class="day-lit">4</span><span class="day-lit">5</span><span class="day-lit">6</span><span class="day-lit">7</span><span class="">8</span><span class="day-lit">9</span><span class="day-lit">10</span><span class="day-lit">11</span><span class="day-lit">12</span><span class="day-lit">13</span><span class="">14</span><span class="day-lit">15</span><span class="">16</span><span class="">17</span><span class="day-lit">18</span><span class="">19</span><span class="">20</span><span class="">21</span><span class="day-lit">22</span><span class="">23</span><span class="">24</span><span class="">25</span><span class="">26</span><span class="">27</span><span class="">28</span><span class="">29</span><span class="">30</span><span class="">31</span></div></div>
+     <span class="art-corner">EST. 2026 / MIO</span>
+    </div>
+    <div class="premium-copy"><span class="feature-kicker">01 · DAILY MEMORY</span><h3>1周年月間皆勤賞</h3><p>毎日の小さな「会えたね」を、きらめく31日間の記録に。</p><span class="feature-cta">皆勤賞カレンダーへ <span aria-hidden="true">↗</span></span></div>
+   </a>
+   <a class="feature-card gacha premium-feature" href="/gacha-cinematic-demo.html">
+    <div class="premium-art whale-art" aria-hidden="true"><span class="art-halo art-halo-a"></span><span class="art-halo art-halo-b"></span>
+     <img class="whale-illustration whale-blue" src="/gacha-v191-whale-blue.svg" alt="" loading="lazy">
+     <img class="whale-illustration whale-gold" src="/gacha-v191-whale-gold.svg" alt="" loading="lazy">
+     <span class="diamond-shine">✦</span><span class="art-corner">BLUE / GOLD EDITION</span>
+    </div>
+    <div class="premium-copy"><span class="feature-kicker">02 · SPECIAL EXPERIENCE</span><h3>プレミアムガチャ</h3><p>メンシプとラキフェス、ふたつの世界が重なる特別演出。</p><span class="feature-cta">クジラガチャを体験 <span aria-hidden="true">↗</span></span></div>
+   </a>
   </div>
+  <p class="demo-description">※画面に表示される日数・演出はTEST用サンプルです。ガチャ回数は消費しません。</p>
  </section>
-
- <section id="community" class="section-block" aria-labelledby="communityTitle">
-  <div class="section-heading"><div><span class="eyebrow">MIO COMMUNITY</span><h2 id="communityTitle">みんなが集まる場所</h2></div><span class="section-star" aria-hidden="true">♡</span></div>
-  <a class="community-banner" href="/community-demo.html"><span class="community-mark" aria-hidden="true">💬</span><span class="community-text"><strong>みおコミュニティ</strong><small>おしゃべり・動画・写真・ファンアートをひとつに。みんなでつくる1周年の思い出。</small><em>コミュニティを開く →</em></span></a>
+<section id="community" class="section-block premium-community" aria-labelledby="communityTitle">
+  <div class="section-heading"><div><span class="eyebrow">A PLACE TO BELONG</span><h2 id="communityTitle">「好き」が、つながる場所。</h2><p class="section-lead">歌も、思い出も、誰かの描いた一枚も。みんなの宝物になる場所。</p></div><span class="section-star" aria-hidden="true">♡</span></div>
+  <a class="community-stage" href="/community-demo.html">
+   <div class="community-stage-copy"><span class="feature-kicker">03 · OUR COMMUNITY</span><h3>みおコミュニティ</h3><p>おしゃべり、動画、写真、ファンアート。みんなの好きなものを、ひとつの場所に。</p><span class="community-stage-cta">コミュニティへ進む <span aria-hidden="true">↗</span></span></div>
+   <div class="community-preview" aria-hidden="true"><div class="preview-orbit"></div>
+    <div class="preview-tile tile-left"><span>✧</span><b>MEMORY</b><small>PHOTOS</small></div>
+    <div class="preview-tile tile-main"><span class="tile-gem">◇</span><b>MAKE A WISH</b><small>MIO 1ST ANNIVERSARY</small></div>
+    <div class="preview-tile tile-right"><span>♫</span><b>OUR VOICES</b><small>LIVE & SONGS</small></div>
+   </div>
+  </a>
   <div class="mini-grid">
-   <a class="mini-card" href="/mypage-deluxe-demo.html"><span aria-hidden="true">💎</span><strong>マイページ</strong><small>参加履歴・ガチャ・作品をまとめて確認 →</small></a>
-   <a class="mini-card" href="/community-demo.html"><span aria-hidden="true">🎨</span><strong>ファンアート</strong><small>みんなの作品を楽しむ →</small></a>
+   <a class="mini-card" href="/mypage-deluxe-demo.html"><span class="mini-card-number">01</span><strong>MY ANNIVERSARY</strong><small>参加履歴・ガチャ・作品をまとめる <b>↗</b></small></a>
+   <a class="mini-card" href="/community-demo.html"><span class="mini-card-number">02</span><strong>FAN ART GALLERY</strong><small>みんなが描いた物語を見る <b>↗</b></small></a>
   </div>
  </section>
-
- <section class="footer-previews" aria-label="大型更新のテスト用ページ">
+<section class="footer-previews" aria-label="大型更新のテスト用ページ">
   <h2>制作・確認用メニュー</h2>
   <div class="utility-links">
    <a href="/admin-center-demo.html">👑 管理センター（デモ）</a>
@@ -88,11 +112,11 @@
  </div>
 </main>
 <nav class="bottom-nav" aria-label="スマホ用メニュー">
- <a href="/next-integrated.html" aria-current="page"><span aria-hidden="true">⌂</span><small>ホーム</small></a>
- <a href="/attendance-deluxe-demo.html"><span aria-hidden="true">🏆</span><small>皆勤賞</small></a>
- <a href="/gacha-cinematic-demo.html"><span aria-hidden="true">💎</span><small>ガチャ</small></a>
- <a href="/community-demo.html"><span aria-hidden="true">💬</span><small>交流</small></a>
- <a href="/mypage-deluxe-demo.html"><span aria-hidden="true">♡</span><small>マイページ</small></a>
+ <a href="/next-integrated.html" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span><small>ホーム</small></a>
+ <a href="/attendance-deluxe-demo.html"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v7a5 5 0 0 1-10 0V3ZM7 5H4v3a4 4 0 0 0 4 4m9-7h3v3a4 4 0 0 1-4 4M12 15v5m-5 1h10"/></svg></span><small>皆勤賞</small></a>
+ <a href="/gacha-cinematic-demo.html"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10l5 6-10 12L2 9l5-6ZM2 9h20M7 3l3 6 2 12 2-12 3-6Z"/></svg></span><small>ガチャ</small></a>
+ <a href="/community-demo.html"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5A8.5 8.5 0 1 1 21 11.5Z"/></svg></span><small>交流</small></a>
+ <a href="/mypage-deluxe-demo.html"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.1 8.8-8.1a5.5 5.5 0 0 0 0-7.8Z"/></svg></span><small>マイページ</small></a>
 </nav>
 <footer class="site-footer">翠央 1周年 ✦ NEXT EXPERIENCE <span>大型更新・統合プレビュー / 本番とは別</span></footer>
 <script src="/next-integrated.js"></script>

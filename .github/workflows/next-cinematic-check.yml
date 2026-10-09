@@ -1,0 +1,31 @@
+name: NEXT Cinematic Preview
+on:
+  push:
+    branches:
+      - feature/next-cinematic-quality-20261010
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - feature/next-integrated-home-20261010
+permissions:
+  contents: read
+jobs:
+  test-premium-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check integrated pages and safety
+        run: |
+          node --test \
+            release-prep/next-premium.test.mjs \
+            release-prep/next-integrated.test.mjs \
+            release-prep/admin-preview.test.mjs \
+            release-prep/replica-safety.test.mjs \
+            release-prep/community-test-schema.test.mjs \
+            community-policy.test.js \
+            security/authorization.test.js \
+            security/guard.test.js
