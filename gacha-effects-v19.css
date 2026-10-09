@@ -1,40 +1,159 @@
-/* 翠央1周年ガチャ v1.9 presentation layer only.
-   No draw/API/entitlement/history logic lives in this file. */
+/* 翠央1周年ガチャ v1.9.1 cinematic presentation layer */
 .gacha-stage{position:relative;overflow:hidden}
 .v19-fx-root{position:absolute;inset:0;z-index:12;pointer-events:none;overflow:hidden;border-radius:inherit}
-.v19-sparkles{position:absolute;inset:-4%;background:url('/gacha-v19-sparkles.svg') center/cover no-repeat;opacity:.22;animation:v19-twinkle 2.2s ease-in-out infinite alternate}
-.v19-aura{position:absolute;left:50%;top:46%;width:280px;height:280px;border-radius:50%;transform:translate(-50%,-50%);background:#5ddfff20;box-shadow:0 0 45px #67e6ff55,0 0 110px #3f87ff35;opacity:.72;animation:v19-aura 1.6s ease-in-out infinite alternate}
-.v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.76);opacity:0;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1)}
-.v19-capsule-img{position:absolute;left:50%;top:51%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff)}
-.gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v19-machine-shake .18s linear infinite}
-.gacha-stage.draw-active .v19-capsule-img{animation:v19-capsule-drop 1.45s cubic-bezier(.18,.75,.2,1) infinite}
-.gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.9s}
-.gacha-stage.draw-active #crystal{opacity:.12}
-.gacha-stage.is-fest .v19-aura{background:#ffd64b20;box-shadow:0 0 50px #ffe06666,0 0 120px #e68d1838}
+.v19-sparkles{position:absolute;inset:-4%;background:url('/gacha-v19-sparkles.svg') center/cover no-repeat;opacity:.18;animation:v191-twinkle 2.2s ease-in-out infinite alternate}
+.v19-aura{position:absolute;left:50%;top:45%;width:280px;height:280px;border-radius:50%;transform:translate(-50%,-50%);background:#5ddfff20;box-shadow:0 0 45px #67e6ff55,0 0 110px #3f87ff35;opacity:.72;animation:v191-aura 1.6s ease-in-out infinite alternate}
+.v191-ball-chamber{position:absolute;left:51.5%;top:48%;width:min(45%,182px);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);overflow:hidden;z-index:3;opacity:.28;transition:opacity .25s ease;filter:drop-shadow(0 0 12px #6eeeffaa)}
+.v191-gem{position:absolute;left:50%;top:50%;width:54px;height:46px;transform:translate(-50%,-50%);clip-path:polygon(50% 0,92% 33%,72% 100%,28% 100%,8% 33%);background:linear-gradient(145deg,#f4ffff 0 8%,#87f4ff 20%,#38bfff 48%,#2a73dd 72%,#113d9b 100%);border:0;box-shadow:inset 0 0 0 2px #ffffffbb,0 0 13px #5eeaffcc;display:grid;place-items:center;color:white;font-weight:1000;font-size:16px;text-shadow:0 1px 3px #09265a,0 0 8px #fff;filter:drop-shadow(0 0 5px #82ecff)}
+.v191-gem::before{content:"";position:absolute;inset:5px 8px 18px;clip-path:polygon(50% 0,100% 55%,78% 100%,22% 100%,0 55%);background:linear-gradient(145deg,#ffffffdd,#b9f7ff66 38%,transparent 72%);opacity:.72}
+.v191-gem-label{position:relative;z-index:2;transform:translateY(3px)}
+.v191-gem[data-rarity="SR"]{background:linear-gradient(145deg,#f8ffff 0 8%,#96f4ff 20%,#42c8ff 48%,#3478e5 72%,#163b9f 100%);box-shadow:inset 0 0 0 2px #fff3a4,0 0 14px #ffe26d88}
+.v191-gem[data-rarity="UR"]{background:linear-gradient(145deg,#fff 0 8%,#9af7ff 20%,#48d1ff 46%,#3c82ea 70%,#243fb3 100%);box-shadow:inset 0 0 0 2px #fff,0 0 18px #bdfaff,0 0 28px #6beaff77}
+.v191-winning-gem{position:absolute;left:51.5%;top:48%;width:68px;height:58px;z-index:11;opacity:0;transform:translate(-50%,-50%) scale(.5);clip-path:polygon(50% 0,92% 33%,72% 100%,28% 100%,8% 33%);background:linear-gradient(145deg,#fff 0 8%,#8ff6ff 19%,#42c8ff 48%,#3478e5 72%,#163b9f);display:grid;place-items:center;color:#fff;font-size:21px;font-weight:1000;text-shadow:0 1px 3px #09265a,0 0 8px #fff;box-shadow:0 0 18px #7eeeff}
+.v191-winning-gem::before{content:"";position:absolute;inset:6px 10px 22px;clip-path:polygon(50% 0,100% 55%,78% 100%,22% 100%,0 55%);background:linear-gradient(145deg,#ffffffee,#b9f7ff55 38%,transparent 72%)}
+.v191-winning-gem span{position:relative;z-index:2;transform:translateY(4px)}
+.v191-winning-gem[data-rarity="SR"]{background:linear-gradient(145deg,#fff 0 8%,#91f5ff 21%,#48caff 48%,#3479e6 72%,#173d9f);box-shadow:0 0 18px #8feeff,0 0 28px #ffe46f}
+.v191-winning-gem[data-rarity="UR"]{background:linear-gradient(145deg,#fff 0 8%,#9af7ff 20%,#48d1ff 46%,#3c82ea 70%,#243fb3 100%);box-shadow:0 0 24px #fff,0 0 42px #73edff,0 0 68px #ff68c288}
+.v191-winning-gem[data-rarity="UR"]::after{content:"";position:absolute;inset:-18px;z-index:-1;border-radius:50%;background:conic-gradient(#ff69bd,#ffe05b,#5ceeff,#9c72ff,#ff69bd);filter:blur(13px);animation:v191-rainbow-spin .7s linear infinite}
+.v19-machine-img{position:absolute;left:50%;top:48%;width:min(78%,340px);max-height:84%;object-fit:contain;transform:translate(-50%,-50%) scale(.94);opacity:1;filter:drop-shadow(0 22px 25px #00153399);transition:opacity .2s ease,transform .3s cubic-bezier(.18,.8,.25,1);z-index:4;animation:v191-whale-float 3.2s ease-in-out infinite}
+.v19-capsule-img{position:absolute;left:50%;top:50%;width:78px;transform:translate(-50%,-80%) scale(.28);opacity:0;filter:drop-shadow(0 0 15px #aaf2ff);z-index:8}
+.v191-handle{position:absolute;left:calc(50% + min(28vw,118px));top:65%;width:84px;height:84px;z-index:7;transform:translate(-50%,-50%);filter:drop-shadow(0 6px 8px #00102f88)}
+.v191-handle::before{content:"";position:absolute;left:50%;top:50%;width:58px;height:16px;border-radius:999px;background:linear-gradient(90deg,#fff0a2,#c98c24,#fff3b3);transform-origin:8px 50%;transform:translate(-8px,-50%) rotate(0deg);box-shadow:0 0 0 3px #5a380a,0 0 12px #ffe28588}
+.v191-handle::after{content:"";position:absolute;left:4px;top:50%;width:28px;height:28px;border-radius:50%;transform:translateY(-50%);background:radial-gradient(circle at 35% 30%,#fff7cb,#e3a532 45%,#7a4307);border:3px solid #ffe8a0}
+.gacha-stage.draw-active .v191-handle::before{animation:v191-handle-turn .72s cubic-bezier(.3,.05,.25,1) infinite}
+.gacha-stage.is-fest .v191-handle{filter:drop-shadow(0 0 12px #ffe278aa) drop-shadow(0 6px 8px #1d0c00)}
+.gacha-stage.v191-rarity-ur::after{content:"";position:absolute;inset:-18%;z-index:10;pointer-events:none;background:radial-gradient(circle at 50% 42%,#fff9 0 5%,#7fefff55 18%,#ff6aca30 38%,transparent 67%);mix-blend-mode:screen;animation:v191-ur-pulse .46s ease-in-out infinite alternate}
+.v191-ur-premonition{position:absolute;inset:0;z-index:9;opacity:0;transition:opacity .3s ease;background:conic-gradient(from 0deg at 50% 42%,#ff4ca000,#ff4ca066,#ffe15a77,#5cecff77,#9d6fff77,#ff4ca000);filter:blur(20px);mix-blend-mode:screen}
+.gacha-stage.draw-active .v19-machine-img{opacity:1;transform:translate(-50%,-50%) scale(1);animation:v191-whale-active .72s ease-in-out infinite alternate}
+.v191-ball-chamber{opacity:.72}
+.v191-gem{animation:v191-gem-orbit var(--idleDur,10s) linear infinite;animation-delay:var(--idleDelay);will-change:transform}
+.gacha-stage.draw-active .v191-ball-chamber{opacity:.98}
+.gacha-stage.draw-active .v191-gem{animation:v191-gem-orbit var(--dur,2.7s) linear infinite;animation-delay:var(--drawDelay)}
+.v19-capsule-img.v191-drop{animation:v191-capsule-drop 1.18s cubic-bezier(.18,.75,.2,1) 1 forwards}
+.gacha-stage.draw-active .v19-sparkles{opacity:.86;animation-duration:.75s}
+.gacha-stage.draw-active #crystal{opacity:.08}
+.gacha-stage.is-fest .v19-aura{background:#ffd64b24;box-shadow:0 0 55px #ffe06677,0 0 130px #e68d1840}
+.gacha-stage.v191-rarity-r .v19-aura{box-shadow:0 0 75px #85eaff88,0 0 135px #398dff55}
+.gacha-stage.v191-rarity-sr .v19-aura{background:#ffd43b33;box-shadow:0 0 80px #ffe267aa,0 0 160px #ff9b2655}
+.gacha-stage.v191-rarity-ur .v191-ur-premonition{opacity:.88;animation:v191-rainbow-spin .9s linear infinite}
+.gacha-stage.v191-rarity-ur .v19-aura{background:#fff4;box-shadow:0 0 90px #fff,0 0 160px #6cefff99,0 0 220px #ff62c977}
+.gacha-stage.v191-rarity-ur .v191-gem{animation-duration:1.45s;filter:brightness(1.45) drop-shadow(0 0 10px #fff)}
+.gacha-stage.v191-rarity-ur .v19-machine-img{animation:v191-whale-ur .42s ease-in-out infinite alternate;filter:drop-shadow(0 0 20px #fff) drop-shadow(0 0 36px #60eaff)}
 .v19-reveal{position:absolute;inset:0;z-index:30;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle at 50% 50%,#1454a05a,#02091bea 68%);transition:opacity .14s ease,visibility .14s ease}
 .v19-reveal.show{visibility:visible;opacity:1}
+.v19-reveal.v191-pre-reveal{background:radial-gradient(circle at 50% 44%,#ffffff12 0 16%,#14295a44 46%,#02071988 82%)}
+.v19-reveal.v191-pre-reveal.ur{background:conic-gradient(from 0deg at 50% 44%,#ff4c9f1f,#ffdb4a28,#57edff28,#9866ff2e,#ff4c9f1f),radial-gradient(circle at 50% 44%,#ffffff10,#09001882 72%)}
+.v191-pre-reveal .v19-reveal-frame{opacity:.22}
+.v191-pre-reveal .v19-reveal-title{font-size:clamp(2.2rem,12vw,4.5rem)}
+.v191-pre-reveal .v19-reveal-caption{bottom:10%}
 .v19-reveal::before{content:"";position:absolute;width:64px;height:64px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 24px #fff,0 0 58px #66e4ff;opacity:0}
-.v19-reveal.show::before{animation:v19-ring 1.05s ease-out infinite}
-.v19-reveal.sr{background:radial-gradient(circle,#9c620a99,#160b00f0 68%)}
-.v19-reveal.ur{background:conic-gradient(from 0deg at 50% 50%,#ff4c9f36,#ffdb4a36,#57edff38,#9866ff44,#ff4c9f36),radial-gradient(circle,#ffffff22,#130020f2 66%)}
-.v19-reveal.ur::after{content:"";position:absolute;inset:-45%;background:conic-gradient(#ff4c9f00,#ff4c9f80,#ffdd4d88,#62f0ff88,#9c70ff88,#ff4c9f00);filter:blur(24px);animation:v19-rainbow-spin 1.25s linear infinite}
-.v19-reveal-frame{position:absolute;inset:5%;width:90%;height:90%;object-fit:fill;opacity:.88;z-index:1}
+.v19-reveal.show::before{animation:v191-ring 1.05s ease-out infinite}
+.v19-reveal.sr{background:radial-gradient(circle,#a4690aaa,#160b00f0 68%)}
+.v19-reveal.ur{background:conic-gradient(from 0deg at 50% 50%,#ff4c9f44,#ffdb4a44,#57edff44,#9866ff55,#ff4c9f44),radial-gradient(circle,#ffffff2d,#130020f2 66%)}
+.v19-reveal.ur::after{content:"";position:absolute;inset:-45%;background:conic-gradient(#ff4c9f00,#ff4c9f95,#ffdd4d99,#62f0ff99,#9c70ff99,#ff4c9f00);filter:blur(24px);animation:v191-rainbow-spin .78s linear infinite}
+.v19-reveal-frame{position:absolute;inset:5%;width:90%;height:90%;object-fit:fill;opacity:.9;z-index:1}
 .v19-reveal-title{position:relative;z-index:3;font-size:clamp(2.6rem,14vw,5.2rem);font-weight:1000;letter-spacing:.08em;color:#fff;text-shadow:0 0 8px #fff,0 0 25px #60ddff;transform:scale(.55);opacity:0}
-.v19-reveal.show .v19-reveal-title{animation:v19-pop .65s cubic-bezier(.16,1.35,.3,1) forwards}
-.v19-reveal.ur .v19-reveal-title{background:linear-gradient(90deg,#ff5ab1,#ffe05e,#5fefff,#a074ff,#ff5ab1);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 11px #fff);animation:v19-pop .65s cubic-bezier(.16,1.35,.3,1) forwards,v19-rainbow-text 1s linear .65s infinite}
+.v19-reveal.show .v19-reveal-title{animation:v191-pop .65s cubic-bezier(.16,1.35,.3,1) forwards}
+.v19-reveal.ur .v19-reveal-title{background:linear-gradient(90deg,#ff5ab1,#ffe05e,#5fefff,#a074ff,#ff5ab1);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 11px #fff);animation:v191-pop .65s cubic-bezier(.16,1.35,.3,1) forwards,v191-rainbow-text .75s linear .65s infinite}
 .v19-reveal-caption{position:absolute;left:10%;right:10%;bottom:14%;z-index:3;text-align:center;font-size:clamp(.95rem,4vw,1.3rem);font-weight:900;color:#fff4bc;text-shadow:0 0 12px #000}
 .gacha-stage.v19-reveal-running .draw-result-card{opacity:0!important;transform:scale(.86)!important;pointer-events:none}
-.gacha-stage.v19-reveal-finished .draw-result-card{animation:v19-result-arrive .72s cubic-bezier(.16,1.2,.3,1)}
+.gacha-stage.v19-reveal-finished .draw-result-card{animation:v191-result-arrive .72s cubic-bezier(.16,1.2,.3,1)}
+.v191-audio-row{display:flex;justify-content:center;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 4px}
+.v191-audio-toggle{appearance:none;border:1px solid #8edcff80;background:#082b60;color:#e7f8ff;border-radius:999px;padding:8px 14px;font-weight:800;font-size:.86rem}
+.v191-caution{margin:9px auto 14px;padding:10px 13px;border-radius:14px;border:1px solid #ffd86f66;background:#4b330b66;color:#fff0b8;font-size:.88rem;line-height:1.55;text-align:center}
+.v191-caution strong{color:#fff}
 .v19-assets-missing .v19-machine-img,.v19-assets-missing .v19-capsule-img,.v19-assets-missing .v19-reveal-frame{display:none}
-.v19-assets-missing .v19-aura,.v19-assets-missing .v19-sparkles{opacity:0}
-@keyframes v19-twinkle{to{opacity:.72;transform:scale(1.035) rotate(1.5deg)}}
-@keyframes v19-aura{to{transform:translate(-50%,-50%) scale(1.12);opacity:.5}}
-@keyframes v19-machine-shake{25%{transform:translate(-50%,-50%) scale(1) rotate(1.2deg)}75%{transform:translate(-50%,-50%) scale(1) rotate(-1.2deg)}}
-@keyframes v19-capsule-drop{0%,28%{opacity:0;transform:translate(-50%,-130%) scale(.25) rotate(0)}38%{opacity:1}82%{opacity:1;transform:translate(-50%,130%) scale(1.04) rotate(320deg)}100%{opacity:0;transform:translate(-50%,180%) scale(.78) rotate(390deg)}}
-@keyframes v19-ring{0%{opacity:.9;transform:scale(.25)}100%{opacity:0;transform:scale(7)}}
-@keyframes v19-pop{0%{opacity:0;transform:scale(.45)}72%{opacity:1;transform:scale(1.16)}100%{opacity:1;transform:scale(1)}}
-@keyframes v19-rainbow-spin{to{transform:rotate(360deg)}}
-@keyframes v19-rainbow-text{to{background-position:250% 0}}
-@keyframes v19-result-arrive{0%{opacity:0;transform:translateY(26px) scale(.72)}65%{opacity:1;transform:translateY(-4px) scale(1.04)}100%{opacity:1;transform:none}}
-@media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
-@media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
+@keyframes v191-twinkle{to{opacity:.78;transform:scale(1.045) rotate(1.8deg)}}
+@keyframes v191-aura{to{transform:translate(-50%,-50%) scale(1.13);opacity:.52}}
+@keyframes v191-machine-shake{25%{transform:translate(-50%,-50%) scale(1) rotate(1.4deg)}75%{transform:translate(-50%,-50%) scale(1) rotate(-1.4deg)}}
+@keyframes v191-ur-shake{25%{transform:translate(-50%,-50%) scale(1.015) rotate(2deg)}75%{transform:translate(-50%,-50%) scale(1.015) rotate(-2deg)}}
+@keyframes v191-gem-chaos{0%{transform:translate(-50%,-50%) translate(-26px,34px) rotate(0deg) scale(.92)}25%{transform:translate(-50%,-50%) translate(30px,-25px) rotate(110deg) scale(1.03)}50%{transform:translate(-50%,-50%) translate(-15px,-42px) rotate(210deg) scale(.96)}75%{transform:translate(-50%,-50%) translate(38px,18px) rotate(300deg) scale(1.04)}100%{transform:translate(-50%,-50%) translate(-31px,7px) rotate(420deg) scale(.95)}}
+@keyframes v191-capsule-drop{0%,42%{opacity:0;transform:translate(-50%,-130%) scale(.22) rotate(0)}52%{opacity:1}82%{opacity:1;transform:translate(-50%,132%) scale(1.06) rotate(330deg)}100%{opacity:0;transform:translate(-50%,190%) scale(.75) rotate(420deg)}}
+@keyframes v191-ring{0%{opacity:.9;transform:scale(.25)}100%{opacity:0;transform:scale(7.5)}}
+@keyframes v191-pop{0%{opacity:0;transform:scale(.42)}72%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+@keyframes v191-rainbow-spin{to{transform:rotate(360deg)}}
+@keyframes v191-rainbow-text{to{background-position:250% 0}}
+@keyframes v191-result-arrive{0%{opacity:0;transform:translateY(26px) scale(.72)}65%{opacity:1;transform:translateY(-5px) scale(1.05)}100%{opacity:1;transform:none}}
+@media(max-width:560px){.v19-machine-img{width:min(84%,315px)}.v191-ball-chamber{width:min(48%,174px)}.v191-gem{width:47px;height:40px}.v191-winning-gem{width:62px;height:52px}.v19-capsule-img{width:70px}.v19-reveal-caption{bottom:11%}}
+@media(prefers-reduced-motion:reduce){.v19-sparkles,.v19-aura,.v19-machine-img,.v19-capsule-img,.v19-reveal::before,.v19-reveal.ur::after,.v19-reveal-title,.v191-gem,.v191-winning-gem,.v191-ur-premonition{animation:none!important}.v19-reveal{display:none!important}.gacha-stage.v19-reveal-running .draw-result-card{opacity:1!important;transform:none!important}}
+
+@keyframes v191-handle-turn{0%{transform:translate(-8px,-50%) rotate(0)}70%,100%{transform:translate(-8px,-50%) rotate(360deg)}}
+@keyframes v191-ur-pulse{to{opacity:.38;transform:scale(1.08)}}
+
+.v191-winning-gem.v191-winner-drop{animation:v191-winner-gem-drop 1.28s cubic-bezier(.18,.76,.2,1) 1 forwards}
+@keyframes v191-winner-gem-drop{
+  0%{opacity:0;left:51.5%;top:48%;transform:translate(-50%,-50%) scale(.35) rotate(-8deg)}
+  16%{opacity:1;left:51.5%;top:50%;transform:translate(-50%,-50%) scale(.9) rotate(7deg)}
+  44%{opacity:1;left:51%;top:58%;transform:translate(-50%,-50%) scale(1.02) rotate(-5deg)}
+  72%{opacity:1;left:52%;top:67%;transform:translate(-50%,-50%) scale(1.08) rotate(4deg)}
+  100%{opacity:1;left:52%;top:74%;transform:translate(-50%,-50%) scale(1.16) rotate(0deg)}
+}
+  16%{opacity:1;transform:translate(-50%,-50%) scale(.92) rotate(10deg)}
+  45%{opacity:1;left:50%;top:55%;transform:translate(-50%,-50%) scale(1.05) rotate(-8deg)}
+  72%{opacity:1;left:50%;top:78%;transform:translate(-50%,-50%) scale(1.08) rotate(5deg)}
+  100%{opacity:1;left:50%;top:88%;transform:translate(-50%,-50%) scale(1.18) rotate(0deg)}
+}
+
+.v191-bubbles{position:absolute;inset:0;z-index:2;pointer-events:none}
+.v191-bubble{position:absolute;left:var(--bx);bottom:var(--by);width:var(--bs);height:var(--bs);border-radius:50%;border:2px solid #dffcffaa;background:radial-gradient(circle at 32% 30%,#fff9,#8eeaff22 45%,#4bbdff11 70%);box-shadow:0 0 10px #7beaff66;opacity:.38;animation:v191-bubble-rise var(--bd) ease-in infinite;animation-delay:var(--bdelay)}
+.v191-spout{position:absolute;left:56%;top:20%;width:96px;height:110px;z-index:1;transform:translateX(-50%);opacity:.38}
+.v191-spout::before,.v191-spout::after{content:"";position:absolute;bottom:5px;width:30px;height:88px;border-radius:70% 30% 65% 35%;background:linear-gradient(#e9ffffcc,#65dcff55 65%,transparent);filter:drop-shadow(0 0 9px #8eeaff99);transform-origin:50% 100%}
+.v191-spout::before{left:22px;transform:rotate(-24deg)}
+.v191-spout::after{right:22px;transform:rotate(24deg)}
+.gacha-stage.draw-active .v191-spout{opacity:.92;animation:v191-spout-pulse .46s ease-in-out infinite alternate}
+.gacha-stage.draw-active .v191-bubble{opacity:.82;animation-duration:calc(var(--bd) * .55)}
+.gacha-stage.is-fest .v191-bubble{border-color:#fff1a7aa;box-shadow:0 0 12px #ffd75c77}
+.gacha-stage.is-fest .v191-spout::before,.gacha-stage.is-fest .v191-spout::after{background:linear-gradient(#fff9ce,#ffd45a55 65%,transparent)}
+@keyframes v191-bubble-rise{0%{transform:translateY(15px) scale(.65);opacity:0}18%{opacity:.7}100%{transform:translateY(-420px) translateX(24px) scale(1.15);opacity:0}}
+@keyframes v191-spout-pulse{to{transform:translateX(-50%) scale(1.12);filter:brightness(1.3)}}
+
+@keyframes v191-whale-float{
+  0%,100%{transform:translate(-50%,-50%) scale(.94) translateY(2px)}
+  50%{transform:translate(-50%,-50%) scale(.955) translateY(-6px)}
+}
+@keyframes v191-gem-idle{
+  0%{transform:translate(-50%,-50%) translate(-4px,4px) rotate(-4deg)}
+  50%{transform:translate(-50%,-50%) translate(5px,-6px) rotate(5deg)}
+  100%{transform:translate(-50%,-50%) translate(-2px,-10px) rotate(-2deg)}
+}
+
+.gacha-stage.v191-loaded #crystal{opacity:0!important;visibility:hidden}
+.gacha-stage.v191-loaded .effect-layer{opacity:.18}
+.gacha-stage.v191-loaded:not(.draw-active) .v191-handle{opacity:.82}
+.gacha-stage.v191-loaded:not(.draw-active) .v19-sparkles{opacity:.28}
+
+@media(max-width:560px){
+  .v191-bubble:nth-child(n+11){display:none}
+  .v191-gem{will-change:transform}
+  .v19-machine-img{will-change:transform}
+}
+
+@keyframes v191-gem-orbit{
+  0%{transform:translate(-50%,-50%) translate(var(--x100),0) scale(.86)}
+  6.25%{transform:translate(-50%,-50%) translate(var(--x92),var(--y38)) scale(.89)}
+  12.5%{transform:translate(-50%,-50%) translate(var(--x71),var(--y71)) scale(.93)}
+  18.75%{transform:translate(-50%,-50%) translate(var(--x38),var(--y92)) scale(.97)}
+  25%{transform:translate(-50%,-50%) translate(0,var(--y100)) scale(1)}
+  31.25%{transform:translate(-50%,-50%) translate(var(--nx38),var(--y92)) scale(1.04)}
+  37.5%{transform:translate(-50%,-50%) translate(var(--nx71),var(--y71)) scale(1.07)}
+  43.75%{transform:translate(-50%,-50%) translate(var(--nx92),var(--y38)) scale(1.09)}
+  50%{transform:translate(-50%,-50%) translate(var(--nx100),0) scale(1.1)}
+  56.25%{transform:translate(-50%,-50%) translate(var(--nx92),var(--ny38)) scale(1.09)}
+  62.5%{transform:translate(-50%,-50%) translate(var(--nx71),var(--ny71)) scale(1.07)}
+  68.75%{transform:translate(-50%,-50%) translate(var(--nx38),var(--ny92)) scale(1.04)}
+  75%{transform:translate(-50%,-50%) translate(0,var(--ny100)) scale(1)}
+  81.25%{transform:translate(-50%,-50%) translate(var(--x38),var(--ny92)) scale(.96)}
+  87.5%{transform:translate(-50%,-50%) translate(var(--x71),var(--ny71)) scale(.92)}
+  93.75%{transform:translate(-50%,-50%) translate(var(--x92),var(--ny38)) scale(.89)}
+  100%{transform:translate(-50%,-50%) translate(var(--x100),0) scale(.86)}
+}
+@keyframes v191-whale-active{
+  from{transform:translate(-50%,-50%) scale(.99) translateY(3px)}
+  to{transform:translate(-50%,-50%) scale(1.01) translateY(-5px)}
+}
+@keyframes v191-whale-ur{
+  from{transform:translate(-50%,-50%) scale(1.005)}
+  to{transform:translate(-50%,-50%) scale(1.025)}
+}
+
+.v191-gem{animation-direction:var(--orbitDir,normal)}
