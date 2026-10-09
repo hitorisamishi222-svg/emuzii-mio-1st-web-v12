@@ -4,6 +4,9 @@ on:
     branches:
       - feature/next-cinematic-quality-20261010
   workflow_dispatch:
+  pull_request:
+    branches:
+      - feature/next-integrated-home-20261010
 permissions:
   contents: read
 jobs:
