@@ -13,13 +13,36 @@ function homeFmtTime(v){const d=homeDate(v);if(!d)return'';return new Intl.DateT
 function homeStatusTime(v){const d=homeDate(v);return d?'最終確認 '+homeFmtTime(d):'最新情報'}
 function homeIsNew(n){const d=homeDate(n.publishedAt||n.startAt);return d&&Date.now()-d.getTime()<72*60*60*1000&&Date.now()>=d.getTime()}
 
+
+// Deterministic, server-independent presentation rules for NEXT TEST ONLY.
+// Past programs with no end time cannot be labelled LIVE forever.
+function homeVisibleNews(items=[],now=Date.now()){
+ if(!Array.isArray(items))return [];
+ return items.filter(n=>{
+  if(!n||typeof n!=='object')return false;
+  const start=homeDate(n.publishedAt),end=homeDate(n.expiresAt);
+  return (!start||start.getTime()<=now)&&(!end||end.getTime()>now);
+ }).sort((a,b)=>(homeDate(b.publishedAt)?.getTime()||0)-(homeDate(a.publishedAt)?.getTime()||0));
+}
+function homeScheduleState(s,now=Date.now()){
+ const start=homeDate(s?.startAt),end=homeDate(s?.endAt);
+ if(!start|| (s.endAt && !end) || (end && end<=start))return 'invalid';
+ if(start.getTime()>now)return 'future';
+ return end&&end.getTime()>now?'live':'past';
+}
+function homeVisibleSchedules(items=[],now=Date.now()){
+ if(!Array.isArray(items))return [];
+ return items.filter(s=>['future','live'].includes(homeScheduleState(s,now)))
+  .sort((a,b)=>{
+   const al=homeScheduleState(a,now)==='live',bl=homeScheduleState(b,now)==='live';
+   if(al!==bl)return al?-1:1;
+   return homeDate(a.startAt).getTime()-homeDate(b.startAt).getTime();
+  });
+}
+
 function renderHomeNews(items=[]){
   const root=home$('homeNewsList');if(!root)return;
-  const now=Date.now();
-  items=items.filter(n=>{
-    const start=homeDate(n.publishedAt),end=homeDate(n.expiresAt);
-    return (!start||start.getTime()<=now)&&(!end||end.getTime()>=now);
-  });
+  items=homeVisibleNews(items);
   if(!items.length){root.innerHTML='<p class="home-empty">現在のお知らせはありません。</p>';return}
   root.innerHTML=items.slice(0,5).map(n=>{
     const kind=n.level==='緊急'?'emergency':n.level==='重要'?'important':'normal';
@@ -35,13 +58,12 @@ function renderHomeNews(items=[]){
 function renderHomeSchedules(items=[]){
   const root=home$('homeScheduleList');if(!root)return;
   const now=Date.now();
-  items=items.filter(s=>{const end=homeDate(s.endAt);return !end||end.getTime()>now});
+  items=homeVisibleSchedules(items,now);
   if(!items.length){root.innerHTML='<p class="home-empty">現在登録されている配信予定はありません。</p>';return}
   items=items.slice(0,5);
   const nextIndex=items.findIndex(s=>{const start=homeDate(s.startAt);return start&&start.getTime()>now});
   root.innerHTML=items.map((s,i)=>{
-    const start=homeDate(s.startAt),end=homeDate(s.endAt);
-    const live=start&&start.getTime()<=now&&(!end||end.getTime()>now);
+    const live=homeScheduleState(s,now)==='live';
     const next=!live&&i===nextIndex;
     const cls=live?'is-live':next?'is-next':'';
     const state=live?'<span class="home-live-pulse"></span>LIVE':next?'NEXT LIVE':'SCHEDULE';
@@ -59,25 +81,10 @@ function renderHomeSchedules(items=[]){
 function renderHomeSummary(notices=[],schedules=[]){
   const now=Date.now();
 
-  notices=notices.filter(n=>{
-    const start=homeDate(n.publishedAt),end=homeDate(n.expiresAt);
-    return (!start||start.getTime()<=now)&&(!end||end.getTime()>=now);
-  });
-
-  schedules=schedules.filter(s=>{
-    const start=homeDate(s.startAt),end=homeDate(s.endAt);
-    return start&&(!end||end.getTime()>now);
-  });
-
-  const live=schedules.find(s=>{
-    const start=homeDate(s.startAt),end=homeDate(s.endAt);
-    return start&&start.getTime()<=now&&(!end||end.getTime()>now);
-  });
-
-  const next=schedules.find(s=>{
-    const start=homeDate(s.startAt);
-    return start&&start.getTime()>now;
-  });
+  notices=homeVisibleNews(notices,now);
+  schedules=homeVisibleSchedules(schedules,now);
+  const live=schedules.find(s=>homeScheduleState(s,now)==='live');
+  const next=schedules.find(s=>homeScheduleState(s,now)==='future');
 
   const liveWrap=home$('homeLiveBanner');
   if(liveWrap){
