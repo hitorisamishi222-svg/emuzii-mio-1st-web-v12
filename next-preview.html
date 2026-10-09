@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>翠央1周年｜次期大型更新テスト</title>
+<style>
+:root{color-scheme:dark;--bg:#06132d;--glass:#0d2952;--edge:#80d6ff55;--ink:#eaf8ff;--muted:#aac8de;--gold:#ffe29b}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:radial-gradient(circle at 80% 0,#2f9cd450,transparent 38%),linear-gradient(165deg,#05132e,#09234c 55%,#061229);color:var(--ink)}
+main{max-width:760px;margin:auto;padding:24px 16px 70px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-weight:900;letter-spacing:.11em}.tag{border:1px solid #ffe6a76b;border-radius:99px;color:var(--gold);padding:6px 10px;font-size:11px}
+.hero{position:relative;overflow:hidden;border:1px solid #97dfff70;border-radius:26px;background:linear-gradient(130deg,#18549caa,#071e42 65%);padding:35px 23px 31px;margin:22px 0;box-shadow:0 14px 45px #0005}
+.hero:after{content:"🐳";position:absolute;right:5px;bottom:-30px;font-size:145px;opacity:.15;transform:rotate(-15deg);pointer-events:none}
+.eyebrow{font-size:11px;letter-spacing:.24em;color:#93e6ff;font-weight:800}
+h1{font-size:clamp(28px,7vw,42px);line-height:1.24;margin:11px 0}
+.hero p{font-size:13px;color:#c7e8fa;line-height:1.8;max-width:480px}
+.safety{font-size:12px;padding:13px 15px;background:#071a36;border:1px solid #82dfff80;border-radius:15px;line-height:1.7;margin-bottom:24px}
+h2{font-size:18px;margin:25px 0 14px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+a.card{min-width:0;text-decoration:none;color:inherit;padding:17px 14px;background:linear-gradient(155deg,#16437a,#0a2148);border:1px solid var(--edge);border-radius:19px;box-shadow:0 12px 24px #00101f4a;min-height:173px;display:flex;flex-direction:column;gap:7px}
+a.card:focus-visible,a.card:hover{outline:2px solid #82e3ff;outline-offset:2px}
+.symbol{font-size:29px}.card strong{font-size:15px}.card small{color:var(--muted);font-size:11px;line-height:1.55}.status{font-size:10px;color:#c9ebff;margin-top:auto}
+.meta{padding:19px 16px;border:1px solid var(--edge);border-radius:20px;background:#0a234b}
+.meta p{font-size:12px;line-height:1.85;margin:6px 0;color:#b9d9f0}
+footer{font-size:11px;text-align:center;color:#8faac7;margin-top:27px}
+@media(max-width:380px){.cards{grid-template-columns:1fr}.card{min-height:138px!important}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style></head><body><main>
+<header class="head"><span class="brand">翠央 1周年</span><span class="tag">NEXT · TEST ONLY</span></header>
+<section class="hero"><span class="eyebrow">ANNIVERSARY NEXT EXPERIENCE</span><h1>1周年の、その先へ。<br>もっと楽しく、もっと華やかに。</h1>
+<p>みんなでつながるコミュニティ、次回配信のお知らせ、豪華クジラガチャ。新しい体験を、公開中のシステムから切り離して準備中。</p></section>
+<div class="safety"><b>🛡️ ここは大型更新専用の複製プレビューです。</b><div>表示内容と投稿はダミー。登録・皆勤・ガチャ本抽選・個人データ・運営管理APIには接続しません。</div></div>
+<h2>✨ 先行体験コンテンツ</h2>
+<div class="cards">
+<a class="card" href="/gacha-cinematic-demo.html"><span class="symbol">🐳</span><strong>豪華クジラガチャ</strong><small>ブルー／ゴールド、UR演出、ダイヤの回転。回数消費のない演出デモ。</small><span class="status">演出を体験する →</span></a>
+<a class="card" href="/community-demo.html"><span class="symbol">💬</span><strong>みおコミュニティ</strong><small>公開チャット、動画、画像ギャラリー。承認切替も画面デモのみ。</small><span class="status">コミュニティを体験 →</span></a>
+<a class="card" href="/home-top-demo.html"><span class="symbol">🏠</span><strong>豪華ホーム</strong><small>配信中バナー、お知らせ・次回配信のコンパクト表示。</small><span class="status">トップを体験する →</span></a>
+<a class="card" href="/home-updates-demo.html"><span class="symbol">📢</span><strong>お知らせ＆配信予定</strong><small>通常・重要・緊急、日時と表示パターンの確認。</small><span class="status">情報表示を試す →</span></a>
+<a class="card" href="/news.html"><span class="symbol">📰</span><strong>ニュース一覧</strong><small>テストデータを使ったお知らせ一覧。公開記事ではありません。</small><span class="status">一覧を見る →</span></a>
+<a class="card" href="/schedule.html"><span class="symbol">📅</span><strong>配信スケジュール</strong><small>架空の日時で動作確認。現在の配信予定ではありません。</small><span class="status">一覧を見る →</span></a>
+</div>
+<h2>🔐 裏側の準備</h2>
+<section class="meta"><p><b>認証・防衛：</b>権限別操作、重要変更の承認ルール、入力保護を準備中。</p>
+<p><b>管理機能：</b>公開審査・緊急停止・操作記録は、TEST用の接続が済んでから実装検証。</p>
+<p><b>端末識別：</b>公開v1.9.1のログインID改修は保管。別チャットの更新と照合後、次期版へ反映。</p></section>
+<footer>翠央1周年・次期更新デモ ｜ 本番とは別に制作中</footer>
+</main></body></html>
