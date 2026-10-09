@@ -16,7 +16,8 @@ body.next-premium-community,
 body.next-premium-gacha{
  background-color:var(--mio-midnight);
 }
-body.next-experience,body.next-premium-home,body.next-premium-community{
+/* HOME deliberately keeps the existing approved character artwork from backgrounds.css. */
+body.next-experience,body.next-premium-community{
  background-image:
  radial-gradient(ellipse at 9% 9%,rgba(72,183,255,.17),transparent 31%),
  radial-gradient(ellipse at 89% 0%,rgba(155,117,242,.15),transparent 34%),
