@@ -126,6 +126,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "next-premium-v2.css",
+      "use": "@vercel/static"
+    },
+    {
       "src": "next-pages.js",
       "use": "@vercel/static"
     }
@@ -258,6 +262,10 @@
     {
       "src": "^/next-sparkle\\.css$",
       "dest": "/next-sparkle.css"
+    },
+    {
+      "src": "^/next-premium-v2\\.css$",
+      "dest": "/next-premium-v2.css"
     },
     {
       "src": "^/next-pages\\.js$",
