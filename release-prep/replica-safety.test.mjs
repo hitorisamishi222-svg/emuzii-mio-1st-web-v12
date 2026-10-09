@@ -33,6 +33,18 @@ test('community and whale demos have no write endpoint calls',()=>{
  assert(!/fetch\s*\(/.test(read('community-demo.html')));
  assert(!/fetch\s*\(/.test(read('gacha-cinematic-demo.html')));
 });
+test('luxury preview pages have working local-only UI, not live APIs',()=>{
+ for(const path of ['attendance-deluxe-demo.html','mypage-deluxe-demo.html','admin-center-demo.html']){
+  const html=read(path);
+  assert(html.includes('NEXT TEST ONLY'));assert(html.includes('next-pages.js'));
+  assert(!/fetch\\s*\\(/.test(html));
+ }
+ const js=read('next-pages.js');
+ assert(!/fetch\\s*\\(/.test(js));
+ assert(!/XMLHttpRequest|WebSocket|localStorage|sessionStorage/.test(js));
+ assert(read('next-preview.html').includes('/attendance-deluxe-demo.html'));
+ assert(read('next-preview.html').includes('/admin-center-demo.html'));
+});
 test('replica includes source login ID recovery and moderation building blocks',()=>{
  const js=read('app.js');const api=read('api-register.js');
  assert(js.includes('mioLoginId'));assert(api.includes('loginId'));

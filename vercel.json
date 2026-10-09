@@ -100,6 +100,26 @@
     {
       "src": "assets/bg-top-mobile.webp",
       "use": "@vercel/static"
+    },
+    {
+      "src": "attendance-deluxe-demo.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mypage-deluxe-demo.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "admin-center-demo.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "next-ui.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "next-pages.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -206,6 +226,26 @@
     {
       "src": "^/assets/bg-top-mobile\\.webp$",
       "dest": "/assets/bg-top-mobile.webp"
+    },
+    {
+      "src": "^/attendance-deluxe-demo\\.html$",
+      "dest": "/attendance-deluxe-demo.html"
+    },
+    {
+      "src": "^/mypage-deluxe-demo\\.html$",
+      "dest": "/mypage-deluxe-demo.html"
+    },
+    {
+      "src": "^/admin-center-demo\\.html$",
+      "dest": "/admin-center-demo.html"
+    },
+    {
+      "src": "^/next-ui\\.css$",
+      "dest": "/next-ui.css"
+    },
+    {
+      "src": "^/next-pages\\.js$",
+      "dest": "/next-pages.js"
     },
     {
       "src": "^/api(?:/.*)?$",

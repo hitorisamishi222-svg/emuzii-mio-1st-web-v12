@@ -10,6 +10,10 @@
 - `/community-demo.html`：ローカル状態だけで動くチャット／動画／画像デモ。
 - `/gacha-cinematic-demo.html`：抽選APIを呼ばないクジラ演出デモ（N/R/SR/UR/ラキフェス）。
 
+- `/attendance-deluxe-demo.html`：31日の出欠カレンダーと記念メダルの演出試作。
+- `/mypage-deluxe-demo.html`：皆勤・ガチャ・作品のサンプル統合プロフィール。
+- `/admin-center-demo.html`：運営機能の端末内モック（本物の管理者権限なし）。
+
 ## 統合済みのコード（本番未有効）
 - `security/guard.js`、`security/authorization.js`：入力、権限、承認、監査、停止等の基礎ロジック。
 - `community-policy.js`：投稿可否、メッセージ入力、公開審査フィルター。
