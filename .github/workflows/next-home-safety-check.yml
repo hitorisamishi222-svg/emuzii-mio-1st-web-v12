@@ -1,0 +1,26 @@
+name: NEXT home and safety tests
+on:
+  push:
+    branches:
+      - feature/next-home-display-clean-20261010
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check UI and safety without external services
+        run: |
+          node --test \
+            release-prep/home-display.test.mjs \
+            release-prep/replica-safety.test.mjs \
+            release-prep/community-test-schema.test.mjs \
+            community-policy.test.js \
+            security/guard.test.js \
+            security/authorization.test.js
