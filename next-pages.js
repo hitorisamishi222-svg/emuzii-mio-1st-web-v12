@@ -24,7 +24,7 @@ if(page==='admin'){
   catch{return {ok:false,error:'URLの形式を確認してください'}}
  };
  const jstDate=value=>{
-  if(!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$/.test(value))return null;
+  if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value))return null;
   const dt=new Date(value+':00+09:00');
   return Number.isFinite(dt.getTime())&&new Date(dt.getTime()+9*3600000).toISOString().slice(0,16)===value?dt:null;
  };
@@ -56,7 +56,7 @@ if(page==='admin'){
   if(!url.ok){$('schedulePreview').textContent=url.error;return}
   const now=Date.now(),state=end.getTime()<=now?'終了済み':start.getTime()<=now?'LIVE':'NEXT LIVE';
   const fmt=dt=>new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(dt);
-  const detail=fmt(start)+' 〜 '+fmt(end)+(body?'\\n'+body:'');
+  const detail=fmt(start)+' 〜 '+fmt(end)+(body?'\n'+body:'');
   renderPreview('schedulePreview',title,detail,state+'（表示デモ・未公開）',url.url);
  });
  const q=[{id:1,name:'サンプル作品A',description:'ファンアート申請（架空）'},{id:2,name:'サンプル作品B',description:'動画リンク申請（架空）'},{id:3,name:'サンプル作品C',description:'写真掲載申請（架空）'}];const queue=$('moderationQueue');
