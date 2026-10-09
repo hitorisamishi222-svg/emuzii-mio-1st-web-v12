@@ -1,6 +1,6 @@
 /**
- * 翠央1周年 v1.8.7 NO-BACKUP 運用・端末復旧アドオン
- * APPS_SCRIPT_Code_v1.8.7_NO_BACKUP.gs と同じ既存Apps Scriptプロジェクトへ追加する。
+ * 翠央1周年 v1.8.9 端末切替・重複整理
+ * v1.8.8の既存Code.gsを維持し、このファイルを既存端末復旧ファイルと置き換える。
  * 管理者が emuzii_Web登録 の「登録承認」を承認済みに変更した時だけ端末整理を行う。
  * 「翠央(お試し)」は自動却下しない。
  * 二重保存・第二保存にはアクセスしない。
@@ -230,7 +230,7 @@ function switchApprovedWebRegistrationV189_(newWebId,expectedMioId){
   }
 }
 
-function verifyV187Ready_(){
+function verifyV188Ready_(){
   var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
   var webRows=web?webActualRows_(web):[];
   var badWeb=[];
@@ -242,9 +242,14 @@ function verifyV187Ready_(){
   var triggerNames=ScriptApp.getProjectTriggers().map(function(t){return t.getHandlerFunction()});
   var recoveryCount=triggerNames.filter(function(x){return x==='webRecoveryOnEdit_'}).length;
   var backupCount=triggerNames.filter(function(x){return x==='backupSweep_'}).length;
+  var adminTab=typeof GACHA_ADMIN_TAB==='undefined'?'emuzii_管理画面':GACHA_ADMIN_TAB;
+  var grantTab=typeof GACHA_GRANT_HISTORY_TAB==='undefined'?'emuzii_ガチャ付与履歴':GACHA_GRANT_HISTORY_TAB;
+  var admin=ss.getSheetByName(adminTab),grantHistory=ss.getSheetByName(grantTab);
+  var gachaAdminReady=!!(admin&&grantHistory&&typeof gachaOpenState_==='function');
+  var gate=gachaAdminReady?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
 
   return {
-    ok:badWeb.length===0&&normal.ready&&fest.ready&&recoveryCount===1&&backupCount===0,
+    ok:badWeb.length===0&&normal.ready&&fest.ready&&recoveryCount===1&&backupCount===0&&gachaAdminReady,
     webActualCount:web?webActualCount_(web):0,
     webIntegrityIssues:badWeb,
     normalReady:normal.ready,
@@ -252,8 +257,26 @@ function verifyV187Ready_(){
     luckyFestivalReady:fest.ready,
     luckyFestivalProbability:fest.total,
     secondSaveEnabled:false,
+    gachaAdminReady:gachaAdminReady,
+    normalGachaOpen:gate.normalOpen,
+    luckyFestivalGachaOpen:gate.festOpen,
     webRecoveryTriggerCount:recoveryCount,
     backupTriggerCount:backupCount,
     triggers:triggerNames
   };
+}
+
+function verifyV189Ready_(){
+  var base=verifyV188Ready_();
+  var ss=SpreadsheetApp.openById(SHEET_ID);
+  var review=ss.getSheetByName(DUP_REVIEW_TAB_V189);
+  var audit=ss.getSheetByName(DUP_AUDIT_TAB_V189);
+  var result={
+    ok:!!(base&&base.ok&&review&&audit&&typeof activeWebDeviceErrorV189_==='function'),
+    v188:base,
+    duplicateReviewReady:!!review,
+    deviceSwitchAuditReady:!!audit,
+    apiDeviceGuardReady:typeof activeWebDeviceErrorV189_==='function'
+  };
+  return result;
 }

@@ -1,6 +1,6 @@
 /**
- * 翠央1周年 統合修正版 v1.8.7 NO-BACKUP
- * Web参加者MIO-ID自動接続・端末復旧整合・皆勤2回制限・ラキフェス5回目制御
+ * 翠央1周年 統合修正版 v1.8.9 NO-DUPLICATES
+ * Web参加者MIO-ID自動接続・端末復旧整合・皆勤2回制限・ラキフェス5回目制御・ガチャ完全被りなし
  * 名前・回答・画像URLは匿名の公開APIへ出さない。
  * Vercelサーバーのsecretと端末用tokenHashを両方確認。
  * 既存スプレッドシート紐付けApps Scriptへ適用し、新規Apps Scriptプロジェクトは作らない。
@@ -17,6 +17,7 @@ function lockedCheckinDays_(participantId){var out=[];for(var d=1;d<=31;d++)if(c
 
 function setup() {
   setupGacha_();
+  setupGachaAdminV188_();
   var ss=SpreadsheetApp.openById(SHEET_ID);
   var sheet=ss.getSheetByName(WEB_TAB);
   if(!sheet) {
@@ -107,16 +108,12 @@ function webIntegrityOk_(row){
   return row[11]==='確認済み';
 }
 
-/**
- * Server-side single-active-browser guard. Account ownership is established by
- * MIO ID and administrator approval, never a fingerprint or matching nickname.
- */
-function activeWebDeviceErrorV189_(web,record){
-  // Approved legacy duplicates remain usable until an explicit manager switch.
+/** Block a retired browser only after an administrator explicitly switches devices. */
+function activeWebDeviceErrorV189_(record){
+  if(!record)return 'unauthorized';
   if(String(record[5]||'')==='承認済み')return '';
   var note=String(record[17]||'');
-  if(String(record[5]||'')==='却下'&&
-      String(record[16]||'')==='旧端末'&&
+  if(String(record[5]||'')==='却下'&&String(record[16]||'')==='旧端末'&&
       (note.indexOf('端末切替')!==-1||note.indexOf('後継')!==-1))
     return 'この登録は旧端末です。新しい端末をご利用ください。';
   return '';
@@ -204,7 +201,6 @@ function doPost(e) {
       SpreadsheetApp.flush();
 
       if(!linked)linked=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,name);
-      // Update the private administrator review list when a new Web ID appears.
       try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
       return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||''});
@@ -221,7 +217,7 @@ function doPost(e) {
     if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
 
     var r=found[0];
-    var inactiveReason=activeWebDeviceErrorV189_(web,r);
+    var inactiveReason=activeWebDeviceErrorV189_(r);
     if(inactiveReason)return json_({ok:false,error:inactiveReason});
     if(!webIntegrityOk_(r))return json_({ok:false,error:'参加者IDの整合を運営が確認中です'});
     if(d.action==='checkin')return json_(checkinAction_(ss,r,d));
@@ -334,20 +330,22 @@ function setupGacha_(){
   var ss=SpreadsheetApp.openById(SHEET_ID),p=ss.getSheetByName(PRIZE_TAB),h=ss.getSheetByName(DRAW_TAB);
   if(!p){
     p=ss.insertSheet(PRIZE_TAB);
-    p.appendRow(['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','数量上限（空欄は制限なし）','景品画像URL（任意・HTTPS）','運営メモ']);
+    p.appendRow(['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','数量上限（空欄は制限なし）','景品画像URL（任意・HTTPS）','運営メモ','被り判定キー（任意）']);
     p.setFrozenRows(1);
-    p.getRange('A1:I1').setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');
-    p.getRange('A2:I101').setBackground('#fff2cc');
+    p.getRange('A1:J1').setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');
+    p.getRange('A2:J101').setBackground('#fff2cc');
     p.getRange('A2:A101').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['通常','ラキフェス'],true).setAllowInvalid(false).build());
     p.getRange('F2:F101').insertCheckboxes();
     p.setColumnWidth(3,240);p.setColumnWidth(8,260);p.setColumnWidth(9,320);
   }
 
-  p.getRange('A1:I1').setValues([['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','数量上限（空欄は制限なし）','景品画像URL（任意・HTTPS）','運営メモ']]);
+  p.getRange('A1:J1').setValues([['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','数量上限（空欄は制限なし）','景品画像URL（任意・HTTPS）','運営メモ','被り判定キー（任意）']]);
   p.getRange('E2:E101').setDataValidation(SpreadsheetApp.newDataValidation().requireNumberBetween(0,100).setAllowInvalid(false).setHelpText('各種類ごとに有効景品の確率合計を100％にしてください。小数第2位まで。').build()).setNumberFormat('0.00');
   p.getRange('G2:G101').setDataValidation(SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(0).setAllowInvalid(false).setHelpText('0以上の整数。空欄は数量制限なし。').build()).setNumberFormat('0');
   p.getRange('E1').setNote('通常・ラキフェスそれぞれで、有効な景品の確率合計を100％にしてください。小数第2位まで。未設定や合計の不一致がある間は抽選できません。');
   p.getRange('H1').setNote('数量上限に達すると抽選は安全のため停止します。確率の再配分などを運営で確認してください。');
+  p.getRange('J1').setNote('同じ景品を通常/ラキフェスで別ID登録する場合だけ、同じ被り判定キーを設定してください。空欄時は景品名で被り判定します。');
+  p.setColumnWidth(10,220);
 
   var g=ss.getSheetByName('emuzii_ガチャ');
   if(g){
@@ -376,13 +374,53 @@ function setupGacha_(){
     h.setFrozenRows(1);
   }
 
-  h.getRange('A1:M1').setValues([['抽選ID（変更不可）','Web参加ID','参加者ID','ColorSing名','種類','景品ID','景品名','確率（抽選時％）','抽選日時','通算何回目','結果','レア度（抽選時）','景品画像URL（抽選時）']]).setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');
+  h.getRange('A1:N1').setValues([['抽選ID（変更不可）','Web参加ID','参加者ID','ColorSing名','種類','景品ID','景品名','確率（抽選時％）','抽選日時','通算何回目','結果','レア度（抽選時）','景品画像URL（抽選時）','被り判定キー（抽選時）']]).setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');
   h.getRange('I2:I1000').setNumberFormat('yyyy/mm/dd hh:mm:ss');
   h.setColumnWidth(12,120);h.setColumnWidth(13,260);
 }
 
 function draws_(ss,id){
   return rows_(ss,DRAW_TAB).filter(function(x){return id&&x[2]===id&&x[10]==='確定'});
+}
+
+function normalizeDuplicateKey_(value){
+  return String(value||'').trim().toLowerCase().replace(/\s+/g,' ');
+}
+
+function prizeDuplicateKeyFromRow_(row){
+  var explicit=String(row[9]||'').trim();
+  return normalizeDuplicateKey_(explicit||row[2]||row[1]);
+}
+
+function wonDuplicateKeys_(ss,id){
+  var catalogRows=rows_(ss,PRIZE_TAB),byPrizeId={};
+  catalogRows.forEach(function(row){
+    var prizeId=String(row[1]||'');
+    if(prizeId)byPrizeId[prizeId]=prizeDuplicateKeyFromRow_(row);
+  });
+
+  var won={};
+  draws_(ss,id).forEach(function(row){
+    var stored=String(row[13]||'').trim();
+    var key=normalizeDuplicateKey_(stored)||byPrizeId[String(row[5]||'')]||normalizeDuplicateKey_(row[6]||row[5]);
+    if(key)won[key]=true;
+  });
+  return won;
+}
+
+function participantCatalog_(catalog,wonKeys){
+  var available=(catalog.prizes||[]).filter(function(p){return !wonKeys[p.duplicateKey]});
+  var units=available.reduce(function(sum,p){return sum+p.units},0);
+  var prizes=available.map(function(p){
+    var effective=units>0?Math.round((p.units/units)*10000)/100:0;
+    return {id:p.id,name:p.name,rarity:p.rarity,chance:effective,stock:p.stock,image:p.image};
+  });
+  return {
+    ready:catalog.ready&&available.length>0,
+    message:!catalog.ready?catalog.message:available.length?'抽選できます（取得済み景品は除外済み）':'対象景品をすべて獲得済みです',
+    total:available.length?100:0,
+    prizes:prizes
+  };
 }
 
 function catalog_(ss,mode){
@@ -395,12 +433,13 @@ function catalog_(ss,mode){
     var units=Math.round(chance*100);
     var stock=x[6]===''?null:Number(x[6]);
     var image=String(x[7]||'').trim();
+    var duplicateKey=prizeDuplicateKeyFromRow_(x);
 
-    if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(x[1]||''))||ids[x[1]]||!String(x[2]||'').trim()||!Number.isFinite(chance)||chance<=0||chance>100||Math.abs(chance*100-units)>0.00001||stock!==null&&(!Number.isSafeInteger(stock)||stock<0)||image&&!/^https:\/\//i.test(image))valid=false;
+    if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(x[1]||''))||ids[x[1]]||!String(x[2]||'').trim()||!duplicateKey||!Number.isFinite(chance)||chance<=0||chance>100||Math.abs(chance*100-units)>0.00001||stock!==null&&(!Number.isSafeInteger(stock)||stock<0)||image&&!/^https:\/\//i.test(image))valid=false;
 
     ids[x[1]]=true;
     total+=units;
-    return {id:String(x[1]),name:String(x[2]),rarity:String(x[3]||''),chance:chance,units:units,stock:stock,image:image};
+    return {id:String(x[1]),name:String(x[2]),rarity:String(x[3]||''),chance:chance,units:units,stock:stock,image:image,duplicateKey:duplicateKey};
   });
 
   prizes.forEach(function(p){if(all.filter(function(x){return String(x[1])===p.id}).length!==1)valid=false});
@@ -443,8 +482,11 @@ function gachaAction_(ss,r,d){
 
   var festEntitled=total>=festAvailableFrom;
   var festUnlocked=festEntitled&&history.length>=festAvailableFrom-1&&remaining>0;
+  var gate=typeof gachaOpenState_==='function'?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
+  var wonKeys=wonDuplicateKeys_(ss,id);
+  var participantNormal=participantCatalog_(normal,wonKeys),participantFest=participantCatalog_(fest,wonKeys);
 
-  if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normal:normal,fest:fest};
+  if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normalOpen:gate.normalOpen,festOpen:gate.festOpen,normal:participantNormal,fest:participantFest};
 
   if(!/^[a-f0-9]{32}$/.test(d.drawId||'')||['通常','ラキフェス'].indexOf(d.mode)<0)return {ok:false,error:'抽選要求が不正です'};
 
@@ -455,6 +497,8 @@ function gachaAction_(ss,r,d){
     return {ok:true,participantId:r[0],drawId:old[0],prize:old[6],mode:old[4],ordinal:old[9],rarity:String(old[11]||''),image:String(old[12]||''),remaining:Math.max(total-(manual+history.length),0),replayed:true};
   }
 
+  if(d.mode==='通常'&&!gate.normalOpen)return {ok:false,error:'メンシプガチャは現在停止中です'};
+  if(d.mode==='ラキフェス'&&!gate.festOpen)return {ok:false,error:'ラキフェスガチャは現在停止中です'};
   if(!confirmed)return {ok:false,error:'メンシプ購入の確認をお待ちください'};
   if(remaining<1)return {ok:false,error:'残り回数がありません'};
   if(d.mode==='ラキフェス'&&!festEntitled)return {ok:false,error:'ラキフェスは総ガチャ権利'+festAvailableFrom+'回以上が対象です'};
@@ -463,39 +507,24 @@ function gachaAction_(ss,r,d){
   var c=d.mode==='通常'?normal:fest;
   if(!c.ready)return {ok:false,error:c.message};
 
+  var available=c.prizes.filter(function(p){return !wonKeys[p.duplicateKey]});
+  if(!available.length)return {ok:false,error:'獲得可能な景品がありません。すべての対象景品を獲得済みです'};
+
+  var availableUnits=available.reduce(function(sum,p){return sum+p.units},0);
+  if(availableUnits<=0)return {ok:false,error:'抽選設定を確認してください'};
+
   var bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,Utilities.getUuid()+Utilities.getUuid());
   var random=0;
   for(var i=0;i<4;i++)random=random*256+((bytes[i]+256)%256);
 
-  var point=Math.floor(random/4294967296*10000),sum=0,winner=null;
-  for(var j=0;j<c.prizes.length;j++){
-    sum+=c.prizes[j].units;
-    if(point<sum){winner=c.prizes[j];break}
+  var point=Math.floor(random/4294967296*availableUnits),sum=0,winner=null;
+  for(var j=0;j<available.length;j++){
+    sum+=available[j].units;
+    if(point<sum){winner=available[j];break}
   }
   if(!winner)return {ok:false,error:'抽選設定を確認してください'};
 
-  ss.getSheetByName(DRAW_TAB).appendRow([d.drawId,r[0],id,safeText_(r[2]),d.mode,winner.id,safeText_(winner.name),winner.chance,new Date(),used+1,'確定',safeText_(winner.rarity),winner.image]);
+  ss.getSheetByName(DRAW_TAB).appendRow([d.drawId,r[0],id,safeText_(r[2]),d.mode,winner.id,safeText_(winner.name),winner.chance,new Date(),used+1,'確定',safeText_(winner.rarity),winner.image,winner.duplicateKey]);
   SpreadsheetApp.flush();
   return {ok:true,participantId:r[0],drawId:d.drawId,prize:winner.name,mode:d.mode,ordinal:used+1,rarity:winner.rarity,image:winner.image,remaining:remaining-1,replayed:false};
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
