@@ -140,6 +140,10 @@
     {
       "src": "next-integrated.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "next-return.css",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -286,6 +290,10 @@
     {
       "src": "^/next-integrated\\.js$",
       "dest": "/next-integrated.js"
+    },
+    {
+      "src": "^/next-return\\.css$",
+      "dest": "/next-return.css"
     },
     {
       "src": "^/api(?:/.*)?$",
