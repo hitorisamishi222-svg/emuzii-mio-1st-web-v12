@@ -60,3 +60,13 @@ test('production-only code remains blocked from static replica routes',()=>{
  }
  assert(!cfg.builds.some(x=>x.src==='index.html'||x.src==='gacha.html'||x.src==='bridge.js'||x.src.startsWith('api')));
 });
+
+test('premium HOME keeps the existing approved desktop and mobile Mio portrait art',()=>{
+ assert(read('backgrounds.css').includes("url('/assets/bg-top-desktop.webp')"));
+ assert(read('backgrounds.css').includes("url('/assets/bg-top-mobile.webp')"));
+ for(const image of ['assets/bg-top-desktop.webp','assets/bg-top-mobile.webp'])
+  assert(cfg.builds.some(x=>x.src===image&&x.use==='@vercel/static'),image);
+ assert(css.includes('body.next-experience,body.next-premium-community{\n background-image:'));
+ assert(!css.includes('body.next-experience,body.next-premium-home,body.next-premium-community{\n background-image:'));
+ assert(read('home-top-demo.html').includes('class="next-premium-home"'));
+});
