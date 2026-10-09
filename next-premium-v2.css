@@ -1,0 +1,301 @@
+/* MIO NEXT — CONTENT EDITION 2 / STATIC VISUALS ONLY
+   Works with the existing isolated NEXT demos. No external assets, network,
+   API calls, storage, user identity, or changes to production styles.
+   The visual system is intentionally mobile-first and accessible.
+*/
+:root{
+ --mio-midnight:#04122d;--mio-deep:#071d44;--mio-cobalt:#0e448b;
+ --mio-sky:#91e9ff;--mio-ice:#e8faff;--mio-lilac:#c8b9ff;
+ --mio-petal:#ffe0f5;--mio-gold:#ffe4a1;--mio-soft:#c5e0f2;
+ --mio-stroke:rgba(173,228,255,.43);--mio-ring:rgba(189,245,255,.9);
+ --mio-shadow:0 18px 38px rgba(0,8,35,.28);
+}
+body.next-experience,
+body.next-premium-home,
+body.next-premium-community,
+body.next-premium-gacha{
+ background-color:var(--mio-midnight);
+}
+body.next-experience,body.next-premium-home,body.next-premium-community{
+ background-image:
+ radial-gradient(ellipse at 9% 9%,rgba(72,183,255,.17),transparent 31%),
+ radial-gradient(ellipse at 89% 0%,rgba(155,117,242,.15),transparent 34%),
+ radial-gradient(ellipse at 52% 100%,rgba(255,168,225,.075),transparent 48%),
+ linear-gradient(163deg,#06152f 0%,#081f49 51%,#040f28 100%);
+}
+body.next-premium-home,body.next-premium-community{color:#eef9ff}
+body.next-experience main,body.next-premium-community main,body.next-premium-gacha main{isolation:isolate}
+body.next-experience .hero,
+body.next-premium-community .hero,
+body.next-premium-home .hero,
+body.next-premium-gacha .demo-head{
+ position:relative;
+}
+body.next-experience .hero,
+body.next-premium-community .hero{
+ border:1px solid rgba(184,237,255,.72);
+ box-shadow:var(--mio-shadow),inset 0 1px 0 rgba(255,255,255,.30),0 0 34px rgba(108,205,255,.11);
+ background:
+ radial-gradient(circle at 100% -5%,rgba(255,222,250,.19),transparent 42%),
+ radial-gradient(circle at -5% 105%,rgba(105,223,255,.20),transparent 48%),
+ linear-gradient(137deg,rgba(20,89,171,.98),rgba(8,32,75,.97) 65%,#0b1a3e);
+}
+body.next-experience .hero h1,
+body.next-premium-community .hero h1{
+ text-wrap:balance;letter-spacing:.025em;
+}
+body.next-experience .hero p,
+body.next-premium-community .hero p{max-width:440px;line-height:1.9}
+body.next-experience .panel,
+body.next-premium-community .panel,
+body.next-premium-home .glass,
+body.next-premium-gacha .glass{
+ background:
+ linear-gradient(145deg,rgba(18,58,111,.90),rgba(6,26,62,.94) 68%),
+ radial-gradient(circle at 100% 0%,rgba(198,177,255,.15),transparent 60%);
+ border:1px solid var(--mio-stroke);
+ box-shadow:var(--mio-shadow),inset 0 1px 0 rgba(242,250,255,.14);
+}
+body.next-experience .panel,body.next-premium-community .panel{border-radius:24px}
+body.next-experience .panel h2,body.next-premium-community .section-title,
+body.next-premium-home h2{letter-spacing:.02em}
+body.next-experience .chip,body.next-experience .tag,
+body.next-premium-community .demo-tag,body.next-premium-gacha .demo-safe{
+ backdrop-filter:blur(12px);
+ background:rgba(10,38,83,.84);
+ border:1px solid rgba(246,215,157,.53);
+ color:#ffecb6;
+ font-weight:850;
+}
+body.next-experience a:focus-visible,
+body.next-experience button:focus-visible,
+body.next-premium-community button:focus-visible,
+body.next-premium-community input:focus-visible,
+body.next-premium-community textarea:focus-visible,
+body.next-premium-gacha button:focus-visible,
+body.next-premium-home button:focus-visible,
+body.next-premium-home a:focus-visible{
+ outline:3px solid var(--mio-ring);outline-offset:3px;
+}
+body.next-experience .button,
+body.next-premium-community .action,
+body.next-premium-gacha .demo-controls button{
+ border-radius:15px;
+ background:linear-gradient(125deg,#fbfeff 0%,#baf2ff 49%,#eedcff 100%);
+ box-shadow:0 8px 24px rgba(99,197,255,.24),inset 0 1px 0 #fff;
+ min-height:46px;
+}
+body.next-experience .button.ghost{
+ background:linear-gradient(130deg,#1b518a,#172b60);
+ color:#fff;border:1px solid rgba(190,231,255,.49);
+}
+body.next-experience .button.warn{background:linear-gradient(130deg,#fff2c3,#ffc8eb);color:#39263d}
+body.next-experience .stat{
+ min-width:0;
+ background:linear-gradient(150deg,rgba(34,88,152,.72),rgba(7,27,65,.88));
+ border-color:rgba(174,228,255,.46);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.13);
+}
+body.next-experience .stat strong{color:#fff;text-shadow:0 0 15px rgba(150,221,255,.38)}
+body.next-experience .stat span{font-size:11px;line-height:1.5}
+body.next-experience .notice{
+ background:linear-gradient(100deg,rgba(13,56,94,.83),rgba(9,28,65,.91));
+ border-left:3px solid #97eeff;
+ font-size:12px;line-height:1.8;
+}
+body.next-experience .small-title{
+ color:#d8edfb;font-weight:850;letter-spacing:.045em;
+}
+body.next-experience footer,body.next-premium-home footer,body.next-premium-community footer{
+ opacity:.95;line-height:1.8;
+}
+/* ATTENDANCE: gemstone progress, legible calendar and collectible milestones */
+body[data-page=attendance] .hero{min-height:188px}
+body[data-page=attendance] .panel:first-of-type{border-color:rgba(138,231,255,.65)}
+.mio-progress-caption{display:flex;justify-content:space-between;align-items:baseline;gap:9px;margin:20px 0 8px;color:var(--mio-soft);font-size:12px;font-weight:800}
+.mio-progress-caption strong{color:var(--mio-gold);font-variant-numeric:tabular-nums}
+.mio-progress-track{height:12px;border-radius:999px;padding:2px;background:rgba(0,13,35,.60);border:1px solid rgba(154,220,255,.43);box-shadow:inset 0 2px 5px rgba(0,0,0,.28)}
+.mio-progress-fill{height:100%;width:48.39%;border-radius:inherit;background:linear-gradient(90deg,#5cd8ec,#a7cbff 55%,#f5cbff);box-shadow:0 0 13px rgba(145,238,255,.35);position:relative}
+.mio-progress-fill::after{content:"✦";position:absolute;right:-8px;top:-10px;font-size:19px;color:white;text-shadow:0 0 12px #a3ecff}
+body[data-page=attendance] .days{margin-top:10px;gap:clamp(4px,1.3vw,9px)}
+body[data-page=attendance] .day{
+ aspect-ratio:1/1.07;min-height:41px;border-radius:13px;
+ background:rgba(12,35,78,.91);border:1px solid rgba(120,178,223,.45);
+ color:#eaf6ff;font-weight:900;font-variant-numeric:tabular-nums;
+ transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+body[data-page=attendance] .day.done{
+ background:linear-gradient(145deg,#2785cb,#3061b5 75%);
+ border-color:#b6f4ff;
+ box-shadow:0 4px 15px rgba(70,169,250,.19),inset 0 1px 0 rgba(255,255,255,.3);
+}
+body[data-page=attendance] .day.active{
+ transform:translateY(-2px);outline:2px solid #ffe5a3;
+ outline-offset:2px;box-shadow:0 0 17px rgba(255,226,153,.32);
+}
+.mio-milestones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.mio-milestone{position:relative;overflow:hidden;border-radius:18px;padding:16px 8px 13px;text-align:center;
+ border:1px solid rgba(185,230,255,.55);
+ background:radial-gradient(circle at 50% 5%,rgba(196,235,255,.23),transparent 52%),linear-gradient(150deg,#1b538b,#0c2454);
+}
+.mio-milestone .medal{display:block;font-size:37px;filter:drop-shadow(0 4px 12px rgba(255,235,192,.28));line-height:1.4}
+.mio-milestone strong{display:block;color:#f8fdff;font-size:12px;margin:7px 0 2px}
+.mio-milestone small{display:block;color:#c0d9ec;font-size:10px}
+.mio-milestone.locked{background:linear-gradient(140deg,#132b55,#101b3a);border-color:rgba(170,191,216,.35)}
+.mio-milestone.locked .medal{filter:grayscale(.5);opacity:.72}
+/* MYPAGE: character card and personal activity feed */
+body[data-page=mypage] .profile{
+ border-radius:19px;padding:12px;background:linear-gradient(112deg,rgba(83,143,215,.20),rgba(255,208,238,.08));border:1px solid rgba(177,231,255,.27)
+}
+body[data-page=mypage] .avatar{
+ width:78px;height:78px;flex-shrink:0;font-size:38px;border:3px solid #dcf7ff;
+ background:radial-gradient(circle at 32% 20%,#fff8ff,#b8eaff 46%,#5d73d8);
+ box-shadow:0 0 0 6px rgba(174,229,255,.10),0 8px 24px rgba(127,188,252,.27);
+}
+body[data-page=mypage] .profile strong{font-size:clamp(16px,4vw,22px)}
+body[data-page=mypage] .tabs{background:rgba(6,22,50,.7);border:1px solid rgba(156,209,245,.26);padding:5px;border-radius:15px}
+body[data-page=mypage] .tab{border-radius:11px}
+body[data-page=mypage] .tab[aria-selected=true]{background:linear-gradient(110deg,#e3fbff,#d5d7ff);color:#0b2d59}
+body[data-page=mypage] .item{border-color:rgba(158,224,255,.41);background:linear-gradient(120deg,rgba(29,77,140,.61),rgba(9,35,79,.82));padding:14px}
+body[data-page=mypage] .item::before{content:"✦";color:#ffe0f5;padding-right:9px}
+body[data-page=mypage] .button-row a{display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+/* ADMIN: functional readability takes precedence over effects */
+body[data-page=admin] .hero{background:linear-gradient(125deg,#173f76,#081935 74%)}
+body[data-page=admin] .stat{background:#0c2b57}
+body[data-page=admin] .field input,body[data-page=admin] .field textarea{
+ background:rgba(3,15,39,.84);color:#fff;
+ border:1px solid rgba(152,217,255,.61);
+ border-radius:12px;padding:13px;min-height:47px;
+}
+body[data-page=admin] .mod-card{border-left:3px solid #b7e9ff;background:linear-gradient(110deg,#163763,#092249)}
+body[data-page=admin] .feedback{border-radius:13px;border-left:3px solid #8deedb;line-height:1.8}
+/* COMMUNITY: a visual identity for lounge/chat/gallery */
+body.next-premium-community main{max-width:650px}
+body.next-premium-community .hero{
+ background:radial-gradient(circle at 94% 13%,rgba(255,211,246,.15),transparent 39%),linear-gradient(128deg,#195da3,#0a2356 74%);
+}
+body.next-premium-community .panel{backdrop-filter:blur(10px)}
+body.next-premium-community .tabs{border-radius:18px;padding:5px;gap:6px;background:rgba(1,17,42,.63);border:1px solid rgba(135,215,255,.27)}
+body.next-premium-community .tab{border-radius:13px;background:#12396a;border-color:rgba(144,214,255,.31)}
+body.next-premium-community .tab[aria-selected=true]{
+ background:linear-gradient(130deg,#e9faff,#bce4ff 52%,#e7d4ff);
+ box-shadow:0 7px 18px rgba(83,195,255,.27);
+}
+body.next-premium-community .ticker{box-shadow:0 8px 22px rgba(0,10,44,.22)}
+body.next-premium-community .chat-window{
+ background:radial-gradient(circle at 100% 0%,rgba(108,201,238,.10),transparent 50%),#041733;
+ border-color:rgba(145,217,252,.35);
+ scrollbar-color:#559ed1 #062147;
+}
+body.next-premium-community .message{
+ background:linear-gradient(140deg,#205a96,#153866);
+ border-color:rgba(161,225,255,.31);
+ box-shadow:0 5px 13px rgba(0,9,30,.14);
+}
+body.next-premium-community .message.mine{background:linear-gradient(145deg,#147d94,#14546e);border-color:rgba(132,246,238,.52)}
+body.next-premium-community .message.admin{background:linear-gradient(140deg,#6c512d,#2e2c64);border-color:rgba(255,227,157,.54)}
+body.next-premium-community .composer textarea{min-height:96px;border-radius:15px;background:#071d3e}
+body.next-premium-community .media-card{
+ background:linear-gradient(155deg,#123767,#091c3c);
+ border:1px solid rgba(151,219,255,.43);
+ box-shadow:0 10px 20px rgba(0,8,35,.24);
+ transition:transform .16s ease,border-color .16s ease;
+}
+body.next-premium-community .media-card .thumb{aspect-ratio:1.18}
+body.next-premium-community .media-card .media-caption{padding:13px}
+body.next-premium-community .media-card .media-type{background:rgba(1,15,37,.88);backdrop-filter:blur(7px)}
+body.next-premium-community .play{box-shadow:0 4px 16px rgba(10,30,70,.26)}
+/* GACHA: stage is distinct from the information cards */
+body.next-premium-gacha .demo-head{
+ padding:21px 13px 22px;margin:10px 0 18px;
+ border:1px solid rgba(176,230,255,.53);border-radius:25px;
+ background:radial-gradient(ellipse at 90% 0%,rgba(208,141,242,.24),transparent 47%),linear-gradient(140deg,#185392,#0a2559);
+ box-shadow:var(--mio-shadow);
+}
+body.next-premium-gacha .demo-head h1{
+ font-size:clamp(23px,6vw,32px);
+ margin:10px 0;letter-spacing:.045em;
+}
+body.next-premium-gacha #drawPanel{
+ overflow:hidden;border-radius:23px;border-color:rgba(196,227,255,.58);
+}
+body.next-premium-gacha #gachaStage{
+ border:2px solid rgba(177,237,255,.58);
+ border-radius:22px;overflow:hidden;
+ box-shadow:inset 0 0 35px rgba(111,217,255,.13),0 12px 28px rgba(0,10,36,.25);
+}
+body.next-premium-gacha .demo-controls{
+ grid-template-columns:repeat(5,minmax(0,1fr));
+ gap:8px;
+}
+body.next-premium-gacha .demo-controls button{
+ min-width:0;border:1px solid rgba(255,255,255,.45);
+ border-radius:13px;padding:9px 4px;
+}
+body.next-premium-gacha .demo-controls button:nth-child(3){background:linear-gradient(130deg,#d6f6ff,#b7c4ff)}
+body.next-premium-gacha .demo-controls button:nth-child(4){background:linear-gradient(130deg,#ffe8f8,#e1baff)}
+body.next-premium-gacha .demo-controls button:nth-child(5){background:linear-gradient(130deg,#fff7c3,#f1c461)}
+body.next-premium-gacha .gacha-balance{color:#fff0c2}
+body.next-premium-gacha .message{font-weight:750;line-height:1.7}
+/* HOME / NEWS / SCHEDULE: clear information hierarchy */
+body.next-premium-home .glass{border-radius:23px}
+body.next-premium-home .home-panel,
+body.next-premium-home .home-summary-card{
+ background:linear-gradient(135deg,rgba(20,65,123,.96),rgba(5,25,61,.94));
+ border-color:rgba(152,219,255,.46);border-radius:19px;
+ box-shadow:0 12px 26px rgba(0,12,44,.22);
+}
+body.next-premium-home .home-summary-card.news{border-top:3px solid #9deaff}
+body.next-premium-home .home-summary-card.schedule{border-top:3px solid #ffdfa0}
+body.next-premium-home .home-news-item{border-left:3px solid #8deaff;border-radius:13px}
+body.next-premium-home .home-news-item.important{border-left-color:#ffe093}
+body.next-premium-home .home-news-item.emergency{border-left-color:#ff9aaa}
+body.next-premium-home .home-live-card{border-radius:17px}
+body.next-premium-home .demo-switcher button{
+ border:1px solid rgba(168,221,255,.55);
+ background:#103a72;color:#edfbff;border-radius:13px;
+ min-height:44px;
+}
+body.next-premium-home .demo-switcher button:active{background:#d4f6ff;color:#083057}
+body.next-premium-home .home-news-item h4{line-height:1.5;overflow-wrap:anywhere}
+body.next-premium-home .page-back{color:#cbf4ff;min-height:44px;align-items:center}
+body.next-premium-home .info-page .hero{border-radius:25px}
+/* PORTAL: categories have individual light accents, not identical cards */
+body.next-portal .cards a.card{
+ border:1px solid rgba(171,228,255,.53);
+ background:radial-gradient(circle at 94% 3%,rgba(195,181,255,.19),transparent 53%),linear-gradient(155deg,#194b89,#0a254f);
+ box-shadow:0 12px 29px rgba(0,9,34,.24),inset 0 1px 0 rgba(255,255,255,.17);
+ transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+body.next-portal .cards a.card:nth-child(3n+1){border-top:3px solid #9deaff}
+body.next-portal .cards a.card:nth-child(3n+2){border-top:3px solid #fbd7f6}
+body.next-portal .cards a.card:nth-child(3n){border-top:3px solid #ffe2a4}
+body.next-portal .cards a.card strong{font-size:15px}
+body.next-portal .cards a.card .symbol{filter:drop-shadow(0 3px 11px rgba(162,236,255,.33))}
+body.next-portal .cards a.card .status{font-weight:850;color:#d5f8ff}
+/* Mobile interaction, no hover assumptions */
+@media(hover:hover) and (pointer:fine){
+ body.next-portal .cards a.card:hover{transform:translateY(-3px);border-color:#d4f4ff;box-shadow:0 20px 35px rgba(0,8,35,.42)}
+ body.next-premium-community .media-card:hover{transform:translateY(-2px);border-color:#d6f4ff}
+}
+@media(max-width:520px){
+ body.next-premium-gacha .demo-controls{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body.next-premium-home .page-list-head{align-items:flex-start;flex-direction:column}
+ body.next-premium-community .chat-window{height:min(53dvh,380px)}
+ .mio-milestones{gap:7px}
+ .mio-milestone{padding:13px 4px}
+ body.next-experience .hero{padding-bottom:24px}
+}
+@media(max-width:355px){
+ body[data-page=attendance] .day{min-height:37px;border-radius:10px}
+ body[data-page=mypage] .profile{gap:9px;padding:8px}
+ body[data-page=mypage] .avatar{width:58px;height:58px;font-size:29px}
+ .mio-milestone strong{font-size:10px}
+ body.next-premium-gacha .demo-controls button{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ body.next-premium-community .ticker-content{animation:none!important;transform:none!important;padding-left:0}
+ body.next-portal .cards a.card,
+ body.next-premium-community .media-card,
+ body[data-page=attendance] .day{transition:none!important}
+}
