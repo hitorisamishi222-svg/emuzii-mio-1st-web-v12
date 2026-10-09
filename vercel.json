@@ -6,6 +6,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "mobile-checklist.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "home-top-demo.html",
       "use": "@vercel/static"
     },
@@ -134,6 +138,10 @@
     {
       "src": "^/next-preview\\.html$",
       "dest": "/next-preview.html"
+    },
+    {
+      "src": "^/mobile-checklist\\.html$",
+      "dest": "/mobile-checklist.html"
     },
     {
       "src": "^/home-top-demo\\.html$",
