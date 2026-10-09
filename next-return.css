@@ -1,0 +1,4 @@
+/* Navigation glue for NEXT static-only demos. Scoped to the return control. */
+.next-return-link{display:inline-flex!important;align-items:center;justify-content:center;min-height:39px;max-width:100%;padding:8px 13px;margin:9px 0 15px;border:1px solid #95e6ff99;border-radius:99px;background:#071f47ee;color:#e5f9ff!important;text-decoration:none!important;font:800 12px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 5px 16px #00112b55;letter-spacing:.02em}
+.next-return-link:hover{background:#194b82}
+.next-return-link:focus-visible{outline:3px solid #ffe7a2;outline-offset:3px}

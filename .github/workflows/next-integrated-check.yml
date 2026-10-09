@@ -1,0 +1,27 @@
+name: NEXT Integrated Replica Check
+on:
+  push:
+    branches:
+      - feature/next-integrated-home-20261010
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-and-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test complete isolated next preview
+        run: |
+          node --test \
+            release-prep/next-integrated.test.mjs \
+            release-prep/admin-preview.test.mjs \
+            release-prep/replica-safety.test.mjs \
+            release-prep/community-test-schema.test.mjs \
+            community-policy.test.js \
+            security/authorization.test.js \
+            security/guard.test.js
