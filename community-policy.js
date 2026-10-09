@@ -10,8 +10,13 @@ export function validatePublicMessage(value){
  return {ok:true,body};
 }
 export function mayWrite({identity,permission,emergencyStop=false}){
- return identity?.verified===true && identity?.active===true && permission?.approved===true &&
-        permission?.participantId===identity.participantId && emergencyStop!==true;
+ // Fail closed: undefined === undefined must never authorize a participant.
+ // The caller must also verify identity and permissions against trusted server-side data.
+ const participantId=identity?.participantId;
+ return identity?.verified===true && identity?.active===true &&
+        typeof participantId==='string' && participantId.trim().length>0 &&
+        permission?.approved===true && typeof permission?.participantId==='string' &&
+        permission.participantId===participantId && emergencyStop!==true;
 }
 export function validateExternalVideoUrl(raw){
  if(typeof raw!=='string'||raw.length>2048)return {ok:false,code:'BAD_URL'};
