@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06162e">
+<meta name="description" content="翠央1周年大型更新の統合プレビュー。すべて架空データの表示デモです。">
+<title>翠央 1周年｜大型更新 統合ホーム TEST</title>
+<link rel="stylesheet" href="/next-integrated.css">
+</head>
+<body class="next-integrated next-experience">
+<a class="skip-link" href="#main">本文へ移動</a>
+<header class="site-header">
+ <div class="site-header-inner">
+  <a class="site-brand" href="/next-integrated.html" aria-label="翠央1周年 トップへ">✦ 翠央 <small>1ST ANNIVERSARY</small></a>
+  <span class="test-tag">NEXT · TEST ONLY</span>
+  <nav class="desktop-nav" aria-label="メインメニュー">
+   <a href="#latest">最新情報</a><a href="#events">イベント</a><a href="#community">コミュニティ</a><a href="/mypage-deluxe-demo.html">マイページ</a>
+  </nav>
+ </div>
+</header>
+<main id="main">
+ <section class="mio-hero" aria-label="翠央1周年の記念トップ画面">
+  <picture class="hero-picture" aria-hidden="true">
+   <source media="(max-width: 700px)" srcset="/assets/bg-top-mobile.webp">
+   <img src="/assets/bg-top-desktop.webp" alt="" fetchpriority="high" decoding="async">
+  </picture>
+  <div class="hero-shade"></div>
+  <div class="hero-copy">
+   <span class="hero-date">2026.10.01 — 10.31</span>
+   <span class="hero-edition">✦ STARRY DIAMOND EDITION ✦</span>
+   <h1>翠央と彩る、<br>1周年のひと月。</h1>
+   <p>歌と笑顔と、31日間の思い出。<br>今日も一緒に、特別な時間を。</p>
+   <div class="hero-actions">
+    <a class="action-primary" href="/attendance-deluxe-demo.html">🏆 皆勤賞をみる <span aria-hidden="true">→</span></a>
+    <a class="action-secondary" href="#events">企画を楽しむ ↓</a>
+   </div>
+  </div>
+ </section>
+ <div class="content-wrap">
+ <p class="demo-banner" role="note"><span aria-hidden="true">🛡️</span><span><strong>大型更新の統合テスト画面です。</strong> お知らせ・配信予定・参加状況は架空のサンプル。本番の登録・皆勤・ガチャ回数・管理データには接続していません。</span></p>
+
+ <section id="latest" class="section-block" aria-labelledby="latestTitle">
+  <div class="section-heading"><div><span class="eyebrow">LATEST INFORMATION</span><h2 id="latestTitle">最新のお知らせ</h2></div><a class="text-more" href="/news.html">一覧を見る →</a></div>
+  <div class="sample-controls" role="group" aria-label="最新情報の表示テスト">
+   <span>表示デモ切替</span>
+   <button type="button" class="sample-control is-active" data-scenario="live" aria-pressed="true">配信中</button>
+   <button type="button" class="sample-control" data-scenario="next" aria-pressed="false">次回予定</button>
+   <button type="button" class="sample-control" data-scenario="empty" aria-pressed="false">予定なし</button>
+  </div>
+  <div class="latest-contents">
+   <div class="live-slot" id="homeLiveBanner" hidden aria-live="polite"></div>
+   <div class="latest-grid">
+    <a class="information-card" href="/news.html"><span class="mini-icon" aria-hidden="true">📢</span><span class="card-label">NEWS / お知らせ</span><span id="homeNewsSummary" class="home-summary"></span><span class="card-link">お知らせ一覧へ →</span></a>
+    <a class="information-card schedule-card" href="/schedule.html"><span class="mini-icon" aria-hidden="true">📅</span><span class="card-label">LIVE / 配信予定</span><span id="homeScheduleSummary" class="home-summary"></span><span class="card-link">配信予定へ →</span></a>
+   </div>
+  </div>
+  <p class="demo-description">※「配信中」「次回予定」は動作サンプルです。実際の翠央の配信状況ではありません。</p>
+ </section>
+
+ <section id="events" class="section-block" aria-labelledby="eventsTitle">
+  <div class="section-heading"><div><span class="eyebrow">ANNIVERSARY EVENTS</span><h2 id="eventsTitle">1周年イベント</h2></div><span class="section-star" aria-hidden="true">✧</span></div>
+  <div class="event-grid">
+   <a class="feature-card attendance" href="/attendance-deluxe-demo.html"><div class="feature-art" aria-hidden="true">🏆<span>✦</span></div><span class="feature-kicker">31 DAYS CHALLENGE</span><h3>1周年月間皆勤賞</h3><p>31日分の足あとをカレンダーで。達成への道のりをきらめく記録に。</p><span class="feature-cta">皆勤賞の画面を見る →</span></a>
+   <a class="feature-card gacha" href="/gacha-cinematic-demo.html"><div class="feature-art whale" aria-hidden="true">🐳<span>💎</span></div><span class="feature-kicker">DIAMOND GACHA</span><h3>豪華クジラガチャ</h3><p>メンシプ＆ラキフェス、ブルーとゴールドの特別演出を楽しもう。</p><span class="feature-cta">演出を体験する →</span></a>
+  </div>
+ </section>
+
+ <section id="community" class="section-block" aria-labelledby="communityTitle">
+  <div class="section-heading"><div><span class="eyebrow">MIO COMMUNITY</span><h2 id="communityTitle">みんなが集まる場所</h2></div><span class="section-star" aria-hidden="true">♡</span></div>
+  <a class="community-banner" href="/community-demo.html"><span class="community-mark" aria-hidden="true">💬</span><span class="community-text"><strong>みおコミュニティ</strong><small>おしゃべり・動画・写真・ファンアートをひとつに。みんなでつくる1周年の思い出。</small><em>コミュニティを開く →</em></span></a>
+  <div class="mini-grid">
+   <a class="mini-card" href="/mypage-deluxe-demo.html"><span aria-hidden="true">💎</span><strong>マイページ</strong><small>参加履歴・ガチャ・作品をまとめて確認 →</small></a>
+   <a class="mini-card" href="/community-demo.html"><span aria-hidden="true">🎨</span><strong>ファンアート</strong><small>みんなの作品を楽しむ →</small></a>
+  </div>
+ </section>
+
+ <section class="footer-previews" aria-label="大型更新のテスト用ページ">
+  <h2>制作・確認用メニュー</h2>
+  <div class="utility-links">
+   <a href="/admin-center-demo.html">👑 管理センター（デモ）</a>
+   <a href="/mobile-checklist.html">📱 スマホ表示チェック</a>
+   <a href="/home-updates-demo.html">📢 お知らせ表示テスト</a>
+   <a href="/next-preview.html">🧩 機能別プレビュー一覧</a>
+  </div>
+  <p>テスト環境の管理ボタンは、本番の権限や設定を変更しません。</p>
+ </section>
+ </div>
+</main>
+<nav class="bottom-nav" aria-label="スマホ用メニュー">
+ <a href="/next-integrated.html" aria-current="page"><span aria-hidden="true">⌂</span><small>ホーム</small></a>
+ <a href="/attendance-deluxe-demo.html"><span aria-hidden="true">🏆</span><small>皆勤賞</small></a>
+ <a href="/gacha-cinematic-demo.html"><span aria-hidden="true">💎</span><small>ガチャ</small></a>
+ <a href="/community-demo.html"><span aria-hidden="true">💬</span><small>交流</small></a>
+ <a href="/mypage-deluxe-demo.html"><span aria-hidden="true">♡</span><small>マイページ</small></a>
+</nav>
+<footer class="site-footer">翠央 1周年 ✦ NEXT EXPERIENCE <span>大型更新・統合プレビュー / 本番とは別</span></footer>
+<script src="/next-integrated.js"></script>
+<script type="module" src="/home-updates.js"></script>
+</body>
+</html>
