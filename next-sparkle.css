@@ -1,0 +1,41 @@
+/* NEXT replica visual layer — decorative only, no production endpoints. */
+.next-experience { --starlight:#9feaff; --stargold:#ffe4a6; }
+.next-experience .design-edition {
+ display:block; margin-top:8px; font-size:10px; font-weight:900;
+ letter-spacing:.16em; color:var(--stargold);
+ text-shadow:0 0 13px #ffe7ac99;
+}
+.next-experience .hero { isolation:isolate; position:relative; overflow:hidden; }
+.next-experience .hero > :not(.hero-art) { position:relative; z-index:2; }
+.next-experience .hero-art { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+.next-experience .hero-art::before {
+ content:""; position:absolute; width:230px; height:230px; right:-35px; top:-95px;
+ border-radius:50%; background:radial-gradient(circle,#b0eaff66 0,#76baf622 45%,transparent 70%);
+ filter:blur(4px);
+}
+.next-experience .hero-orbit { position:absolute; right:-44px; top:15px; width:205px; height:205px;
+ border:1px solid #a6eaff80; border-radius:50%; transform:rotate(-26deg) scaleY(.62);
+ box-shadow:0 0 32px #8fcfff22,inset 0 0 20px #8fcfff18;
+}
+.next-experience .hero-gem {position:absolute;right:50px;top:38px;font-size:64px;opacity:.56;
+ filter:drop-shadow(0 0 22px #b0ecff99);
+ animation:next-gem 5s ease-in-out infinite;
+}
+.next-experience .hero-spark{position:absolute;color:#fff2c6;filter:drop-shadow(0 0 9px #a4eaff);
+ animation:next-sparkle 3.8s ease-in-out infinite alternate;
+}
+.next-experience .hero-spark-a{right:18px;top:34px;font-size:23px}
+.next-experience .hero-spark-b{right:145px;top:110px;font-size:18px;animation-delay:1.3s}
+.next-experience .panel,.next-portal .meta {box-shadow:inset 0 0 28px #68d8ff0e,0 10px 27px #001a3850}
+.next-experience a:focus-visible,.next-experience button:focus-visible {outline:3px solid #fff0b0;outline-offset:3px}
+@keyframes next-gem {50%{transform:translateY(-8px) rotate(7deg)}}
+@keyframes next-sparkle {from{opacity:.38;transform:scale(.85)}to{opacity:1;transform:scale(1.17)}}
+@media(max-width:420px){
+ .next-experience .hero-gem {right:10px;top:68px;font-size:45px;opacity:.28}
+ .next-experience .hero-orbit {right:-92px;top:60px}
+ .next-experience .hero-spark-b {right:95px}
+ .next-experience .design-edition {font-size:9px;letter-spacing:.1em}
+}
+@media(prefers-reduced-motion:reduce){
+ .next-experience .hero-gem,.next-experience .hero-spark{animation:none}
+}
