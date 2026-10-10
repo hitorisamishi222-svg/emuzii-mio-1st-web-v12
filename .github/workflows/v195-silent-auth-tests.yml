@@ -1,0 +1,25 @@
+name: v1.9.5 Silent Auth Compatibility
+on:
+  push:
+    branches:
+      - hotfix/v195-silent-auth-stage-20261010
+  pull_request:
+    paths:
+      - 'api-browser-pair-*.js'
+      - 'pair-release-gate.js'
+      - 'vercel.json'
+      - 'release-prep/silent-pair-gate-v195.test.mjs'
+      - '.github/workflows/v195-silent-auth-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run session, endpoint and routing compatibility tests
+        run: node --test release-prep/silent-pair-gate-v195.test.mjs
