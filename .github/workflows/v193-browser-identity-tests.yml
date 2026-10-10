@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - fix/v193-browser-auth-handoff-20261010
+  pull_request:
+    paths:
+      - 'APPS_SCRIPT_Code_v1.9.3_BROWSER_IDENTITY_LAYER.gs'
+      - 'release-prep/browser-identity-v193.test.mjs'
+      - '.github/workflows/v193-browser-identity-tests.yml'
   workflow_dispatch:
 permissions:
   contents: read
