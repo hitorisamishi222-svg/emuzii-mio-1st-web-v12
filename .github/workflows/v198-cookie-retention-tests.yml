@@ -1,0 +1,25 @@
+name: v1.9.8 Signed Cookie Retention
+on:
+  push:
+    branches:
+      - fix/v198-refresh-signed-session-cookie-20261010
+  pull_request:
+    paths:
+      - 'api-status.js'
+      - 'api-checkin.js'
+      - 'api-gacha.js'
+      - 'release-prep/session-cookie-rolling-v198.test.mjs'
+      - '.github/workflows/v198-cookie-retention-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Test signed cookie retention and old API compatibility
+        run: node --test release-prep/session-cookie-rolling-v198.test.mjs
