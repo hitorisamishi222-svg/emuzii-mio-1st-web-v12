@@ -239,7 +239,7 @@ function browserRequestSheet_(ss){
   var sh=ss.getSheetByName(BROWSER_REQUEST_TAB);
   if(!sh){
     sh=ss.insertSheet(BROWSER_REQUEST_TAB);
-    sh.appendRow(['ブラウザ申請ID','認証ハッシュ','ColorSing名','承認先MIO-ID','状態','申請日時','確認日時','運営メモ']);
+    sh.appendRow(['ブラウザ申請ID','認証ハッシュ','ColorSing名','承認先MIO-ID','状態','申請日時','確認日時','運営メモ','参考候補MIO-ID（自動承認不可）']);
     sh.setFrozenRows(1);
     sh.getRange('E2:E500').setDataValidation(
       SpreadsheetApp.newDataValidation().requireValueInList(['確認待ち','承認済み','却下'],true).setAllowInvalid(false).build()
@@ -260,9 +260,9 @@ function queueBrowserRequest_(ss,d,name,proposedMioId){
   var sh=browserRequestSheet_(ss);
   if(findBrowserRequest_(ss,d.participantId,d.tokenHash))return true;
   if(sh.getLastRow()>=500)return false;
-  sh.appendRow([d.participantId,d.tokenHash,safeText_(name),
-    /^MIO-\\d{4}$/.test(String(proposedMioId||''))?proposedMioId:'',
-    '確認待ち',new Date(),'','本人確認後に管理者が承認先MIO-IDと状態を確認']);
+  sh.appendRow([d.participantId,d.tokenHash,safeText_(name),'',
+    '確認待ち',new Date(),'','承認先MIO-IDは本人確認後に管理者がD列へ記入',
+    /^MIO-\d{4}$/.test(String(proposedMioId||''))?proposedMioId:'']);
   SpreadsheetApp.flush();
   return true;
 }
@@ -278,7 +278,7 @@ function browserIdentityFor_(ss,web,d){
   var name=String(req[2]||'');
   if(status!=='承認済み')return {pending:true,status:status==='却下'?'却下':'承認待ち',name:name};
   var id=String(req[3]||'');
-  if(!/^MIO-\\d{4}$/.test(id))return {pending:true,status:'承認待ち',name:name};
+  if(!/^MIO-\d{4}$/.test(id))return {pending:true,status:'承認待ち',name:name};
   var people=rows_(ss,'emuzii_参加者').filter(function(p){return String(p[0]||'')===id&&nameKey_(p[1])===nameKey_(name)});
   if(people.length!==1)return {pending:true,status:'承認待ち',name:name};
   var bases=webActualRows_(web).filter(function(r){
@@ -329,10 +329,8 @@ function doPost(e) {
       var peopleByName=rows_(ss,'emuzii_参加者').filter(function(p){return nameKey_(p[1])===nameKey});
       var linked=peopleByName.length===1?peopleByName[0][0]:'';
       var matchState=peopleByName.length>1?'重複要確認':peopleByName.length===1?'既存一致':'フォーム/Web新規';
-      var submittedLoginId=loginIdFormat_(d.loginId);
-
       // An existing person's name never creates another person/entitlement record.
-      // No surname, user agent, login ID, or device fingerprint grants access.
+      // Display name, user agent, login ID, or browser fingerprint alone never grants access.
       if(duplicates.length || peopleByName.length){
         if(!queueBrowserRequest_(ss,d,name,linked))
           return json_({ok:false,error:'接続申請が混み合っています。運営へ連絡してください'});
