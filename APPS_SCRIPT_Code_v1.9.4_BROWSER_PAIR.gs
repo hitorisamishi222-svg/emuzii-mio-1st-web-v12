@@ -328,7 +328,7 @@ function approvedBrowserSource_(ss,web,participantId,tokenHash){
   var people=rows_(ss,'emuzii_参加者').filter(function(x){
     return String(x[0]||'')===id&&nameKey_(x[1])===nameKey_(name);
   });
-  return people.length===1?{id:id,name:name}:null;
+  return people.length===1?{id:id,name:name,member:String(r[6]||'未確認')}:null;
 }
 function createPair_(ss,web,d){
   if(!/^[a-f0-9]{64}$/.test(String(d.pairHash||'')))return {ok:false,error:'接続キーが不正です'};
@@ -361,8 +361,27 @@ function claimPair_(ss,web,d){
   var origin=approvedBrowserSource_(ss,web,String(record[1]),String(record[2]));
   if(!origin||origin.id!==String(record[3])||nameKey_(origin.name)!==nameKey_(record[4]))
     return {ok:false,error:'元のブラウザの認証が無効になりました'};
-  if(webActualRows_(web).some(function(r){return String(r[0])===d.participantId}))
-    return {ok:false,error:'すでに登録されたブラウザです。既存の参加状況を確認してください'};
+  var existingWeb=webActualRows_(web).map(function(r,i){return {v:r,row:i+2};})
+    .filter(function(x){return String(x.v[0])===d.participantId});
+  if(existingWeb.length>1)return {ok:false,error:'重複したブラウザ情報を運営が確認中です'};
+  // A v1.9.2 pending browser can join safely without receiving a new Web-ID.
+  if(existingWeb.length===1){
+    var w=existingWeb[0],recordWeb=w.v;
+    if(!equal_(recordWeb[1],d.tokenHash)||nameKey_(recordWeb[2])!==nameKey_(origin.name)||
+       String(recordWeb[5])!=='承認待ち'||String(recordWeb[16])==='旧端末'||
+       (recordWeb[7]&&String(recordWeb[7])!==origin.id)||
+       (recordWeb[10]&&String(recordWeb[10])!==origin.id&&String(recordWeb[10])!==d.participantId))
+      return {ok:false,error:'登録済みブラウザの本人確認が必要です'};
+    web.getRange(w.row,6).setValue('承認済み');
+    web.getRange(w.row,7).setValue(origin.member);
+    web.getRange(w.row,8).setValue(origin.id);
+    web.getRange(w.row,11).setValue(origin.id);
+    web.getRange(w.row,12).setValue('確認済み');
+    web.getRange(w.row,13).setValue(new Date());
+    web.getRange(w.row,17).setValue('使用中');
+    web.getRange(w.row,18).setValue('ワンタイムリンクで元の認証済みブラウザと接続');
+    ensureWebDerivedRow_(web,w.row);
+  }else{
   var sh=browserRequestSheet_(ss),claims=rows_(ss,BROWSER_REQUEST_TAB);
   var existing=claims.map(function(r,i){return {v:r,row:i+2}}).filter(function(x){return String(x.v[0])===d.participantId});
   if(existing.length>1)return {ok:false,error:'ブラウザ申請の重複を運営が確認中です'};
@@ -379,6 +398,7 @@ function claimPair_(ss,web,d){
     if(sh.getLastRow()>=500)return {ok:false,error:'接続申請の保存上限です'};
     sh.appendRow([d.participantId,d.tokenHash,safeText_(origin.name),origin.id,
       '承認済み',new Date(),new Date(),'ワンタイムリンクによる自動接続',origin.id]);
+  }
   }
   pairs.getRange(pair.row,8).setValue('使用済み');
   pairs.getRange(pair.row,9).setValue(d.participantId);
