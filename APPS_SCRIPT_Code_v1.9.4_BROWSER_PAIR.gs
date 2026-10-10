@@ -325,7 +325,10 @@ function approvedBrowserSource_(ss,web,participantId,tokenHash){
   if(!r||r[5]!=='承認済み'||activeWebDeviceErrorV189_(r)||!webIntegrityOk_(r))return null;
   // Legacy v1.9.2 name-only browser approvals must not bootstrap another browser.
   // They remain valid for existing activity until an operator performs migration review.
-  if(String(r[16]||'')==='旧端末'||/別ブラウザ自動承認|同一ColorSing名・既存承認済みMIO-ID一致/.test(String(r[8]||'')+' '+String(r[17]||'')))return null;
+  // An auto-linked MIO-ID may appear confirmed even when its memo still says
+  // organizer verification is pending. Never let that legacy row mint a new credential.
+  // Require an independently reviewed source before the owner can add browsers.
+  if(String(r[16]||'')==='旧端末'||/別ブラウザ自動承認|同一ColorSing名・既存承認済みMIO-ID一致|MIO-ID自動接続|運営確認待ち/.test(String(r[8]||'')+' '+String(r[17]||'')))return null;
   var id=String(r[7]||''),name=String(r[2]||'');
   if(!/^MIO-\d{4}$/.test(id))return null;
   var people=rows_(ss,'emuzii_参加者').filter(function(x){
