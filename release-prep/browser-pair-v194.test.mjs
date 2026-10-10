@@ -63,3 +63,27 @@ test('previously registered browser is not overwritten by pairing',()=>{
  assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:tokenHash}).ok,true);
  assert.equal(h.call('pair_claim',webId('a'),hash('1'),'Alice',{pairHash:tokenHash}).ok,false);
 });
+
+test('an existing pending browser is upgraded after verified pairing, preserving its Web-ID',()=>{
+ const h=makeServer(source),p=hash('9'),id=webId('b'),token=hash('2');
+ const pending=Array(21).fill('');
+ pending[0]=id;pending[1]=token;pending[2]='Alice';
+ pending[5]='承認待ち';pending[6]='未確認';pending[10]=id;pending[11]='確認待ち';
+ h.tables['emuzii_Web登録'].data.push(pending);
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:p}).ok,true);
+ const result=h.call('pair_claim',id,token,'Alice',{pairHash:p});
+ assert.equal(result.ok,true);
+ assert.equal(h.tables['emuzii_Web登録'].getLastRow(),3);
+ assert.equal(pending[5],'承認済み');assert.equal(pending[7],'MIO-0001');
+ assert.equal(pending[10],'MIO-0001');
+});
+test('pending browser with different ColorSing name cannot attach to someone else',()=>{
+ const h=makeServer(source),p=hash('9'),id=webId('b'),token=hash('2');
+ const pending=Array(21).fill('');
+ pending[0]=id;pending[1]=token;pending[2]='Different';
+ pending[5]='承認待ち';
+ h.tables['emuzii_Web登録'].data.push(pending);
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:p}).ok,true);
+ assert.equal(h.call('pair_claim',id,token,'Different',{pairHash:p}).ok,false);
+ assert.equal(pending[5],'承認待ち');
+});
