@@ -172,3 +172,13 @@ test('preissued pairing links cannot race beyond five-browser limit',()=>{
  assert.equal(h.tables['emuzii_ブラウザ接続申請'].getLastRow(),5);
  assert.equal(h.call('status',webId('a'),hash('1')).status,'承認済み');
 });
+
+test('legacy auto-linked ID awaiting organizer verification cannot mint another browser credential',()=>{
+ const h=makeServer(source),r=h.tables['emuzii_Web登録'].data[1];
+ r[8]='MIO-ID自動接続（MIO-0001）・運営確認待ち';
+ r[11]='確認済み';
+ assert.equal(h.call('status',webId('a'),hash('1')).status,'承認済み','preserve existing working session');
+ const minted=h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('9')});
+ assert.equal(minted.ok,false);
+ assert.equal(h.tables['emuzii_ブラウザ接続キー']?.getLastRow()??0,0);
+});
