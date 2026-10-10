@@ -87,3 +87,31 @@ test('pending browser with different ColorSing name cannot attach to someone els
  assert.equal(h.call('pair_claim',id,token,'Different',{pairHash:p}).ok,false);
  assert.equal(pending[5],'承認待ち');
 });
+
+test('approved browser claim cannot be rebound to a different identity',()=>{
+ const h=makeServer(source),p=hash('9'),id=webId('b'),token=hash('2');
+ assert.equal(h.call('register',id,token).status,'承認待ち');
+ const pending=h.tables['emuzii_ブラウザ接続申請'].data[1];
+ pending[3]='MIO-0001';pending[4]='承認済み';
+ const before=h.call('status',id,token);
+ assert.equal(before.status,'承認済み');
+ const count=h.tables['emuzii_Web登録'].getLastRow();
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:p}).ok,true);
+ const result=h.call('pair_claim',id,token,'Alice',{pairHash:p});
+ assert.equal(result.ok,false);
+ assert.equal(h.tables['emuzii_Web登録'].getLastRow(),count);
+ assert.equal(h.tables['emuzii_ブラウザ接続申請'].data[1][3],'MIO-0001');
+});
+test('a browser awaiting another MIO-ID cannot be auto-paired to Alice',()=>{
+ const h=makeServer(source),p=hash('9'),id=webId('b'),token=hash('2');
+ assert.equal(h.call('register',id,token).status,'承認待ち');
+ h.tables['emuzii_ブラウザ接続申請'].data[1][3]='MIO-0002';
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:p}).ok,true);
+ assert.equal(h.call('pair_claim',id,token,'Alice',{pairHash:p}).ok,false);
+ assert.equal(h.tables['emuzii_ブラウザ接続申請'].data[1][3],'MIO-0002');
+});
+test('rejected source cannot mint transfer links',()=>{
+ const h=makeServer(source),p=hash('9');
+ h.tables['emuzii_Web登録'].data[1][5]='却下';
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:p}).ok,false);
+});
