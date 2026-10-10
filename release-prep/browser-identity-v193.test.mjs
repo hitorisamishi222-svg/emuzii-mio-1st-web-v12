@@ -11,7 +11,7 @@ function row(values,length=21){const a=Array(length).fill('');for(const [key,val
 const original=row({0:webId('a'),1:hash('1'),2:'Alice',5:'承認済み',6:'確認済み',
  7:'MIO-0001',10:'MIO-0001',11:'確認済み',15:'MIO-0001',16:'使用中'});
 class Sheet{
- constructor(header,body=[]){this.data=[header,...body.map(x=>x.slice())]}
+ constructor(header,body=[]){this.data=header?[header,...body.map(x=>x.slice())]:[]}
  getLastRow(){return this.data.length}
  getLastColumn(){return this.data[0]?.length||1}
  getMaxRows(){return Math.max(10,this.getLastRow())}
@@ -42,7 +42,7 @@ function makeServer(){
   'emuzii_Web登録':new Sheet(row({20:'ログインID'}),[original]),
   'emuzii_参加者':new Sheet(['参加者ID','ColorSing名'],[['MIO-0001','Alice']])
  };
- const ss={getSheetByName:name=>tables[name]||null,insertSheet:name=>(tables[name]=new Sheet(['']))};
+ const ss={getSheetByName:name=>tables[name]||null,insertSheet:name=>(tables[name]=new Sheet(null))};
  const properties={getProperty:key=>key==='BRIDGE_SECRET'?secret:undefined};
  const sandbox={
   SpreadsheetApp:{openById:()=>ss,flush:()=>{},newDataValidation:()=>({
