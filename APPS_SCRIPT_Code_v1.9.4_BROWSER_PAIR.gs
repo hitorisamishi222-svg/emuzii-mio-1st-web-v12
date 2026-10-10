@@ -339,7 +339,7 @@ function approvedBrowserSource_(ss,web,participantId,tokenHash){
  */
 var MAX_APPROVED_BROWSERS_PER_MIO=5;
 function approvedBrowserCount_(ss,web,mioId){
-  if(!/^MIO-\\d{4}$/.test(String(mioId||'')))return 0;
+  if(!/^MIO-\d{4}$/.test(String(mioId||'')))return 0;
   var identities={};
   webActualRows_(web).forEach(function(r){
     var id=String(r[0]||'');
