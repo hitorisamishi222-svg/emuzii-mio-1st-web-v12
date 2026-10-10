@@ -136,3 +136,39 @@ test('previously linked and verified browser may mint another limited one-time l
  assert.equal(h.call('pair_claim',webId('b'),hash('2'),'Alice',{pairHash:one}).ok,true);
  assert.equal(h.call('pair_create',webId('b'),hash('2'),'Alice',{pairHash:two}).ok,true);
 });
+
+
+test('five-browser limit allows original plus four linked browsers without rewriting original history',()=>{
+ const h=makeServer(source);
+ for(const [index,pairKey,browser,credential] of [
+  [1,'9','b','2'],[2,'8','c','3'],[3,'7','d','4'],[4,'6','e','5']
+ ]){
+  const link=hash(pairKey);
+  assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:link}).ok,true,'issue '+index);
+  const claim=h.call('pair_claim',webId(browser),hash(credential),'Alice',{pairHash:link});
+  assert.equal(claim.ok,true,'connect '+index);
+  assert.equal(claim.integratedParticipantId,'MIO-0001');
+ }
+ const requests=h.tables['emuzii_ブラウザ接続申請'].data;
+ assert.equal(requests.length,5,'four new browser links only');
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('f')}).ok,false);
+ assert.match(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('g')}).error,/最大5件/);
+ for(const [browser,credential] of [['a','1'],['b','2'],['c','3'],['d','4'],['e','5']])
+  assert.equal(h.call('status',webId(browser),hash(credential)).status,'承認済み');
+ assert.equal(h.tables['emuzii_Web登録'].getLastRow(),2,'original registration unchanged');
+});
+test('preissued pairing links cannot race beyond five-browser limit',()=>{
+ const h=makeServer(source);
+ for(const [key,id,token] of [['9','b','2'],['8','c','3'],['7','d','4']]){
+  assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash(key)}).ok,true);
+  assert.equal(h.call('pair_claim',webId(id),hash(token),'Alice',{pairHash:hash(key)}).ok,true);
+ }
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('5')}).ok,true);
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('6')}).ok,true);
+ assert.equal(h.call('pair_claim',webId('e'),hash('6'),'Alice',{pairHash:hash('5')}).ok,true);
+ const denied=h.call('pair_claim',webId('f'),hash('7'),'Alice',{pairHash:hash('6')});
+ assert.equal(denied.ok,false);
+ assert.match(denied.error,/最大5件/);
+ assert.equal(h.tables['emuzii_ブラウザ接続申請'].getLastRow(),5);
+ assert.equal(h.call('status',webId('a'),hash('1')).status,'承認済み');
+});
