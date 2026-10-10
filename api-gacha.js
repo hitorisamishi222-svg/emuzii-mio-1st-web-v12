@@ -1,4 +1,4 @@
-import {prepare,bridge,readSession,hash} from './bridge.js';
+import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 
 export default async function handler(req,res){
  const cfg=prepare(req,res);
@@ -15,6 +15,7 @@ export default async function handler(req,res){
   const identity={participantId:session.id,tokenHash:hash(session.token)};
   const data=await bridge(body.action,{...identity,...(body.action==='draw'?{drawId:body.drawId,mode:body.mode}:{})});
   if(data.participantId!==session.id)throw Error('登録を確認できません');
+  res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
   return res.status(200).json(data);
  }catch(error){
   return res.status(409).json({ok:false,error:error.message==='unauthorized'?'登録の確認が必要です':error.message||'抽選結果を確認できませんでした。同じ抽選を再確認してください'});
