@@ -387,8 +387,12 @@ function claimPair_(ss,web,d){
   if(existing.length>1)return {ok:false,error:'ブラウザ申請の重複を運営が確認中です'};
   if(existing.length===1){
     var x=existing[0];
+    // A previously approved browser must never be reassigned to another MIO-ID.
+    if(String(x.v[4])==='承認済み')
+      return {ok:false,error:'すでに認証済みのブラウザです。別アカウントへ切り替える場合は管理者に連絡してください'};
     if(!equal_(x.v[1],d.tokenHash)||nameKey_(x.v[2])!==nameKey_(origin.name)||
-       String(x.v[4])==='却下')
+       String(x.v[4])==='却下'||
+       (x.v[3]&&String(x.v[3])!==origin.id))
       return {ok:false,error:'すでに別の接続申請があるため管理者確認が必要です'};
     sh.getRange(x.row,4).setValue(origin.id);
     sh.getRange(x.row,5).setValue('承認済み');
