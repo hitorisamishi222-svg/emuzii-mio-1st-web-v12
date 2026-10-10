@@ -296,7 +296,9 @@ function doPost(e) {
       return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||'',loginId:issuedLoginId});
     }
 
-    if(found.length===1&&equal_(found[0][1],d.tokenHash)&&!found[0][7]){
+    // Pending browser records are never auto-associated with an existing MIO-ID.
+    // Only an already approved, token-authenticated browser may use legacy repair.
+    if(found.length===1&&equal_(found[0][1],d.tokenHash)&&found[0][5]==='承認済み'&&!found[0][7]){
       var repairedId=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
       if(repairedId){
         all=webActualRows_(web);
