@@ -63,6 +63,7 @@ function sliceFunction(source,name){
 test('manual-browser-guard proposal cannot modify existing gacha APIs, grant amounts, or attendance',()=>{
  for(const f of ['gachaAction_','checkinAction_','setupGacha_'])
   assert.equal(sliceFunction(future,f),sliceFunction(current,f));
+ const executable=code.replace(/\/\*[\s\S]*?\*\//g,'').replace(/^\s*\/\/.*$/gm,'');
  for(const forbidden of ['setValue(','appendRow(','getRange(','deleteTrigger(','newTrigger('])
-  assert.equal(code.includes(forbidden),false,'guard must be read-only and have no triggers: '+forbidden);
+  assert.equal(executable.includes(forbidden),false,'guard must be read-only and have no triggers: '+forbidden);
 });
