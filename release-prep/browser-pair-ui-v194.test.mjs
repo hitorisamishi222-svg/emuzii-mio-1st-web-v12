@@ -33,14 +33,14 @@ test('invalid or missing link is rejected before a network call',()=>{
   const x=claimFixture(hash);
   assert.equal(x.button.disabled,true);
   assert.equal(x.calls.length,0);
-  assert.deepEqual(Array.from(x.history.args||[]).slice(1),[null,'/browser-connect.html']);
+  assert.deepEqual(Array.from(x.history.args||[]).slice(1),['','/browser-connect.html']);
  }
 });
 test('valid link requires an explicit tap and removes hash from address bar',async()=>{
  const secret='a'.repeat(64),x=claimFixture('#key='+secret);
  assert.equal(x.button.disabled,false);
  assert.equal(x.calls.length,0,'opening the link alone does not claim identity');
- assert.deepEqual(Array.from(x.history.args).slice(1),[null,'/browser-connect.html']);
+ assert.deepEqual(Array.from(x.history.args).slice(1),['','/browser-connect.html']);
  await x.events.click();
  assert.equal(x.calls.length,1);
  const call=x.calls[0];
