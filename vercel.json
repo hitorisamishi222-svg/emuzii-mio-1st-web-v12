@@ -192,9 +192,25 @@
     {
       "src": "gacha-v19-frame-ur.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-browser-pair-create.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-browser-pair-claim.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/browser-pair/claim",
+      "dest": "/api-browser-pair-claim.js"
+    },
+    {
+      "src": "/api/browser-pair/create",
+      "dest": "/api-browser-pair-create.js"
+    },
     {
       "src": "/api/register",
       "dest": "/api-register.js"
