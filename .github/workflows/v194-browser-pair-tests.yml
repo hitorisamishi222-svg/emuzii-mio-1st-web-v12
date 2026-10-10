@@ -10,6 +10,7 @@ on:
       - 'browser-*.html'
       - 'browser-*.js'
       - 'release-prep/browser-pair-v194.test.mjs'
+      - 'release-prep/browser-pair-api-v194.test.mjs'
       - 'release-prep/browser-identity-v193.test.mjs'
       - '.github/workflows/v194-browser-pair-tests.yml'
   workflow_dispatch:
@@ -24,4 +25,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Run both identity and pairing tests
-        run: node --test release-prep/browser-identity-v193.test.mjs release-prep/browser-pair-v194.test.mjs
+        run: node --test release-prep/browser-identity-v193.test.mjs release-prep/browser-pair-v194.test.mjs release-prep/browser-pair-api-v194.test.mjs
