@@ -105,7 +105,8 @@ test('staged release retains original registration, attendance and gacha APIs',(
  assert(vercel.routes.some(x=>x.src==='/api/browser-pair/create'));
  assert(vercel.routes.some(x=>x.src==='/api/browser-pair/claim'));
  assert.match(read('index.html'),/id="browserPair"[^>]+hidden/);
- assert.match(read('app.js'),/browserPair'\)\.hidden=d\.status!=='承認済み'/);
+ assert.match(read('app.js'),/d\.status==='承認済み'&&d\.pairEnabled===true/);
+ assert.match(read('api-status.js'),/pairEnabled:d\.status==='承認済み'&&pairReleaseEnabled\(\)/);
  assert.match(read('pair-release-gate.js'),/MIO_PAIR_AUTH_RELEASE/);
 });
 process.on('exit',()=>{
