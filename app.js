@@ -41,7 +41,7 @@ function display(d){
   $('personal').hidden=false;
   $('status').textContent=d.status||'';
   $('greeting').textContent=(d.name||'')+' さん';
-  $('participantId').textContent='登録ID：'+d.participantId+(d.loginId?' ／ ログインID：'+d.loginId:'');
+  $('participantId').textContent='登録ID：'+d.participantId;
   if($('name')){$('name').value=d.name||$('name').value;$('registerButton').textContent='この名前で参加状況を更新'}
   try{if(d.name)localStorage.setItem(NAME_KEY,d.name)}catch{}
   try{if(d.loginId){localStorage.setItem(LOGIN_ID_KEY,d.loginId);if($('loginId'))$('loginId').value=d.loginId}}catch{}
