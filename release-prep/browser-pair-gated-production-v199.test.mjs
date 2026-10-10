@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import create from '../api-browser-pair-create.js';
+import status from '../api-status.js';
 import claim from '../api-browser-pair-claim.js';
 import {sessionCookie,readSession,hash} from '../bridge.js';
 import {pairReleaseEnabled} from '../pair-release-gate.js';
@@ -93,6 +94,56 @@ test('cross-site origin cannot access new browser pairing endpoints',async()=>{
  }
  delete process.env.MIO_PAIR_AUTH_RELEASE;
 });
+
+test('approved existing user sees pairing disabled when release flag is unset; session remains renewed',async()=>{
+ delete process.env.MIO_PAIR_AUTH_RELEASE;
+ await useServer(d=>{
+  assert.equal(d.action,'status');
+  assert.equal(d.participantId,id);
+  return {ok:true,participantId:id,status:'承認済み',name:'テスト'};
+ },async count=>{
+  const r=res();await status(req(),r);
+  assert.equal(r.statusCode,200);
+  assert.equal(r.body.pairEnabled,false);
+  assert.equal(r.body.status,'承認済み');
+  assert.ok(readSession(r.headers['Set-Cookie'],process.env.APPS_SCRIPT_SECRET));
+  assert.equal(count(),1);
+ });
+});
+test('pairing flag enables the button only for a confirmed approved status',async()=>{
+ process.env.MIO_PAIR_AUTH_RELEASE='v1.9.4-ready';
+ await useServer(d=>({ok:true,participantId:id,status:'承認済み'}),async()=>{
+  const r=res();await status(req(),r);
+  assert.equal(r.statusCode,200);
+  assert.equal(r.body.pairEnabled,true);
+ });
+ await useServer(d=>({ok:true,participantId:id,status:'承認待ち'}),async()=>{
+  const r=res();await status(req(),r);
+  assert.equal(r.statusCode,200);
+  assert.equal(r.body.pairEnabled,false);
+  assert.equal(r.headers['Set-Cookie'],undefined);
+ });
+ delete process.env.MIO_PAIR_AUTH_RELEASE;
+});
+test('unregistered user cannot see pairing or trigger GAS status request',async()=>{
+ await useServer(()=>{throw Error('unexpected status request')},async count=>{
+  const r=res();await status(req({},''),r);
+  assert.equal(r.statusCode,401);
+  assert.equal(count(),0);
+  assert.equal(r.headers['Set-Cookie'],undefined);
+ });
+});
+test('status endpoint fails closed on mismatched identity without granting pairing access',async()=>{
+ process.env.MIO_PAIR_AUTH_RELEASE='v1.9.4-ready';
+ await useServer(d=>({ok:true,participantId:'MIO-W-'+'b'.repeat(24),status:'承認済み'}),async()=>{
+  const r=res();await status(req(),r);
+  assert.equal(r.statusCode,502);
+  assert.equal(r.body.pairEnabled,undefined);
+  assert.equal(r.headers['Set-Cookie'],undefined);
+ });
+ delete process.env.MIO_PAIR_AUTH_RELEASE;
+});
+
 test('staged release retains original registration, attendance and gacha APIs',()=>{
  const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
  const vercel=JSON.parse(read('vercel.json'));
