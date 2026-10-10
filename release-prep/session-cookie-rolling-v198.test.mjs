@@ -62,7 +62,9 @@ test('missing and invalid cookies are denied before any GAS contact',async()=>{
  let called=false;const prev=globalThis.fetch;
  globalThis.fetch=async()=>{called=true;throw Error('no GAS allowed')};
  try{
-  for(const invalid of ['',cookie.replace('aaaa','cccc')]){
+  const parts=cookie.split('.');
+ const forged=parts[0]+'.'+(parts[1][0]==='a'?'b':'a')+parts[1].slice(1);
+ for(const invalid of ['',forged]){
    const res=response();await status(request({},invalid),res);
    assert.equal(res.code,401);assert.equal(res.headers['set-cookie'],undefined);
   }
