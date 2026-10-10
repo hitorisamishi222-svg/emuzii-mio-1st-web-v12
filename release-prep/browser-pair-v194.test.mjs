@@ -152,7 +152,7 @@ test('five-browser limit allows original plus four linked browsers without rewri
  const requests=h.tables['emuzii_ブラウザ接続申請'].data;
  assert.equal(requests.length,5,'four new browser links only');
  assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('f')}).ok,false);
- assert.match(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('g')}).error,/最大5件/);
+ assert.match(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('e')}).error,/最大5件/);
  for(const [browser,credential] of [['a','1'],['b','2'],['c','3'],['d','4'],['e','5']])
   assert.equal(h.call('status',webId(browser),hash(credential)).status,'承認済み');
  assert.equal(h.tables['emuzii_Web登録'].getLastRow(),2,'original registration unchanged');
