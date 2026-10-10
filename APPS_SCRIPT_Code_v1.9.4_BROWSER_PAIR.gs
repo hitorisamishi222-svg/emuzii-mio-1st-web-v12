@@ -333,10 +333,35 @@ function approvedBrowserSource_(ss,web,participantId,tokenHash){
   });
   return people.length===1?{id:id,name:name,member:String(r[6]||'未確認')}:null;
 }
+/** Maximum five distinct approved browser credentials for each existing MIO-ID.
+ * Network/IP/user-agent signatures are NOT identity credentials.
+ * Existing approved logins are never revoked if legacy data already exceeds this cap.
+ */
+var MAX_APPROVED_BROWSERS_PER_MIO=5;
+function approvedBrowserCount_(ss,web,mioId){
+  if(!/^MIO-\\d{4}$/.test(String(mioId||'')))return 0;
+  var identities={};
+  webActualRows_(web).forEach(function(r){
+    var id=String(r[0]||'');
+    if(/^MIO-W-[a-f0-9]{24}$/.test(id) && String(r[5]||'')==='承認済み' &&
+       String(r[7]||'')===mioId && String(r[10]||'')===mioId &&
+       String(r[11]||'')==='確認済み' && String(r[16]||'')!=='旧端末')
+      identities[id]=true;
+  });
+  if(ss.getSheetByName(BROWSER_REQUEST_TAB))rows_(ss,BROWSER_REQUEST_TAB).forEach(function(r){
+    var id=String(r[0]||'');
+    if(/^MIO-W-[a-f0-9]{24}$/.test(id) && String(r[3]||'')===mioId &&
+       String(r[4]||'')==='承認済み')identities[id]=true;
+  });
+  return Object.keys(identities).length;
+}
+
 function createPair_(ss,web,d){
   if(!/^[a-f0-9]{64}$/.test(String(d.pairHash||'')))return {ok:false,error:'接続キーが不正です'};
   var approved=approvedBrowserSource_(ss,web,d.participantId,d.tokenHash);
   if(!approved)return {ok:false,error:'承認済みのブラウザから開始してください'};
+  if(approvedBrowserCount_(ss,web,approved.id)>=MAX_APPROVED_BROWSERS_PER_MIO)
+    return {ok:false,error:'接続できるブラウザは最大5件です。端末整理を管理者へ依頼してください'};
   var pairs=pairSheet_(ss),values=rows_(ss,PAIR_TAB),now=Date.now();
   var recent=values.filter(function(x){
     return String(x[1]||'')===d.participantId && (now-new Date(x[5]).getTime())<60*60*1000;
@@ -364,6 +389,9 @@ function claimPair_(ss,web,d){
   var origin=approvedBrowserSource_(ss,web,String(record[1]),String(record[2]));
   if(!origin||origin.id!==String(record[3])||nameKey_(origin.name)!==nameKey_(record[4]))
     return {ok:false,error:'元のブラウザの認証が無効になりました'};
+  // Re-check under the same ScriptLock: links already issued cannot exceed the five-browser limit.
+  if(approvedBrowserCount_(ss,web,origin.id)>=MAX_APPROVED_BROWSERS_PER_MIO)
+    return {ok:false,error:'接続できるブラウザは最大5件です。端末整理を管理者へ依頼してください'};
   var existingWeb=webActualRows_(web).map(function(r,i){return {v:r,row:i+2};})
     .filter(function(x){return String(x.v[0])===d.participantId});
   if(existingWeb.length>1)return {ok:false,error:'重複したブラウザ情報を運営が確認中です'};
