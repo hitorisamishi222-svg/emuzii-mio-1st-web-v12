@@ -1,0 +1,26 @@
+name: v1.9.9 Browser Pairing Release Gate
+on:
+  push:
+    branches:
+      - release/v199-prod-browser-pair-staged-20261010
+  pull_request:
+    paths:
+      - 'api-browser-pair-*.js'
+      - 'pair-release-gate.js'
+      - 'browser-connect.*'
+      - 'browser-pair-candidate.js'
+      - 'release-prep/browser-pair-gated-production-v199.test.mjs'
+      - '.github/workflows/v199-staged-browser-pair-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Browser linking integration tests
+        run: node --test release-prep/browser-pair-gated-production-v199.test.mjs
