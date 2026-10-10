@@ -40,7 +40,7 @@ function display(d){
   $('register').hidden=false;
   $('personal').hidden=false;
   // The pairing link may only be issued from a server-confirmed approved session.
-  if($('browserPair'))$('browserPair').hidden=d.status!=='承認済み';
+  if($('browserPair'))$('browserPair').hidden=!(d.status==='承認済み'&&d.pairEnabled===true);
   $('status').textContent=d.status||'';
   $('greeting').textContent=(d.name||'')+' さん';
   $('participantId').textContent='登録ID：'+d.participantId;
