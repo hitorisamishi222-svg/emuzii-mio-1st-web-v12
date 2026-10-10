@@ -37,7 +37,7 @@ class Sheet{
  setFrozenRows(){}setColumnWidth(){}
  appendRow(a){this.data.push(a.slice())}
 }
-function makeServer(){
+function makeServer(gasSource=source){
  const tables={
   'emuzii_Web登録':new Sheet(row({20:'ログインID'}),[original]),
   'emuzii_参加者':new Sheet(['参加者ID','ColorSing名'],[['MIO-0001','Alice']])
@@ -56,10 +56,10 @@ function makeServer(){
   Utilities:{getUuid:()=> '11111111-2222-3333-4444-555555555555',
     formatDate:()=> '2026-10-10',sleep(){}}
  };
- vm.runInNewContext(source,sandbox,{filename:'v193.gs',timeout:3000});
- const call=(action,participantId,tokenHash,name='Alice')=>{
+ vm.runInNewContext(gasSource,sandbox,{filename:'candidate.gs',timeout:3000});
+ const call=(action,participantId,tokenHash,name='Alice',extras={})=>{
    const output=sandbox.doPost({postData:{contents:JSON.stringify({
-    action,secret,participantId,tokenHash,name
+    action,secret,participantId,tokenHash,name,...extras
    })}});
    return JSON.parse(output.value);
  };
@@ -133,3 +133,5 @@ test('unknown user still enters existing new-user approval workflow',()=>{
  assert.equal(h.tables['emuzii_Web登録'].getLastRow(),3);
  assert.equal(h.tables['emuzii_ブラウザ接続申請'],undefined);
 });
+
+export {makeServer,webId,hash};

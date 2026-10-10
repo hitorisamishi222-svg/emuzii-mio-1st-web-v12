@@ -1,0 +1,32 @@
+name: v1.9.4 Browser Pairing Safety
+on:
+  push:
+    branches:
+      - feature/v194-browser-pair-auto-login-20261010
+  pull_request:
+    paths:
+      - 'APPS_SCRIPT_Code_v1.9.4_BROWSER_PAIR.gs'
+      - 'api-browser-pair-*.js'
+      - 'browser-*.html'
+      - 'browser-*.js'
+      - 'release-prep/browser-pair-v194.test.mjs'
+      - 'release-prep/browser-pair-v194-source-integrity.test.mjs'
+      - 'release-prep/browser-manual-guard-v199.test.mjs'
+      - 'release-prep/build-browseradd-v199.test.mjs'
+      - 'release-prep/browser-pair-api-v194.test.mjs'
+      - 'release-prep/browser-pair-ui-v194.test.mjs'
+      - 'release-prep/browser-identity-v193.test.mjs'
+      - '.github/workflows/v194-browser-pair-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout candidate without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run both identity and pairing tests
+        run: node --test release-prep/browser-identity-v193.test.mjs release-prep/browser-pair-v194.test.mjs release-prep/browser-pair-v194-source-integrity.test.mjs release-prep/browser-manual-guard-v199.test.mjs release-prep/build-browseradd-v199.test.mjs release-prep/browser-pair-api-v194.test.mjs release-prep/browser-pair-ui-v194.test.mjs

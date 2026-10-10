@@ -2,20 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
-      "src": "api-register.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api-status.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api-checkin.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api-gacha.js",
-      "use": "@vercel/node"
+      "src": "browser-pair-preview.html",
+      "use": "@vercel/static"
     },
     {
       "src": "index.html",
@@ -192,36 +180,224 @@
     {
       "src": "gacha-v19-frame-ur.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "browser-connect.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "browser-connect.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "browser-pair-candidate.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/api/register",
-      "dest": "/api-register.js"
+      "src": "^/$",
+      "dest": "/browser-pair-preview.html"
     },
     {
-      "src": "/api/status",
-      "dest": "/api-status.js"
+      "src": "^/browser-pair-candidate\\.js$",
+      "dest": "/browser-pair-candidate.js"
     },
     {
-      "src": "/api/checkin",
-      "dest": "/api-checkin.js"
+      "src": "^/browser-connect\\.js$",
+      "dest": "/browser-connect.js"
     },
     {
-      "src": "/api/gacha",
-      "dest": "/api-gacha.js"
+      "src": "^/browser-connect\\.html$",
+      "dest": "/browser-connect.html"
     },
     {
-      "src": "/gacha.html",
-      "dest": "/gacha.html"
+      "src": "^/browser-pair-preview\\.html$",
+      "dest": "/browser-pair-preview.html"
     },
     {
-      "src": "/",
+      "src": "^/index\\.html$",
       "dest": "/index.html"
     },
     {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "src": "^/style\\.css$",
+      "dest": "/style.css"
+    },
+    {
+      "src": "^/app\\.js$",
+      "dest": "/app.js"
+    },
+    {
+      "src": "^/gacha\\.js$",
+      "dest": "/gacha.js"
+    },
+    {
+      "src": "^/mio-awakening\\.mp3$",
+      "dest": "/mio-awakening.mp3"
+    },
+    {
+      "src": "^/mio-blue-bg\\.png$",
+      "dest": "/mio-blue-bg.png"
+    },
+    {
+      "src": "^/gacha\\.html$",
+      "dest": "/gacha.html"
+    },
+    {
+      "src": "^/gacha-page\\.js$",
+      "dest": "/gacha-page.js"
+    },
+    {
+      "src": "^/gacha-mem-01\\.jpg$",
+      "dest": "/gacha-mem-01.jpg"
+    },
+    {
+      "src": "^/gacha-mem-02\\.jpg$",
+      "dest": "/gacha-mem-02.jpg"
+    },
+    {
+      "src": "^/gacha-mem-03\\.jpg$",
+      "dest": "/gacha-mem-03.jpg"
+    },
+    {
+      "src": "^/gacha-mem-04\\.jpg$",
+      "dest": "/gacha-mem-04.jpg"
+    },
+    {
+      "src": "^/gacha-mem-05\\.jpg$",
+      "dest": "/gacha-mem-05.jpg"
+    },
+    {
+      "src": "^/gacha-mem-06\\.jpg$",
+      "dest": "/gacha-mem-06.jpg"
+    },
+    {
+      "src": "^/gacha-mem-07\\.jpg$",
+      "dest": "/gacha-mem-07.jpg"
+    },
+    {
+      "src": "^/gacha-mem-08\\.jpg$",
+      "dest": "/gacha-mem-08.jpg"
+    },
+    {
+      "src": "^/gacha-mem-09\\.jpg$",
+      "dest": "/gacha-mem-09.jpg"
+    },
+    {
+      "src": "^/gacha-mem-10\\.jpg$",
+      "dest": "/gacha-mem-10.jpg"
+    },
+    {
+      "src": "^/gacha-mem-11\\.jpg$",
+      "dest": "/gacha-mem-11.jpg"
+    },
+    {
+      "src": "^/gacha-mem-12\\.jpg$",
+      "dest": "/gacha-mem-12.jpg"
+    },
+    {
+      "src": "^/gacha-mem-13\\.jpg$",
+      "dest": "/gacha-mem-13.jpg"
+    },
+    {
+      "src": "^/gacha-mem-14\\.jpg$",
+      "dest": "/gacha-mem-14.jpg"
+    },
+    {
+      "src": "^/gacha-mem-15\\.jpg$",
+      "dest": "/gacha-mem-15.jpg"
+    },
+    {
+      "src": "^/gacha-mem-16\\.jpg$",
+      "dest": "/gacha-mem-16.jpg"
+    },
+    {
+      "src": "^/gacha-lf-09\\.jpg$",
+      "dest": "/gacha-lf-09.jpg"
+    },
+    {
+      "src": "^/gacha-lf-10\\.jpg$",
+      "dest": "/gacha-lf-10.jpg"
+    },
+    {
+      "src": "^/gacha-lf-11\\.jpg$",
+      "dest": "/gacha-lf-11.jpg"
+    },
+    {
+      "src": "^/gacha-lf-12\\.jpg$",
+      "dest": "/gacha-lf-12.jpg"
+    },
+    {
+      "src": "^/gacha-lf-13\\.jpg$",
+      "dest": "/gacha-lf-13.jpg"
+    },
+    {
+      "src": "^/gacha-lf-14\\.jpg$",
+      "dest": "/gacha-lf-14.jpg"
+    },
+    {
+      "src": "^/gacha-lf-15\\.jpg$",
+      "dest": "/gacha-lf-15.jpg"
+    },
+    {
+      "src": "^/gacha-lf-16\\.jpg$",
+      "dest": "/gacha-lf-16.jpg"
+    },
+    {
+      "src": "^/gacha-lf-17\\.jpg$",
+      "dest": "/gacha-lf-17.jpg"
+    },
+    {
+      "src": "^/gacha-lf-18\\.jpg$",
+      "dest": "/gacha-lf-18.jpg"
+    },
+    {
+      "src": "^/gacha-lf-19\\.jpg$",
+      "dest": "/gacha-lf-19.jpg"
+    },
+    {
+      "src": "^/gacha-effects-v19\\.css$",
+      "dest": "/gacha-effects-v19.css"
+    },
+    {
+      "src": "^/gacha-effects-v19\\.js$",
+      "dest": "/gacha-effects-v19.js"
+    },
+    {
+      "src": "^/gacha-v19-machine-blue\\.svg$",
+      "dest": "/gacha-v19-machine-blue.svg"
+    },
+    {
+      "src": "^/gacha-v19-machine-gold\\.svg$",
+      "dest": "/gacha-v19-machine-gold.svg"
+    },
+    {
+      "src": "^/gacha-v19-capsule\\.svg$",
+      "dest": "/gacha-v19-capsule.svg"
+    },
+    {
+      "src": "^/gacha-v19-diamond\\.svg$",
+      "dest": "/gacha-v19-diamond.svg"
+    },
+    {
+      "src": "^/gacha-v19-sparkles\\.svg$",
+      "dest": "/gacha-v19-sparkles.svg"
+    },
+    {
+      "src": "^/gacha-v19-frame-sr\\.svg$",
+      "dest": "/gacha-v19-frame-sr.svg"
+    },
+    {
+      "src": "^/gacha-v19-frame-ur\\.svg$",
+      "dest": "/gacha-v19-frame-ur.svg"
+    },
+    {
+      "src": "^/api(?:/.*)?$",
+      "status": 404
+    },
+    {
+      "src": "^/.*$",
+      "status": 404
     }
   ]
 }

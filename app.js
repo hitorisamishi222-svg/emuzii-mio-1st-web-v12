@@ -39,6 +39,8 @@ function display(d){
   registered=true;
   $('register').hidden=false;
   $('personal').hidden=false;
+  // The pairing link may only be issued from a server-confirmed approved session.
+  if($('browserPair'))$('browserPair').hidden=d.status!=='承認済み';
   $('status').textContent=d.status||'';
   $('greeting').textContent=(d.name||'')+' さん';
   $('participantId').textContent='登録ID：'+d.participantId;
@@ -70,6 +72,7 @@ function display(d){
 
 async function refresh(){
   message('参加状況を確認しています…');
+  if($('browserPair'))$('browserPair').hidden=true;
   if($('counts'))$('counts').hidden=true;
   if($('gachaDetail'))$('gachaDetail').textContent='';
   if($('refresh'))$('refresh').disabled=true;
