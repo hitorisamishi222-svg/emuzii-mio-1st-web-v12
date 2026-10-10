@@ -1,0 +1,23 @@
+name: v1.9.6 Identity Impersonation Hotfix
+on:
+  push:
+    branches:
+      - hotfix/v196-block-name-only-autoapproval-20261010
+  pull_request:
+    paths:
+      - 'APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs'
+      - 'release-prep/name-only-hotfix-v196.test.mjs'
+      - '.github/workflows/v196-name-only-security-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout test candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify legacy approved users and deny nickname-only login
+        run: node --test release-prep/name-only-hotfix-v196.test.mjs
