@@ -1,0 +1,21 @@
+name: v1.9.7 Live v1.9.1 Minimal Auth Patch
+on:
+  push:
+    branches:
+      - fix/v197-live-v191-surgical-registration-20261010
+  pull_request:
+    paths:
+      - 'APPS_SCRIPT_Code_v1.9.7_LIVE_v191_MINIMAL_PATCH.gs'
+      - 'release-prep/live-v191-surgical-auth-v197.test.mjs'
+      - '.github/workflows/v197-live-v191-auth-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: node --test release-prep/live-v191-surgical-auth-v197.test.mjs
