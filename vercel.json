@@ -180,12 +180,36 @@
     {
       "src": "gacha-v19-frame-ur.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "browser-connect.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "browser-connect.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "browser-pair-candidate.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "^/$",
       "dest": "/browser-pair-preview.html"
+    },
+    {
+      "src": "^/browser-pair-candidate\\.js$",
+      "dest": "/browser-pair-candidate.js"
+    },
+    {
+      "src": "^/browser-connect\\.js$",
+      "dest": "/browser-connect.js"
+    },
+    {
+      "src": "^/browser-connect\\.html$",
+      "dest": "/browser-connect.html"
     },
     {
       "src": "^/browser-pair-preview\\.html$",
