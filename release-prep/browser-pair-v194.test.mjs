@@ -115,3 +115,24 @@ test('rejected source cannot mint transfer links',()=>{
  h.tables['emuzii_Web登録'].data[1][5]='却下';
  assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:p}).ok,false);
 });
+
+test('legacy name-only auto-approval cannot mint a new link but keeps existing status',()=>{
+ const h=makeServer(source),r=h.tables['emuzii_Web登録'].data[1];
+ r[8]='同一ColorSing名・既存承認済みMIO-ID一致のため別ブラウザ自動承認';
+ r[17]='別ブラウザ自動承認／MIO-ID一致／ログインID入力不要';
+ const result=h.call('status',webId('a'),hash('1'));
+ assert.equal(result.status,'承認済み','do not log out existing participants without migration review');
+ const issue=h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('9')});
+ assert.equal(issue.ok,false);
+});
+test('explicitly retired browsers cannot mint pairing links even with stale approved status',()=>{
+ const h=makeServer(source),r=h.tables['emuzii_Web登録'].data[1];
+ r[16]='旧端末';
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:hash('9')}).ok,false);
+});
+test('previously linked and verified browser may mint another limited one-time link',()=>{
+ const h=makeServer(source),one=hash('8'),two=hash('9');
+ assert.equal(h.call('pair_create',webId('a'),hash('1'),'Alice',{pairHash:one}).ok,true);
+ assert.equal(h.call('pair_claim',webId('b'),hash('2'),'Alice',{pairHash:one}).ok,true);
+ assert.equal(h.call('pair_create',webId('b'),hash('2'),'Alice',{pairHash:two}).ok,true);
+});
