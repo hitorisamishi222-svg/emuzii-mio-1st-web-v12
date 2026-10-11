@@ -236,3 +236,12 @@
 .gacha-stage.v19-reveal-finished .v19-fx-root .v19-machine-img{opacity:.38;filter:brightness(.55) drop-shadow(0 12px 15px #00112b)}
 .gacha-stage.v19-reveal-finished .v20-pearl-glints{opacity:.25}
 @media(max-width:560px){.gacha-stage .draw-result-card:not([hidden]){width:min(92%,380px);padding:18px 14px}}
+
+/* v2 critical fix: diamonds must be visible through whale belly glass */
+.gacha-stage .v191-ball-chamber{z-index:7!important;left:51.5%;top:48%;width:min(37%,155px);opacity:1!important;overflow:hidden;border-radius:50%;background:radial-gradient(circle at 35% 25%,#ffffff15,transparent 55%);box-shadow:inset 0 0 18px #7eeaff55,0 0 10px #70eaff22;filter:none;pointer-events:none}
+.gacha-stage .v191-gem{width:clamp(25px,8vw,43px);height:clamp(23px,7vw,38px);animation-play-state:running!important;backface-visibility:hidden}
+.gacha-stage.draw-active .v191-ball-chamber{opacity:1!important;box-shadow:inset 0 0 22px #aaf6ff99,0 0 18px #6deeff88}
+.gacha-stage.draw-active .v191-gem{animation-duration:var(--dur,2.7s)}
+.gacha-stage.v191-rarity-ur .v191-ball-chamber{box-shadow:inset 0 0 26px #ffdcff99,0 0 26px #b6eaff}
+@media(max-width:560px){.gacha-stage .v191-ball-chamber{width:min(38%,143px)}}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v191-gem{animation:none!important}}
