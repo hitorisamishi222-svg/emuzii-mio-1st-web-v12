@@ -8,6 +8,13 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   stage.classList.add('v191-loaded');
   const root=document.createElement('div');root.className='v19-fx-root';root.setAttribute('aria-hidden','true');
   const sparkles=document.createElement('div');sparkles.className='v19-sparkles';
+  const oceanRays=document.createElement('div');oceanRays.className='v20-ocean-rays';
+  const glints=document.createElement('div');glints.className='v20-pearl-glints';
+  for(let i=0;i<9;i++){
+    const star=document.createElement('i');star.className='v20-pearl-glint';
+    star.style.setProperty('--gx',(10+(i*37)%80)+'%');star.style.setProperty('--gy',(12+(i*29)%73)+'%');
+    star.style.setProperty('--gd',(-i*.47)+'s');glints.append(star);
+  }
   const bubbles=document.createElement('div');bubbles.className='v191-bubbles';
   for(let i=0;i<14;i++){
     const b=document.createElement('i');b.className='v191-bubble';
@@ -48,7 +55,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const title=document.createElement('div');title.className='v19-reveal-title';
   const caption=document.createElement('div');caption.className='v19-reveal-caption';
   reveal.append(frame,title,caption);
-  root.append(sparkles,bubbles,spout,aura,chamber,machine,handle,outlet,winnerGem,urPremonition,reveal);
+  root.append(oceanRays,sparkles,glints,bubbles,spout,aura,chamber,machine,handle,outlet,winnerGem,urPremonition,reveal);
   stage.append(root);
 
   for(const img of [machine,frame]) img.addEventListener('error',()=>root.classList.add('v19-assets-missing'));
