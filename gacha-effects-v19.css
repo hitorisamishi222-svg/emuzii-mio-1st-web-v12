@@ -314,3 +314,16 @@
 .gacha-stage .draw-result-card:not([hidden])::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;border:1px solid #fff8;background:linear-gradient(125deg,#fff3,transparent 34%,#8beeff13 64%,transparent);z-index:0}
 .gacha-stage .draw-result-card:not([hidden])>*{position:relative;z-index:1}
 @media(prefers-reduced-motion:reduce){.gacha-stage .draw-result-card:not([hidden]){animation:none!important}}
+
+/* v2.2 premium kinetic finish: visible machine, gentle physical depth, crisp result */
+.gacha-stage .v191-ball-chamber{perspective:550px!important;transform-style:preserve-3d}
+.gacha-stage .v191-gem{transform-style:preserve-3d;will-change:transform}
+.gacha-stage .v20-jewel-core{box-shadow:inset 1px 1px 3px #fff9,inset -4px -4px 9px #0d3f9a77;filter:drop-shadow(0 0 3px #d5faff)}
+.gacha-stage .v191-gem-label{background:#042c6c77;border-radius:5px;padding:2px 3px;text-shadow:0 1px 2px #00173e}
+.gacha-stage .v191-ball-chamber{outline:1px solid #ffffff77;outline-offset:-6px}
+.gacha-stage .v191-ball-chamber::before{content:"";position:absolute;left:17%;top:8%;width:31%;height:13%;border-radius:50%;transform:rotate(-36deg);background:#fff9;filter:blur(6px);z-index:15;pointer-events:none}
+.gacha-stage.draw-active .v191-gem{animation-duration:var(--dur,2.5s)!important}
+.gacha-stage:not(.draw-active) .v191-gem{animation-duration:var(--idleDur,10s)!important}
+.gacha-stage .v19-machine-img{filter:drop-shadow(0 18px 24px #00112bc7) drop-shadow(0 0 12px #5acaff55)!important}
+.gacha-stage .draw-result-card:not([hidden]){border:2px solid #e0f9ff!important;box-shadow:0 20px 42px #00122bd9,0 0 30px #56ccff88,inset 0 2px 0 #fff8!important}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v191-gem{animation:none!important;will-change:auto!important}}
