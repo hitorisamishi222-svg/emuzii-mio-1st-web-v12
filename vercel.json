@@ -132,6 +132,14 @@
     {
       "src": "next-pages.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gacha.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-page.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -270,6 +278,14 @@
     {
       "src": "^/next-pages\\.js$",
       "dest": "/next-pages.js"
+    },
+    {
+      "src": "^/gacha(?:\\.html)?$",
+      "dest": "/gacha.html"
+    },
+    {
+      "src": "^/gacha-page\\.js$",
+      "dest": "/gacha-page.js"
     },
     {
       "src": "^/api(?:/.*)?$",
