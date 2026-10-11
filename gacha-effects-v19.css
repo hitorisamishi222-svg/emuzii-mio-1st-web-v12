@@ -274,3 +274,20 @@
 @media(min-width:560px){.gacha-stage{min-height:460px}.gacha-stage .v19-machine-img{width:min(80%,400px)}.gacha-stage .v191-ball-chamber{width:min(33%,172px)}}
 @media(max-width:390px){.gacha-stage{min-height:345px}.gacha-stage .v19-machine-img{width:96%}.gacha-stage .v191-ball-chamber{width:42%;top:49%}.gacha-stage .v20-whale-outlet{top:79%}.gacha-stage .draw-result-card:not([hidden]){bottom:5%!important}}
 @media(prefers-reduced-motion:reduce){.gacha-stage .v191-gem{animation:none!important}}
+
+/* v2 jewel rebuild: recognizable faceted brilliant-cut gemstones, not flat pentagons */
+.gacha-stage .v191-gem,.gacha-stage .v191-winning-gem{clip-path:none!important;background:none!important;border:0!important;box-shadow:none!important;filter:drop-shadow(0 2px 2px #001432) drop-shadow(0 0 5px #81edff);overflow:visible;isolation:isolate}
+.gacha-stage .v191-gem::before,.gacha-stage .v191-winning-gem::before{display:none!important}
+.gacha-stage .v20-jewel-core{position:absolute;inset:0;display:block;clip-path:polygon(50% 0%,75% 13%,97% 33%,91% 57%,50% 100%,9% 57%,3% 33%,25% 13%);background:conic-gradient(from 22deg at 50% 38%,#faffff 0deg,#a9ffff 40deg,#238de9 75deg,#e2ffff 105deg,#2378e2 145deg,#83e8ff 180deg,#fff 220deg,#2a8edb 260deg,#d5ffff 302deg,#fff 360deg);box-shadow:inset 0 0 7px #fff}
+.gacha-stage .v20-jewel-core::before{content:"";position:absolute;inset:5% 8% 18%;clip-path:polygon(50% 0%,93% 33%,75% 100%,25% 100%,7% 33%);background:conic-gradient(from 45deg at 50% 45%,#ffffffec 0 38deg,#5ac4ff66 40deg 84deg,#fff8 90deg 135deg,#1452b88a 145deg 180deg,#eaffff 210deg 250deg,#2163c088 260deg 300deg,#ffffffd8 315deg);opacity:.88}
+.gacha-stage .v20-jewel-core::after{content:"";position:absolute;inset:2px;clip-path:polygon(50% 0,59% 28%,100% 34%,63% 48%,50% 100%,37% 48%,0 34%,41% 28%);background:linear-gradient(125deg,#ffffffbf,transparent 38%,#c5f9ff8a 60%,transparent 82%);mix-blend-mode:screen}
+.gacha-stage .v191-gem-label{position:absolute;z-index:2;left:50%;top:53%;transform:translate(-50%,-50%)!important;font-size:clamp(8px,2.2vw,11px)!important;line-height:1;color:#fff;text-shadow:0 1px 3px #00204b,0 0 5px #00133d}
+.gacha-stage .v191-winning-gem span:not(.v20-jewel-core){position:relative;z-index:2}
+.gacha-stage .v191-gem[data-rarity="SR"] .v20-jewel-core{filter:hue-rotate(135deg) saturate(1.35)}
+.gacha-stage .v191-gem[data-rarity="UR"] .v20-jewel-core{filter:hue-rotate(235deg) saturate(1.7) brightness(1.18)}
+.gacha-stage .v191-ball-chamber{left:51.5%!important;top:65%!important;width:min(37%,145px)!important;height:auto!important;aspect-ratio:1!important;z-index:8!important;border-radius:50%!important;overflow:hidden!important}
+.gacha-stage .v191-gem{width:clamp(21px,6vw,32px)!important;height:clamp(25px,7vw,39px)!important}
+.gacha-stage .v191-ball-chamber .v191-gem{animation-name:v191-gem-orbit!important}
+.gacha-stage .v191-winning-gem{left:51.5%;top:65%}
+@media(min-width:560px){.gacha-stage .v191-ball-chamber{top:64%!important;width:min(32%,155px)!important}}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v191-ball-chamber .v191-gem{animation:none!important}}
