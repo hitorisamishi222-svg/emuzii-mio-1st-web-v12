@@ -1,97 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" role="img" aria-label="ゴールドのジュエリーガチャクジラ">
 <defs>
-  <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5276bd"/><stop offset=".48" stop-color="#173e7e"/><stop offset="1" stop-color="#081f50"/></linearGradient>
-  <linearGradient id="trim"><stop stop-color="#fff7c6"/><stop offset=".48" stop-color="#efb738"/><stop offset="1" stop-color="#fff7c6"/></linearGradient>
-  <radialGradient id="glass"><stop stop-color="#ffffff33"/><stop offset=".62" stop-color="#ffd96522"/><stop offset="1" stop-color="#ffd96555"/></radialGradient>
-  <filter id="soft"><feGaussianBlur stdDeviation="8"/></filter>
-<linearGradient id="v2metal" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#fff" stop-opacity=".78"/><stop offset=".22" stop-color="#ffe7a2" stop-opacity=".26"/><stop offset=".52" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#00112b" stop-opacity=".25"/></linearGradient><radialGradient id="v2lens" cx=".25" cy=".16" r=".85"><stop stop-color="#fff" stop-opacity=".43"/><stop offset=".3" stop-color="#fff" stop-opacity=".08"/><stop offset=".78" stop-color="#ffd67e" stop-opacity=".09"/><stop offset="1" stop-color="#061634" stop-opacity=".37"/></radialGradient></defs>
-
-<!-- soft shadow -->
-<ellipse cx="360" cy="640" rx="255" ry="28" fill="#00152f" opacity=".35"/>
-
-<!-- v2.6 full silhouette redesign: short chubby toy whale, upright dorsal fin and oversized friendly snout -->
-<path d="M142 344 C99 297 45 292 28 321 C9 354 52 376 103 370 C52 405 45 451 85 462 C131 473 168 418 174 367Z" fill="url(#body)" stroke="url(#trim)" stroke-width="12" stroke-linejoin="round"/>
-<path d="M48 337 Q88 327 117 351" fill="none" stroke="#ffe3a0" stroke-width="9" opacity=".7" stroke-linecap="round"/>
-<path d="M265 191 Q283 104 333 113 Q357 116 369 174" fill="#163a7a" stroke="url(#trim)" stroke-width="11" stroke-linejoin="round"/>
-<path d="M122 360 C117 246 206 161 329 147 C456 132 562 175 625 265 C680 343 665 466 583 538 C508 606 343 621 236 579 C151 545 112 467 122 360Z" fill="url(#body)" stroke="url(#trim)" stroke-width="15"/>
-<path d="M141 353 Q164 235 285 192" fill="none" stroke="#ffe3a0" stroke-width="20" stroke-linecap="round" opacity=".34"/>
-<path d="M542 229 C631 225 676 281 669 338 C665 389 626 417 568 408" fill="#163a7a" stroke="url(#trim)" stroke-width="9" stroke-linecap="round"/>
-<path d="M563 386 Q623 420 666 367" fill="none" stroke="#091d50" stroke-width="6" opacity=".5" stroke-linecap="round"/>
-<!-- clear belly window -->
-<ellipse cx="362" cy="353" rx="176" ry="165" fill="url(#glass)" stroke="#efffff" stroke-width="9"/>
-<ellipse cx="362" cy="353" rx="163" ry="152" fill="none" stroke="#ffd965" stroke-opacity=".75" stroke-width="4"/>
-<path d="M238 246 C296 198 389 183 466 219" fill="none" stroke="#ffffff99" stroke-width="8" stroke-linecap="round"/>
-<path d="M254 255 C307 222 370 210 421 222" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/>
-
-<!-- premium dome: optical depth and thick transparent rim -->
-<ellipse cx="362" cy="353" rx="174" ry="163" fill="url(#v2lens)" stroke="url(#v2metal)" stroke-width="9"/>
-<ellipse cx="362" cy="353" rx="156" ry="146" fill="none" stroke="#ffffff" stroke-opacity=".26" stroke-width="3"/>
-<path d="M221 299 C242 242 284 217 324 211" fill="none" stroke="#ffffff" stroke-opacity=".57" stroke-width="14" stroke-linecap="round"/>
-<path d="M470 454 C450 489 415 511 379 516" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="8" stroke-linecap="round"/>
-<!-- eye / cheek / smile: face is clearly on the right -->
-<!-- expressive glossy jewel eyes -->
-<ellipse cx="557" cy="260" rx="23" ry="28" fill="#e5fbff" opacity=".9"/>
-<ellipse cx="559" cy="261" rx="18" ry="23" fill="#071a43"/>
-<ellipse cx="563" cy="265" rx="12" ry="16" fill="#7351ae"/>
-<ellipse cx="551" cy="252" rx="7" ry="9" fill="#fff"/>
-<circle cx="569" cy="271" r="3.5" fill="#fff" opacity=".8"/>
-<path d="M535 232 Q557 217 580 233" fill="none" stroke="#e6fbff" stroke-width="5" stroke-linecap="round"/>
-<ellipse cx="578" cy="302" rx="25" ry="14" fill="#ffbf86" opacity=".78"/>
-<path d="M527 290 C548 309 576 311 599 290" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
-<path d="M600 289 C609 285 617 278 623 269" fill="none" stroke="#ffffffaa" stroke-width="3" stroke-linecap="round"/>
-
-<!-- pectoral fin -->
-<path d="M499 460 C562 455 599 482 576 519 C553 555 493 532 461 490"
-      fill="url(#body)" stroke="url(#trim)" stroke-width="10" stroke-linejoin="round"/>
-<path d="M511 477 C536 480 553 489 560 503" fill="none" stroke="#ffffff77" stroke-width="5" stroke-linecap="round"/>
-
-<!-- blowhole -->
-<ellipse cx="452" cy="147" rx="22" ry="9" fill="#092a63" stroke="#fff7c6" stroke-width="5"/>
-
-<!-- cute small crown/fin accent -->
-<path d="M312 150 L331 113 L356 142 L382 105 L405 145 L430 119 L441 170 L309 170 Z"
-      fill="#173b79" stroke="url(#trim)" stroke-width="7" stroke-linejoin="round"/>
-<path d="M361 126 L382 146 L361 168 L340 146 Z" fill="#ffd965" stroke="#fff" stroke-width="4"/>
-
-<!-- gachapon outlet integrated in belly -->
-<path d="M273 520 C286 486 320 473 351 488 C376 465 416 467 438 491 C471 479 506 495 518 531
-         L505 596 C477 626 421 639 364 640 C306 639 251 626 224 596 L219 543
-         C232 520 251 512 273 520 Z"
-      fill="#0c2452" stroke="url(#trim)" stroke-width="12"/>
-<rect x="292" y="538" width="150" height="70" rx="24" fill="#170d02" stroke="url(#trim)" stroke-width="9"/>
-<path d="M320 538 C347 510 387 510 414 538" fill="none" stroke="#ffd965" stroke-width="9" stroke-linecap="round"/>
-
-<!-- whale belly line -->
-<path d="M180 471 C231 535 327 559 424 546 C496 537 550 511 584 474"
-      fill="none" stroke="#082b67" stroke-opacity=".45" stroke-width="5"/>
-
-<!-- sparkles -->
-<g fill="#fff7c6">
-  <path d="m170 175 8 21 21 8-21 8-8 21-8-21-21-8 21-8z"/>
-  <path d="m611 431 7 18 18 7-18 7-7 18-7-18-18-7 18-7z"/>
-</g>
-
-<!-- water line base -->
-<path d="M112 612 C158 579 202 579 247 611 C291 642 335 582 379 611 C424 642 470 582 514 611 C555 638 596 612 621 591"
-      fill="none" stroke="#ffd965" stroke-width="13" stroke-linecap="round"/>
-
-<!-- v2.0 premium body reflections and pearl detailing -->
-<path d="M192 281 C258 211 414 197 519 252" fill="none" stroke="#fff0b0" stroke-width="13" stroke-linecap="round" opacity=".35"/>
-<path d="M210 300 C291 240 418 237 490 270" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".35"/>
-<g opacity=".88"><circle cx="240" cy="228" r="5" fill="#ffe6a0"/><circle cx="461" cy="210" r="4" fill="#ffffff"/><circle cx="528" cy="288" r="6" fill="#ffdc7c"/></g>
-
-<!-- v2.5D jewellery machine redesign: rounded enamel, sapphire badge, inset chrome fittings -->
-<path d="M149 309 C180 196 279 143 395 143" fill="none" stroke="#fff" stroke-width="17" stroke-linecap="round" opacity=".19"/>
-<path d="M140 403 C146 486 206 550 275 567" fill="none" stroke="#061b4b" stroke-width="13" stroke-linecap="round" opacity=".2"/>
-<ellipse cx="362" cy="353" rx="184" ry="173" fill="none" stroke="#fff0b4" stroke-width="4" opacity=".92"/>
-<ellipse cx="362" cy="353" rx="189" ry="178" fill="none" stroke="#062a65" stroke-width="4" opacity=".36"/>
-<g transform="translate(479 399)">
-  <circle r="23" fill="#c99030" stroke="#fff" stroke-width="5"/>
-  <circle r="16" fill="#103c78" stroke="#ffe5a0" stroke-width="2"/>
-  <path d="M0 -12 L11 0 L0 12 L-11 0Z" fill="#ffe9a8" stroke="#fff" stroke-width="2"/>
-  <path d="M0 -8 L0 8 M-7 0 L7 0" stroke="#fff" opacity=".65"/>
-</g>
-<path d="M503 467 Q549 459 571 497" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".45"/>
-<path d="M311 581 Q366 597 426 581" fill="none" stroke="#ffe4a3" stroke-width="5" stroke-linecap="round" opacity=".6"/>
-<g fill="#fff" opacity=".8"><circle cx="161" cy="349" r="4"/><circle cx="191" cy="453" r="3"/><circle cx="519" cy="189" r="4"/></g>
+<linearGradient id="skin" x1=".13" y1="0" x2=".83" y2="1"><stop stop-color="#4469b4"/><stop offset=".46" stop-color="#15346e"/><stop offset="1" stop-color="#091b47"/></linearGradient>
+<linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".3" stop-color="#f4d583"/><stop offset=".58" stop-color="#e2b858"/><stop offset=".78" stop-color="#fff"/><stop offset="1" stop-color="#e2b858"/></linearGradient>
+<radialGradient id="glass" cx=".28" cy=".18" r=".94"><stop stop-color="#fff" stop-opacity=".29"/><stop offset=".35" stop-color="#f4d583" stop-opacity=".07"/><stop offset=".78" stop-color="#7edaff" stop-opacity=".08"/><stop offset="1" stop-color="#092657" stop-opacity=".4"/></radialGradient>
+<linearGradient id="whitebelly" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f4d583"/></linearGradient>
+<radialGradient id="eye"><stop stop-color="#5e9df4"/><stop offset=".6" stop-color="#133773"/><stop offset="1" stop-color="#08132d"/></radialGradient>
+</defs>
+<!-- the machine is a single whale-shaped toy, not decorations stuck onto a whale -->
+<ellipse cx="350" cy="652" rx="226" ry="24" fill="#061c42" opacity=".25"/>
+<!-- large split tail -->
+<path d="M158 335 Q94 269 40 288 Q15 319 70 356 Q25 376 47 415 Q105 445 170 384Z" fill="url(#skin)" stroke="url(#metal)" stroke-width="11" stroke-linejoin="round"/>
+<path d="M69 314 Q104 316 131 343" fill="none" stroke="#fff" stroke-width="8" opacity=".55" stroke-linecap="round"/>
+<!-- dorsal fin -->
+<path d="M310 176 Q312 108 360 91 Q391 124 390 174" fill="url(#skin)" stroke="url(#metal)" stroke-width="9" stroke-linejoin="round"/>
+<!-- chubby body -->
+<path d="M138 354 Q139 192 293 157 Q455 115 565 205 Q657 271 647 406 Q640 547 514 594 Q347 662 216 568 Q129 507 138 354Z" fill="url(#skin)" stroke="url(#metal)" stroke-width="13"/>
+<path d="M166 323 Q186 224 280 196" fill="none" stroke="#fff" stroke-width="20" opacity=".34" stroke-linecap="round"/>
+<!-- large cream belly supporting machine -->
+<path d="M190 461 Q295 551 473 510 Q555 493 612 428 Q600 556 492 594 Q326 647 226 563 Q195 525 190 461Z" fill="url(#whitebelly)" opacity=".88"/>
+<!-- thick circular gacha dome integrated into belly, center fixed at 362,353 -->
+<ellipse cx="362" cy="353" rx="188" ry="178" fill="#0a3769" opacity=".7"/>
+<ellipse cx="362" cy="353" rx="183" ry="173" fill="url(#metal)" stroke="#fff" stroke-width="6"/>
+<ellipse cx="362" cy="353" rx="170" ry="160" fill="#123c6e" opacity=".4"/>
+<ellipse cx="362" cy="353" rx="163" ry="153" fill="url(#glass)" stroke="#ffe7a7" stroke-width="5"/>
+<path d="M223 296 Q248 225 323 207" fill="none" stroke="#fff" stroke-width="16" opacity=".57" stroke-linecap="round"/>
+<path d="M264 223 Q348 185 442 223" fill="none" stroke="#fff" stroke-width="5" opacity=".46" stroke-linecap="round"/>
+<path d="M460 460 Q436 489 398 499" fill="none" stroke="#fff" stroke-width="7" opacity=".2" stroke-linecap="round"/>
+<!-- projecting friendly whale face outside dome -->
+<path d="M531 221 Q594 199 632 257 Q663 307 645 354 Q630 397 568 393 Q540 375 542 342" fill="url(#skin)" stroke="#ffe7a7" stroke-width="8" stroke-linejoin="round"/>
+<path d="M575 331 Q610 314 647 334 Q653 366 617 381 Q581 387 563 359Z" fill="#f4d583" stroke="#ffe7a7" stroke-width="4"/>
+<ellipse cx="564" cy="273" rx="25" ry="30" fill="#fff"/>
+<ellipse cx="568" cy="277" rx="19" ry="25" fill="url(#eye)"/>
+<ellipse cx="559" cy="265" rx="8" ry="10" fill="#fff"/>
+<circle cx="578" cy="288" r="4" fill="#fff"/>
+<ellipse cx="582" cy="315" rx="25" ry="13" fill="#ffe6b5" opacity=".88"/>
+<path d="M589 358 Q611 372 635 353" fill="none" stroke="#25628b" stroke-width="5" stroke-linecap="round"/>
+<ellipse cx="625" cy="339" rx="7" ry="4" fill="#418bb5" opacity=".6"/>
+<!-- flipper -->
+<path d="M486 479 Q551 463 589 498 Q609 525 571 546 Q528 551 477 505" fill="url(#skin)" stroke="url(#metal)" stroke-width="9"/>
+<path d="M516 490 Q550 491 567 509" fill="none" stroke="#fff" stroke-width="6" opacity=".48" stroke-linecap="round"/>
+<!-- real mechanical crank on the side -->
+<circle cx="548" cy="448" r="30" fill="#0b356b" stroke="url(#metal)" stroke-width="9"/>
+<circle cx="548" cy="448" r="17" fill="#e2b858" stroke="#fff" stroke-width="3"/>
+<path d="M548 432 V464 M532 448 H564" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+<circle cx="548" cy="448" r="5" fill="#123a6b"/>
+<!-- sturdy capsule dispensing door, part of the chassis -->
+<path d="M258 522 Q362 550 467 522 L489 603 Q369 655 240 603Z" fill="url(#skin)" stroke="url(#metal)" stroke-width="11" stroke-linejoin="round"/>
+<rect x="287" y="545" width="153" height="69" rx="25" fill="#081e44" stroke="url(#metal)" stroke-width="10"/>
+<rect x="305" y="558" width="117" height="40" rx="17" fill="#06132b"/>
+<path d="M310 558 Q360 542 416 558" fill="none" stroke="#ffe7a7" stroke-width="5" opacity=".8"/>
+<!-- blowhole and celebratory jewel -->
+<ellipse cx="464" cy="166" rx="22" ry="9" fill="#092b62" stroke="url(#metal)" stroke-width="5"/>
+<path d="M362 111 L386 139 L362 167 L338 139Z" fill="#e2b858" stroke="#fff" stroke-width="5"/>
+<path d="M362 117 L362 161 M343 139 H381" stroke="#fff" opacity=".6" stroke-width="3"/>
+<g fill="#fff" opacity=".9"><path d="m171 190 7 17 17 7-17 7-7 17-7-17-17-7 17-7z"/><circle cx="622" cy="444" r="5"/></g>
 </svg>
