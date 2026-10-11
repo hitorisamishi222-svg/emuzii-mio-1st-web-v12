@@ -170,3 +170,11 @@
 @keyframes v20-hatch{0%,12%{transform:scaleY(.15);opacity:.4}24%,72%{transform:scaleY(1);opacity:1}100%{transform:scaleY(.15);opacity:.4}}
 @keyframes v20-capsule-exit{0%,24%{opacity:0;transform:translate(-50%,-30px) scale(.4) rotate(-25deg)}33%{opacity:1}52%{opacity:1;transform:translate(-50%,4px) scale(1.05) rotate(35deg)}74%{opacity:1;transform:translate(-50%,34px) scale(.95) rotate(180deg)}100%{opacity:0;transform:translate(-50%,72px) scale(.65) rotate(300deg)}}
 @media(prefers-reduced-motion:reduce){.v20-whale-outlet.v20-eject::before,.v20-whale-outlet.v20-eject .v20-outlet-capsule{animation:none}.v20-whale-outlet.v20-eject::before{transform:scaleY(1);opacity:1}.v20-whale-outlet.v20-eject .v20-outlet-capsule{opacity:1;transform:translate(-50%,10px)}}
+
+/* v2 polish: light refraction, capsule depth, restrained mobile effects */
+.v20-whale-outlet{filter:drop-shadow(0 5px 10px #001331aa)}
+.v20-whale-outlet::after{content:"";position:absolute;left:8px;right:8px;top:7px;height:9px;border-radius:50%;background:linear-gradient(90deg,transparent,#e8ffffaa,transparent);opacity:.8;pointer-events:none}
+.v20-outlet-capsule{will-change:transform,opacity;backface-visibility:hidden}
+.v20-whale-outlet.v20-eject .v20-outlet-capsule{filter:drop-shadow(0 0 13px #9aeaff)}
+.gacha-stage.is-fest .v20-outlet-capsule{background:linear-gradient(150deg,#fff 0 10%,#ffeeb0 22%,#dc982e 49%,#fffaf0 50%,#eecbff 76%,#a77cdb 100%);box-shadow:inset -5px -7px 9px #7c4a2266,0 0 23px #ffe5a0}
+@media(max-width:390px){.v20-whale-outlet{top:74%;width:66px;height:42px}.v20-outlet-capsule{width:38px;height:38px}}
