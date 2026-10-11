@@ -32,7 +32,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const jewel=document.createElement('span');jewel.className='v20-jewel-core';jewel.setAttribute('aria-hidden','true');gem.append(jewel);
     const label=document.createElement('span');label.className='v191-gem-label';label.textContent=gemLabels[i];gem.append(label);
     const ring=i%3;
-    const rx=ring===0?72:ring===1?55:38, ry=ring===0?58:ring===1?43:30;
+    const rx=ring===0?47:ring===1?34:20, ry=ring===0?37:ring===1?26:15;
     const p=(n)=>n.toFixed(2)+'px';
     gem.style.setProperty('--x100',p(rx));gem.style.setProperty('--x92',p(rx*.9239));gem.style.setProperty('--x71',p(rx*.7071));gem.style.setProperty('--x38',p(rx*.3827));
     gem.style.setProperty('--nx100',p(-rx));gem.style.setProperty('--nx92',p(-rx*.9239));gem.style.setProperty('--nx71',p(-rx*.7071));gem.style.setProperty('--nx38',p(-rx*.3827));
