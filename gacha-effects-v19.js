@@ -29,6 +29,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const gemLabels=['N','R','N','SR','N','R','N','UR','N','R','N','SR'];
   for(let i=0;i<gemLabels.length;i++){
     const gem=document.createElement('i');gem.className='v191-gem';gem.dataset.rarity=gemLabels[i];
+    const jewel=document.createElement('span');jewel.className='v20-jewel-core';jewel.setAttribute('aria-hidden','true');gem.append(jewel);
     const label=document.createElement('span');label.className='v191-gem-label';label.textContent=gemLabels[i];gem.append(label);
     const ring=i%3;
     const rx=ring===0?72:ring===1?55:38, ry=ring===0?58:ring===1?43:30;
@@ -45,6 +46,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     chamber.append(gem);
   }
   const winnerGem=document.createElement('div');winnerGem.className='v191-winning-gem';winnerGem.dataset.rarity='N';
+  const winnerJewel=document.createElement('span');winnerJewel.className='v20-jewel-core';winnerGem.append(winnerJewel);
   const winnerLabel=document.createElement('span');winnerLabel.textContent='N';winnerGem.append(winnerLabel);
   const machine=document.createElement('img');machine.className='v19-machine-img';machine.alt='';
   const handle=document.createElement('div');handle.className='v191-handle';
