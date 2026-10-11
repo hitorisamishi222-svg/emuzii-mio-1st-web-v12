@@ -191,7 +191,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const label=k.toUpperCase();winnerGem.dataset.rarity=label;winnerLabel.textContent=label;
     const dropDelay=k==='ur'?1450:k==='sr'?850:k==='r'?420:220;
     setTimeout(()=>{
-      if(stage.classList.contains('draw-active')){
+      if(resultCard&&!resultCard.hidden){
         winnerGem.style.opacity='';winnerGem.classList.remove('v191-winner-drop');void winnerGem.offsetWidth;winnerGem.classList.add('v191-winner-drop');outlet.classList.remove('v20-eject');void outlet.offsetWidth;outlet.classList.add('v20-eject');sfxDrop();
       }
     },dropDelay);
