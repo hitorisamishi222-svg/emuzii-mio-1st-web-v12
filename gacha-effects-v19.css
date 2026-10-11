@@ -198,3 +198,16 @@
 @keyframes v20-ocean-sway{from{transform:rotate(-4deg) scale(1)}to{transform:rotate(5deg) scale(1.08)}}
 @keyframes v20-pearl-twinkle{0%,100%{opacity:.08;transform:scale(.4) rotate(45deg)}42%{opacity:.9;transform:scale(1.3) rotate(45deg)}60%{opacity:.3;transform:scale(.7) rotate(45deg)}}
 @media(prefers-reduced-motion:reduce){.v20-ocean-rays,.v20-pearl-glint{animation:none}.v20-pearl-glint{opacity:.4}}
+
+/* v2.0 animated whale stage: subtle breathing at rest, dramatic awakening on draw */
+.v20-stage-pulse{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 47%,#b7faffaa 0%,#4bcaff4a 22%,transparent 65%);transform:scale(.45)}
+.gacha-stage.v20-stage-awaken .v20-stage-pulse{animation:v20-stage-awakening 2.8s ease-out both}
+.gacha-stage.is-fest .v20-stage-pulse{background:radial-gradient(ellipse at 50% 47%,#fff7bbaa 0%,#f4bd534f 24%,transparent 66%)}
+.gacha-stage .v19-machine-img{animation:v20-whale-breathe 4.1s ease-in-out infinite}
+.gacha-stage.draw-active .v19-machine-img{animation:v20-whale-excited .85s ease-in-out infinite alternate}
+.gacha-stage.v191-rarity-ur .v19-machine-img{animation:v20-whale-legendary .55s ease-in-out infinite alternate}
+@keyframes v20-whale-breathe{0%,100%{transform:translate(-50%,-50%) rotate(-.7deg) scale(.945)}50%{transform:translate(-50%,-51.4%) rotate(.8deg) scale(.963)}}
+@keyframes v20-whale-excited{0%{transform:translate(-50%,-50%) rotate(-1.8deg) scale(.99)}100%{transform:translate(-50%,-52%) rotate(1.8deg) scale(1.025)}}
+@keyframes v20-whale-legendary{0%{transform:translate(-50%,-50%) rotate(-2deg) scale(1.025)}100%{transform:translate(-50%,-52%) rotate(2deg) scale(1.06)}}
+@keyframes v20-stage-awakening{0%{opacity:0;transform:scale(.35)}18%{opacity:.9}55%{opacity:.55;transform:scale(1.25)}100%{opacity:0;transform:scale(1.85)}}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v19-machine-img,.gacha-stage.draw-active .v19-machine-img,.gacha-stage.v191-rarity-ur .v19-machine-img,.gacha-stage.v20-stage-awaken .v20-stage-pulse{animation:none}.gacha-stage .v19-machine-img{transform:translate(-50%,-50%) scale(.96)}}
