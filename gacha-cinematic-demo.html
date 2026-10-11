@@ -26,7 +26,7 @@ body{min-height:100vh}
 <header class="demo-head">
 <div class="brand">翠央 1周年ガチャ</div>
 <h1>v2.0 BLUE WHALE GRAND GACHA</h1><p class="demo-subtitle">海のきらめきと、可愛いクジラのプレミアム抽選体験</p>
-<div class="demo-safe">安全デモ：抽選API未接続・回数消費なし</div>
+<div class="demo-safe">安全デモ：抽選API未接続・回数消費なし</div><p class="demo-mode" id="demoMode" aria-live="polite">2.5D演出を準備中</p>
 </header>
 <section class="glass" id="drawPanel">
 <h2>🐳 クジラの宝石ガチャ</h2>
@@ -56,7 +56,10 @@ body{min-height:100vh}
 <script type="module" src="/gacha-effects-v19.js"></script>
 <script>
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
+const mode=$('demoMode');const refreshMode=()=>{const st=$('gachaStage');mode.textContent=st.classList.contains('v25-low-power')?'省エネ2.5Dモードで表示中':'プレミアム2.5Dモードで表示中'};
+requestAnimationFrame(refreshMode);
 let running=false,seq=0;
+window.addEventListener('error',()=>{if(!running)return;running=false;document.querySelectorAll('[data-r]').forEach(b=>b.disabled=false);$('demoMsg').textContent='表示エラーが発生しました。もう一度お試しください。';window.dispatchEvent(new Event('mio:gacha-animation-error'));});
 async function play(rarity,fest){
   if(running)return;running=true;
   document.querySelectorAll('[data-r]').forEach(b=>b.disabled=true);
