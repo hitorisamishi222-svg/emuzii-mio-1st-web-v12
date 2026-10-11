@@ -1,0 +1,9 @@
+/* Approved artwork geometry: 772x522 reference; only activates once image is available. */
+.gacha-stage.whale-v3-approved .v19-machine-img{width:min(96%,600px)!important;max-height:95%!important;object-fit:contain!important;transform:translate(-50%,-50%)!important;animation:none!important;left:50%!important;top:49%!important}
+.gacha-stage.whale-v3-approved .v191-ball-chamber{left:calc(50% + min(19vw,119px))!important;top:calc(49% - min(1vw,7px))!important;width:min(26%,112px)!important;opacity:.75!important;z-index:6!important}
+.gacha-stage.whale-v3-approved .v191-handle{left:calc(50% + min(19vw,119px))!important;top:calc(49% + min(11vw,70px))!important}
+.gacha-stage.whale-v3-approved .v20-whale-outlet{left:calc(50% + min(19vw,119px))!important;top:calc(49% + min(16vw,105px))!important}
+.gacha-stage.whale-v3-approved .v191-winning-gem{left:calc(50% + min(19vw,119px))!important;top:calc(49% + min(16vw,105px))!important}
+.gacha-stage.whale-v3-approved .v191-spout{display:none!important}
+.gacha-stage.whale-v3-approved .v191-gem{width:clamp(10px,2.5vw,16px)!important;height:clamp(10px,2.5vw,16px)!important}
+@media(prefers-reduced-motion:reduce){.gacha-stage.whale-v3-approved .v191-gem{animation:none!important}}
