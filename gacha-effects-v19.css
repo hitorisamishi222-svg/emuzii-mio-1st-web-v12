@@ -300,3 +300,17 @@
 .gacha-stage .v191-gem-label{font-size:9px!important;letter-spacing:-.4px}
 .gacha-stage .v20-whale-outlet{top:76%!important}
 @media(max-width:390px){.gacha-stage .v19-machine-img{width:88%!important;max-height:80%!important}.gacha-stage .v191-ball-chamber{width:39%!important;top:49%!important}}
+
+/* v2.1 spectacle: visual intensity responds to the draw, without covering results */
+.gacha-stage .v19-fx-root{isolation:isolate}
+.gacha-stage.draw-active .v191-ball-chamber{box-shadow:inset 0 0 15px #fff8,0 0 24px #80ecff88,0 0 55px #1688ff66!important;transition:box-shadow .4s ease}
+.gacha-stage.draw-active .v191-gem{filter:drop-shadow(0 0 5px #aaf6ff) drop-shadow(0 0 9px #47baff)!important}
+.gacha-stage.draw-active .v19-aura{animation-duration:.95s!important;opacity:.95!important}
+.gacha-stage.v20-stage-awaken .v19-aura{background:radial-gradient(circle,#fff9 0%,#83ecff66 22%,#7972ff55 48%,transparent 74%)!important;box-shadow:0 0 55px #bceeffaa,0 0 100px #a178ff88!important}
+.gacha-stage.v20-stage-awaken .v191-ball-chamber{border-color:#fff5c4!important;box-shadow:inset 0 0 24px #fff9,0 0 28px #ffdd9a,0 0 72px #a97affaa!important}
+.gacha-stage .v191-gem-label{font-family:system-ui,-apple-system,sans-serif!important;font-style:normal!important;font-weight:900!important}
+.gacha-stage .draw-result-card:not([hidden]){animation:v21-reward-enter .55s cubic-bezier(.18,.8,.2,1) both!important}
+@keyframes v21-reward-enter{from{opacity:0;transform:translateY(18px) scale(.94);filter:blur(4px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.gacha-stage .draw-result-card:not([hidden])::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;border:1px solid #fff8;background:linear-gradient(125deg,#fff3,transparent 34%,#8beeff13 64%,transparent);z-index:0}
+.gacha-stage .draw-result-card:not([hidden])>*{position:relative;z-index:1}
+@media(prefers-reduced-motion:reduce){.gacha-stage .draw-result-card:not([hidden]){animation:none!important}}
