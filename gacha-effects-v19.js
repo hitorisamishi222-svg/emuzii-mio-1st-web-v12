@@ -72,7 +72,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   stage.append(root);
 
   for(const img of [machine,frame]) img.addEventListener('error',()=>root.classList.add('v19-assets-missing'));
-  const syncMachine=()=>{machine.src=stage.classList.contains('is-fest')?'/gacha-v191-whale-gold.svg':'/gacha-v191-whale-blue.svg'};
+  const syncMachine=()=>{const next=stage.classList.contains('is-fest')?'/gacha-v191-whale-gold.svg':'/gacha-v191-whale-blue.svg';if(machine.getAttribute('src')!==next)machine.src=next;};
   syncMachine();
 
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -202,7 +202,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   }
 
   window.addEventListener('mio:gacha-animation-start',e=>{
-    outletRevealToken++;stage.classList.remove('v20-prize-visible','v20-stage-awaken','v19-reveal-finished');void stage.offsetWidth;stage.classList.add('v20-stage-awaken');
+    token++;clearTimeout(watchdog);reveal.className='v19-reveal';stage.classList.remove('v19-reveal-running','v19-reveal-finished');outletRevealToken++;stage.classList.remove('v20-prize-visible','v20-stage-awaken','v19-reveal-finished');void stage.offsetWidth;stage.classList.add('v20-stage-awaken');
     const fest=e.detail?.mode==='ラキフェス';syncMachine();setRarityState('n');winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');winnerGem.style.opacity='0';winnerGem.dataset.rarity='N';winnerLabel.textContent='N';sfxStart(fest);startBgm(fest);
     let ticks=0;const t=setInterval(()=>{if(!stage.classList.contains('draw-active')||ticks++>14){clearInterval(t);return}sfxTick()},180);
   });
@@ -267,8 +267,8 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const sig=[rarityNode?.textContent||'',ordinalNode?.textContent||'',resultCard.className].join('|');
     if(!sig.trim()||sig===lastSignature||!resultCard.classList.contains('result-pop'))return;
     lastSignature=sig;
-    // fallback when event hook is unavailable
-    if(!stage.classList.contains('v19-reveal-running'))void showReveal(rarityKey(rarityNode?.textContent));
+    // Fallback only when no explicit result-shown event marked this draw.
+    if(!stage.classList.contains('v20-prize-visible')&&!stage.classList.contains('v19-reveal-running'))void showReveal(rarityKey(rarityNode?.textContent));
   };
   const resultObserver=new MutationObserver(maybeReveal);
   resultObserver.observe(resultCard,{attributes:true,attributeFilter:['class','hidden'],childList:true,subtree:true});
