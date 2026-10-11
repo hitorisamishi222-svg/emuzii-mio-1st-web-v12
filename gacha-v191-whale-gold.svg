@@ -45,8 +45,13 @@
 <path d="M221 299 C242 242 284 217 324 211" fill="none" stroke="#ffffff" stroke-opacity=".57" stroke-width="14" stroke-linecap="round"/>
 <path d="M470 454 C450 489 415 511 379 516" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="8" stroke-linecap="round"/>
 <!-- eye / cheek / smile: face is clearly on the right -->
-<ellipse cx="557" cy="259" rx="13" ry="17" fill="#071b48"/>
-<circle cx="552" cy="253" r="4" fill="#fff"/>
+<!-- expressive glossy jewel eyes -->
+<ellipse cx="557" cy="260" rx="23" ry="28" fill="#e5fbff" opacity=".9"/>
+<ellipse cx="559" cy="261" rx="18" ry="23" fill="#071a43"/>
+<ellipse cx="563" cy="265" rx="12" ry="16" fill="#7351ae"/>
+<ellipse cx="551" cy="252" rx="7" ry="9" fill="#fff"/>
+<circle cx="569" cy="271" r="3.5" fill="#fff" opacity=".8"/>
+<path d="M535 232 Q557 217 580 233" fill="none" stroke="#e6fbff" stroke-width="5" stroke-linecap="round"/>
 <ellipse cx="578" cy="302" rx="25" ry="14" fill="#ffbf86" opacity=".78"/>
 <path d="M527 290 C548 309 576 311 599 290" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
 <path d="M600 289 C609 285 617 278 623 269" fill="none" stroke="#ffffffaa" stroke-width="3" stroke-linecap="round"/>
@@ -90,4 +95,19 @@
 <path d="M192 281 C258 211 414 197 519 252" fill="none" stroke="#fff0b0" stroke-width="13" stroke-linecap="round" opacity=".35"/>
 <path d="M210 300 C291 240 418 237 490 270" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".35"/>
 <g opacity=".88"><circle cx="240" cy="228" r="5" fill="#ffe6a0"/><circle cx="461" cy="210" r="4" fill="#ffffff"/><circle cx="528" cy="288" r="6" fill="#ffdc7c"/></g>
+
+<!-- v2.5D jewellery machine redesign: rounded enamel, sapphire badge, inset chrome fittings -->
+<path d="M149 309 C180 196 279 143 395 143" fill="none" stroke="#fff" stroke-width="17" stroke-linecap="round" opacity=".19"/>
+<path d="M140 403 C146 486 206 550 275 567" fill="none" stroke="#061b4b" stroke-width="13" stroke-linecap="round" opacity=".2"/>
+<ellipse cx="362" cy="353" rx="184" ry="173" fill="none" stroke="#fff0b4" stroke-width="4" opacity=".92"/>
+<ellipse cx="362" cy="353" rx="189" ry="178" fill="none" stroke="#062a65" stroke-width="4" opacity=".36"/>
+<g transform="translate(479 399)">
+  <circle r="23" fill="#c99030" stroke="#fff" stroke-width="5"/>
+  <circle r="16" fill="#103c78" stroke="#ffe5a0" stroke-width="2"/>
+  <path d="M0 -12 L11 0 L0 12 L-11 0Z" fill="#ffe9a8" stroke="#fff" stroke-width="2"/>
+  <path d="M0 -8 L0 8 M-7 0 L7 0" stroke="#fff" opacity=".65"/>
+</g>
+<path d="M503 467 Q549 459 571 497" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".45"/>
+<path d="M311 581 Q366 597 426 581" fill="none" stroke="#ffe4a3" stroke-width="5" stroke-linecap="round" opacity=".6"/>
+<g fill="#fff" opacity=".8"><circle cx="161" cy="349" r="4"/><circle cx="191" cy="453" r="3"/><circle cx="519" cy="189" r="4"/></g>
 </svg>
