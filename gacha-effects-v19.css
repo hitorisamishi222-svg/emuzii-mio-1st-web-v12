@@ -337,3 +337,10 @@
 /* v2.5D adaptive effects: conserve GPU work while keeping premium static visuals */
 @media(max-width:420px){.gacha-stage .v19-sparkles{animation:none!important;opacity:.22!important}.gacha-stage .v20-pearl-glint:nth-child(n+5),.gacha-stage .v191-bubble:nth-child(n+7){display:none!important}.gacha-stage .v19-aura{animation-duration:3s!important}.gacha-stage .v191-ball-chamber{filter:none!important}}
 @media(prefers-reduced-motion:reduce){.gacha-stage .v191-gem,.gacha-stage .v20-pearl-glint,.gacha-stage .v191-bubble,.gacha-stage .v19-aura,.gacha-stage .v19-sparkles{animation:none!important}.gacha-stage .draw-result-card:not([hidden]){animation:none!important}}
+
+/* 2.5D refinement: reduce continuous compositing; focus motion on the draw */
+.gacha-stage:not(.draw-active) .v20-ocean-rays,.gacha-stage:not(.draw-active) .v20-stage-pulse{animation-play-state:paused!important;opacity:.22}
+.gacha-stage .v191-ball-chamber{isolation:isolate;contain:paint}
+.gacha-stage .v191-gem{backface-visibility:hidden}
+@media(max-width:420px){.gacha-stage .v20-pearl-glint:nth-child(n+5),.gacha-stage .v191-bubble:nth-child(n+7){display:none!important}.gacha-stage:not(.draw-active) .v19-sparkles{animation-play-state:paused!important}}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v20-ocean-rays,.gacha-stage .v20-stage-pulse,.gacha-stage .v19-sparkles{animation:none!important}}
