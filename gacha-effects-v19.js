@@ -6,6 +6,16 @@ const ordinalNode=document.getElementById('drawOrdinal');
 
 if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   stage.classList.add('v191-loaded');
+  // 2.5D adaptive quality: keep the drawing static and trim decorative motion on weaker phones.
+  const deviceMemory=Number(navigator.deviceMemory||0);
+  const cpuCores=Number(navigator.hardwareConcurrency||0);
+  const dataSaver=Boolean(navigator.connection?.saveData);
+  const lowPower=dataSaver||(deviceMemory>0&&deviceMemory<=2)||(cpuCores>0&&cpuCores<=2);
+  if(lowPower)stage.classList.add('v25-low-power');
+  const syncVisibility=()=>stage.classList.toggle('v25-offscreen',document.hidden);
+  document.addEventListener('visibilitychange',syncVisibility);
+  syncVisibility();
+
   const root=document.createElement('div');root.className='v19-fx-root';root.setAttribute('aria-hidden','true');
   const sparkles=document.createElement('div');sparkles.className='v19-sparkles';
   const oceanRays=document.createElement('div');oceanRays.className='v20-ocean-rays';
@@ -264,5 +274,5 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   resultObserver.observe(resultCard,{attributes:true,attributeFilter:['class','hidden'],childList:true,subtree:true});
   if(ordinalNode)resultObserver.observe(ordinalNode,{childList:true,subtree:true,characterData:true});
 
-  window.addEventListener('pagehide',()=>{token++;clearTimeout(watchdog);stopBgm();stageObserver.disconnect();resultObserver.disconnect()},{once:true});
+  window.addEventListener('pagehide',()=>{token++;clearTimeout(watchdog);stopBgm();stageObserver.disconnect();resultObserver.disconnect();document.removeEventListener('visibilitychange',syncVisibility)},{once:true});
 }
