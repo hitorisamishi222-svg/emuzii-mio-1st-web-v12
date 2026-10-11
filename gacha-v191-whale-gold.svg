@@ -9,30 +9,14 @@
 <!-- soft shadow -->
 <ellipse cx="360" cy="640" rx="255" ry="28" fill="#00152f" opacity=".35"/>
 
-<!-- unmistakable whale tail on the left -->
-<path d="M126 300
-         C76 250 30 252 24 292
-         C19 330 60 345 105 335
-         C63 366 55 409 91 425
-         C132 443 164 392 171 342
-         Z"
-      fill="url(#body)" stroke="url(#trim)" stroke-width="11" stroke-linejoin="round"/>
-<path d="M120 308 C86 293 58 299 46 317" fill="none" stroke="#ffffff88" stroke-width="6" stroke-linecap="round"/>
-
-<!-- whale body: long side-profile silhouette -->
-<path d="M130 318
-         C151 185 274 115 425 126
-         C548 135 628 207 647 310
-         C665 406 620 505 531 554
-         C452 598 332 610 233 568
-         C155 535 112 463 118 388
-         C120 360 124 337 130 318 Z"
-      fill="url(#body)" stroke="url(#trim)" stroke-width="14"/>
-
-<!-- round forehead / snout -->
-<path d="M510 192 C608 211 664 279 647 344 C635 389 593 408 544 394"
-      fill="none" stroke="#ffffff33" stroke-width="8" stroke-linecap="round"/>
-
+<!-- v2.6 full silhouette redesign: short chubby toy whale, upright dorsal fin and oversized friendly snout -->
+<path d="M142 344 C99 297 45 292 28 321 C9 354 52 376 103 370 C52 405 45 451 85 462 C131 473 168 418 174 367Z" fill="url(#body)" stroke="url(#trim)" stroke-width="12" stroke-linejoin="round"/>
+<path d="M48 337 Q88 327 117 351" fill="none" stroke="#ffe3a0" stroke-width="9" opacity=".7" stroke-linecap="round"/>
+<path d="M265 191 Q283 104 333 113 Q357 116 369 174" fill="#163a7a" stroke="url(#trim)" stroke-width="11" stroke-linejoin="round"/>
+<path d="M122 360 C117 246 206 161 329 147 C456 132 562 175 625 265 C680 343 665 466 583 538 C508 606 343 621 236 579 C151 545 112 467 122 360Z" fill="url(#body)" stroke="url(#trim)" stroke-width="15"/>
+<path d="M141 353 Q164 235 285 192" fill="none" stroke="#ffe3a0" stroke-width="20" stroke-linecap="round" opacity=".34"/>
+<path d="M542 229 C631 225 676 281 669 338 C665 389 626 417 568 408" fill="#163a7a" stroke="url(#trim)" stroke-width="9" stroke-linecap="round"/>
+<path d="M563 386 Q623 420 666 367" fill="none" stroke="#091d50" stroke-width="6" opacity=".5" stroke-linecap="round"/>
 <!-- clear belly window -->
 <ellipse cx="362" cy="353" rx="176" ry="165" fill="url(#glass)" stroke="#efffff" stroke-width="9"/>
 <ellipse cx="362" cy="353" rx="163" ry="152" fill="none" stroke="#ffd965" stroke-opacity=".75" stroke-width="4"/>
