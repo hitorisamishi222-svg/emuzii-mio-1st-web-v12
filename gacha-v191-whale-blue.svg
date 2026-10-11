@@ -80,4 +80,9 @@
 <!-- water line base -->
 <path d="M112 612 C158 579 202 579 247 611 C291 642 335 582 379 611 C424 642 470 582 514 611 C555 638 596 612 621 591"
       fill="none" stroke="#76eaff" stroke-width="13" stroke-linecap="round"/>
+
+<!-- v2.0 premium body reflections and pearl detailing -->
+<path d="M192 281 C258 211 414 197 519 252" fill="none" stroke="#d8ffff" stroke-width="13" stroke-linecap="round" opacity=".35"/>
+<path d="M210 300 C291 240 418 237 490 270" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+<g opacity=".88"><circle cx="240" cy="228" r="5" fill="#baf7ff"/><circle cx="461" cy="210" r="4" fill="#ffffff"/><circle cx="528" cy="288" r="6" fill="#9eeaff"/></g>
 </svg>
