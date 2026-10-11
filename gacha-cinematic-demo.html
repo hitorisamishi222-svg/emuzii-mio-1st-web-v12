@@ -18,17 +18,18 @@ body{min-height:100vh}
 .demo-controls button:last-child{background:linear-gradient(135deg,#fff4b8,#e9b13a)}
 .demo-controls button:disabled{opacity:.45}
 @media(max-width:520px){.demo-controls{grid-template-columns:repeat(3,1fr)}}
+.demo-head{padding:20px 8px 24px}.demo-head .brand{font-weight:800;letter-spacing:.2em;color:#8feaff;text-shadow:0 0 16px #42bfff77}.demo-head h1{font-size:clamp(21px,5.2vw,34px);line-height:1.2;letter-spacing:.035em;color:#f6fdff;text-shadow:0 3px 22px #54caff66}.demo-subtitle{margin:10px auto 14px;color:#c9edff;font-size:13px;line-height:1.65}.demo-wrap{background:radial-gradient(ellipse at 50% 15%,#178dce22,transparent 52%)}.demo-controls button{box-shadow:inset 0 2px 2px #fff9,0 7px 16px #00102b66;transition:transform .2s ease,filter .2s ease}.demo-controls button:active{transform:scale(.95)}.demo-controls button:focus-visible{outline:3px solid #fff;outline-offset:3px}.demo-safe{line-height:1.5}.gacha-stage{box-shadow:inset 0 0 40px #0aa5ff20,0 16px 40px #000c2e50}.draw-result-card:not([hidden]){max-width:92%;overflow-wrap:anywhere}#demoMsg{line-height:1.8}@media(prefers-reduced-motion:reduce){.demo-controls button{transition:none}}
 </style>
 </head>
 <body class="next-premium-gacha">
 <main class="demo-wrap">
 <header class="demo-head">
 <div class="brand">翠央 1周年ガチャ</div>
-<h1>v2.0 GRAND EDITION 演出体験</h1>
+<h1>v2.0 BLUE WHALE GRAND GACHA</h1><p class="demo-subtitle">海のきらめきと、可愛いクジラのプレミアム抽選体験</p>
 <div class="demo-safe">安全デモ：抽選API未接続・回数消費なし</div>
 </header>
 <section class="glass" id="drawPanel">
-<h2>💎 演出だけ試す</h2>
+<h2>🐳 クジラの宝石ガチャ</h2>
 <p id="drawRemaining" class="gacha-balance">デモ残り ∞ 回</p>
 <div class="gacha-stage" id="gachaStage">
   <div class="stage-lights" aria-hidden="true"></div>
@@ -41,7 +42,7 @@ body{min-height:100vh}
     <span class="draw-ordinal" id="drawOrdinal"></span>
   </div>
 </div>
-<p id="demoMsg" class="message">クジラの透明窓でダイヤが回転。好きなレアリティを選んで演出を試せます。</p>
+<p id="demoMsg" class="message">好きなレアリティをタップ！ クジラのお腹で宝石が舞い、景品が現れるよ。</p>
 <div class="demo-controls">
 <button data-r="N">N</button>
 <button data-r="R">R</button>
