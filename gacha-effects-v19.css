@@ -344,3 +344,10 @@
 .gacha-stage .v191-gem{backface-visibility:hidden}
 @media(max-width:420px){.gacha-stage .v20-pearl-glint:nth-child(n+5),.gacha-stage .v191-bubble:nth-child(n+7){display:none!important}.gacha-stage:not(.draw-active) .v19-sparkles{animation-play-state:paused!important}}
 @media(prefers-reduced-motion:reduce){.gacha-stage .v20-ocean-rays,.gacha-stage .v20-stage-pulse,.gacha-stage .v19-sparkles{animation:none!important}}
+
+/* v2.5D automatic performance tier, without affecting draw result logic */
+.gacha-stage.v25-low-power .v191-bubble:nth-child(n+5),.gacha-stage.v25-low-power .v20-pearl-glint:nth-child(n+4){display:none!important}
+.gacha-stage.v25-low-power .v19-sparkles,.gacha-stage.v25-low-power .v20-ocean-rays{animation:none!important}
+.gacha-stage.v25-low-power .v191-gem{filter:none!important}
+.gacha-stage.v25-low-power .v191-ball-chamber{filter:none!important;backdrop-filter:none!important}
+.gacha-stage.v25-offscreen .v191-gem,.gacha-stage.v25-offscreen .v191-bubble,.gacha-stage.v25-offscreen .v20-pearl-glint,.gacha-stage.v25-offscreen .v19-sparkles,.gacha-stage.v25-offscreen .v19-aura{animation-play-state:paused!important}
