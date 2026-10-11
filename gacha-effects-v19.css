@@ -157,3 +157,16 @@
 }
 
 .v191-gem{animation-direction:var(--orbitDir,normal)}
+
+/* v2 whale hatch and capsule ejection — visual layer only */
+.v20-whale-outlet{position:absolute;z-index:10;left:50%;top:75%;width:76px;height:44px;transform:translate(-50%,-50%);pointer-events:none}
+.v20-whale-outlet::before{content:"";position:absolute;inset:8px 0 0;border-radius:45% 45% 52% 52%;background:radial-gradient(ellipse at 50% 55%,#05142e 0 37%,#1866a2 62%,#b5f5ff 86%,#fff 100%);border:3px solid #9beeff;box-shadow:0 0 13px #49cfff,0 5px 14px #001b43b0;transform:scaleY(.18);transform-origin:50% 0;opacity:.3}
+.v20-outlet-capsule{position:absolute;left:50%;top:8px;width:42px;height:42px;border-radius:50%;background:linear-gradient(155deg,#fff 0 13%,#8bf1ff 18%,#2783e8 49%,#f8f9ff 50%,#e9d7ff 78%,#b86cf6 100%);border:2px solid #e8faff;box-shadow:inset -6px -8px 9px #17328a66,0 0 20px #a8eaff;opacity:0;transform:translate(-50%,-30px) scale(.4)}
+.v20-outlet-capsule::after{content:"";position:absolute;left:3px;right:3px;top:48%;height:3px;background:#fff9;transform:rotate(-10deg)}
+.v20-whale-outlet.v20-eject::before{animation:v20-hatch 1.5s ease both}
+.v20-whale-outlet.v20-eject .v20-outlet-capsule{animation:v20-capsule-exit 1.5s cubic-bezier(.25,.8,.3,1) both}
+.gacha-stage.is-fest .v20-whale-outlet::before{border-color:#ffe78c;box-shadow:0 0 18px #ffe17c}
+.gacha-stage.v191-rarity-ur .v20-outlet-capsule{filter:drop-shadow(0 0 12px #ff81e6) drop-shadow(0 0 18px #f9e55c)}
+@keyframes v20-hatch{0%,12%{transform:scaleY(.15);opacity:.4}24%,72%{transform:scaleY(1);opacity:1}100%{transform:scaleY(.15);opacity:.4}}
+@keyframes v20-capsule-exit{0%,24%{opacity:0;transform:translate(-50%,-30px) scale(.4) rotate(-25deg)}33%{opacity:1}52%{opacity:1;transform:translate(-50%,4px) scale(1.05) rotate(35deg)}74%{opacity:1;transform:translate(-50%,34px) scale(.95) rotate(180deg)}100%{opacity:0;transform:translate(-50%,72px) scale(.65) rotate(300deg)}}
+@media(prefers-reduced-motion:reduce){.v20-whale-outlet.v20-eject::before,.v20-whale-outlet.v20-eject .v20-outlet-capsule{animation:none}.v20-whale-outlet.v20-eject::before{transform:scaleY(1);opacity:1}.v20-whale-outlet.v20-eject .v20-outlet-capsule{opacity:1;transform:translate(-50%,10px)}}
