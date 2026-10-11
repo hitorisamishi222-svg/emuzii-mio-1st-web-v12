@@ -178,3 +178,10 @@
 .v20-whale-outlet.v20-eject .v20-outlet-capsule{filter:drop-shadow(0 0 13px #9aeaff)}
 .gacha-stage.is-fest .v20-outlet-capsule{background:linear-gradient(150deg,#fff 0 10%,#ffeeb0 22%,#dc982e 49%,#fffaf0 50%,#eecbff 76%,#a77cdb 100%);box-shadow:inset -5px -7px 9px #7c4a2266,0 0 23px #ffe5a0}
 @media(max-width:390px){.v20-whale-outlet{top:74%;width:66px;height:42px}.v20-outlet-capsule{width:38px;height:38px}}
+
+/* v2 visual finale: richer whale depth and UR spectacle */
+.gacha-stage .v19-machine-img{filter:drop-shadow(0 10px 10px #00102d99) drop-shadow(0 24px 25px #00153399) drop-shadow(0 0 15px #71dfff40)}
+.gacha-stage.is-fest .v19-machine-img{filter:drop-shadow(0 12px 13px #030c2aaa) drop-shadow(0 26px 30px #020a1cbb) drop-shadow(0 0 17px #ffd96955)}
+.gacha-stage.v191-rarity-ur .v19-machine-img{filter:drop-shadow(0 0 16px #fff) drop-shadow(0 0 35px #7befff) drop-shadow(0 20px 28px #07132e)}
+.gacha-stage.v191-rarity-ur .v20-whale-outlet{filter:drop-shadow(0 0 15px #ffe782) drop-shadow(0 0 26px #ef7dff)}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v19-machine-img,.gacha-stage.v191-rarity-ur .v19-machine-img{animation:none}}
