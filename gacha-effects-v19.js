@@ -10,6 +10,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const sparkles=document.createElement('div');sparkles.className='v19-sparkles';
   const oceanRays=document.createElement('div');oceanRays.className='v20-ocean-rays';
   const glints=document.createElement('div');glints.className='v20-pearl-glints';
+  const pulse=document.createElement('div');pulse.className='v20-stage-pulse';
   for(let i=0;i<9;i++){
     const star=document.createElement('i');star.className='v20-pearl-glint';
     star.style.setProperty('--gx',(10+(i*37)%80)+'%');star.style.setProperty('--gy',(12+(i*29)%73)+'%');
@@ -55,7 +56,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const title=document.createElement('div');title.className='v19-reveal-title';
   const caption=document.createElement('div');caption.className='v19-reveal-caption';
   reveal.append(frame,title,caption);
-  root.append(oceanRays,sparkles,glints,bubbles,spout,aura,chamber,machine,handle,outlet,winnerGem,urPremonition,reveal);
+  root.append(oceanRays,pulse,sparkles,glints,bubbles,spout,aura,chamber,machine,handle,outlet,winnerGem,urPremonition,reveal);
   stage.append(root);
 
   for(const img of [machine,frame]) img.addEventListener('error',()=>root.classList.add('v19-assets-missing'));
@@ -189,6 +190,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   }
 
   window.addEventListener('mio:gacha-animation-start',e=>{
+    stage.classList.remove('v20-stage-awaken');void stage.offsetWidth;stage.classList.add('v20-stage-awaken');
     const fest=e.detail?.mode==='ラキフェス';syncMachine();setRarityState('n');winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');winnerGem.style.opacity='0';winnerGem.dataset.rarity='N';winnerLabel.textContent='N';sfxStart(fest);startBgm(fest);
     let ticks=0;const t=setInterval(()=>{if(!stage.classList.contains('draw-active')||ticks++>14){clearInterval(t);return}sfxTick()},180);
   });
@@ -240,7 +242,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     reveal.className='v19-reveal';
     void showReveal(k);
   });
-  window.addEventListener('mio:gacha-animation-error',()=>{stopBgm();winnerGem.style.opacity='0';winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');clearRarityState()});
+  window.addEventListener('mio:gacha-animation-error',()=>{stage.classList.remove('v20-stage-awaken');stopBgm();winnerGem.style.opacity='0';winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');clearRarityState()});
 
   const stageObserver=new MutationObserver(()=>syncMachine());
   stageObserver.observe(stage,{attributes:true,attributeFilter:['class']});
