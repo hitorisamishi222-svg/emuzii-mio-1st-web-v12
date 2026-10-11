@@ -3,7 +3,7 @@ name: v1.9.8 isolated browser policy tests
 on:
   pull_request:
     paths:
-      - 'release-prep/v198-browser-approval-policy*.mjs'
+      - 'release-prep/v198-browser-*.mjs'
       - '.github/workflows/v198-browser-policy-tests.yml'
   workflow_dispatch:
 
@@ -19,4 +19,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run pure policy tests (no external services)
-        run: node --test release-prep/v198-browser-approval-policy.test.mjs
+        run: node --test release-prep/v198-browser-*.test.mjs
