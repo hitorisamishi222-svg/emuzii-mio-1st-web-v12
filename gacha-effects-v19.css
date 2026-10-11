@@ -361,3 +361,14 @@
 @keyframes v25-capsule-bounce{0%{opacity:0;transform:translateY(-20px) scale(.62) rotate(-20deg)}23%{opacity:1;transform:translateY(8px) scale(1.08,.92) rotate(18deg)}41%{transform:translateY(-9px) scale(.96,1.05) rotate(-12deg)}62%{transform:translateY(3px) scale(1.04,.96) rotate(7deg)}82%{transform:translateY(-3px) scale(.99,1.02) rotate(-3deg)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
 .gacha-stage .v191-handle{filter:drop-shadow(0 2px 3px #00173988)}
 @media(prefers-reduced-motion:reduce){.gacha-stage .v20-eject .v20-outlet-capsule{animation:none!important;opacity:1!important;transform:none!important}}
+
+/* v2.7: match approved whale silhouette: capsules live on TAIL SIDE, never in belly */
+.gacha-stage .v191-ball-chamber{left:calc(50% + min(15.5vw,67px))!important;top:calc(48% - min(6.4vw,28px))!important;width:min(19%,80px)!important;aspect-ratio:1!important;opacity:.94!important;z-index:6!important;overflow:hidden!important;border-radius:50%!important;box-shadow:none!important;background:transparent!important;filter:none!important;backdrop-filter:none!important}
+.gacha-stage .v191-gem{width:clamp(10px,2.8vw,16px)!important;height:clamp(10px,2.8vw,16px)!important}
+.gacha-stage .v191-gem-label{font-size:6px!important}
+.gacha-stage .v191-handle{left:calc(50% + min(15.3vw,66px))!important;top:calc(48% + min(4.4vw,19px))!important;width:39px!important;height:39px!important;z-index:8!important}
+.gacha-stage .v191-handle::before{width:27px!important;height:9px!important}
+.gacha-stage .v191-handle::after{width:13px!important;height:13px!important;border-width:2px!important}
+.gacha-stage .v20-whale-outlet{left:calc(50% + min(15.4vw,66px))!important;top:calc(48% + min(11.5vw,50px))!important;width:52px!important;height:37px!important;z-index:9!important}
+.gacha-stage .v191-winning-gem{left:calc(50% + min(15.5vw,67px))!important;top:calc(48% + min(11.5vw,50px))!important}
+@media(max-width:420px){.gacha-stage .v191-ball-chamber{width:18%!important}.gacha-stage .v191-gem:nth-child(n+5){display:none!important}}
