@@ -217,3 +217,10 @@
 .v20-whale-outlet.v20-eject{z-index:18}
 .gacha-stage.v20-stage-awaken .v20-pearl-glints{filter:drop-shadow(0 0 5px #d8ffff)}
 .gacha-stage.v191-rarity-ur .v20-stage-pulse{background:radial-gradient(ellipse at 50% 47%,#fff 0%,#f6d5ffbd 17%,#8eaeff72 36%,transparent 70%)}
+
+/* v2 quality pass: reduced motion, compact screens and safe compositing */
+.gacha-stage .v19-fx-root{isolation:isolate}
+.gacha-stage .v20-ocean-rays,.gacha-stage .v20-stage-pulse,.gacha-stage .v20-pearl-glint{backface-visibility:hidden}
+.gacha-stage .v20-pearl-glints{contain:layout style paint}
+@media(max-width:360px){.gacha-stage .v20-whale-outlet{width:58px;top:73%}.gacha-stage .v20-outlet-capsule{width:34px;height:34px}.gacha-stage .v20-pearl-glint{width:10px;height:10px}}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v19-machine-img,.gacha-stage.draw-active .v19-machine-img,.gacha-stage.v191-rarity-ur .v19-machine-img{animation:none!important;transform:translate(-50%,-50%) scale(.96)}.gacha-stage .v20-ocean-rays,.gacha-stage .v20-pearl-glint,.gacha-stage .v20-stage-pulse,.gacha-stage .v20-outlet-capsule{animation:none!important}.gacha-stage .v20-pearl-glint{opacity:.35}}
