@@ -40,13 +40,15 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   const winnerLabel=document.createElement('span');winnerLabel.textContent='N';winnerGem.append(winnerLabel);
   const machine=document.createElement('img');machine.className='v19-machine-img';machine.alt='';
   const handle=document.createElement('div');handle.className='v191-handle';
+  const outlet=document.createElement('div');outlet.className='v20-whale-outlet';
+  const capsule=document.createElement('div');capsule.className='v20-outlet-capsule';outlet.append(capsule);
   const urPremonition=document.createElement('div');urPremonition.className='v191-ur-premonition';
   const reveal=document.createElement('div');reveal.className='v19-reveal';
   const frame=document.createElement('img');frame.className='v19-reveal-frame';frame.alt='';
   const title=document.createElement('div');title.className='v19-reveal-title';
   const caption=document.createElement('div');caption.className='v19-reveal-caption';
   reveal.append(frame,title,caption);
-  root.append(sparkles,bubbles,spout,aura,chamber,machine,handle,winnerGem,urPremonition,reveal);
+  root.append(sparkles,bubbles,spout,aura,chamber,machine,handle,outlet,winnerGem,urPremonition,reveal);
   stage.append(root);
 
   for(const img of [machine,frame]) img.addEventListener('error',()=>root.classList.add('v19-assets-missing'));
@@ -180,7 +182,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   }
 
   window.addEventListener('mio:gacha-animation-start',e=>{
-    const fest=e.detail?.mode==='ラキフェス';syncMachine();setRarityState('n');winnerGem.classList.remove('v191-winner-drop');winnerGem.style.opacity='0';winnerGem.dataset.rarity='N';winnerLabel.textContent='N';sfxStart(fest);startBgm(fest);
+    const fest=e.detail?.mode==='ラキフェス';syncMachine();setRarityState('n');winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');winnerGem.style.opacity='0';winnerGem.dataset.rarity='N';winnerLabel.textContent='N';sfxStart(fest);startBgm(fest);
     let ticks=0;const t=setInterval(()=>{if(!stage.classList.contains('draw-active')||ticks++>14){clearInterval(t);return}sfxTick()},180);
   });
 
@@ -190,7 +192,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const dropDelay=k==='ur'?1450:k==='sr'?850:k==='r'?420:220;
     setTimeout(()=>{
       if(stage.classList.contains('draw-active')){
-        winnerGem.style.opacity='';winnerGem.classList.remove('v191-winner-drop');void winnerGem.offsetWidth;winnerGem.classList.add('v191-winner-drop');sfxDrop();
+        winnerGem.style.opacity='';winnerGem.classList.remove('v191-winner-drop');void winnerGem.offsetWidth;winnerGem.classList.add('v191-winner-drop');outlet.classList.remove('v20-eject');void outlet.offsetWidth;outlet.classList.add('v20-eject');sfxDrop();
       }
     },dropDelay);
     // 結果カードを見せる前に兆候を出す。URは回転中に確定演出まで見せる。
@@ -231,7 +233,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     reveal.className='v19-reveal';
     void showReveal(k);
   });
-  window.addEventListener('mio:gacha-animation-error',()=>{stopBgm();winnerGem.style.opacity='0';winnerGem.classList.remove('v191-winner-drop');clearRarityState()});
+  window.addEventListener('mio:gacha-animation-error',()=>{stopBgm();winnerGem.style.opacity='0';winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');clearRarityState()});
 
   const stageObserver=new MutationObserver(()=>syncMachine());
   stageObserver.observe(stage,{attributes:true,attributeFilter:['class']});
