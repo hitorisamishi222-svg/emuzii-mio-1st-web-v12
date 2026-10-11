@@ -4,7 +4,7 @@
   <linearGradient id="trim"><stop stop-color="#fff8d2"/><stop offset=".48" stop-color="#e9b95c"/><stop offset="1" stop-color="#fff8d2"/></linearGradient>
   <radialGradient id="glass"><stop stop-color="#ffffff33"/><stop offset=".62" stop-color="#76eaff22"/><stop offset="1" stop-color="#76eaff55"/></radialGradient>
   <filter id="soft"><feGaussianBlur stdDeviation="8"/></filter>
-</defs>
+<linearGradient id="v2metal" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#fff" stop-opacity=".78"/><stop offset=".22" stop-color="#c2f4ff" stop-opacity=".26"/><stop offset=".52" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#00112b" stop-opacity=".25"/></linearGradient><radialGradient id="v2lens" cx=".25" cy=".16" r=".85"><stop stop-color="#fff" stop-opacity=".43"/><stop offset=".3" stop-color="#fff" stop-opacity=".08"/><stop offset=".78" stop-color="#66dfff" stop-opacity=".09"/><stop offset="1" stop-color="#061634" stop-opacity=".37"/></radialGradient></defs>
 
 <!-- soft shadow -->
 <ellipse cx="360" cy="640" rx="255" ry="28" fill="#00152f" opacity=".35"/>
@@ -39,6 +39,11 @@
 <path d="M238 246 C296 198 389 183 466 219" fill="none" stroke="#ffffff99" stroke-width="8" stroke-linecap="round"/>
 <path d="M254 255 C307 222 370 210 421 222" fill="none" stroke="#ffffff55" stroke-width="4" stroke-linecap="round"/>
 
+<!-- premium dome: optical depth and thick transparent rim -->
+<ellipse cx="362" cy="353" rx="174" ry="163" fill="url(#v2lens)" stroke="url(#v2metal)" stroke-width="9"/>
+<ellipse cx="362" cy="353" rx="156" ry="146" fill="none" stroke="#ffffff" stroke-opacity=".26" stroke-width="3"/>
+<path d="M221 299 C242 242 284 217 324 211" fill="none" stroke="#ffffff" stroke-opacity=".57" stroke-width="14" stroke-linecap="round"/>
+<path d="M470 454 C450 489 415 511 379 516" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="8" stroke-linecap="round"/>
 <!-- eye / cheek / smile: face is clearly on the right -->
 <ellipse cx="557" cy="259" rx="13" ry="17" fill="#071b48"/>
 <circle cx="552" cy="253" r="4" fill="#fff"/>
