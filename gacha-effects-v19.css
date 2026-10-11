@@ -211,3 +211,9 @@
 @keyframes v20-whale-legendary{0%{transform:translate(-50%,-50%) rotate(-2deg) scale(1.025)}100%{transform:translate(-50%,-52%) rotate(2deg) scale(1.06)}}
 @keyframes v20-stage-awakening{0%{opacity:0;transform:scale(.35)}18%{opacity:.9}55%{opacity:.55;transform:scale(1.25)}100%{opacity:0;transform:scale(1.85)}}
 @media(prefers-reduced-motion:reduce){.gacha-stage .v19-machine-img,.gacha-stage.draw-active .v19-machine-img,.gacha-stage.v191-rarity-ur .v19-machine-img,.gacha-stage.v20-stage-awaken .v20-stage-pulse{animation:none}.gacha-stage .v19-machine-img{transform:translate(-50%,-50%) scale(.96)}}
+
+/* v2 cinematic synchronization: keep machine centered while breathing */
+.v19-fx-root .v19-machine-img{transform-origin:center center}
+.v20-whale-outlet.v20-eject{z-index:18}
+.gacha-stage.v20-stage-awaken .v20-pearl-glints{filter:drop-shadow(0 0 5px #d8ffff)}
+.gacha-stage.v191-rarity-ur .v20-stage-pulse{background:radial-gradient(ellipse at 50% 47%,#fff 0%,#f6d5ffbd 17%,#8eaeff72 36%,transparent 70%)}
