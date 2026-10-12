@@ -14,3 +14,15 @@
 .gacha-stage .v191-gem:nth-child(11){transform:translate(-70%,145%)}
 .gacha-stage .v191-gem:nth-child(12){transform:translate(35%,145%)}
 @media(max-width:390px){.gacha-stage .v191-ball-chamber{width:49%}.gacha-stage .v191-gem{width:28px;height:25px}}
+
+/* Draw-time sparkle on the chamber only; no orbiting capsules. */
+.gacha-stage.draw-active .v191-ball-chamber{
+ opacity:1;
+ box-shadow:0 0 16px 5px rgba(171,235,255,.65),0 0 36px 10px rgba(255,221,123,.36);
+ transition:box-shadow .2s ease,opacity .2s ease;
+}
+.gacha-stage.draw-active .v20-stage-pulse{opacity:.9}
+.gacha-stage .v191-gem{pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+ .gacha-stage.draw-active .v191-ball-chamber{transition:none}
+}
