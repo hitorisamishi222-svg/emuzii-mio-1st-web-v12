@@ -126,7 +126,8 @@ async function start(mode){
   if(!participant||busy||confirming||remember()||!lastCatalog)return;
   $('drawNormal').disabled=true;$('drawFest').disabled=true;
   note('管理画面の受付と残り回数を確認しています…');
-  if(!await loadCatalog(false)||!lastCatalog)return;
+  // loadCatalog sets busy while fetching; avoid leaving buttons disabled after a failed refresh.
+  if(!await loadCatalog(false)||!lastCatalog){if(lastCatalog)setButtons(lastCatalog);return;}
   const c=lastCatalog;
   const available=mode==='通常'
     ?c.normalOpen===true&&c.normal.ready&&c.confirmed&&c.remaining>0
