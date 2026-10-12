@@ -1,18 +1,16 @@
-/* Preview-only: approved static-chamber policy. Do not animate inner gems. */
-.gacha-stage .v191-gem,
-.gacha-stage.draw-active .v191-gem,
-.gacha-stage.v191-rarity-ur .v191-gem {
-  animation: none !important;
-  will-change: auto;
-}
-/* Stable positions independent of orbit keyframes; light effects remain active. */
-.v191-ball-chamber .v191-gem:nth-child(1){transform:translate(-110%,-125%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(2){transform:translate(-5%,-145%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(3){transform:translate(85%,-110%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(4){transform:translate(-140%,-45%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(5){transform:translate(-45%,-55%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(6){transform:translate(50%,-40%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(7){transform:translate(-120%,35%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(8){transform:translate(-15%,40%) scale(.55)}
-.v191-ball-chamber .v191-gem:nth-child(n+9){display:none}
-@media(prefers-reduced-motion:reduce){.gacha-stage .v191-handle::before{animation:none!important}}
+/* v2 preview: chamber jewels remain static; draw API untouched */
+.gacha-stage .v191-gem,.gacha-stage.draw-active .v191-gem,.gacha-stage.v191-rarity-ur .v191-gem{animation:none!important;animation-delay:0s!important;will-change:auto!important;filter:none!important}
+.gacha-stage .v191-ball-chamber{opacity:.84;filter:none}
+.gacha-stage .v191-gem:nth-child(1){transform:translate(-110%,-125%)}
+.gacha-stage .v191-gem:nth-child(2){transform:translate(-10%,-130%)}
+.gacha-stage .v191-gem:nth-child(3){transform:translate(70%,-105%)}
+.gacha-stage .v191-gem:nth-child(4){transform:translate(-150%,-25%)}
+.gacha-stage .v191-gem:nth-child(5){transform:translate(-55%,-35%)}
+.gacha-stage .v191-gem:nth-child(6){transform:translate(40%,-15%)}
+.gacha-stage .v191-gem:nth-child(7){transform:translate(105%,0%)}
+.gacha-stage .v191-gem:nth-child(8){transform:translate(-125%,80%)}
+.gacha-stage .v191-gem:nth-child(9){transform:translate(-25%,80%)}
+.gacha-stage .v191-gem:nth-child(10){transform:translate(65%,90%)}
+.gacha-stage .v191-gem:nth-child(11){transform:translate(-70%,145%)}
+.gacha-stage .v191-gem:nth-child(12){transform:translate(35%,145%)}
+@media(max-width:390px){.gacha-stage .v191-ball-chamber{width:49%}.gacha-stage .v191-gem{width:28px;height:25px}}
