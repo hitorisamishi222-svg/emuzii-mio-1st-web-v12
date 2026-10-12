@@ -1,0 +1,18 @@
+/* Preview-only: approved static-chamber policy. Do not animate inner gems. */
+.gacha-stage .v191-gem,
+.gacha-stage.draw-active .v191-gem,
+.gacha-stage.v191-rarity-ur .v191-gem {
+  animation: none !important;
+  will-change: auto;
+}
+/* Stable positions independent of orbit keyframes; light effects remain active. */
+.v191-ball-chamber .v191-gem:nth-child(1){transform:translate(-110%,-125%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(2){transform:translate(-5%,-145%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(3){transform:translate(85%,-110%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(4){transform:translate(-140%,-45%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(5){transform:translate(-45%,-55%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(6){transform:translate(50%,-40%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(7){transform:translate(-120%,35%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(8){transform:translate(-15%,40%) scale(.55)}
+.v191-ball-chamber .v191-gem:nth-child(n+9){display:none}
+@media(prefers-reduced-motion:reduce){.gacha-stage .v191-handle::before{animation:none!important}}
