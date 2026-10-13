@@ -214,7 +214,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     const dropDelay=k==='ur'?1450:k==='sr'?850:k==='r'?420:220;
     const thisReveal=++outletRevealToken;
     setTimeout(()=>{
-      if(thisReveal===outletRevealToken&&stage.classList.contains('draw-active')){
+      if(thisReveal===outletRevealToken&&(stage.classList.contains('draw-active')||stage.classList.contains('v20-prize-visible'))){
         winnerGem.style.opacity='';winnerGem.classList.remove('v191-winner-drop');void winnerGem.offsetWidth;winnerGem.classList.add('v191-winner-drop');outlet.classList.remove('v20-eject');void outlet.offsetWidth;outlet.classList.add('v20-eject');sfxDrop();
       }
     },dropDelay);
@@ -252,8 +252,8 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
   window.addEventListener('mio:gacha-result-shown',e=>{
     stage.classList.add('v20-prize-visible');
     const k=rarityKey(e.detail?.rarity);
-    winnerGem.style.opacity='0';
-    winnerGem.classList.remove('v191-winner-drop');
+    // Keep the capsule drop visible after the result card appears; the draw-active
+    // state can be cleared by the API flow before the delayed rarity drop starts.
     reveal.className='v19-reveal';
     void showReveal(k);
   });
