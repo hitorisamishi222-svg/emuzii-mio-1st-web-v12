@@ -133,7 +133,7 @@ async function start(mode){
   $('drawNormal').disabled=true;$('drawFest').disabled=true;
   note('管理画面の受付と残り回数を確認しています…');
   // loadCatalog sets busy while fetching; avoid leaving buttons disabled after a failed refresh.
-  if(!await loadCatalog(false)||!lastCatalog){if(lastCatalog)setButtons(lastCatalog);return;}
+  if(!await loadCatalog(false)||!lastCatalog){if(lastCatalog)setButtons(lastCatalog);note('ガチャ設定を取得できませんでした。通信状態を確認して再試行してください。');return;}
   const c=lastCatalog;
   const available=mode==='通常'
     ?c.normalOpen===true&&c.normal.ready&&c.confirmed&&c.remaining>0
