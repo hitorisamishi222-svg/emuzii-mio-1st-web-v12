@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "music-gallery-demo.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "home-portrait-next.html",
       "use": "@vercel/static"
     },
@@ -163,6 +167,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "^/music-gallery-demo(?:\\.html)?$",
+      "dest": "/music-gallery-demo.html"
+    },
     {
       "src": "^/home-portrait-next(?:\\.html)?$",
       "dest": "/home-portrait-next.html"
