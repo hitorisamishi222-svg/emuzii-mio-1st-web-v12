@@ -579,6 +579,8 @@ function gachaAction_(ss,r,d){
   var gate=typeof gachaOpenState_==='function'?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
   if(!gate||typeof gate.normalOpen!=='boolean'||typeof gate.festOpen!=='boolean')gate={normalOpen:false,festOpen:false};
   var gateConfigured=typeof gachaOpenState_==='function';
+  // Do not infer admin switch cells: require the existing administrator gate implementation.
+  // Expose diagnostics only; absent/invalid gates remain fail-closed.
   var wonKeys=wonDuplicateKeys_(ss,id);
   var participantNormal=participantCatalog_(normal,wonKeys),participantFest=participantCatalog_(fest,wonKeys);
 
