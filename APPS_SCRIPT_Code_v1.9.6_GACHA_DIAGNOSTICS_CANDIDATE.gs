@@ -626,3 +626,19 @@ function gachaAction_(ss,r,d){
   SpreadsheetApp.flush();
   return {ok:true,participantId:r[0],drawId:d.drawId,prize:winner.name,mode:d.mode,ordinal:used+1,rarity:winner.rarity,image:winner.image,remaining:remaining-1,replayed:false};
 }
+
+/** 管理画面の実配置に基づく公開スイッチ（J17=通常、J18=ラキフェス）。
+ * チェックボックスの真偽値のみ許可し、取得失敗時は必ず停止。
+ * K17/K18は表示用の受付状態であり、公開判定には使わない。
+ */
+function gachaOpenState_(ss){
+  try {
+    var admin=ss.getSheetByName('emuzii_管理画面');
+    if(!admin)return {normalOpen:false,festOpen:false};
+    var flags=admin.getRange('J17:J18').getValues();
+    return {normalOpen:flags[0][0]===true,festOpen:flags[1][0]===true};
+  }catch(e){
+    console.error('gachaOpenState_: failed to read admin switches',e);
+    return {normalOpen:false,festOpen:false};
+  }
+}
