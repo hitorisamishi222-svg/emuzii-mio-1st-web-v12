@@ -7,7 +7,7 @@
 <title>翠央1周年 ガチャ演出体験 v2.0</title>
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/backgrounds.css">
-<link rel="stylesheet" href="/gacha-effects-v19.css"><link rel="stylesheet" href="/next-premium-v2.css">
+<link rel="stylesheet" href="/gacha-effects-v19.css"><link rel="stylesheet" href="/gacha-approved-integration.css"><link rel="stylesheet" href="/next-premium-v2.css">
 <style>
 body{min-height:100vh}
 .demo-wrap{width:min(100%,720px);margin:auto;padding:14px 12px 60px}
@@ -53,7 +53,7 @@ body{min-height:100vh}
 <p class="muted">本番と同じ演出コードを使う確認用ページです。景品・回数・履歴は一切変更しません。</p>
 </section>
 </main>
-<script type="module" src="/gacha-effects-v19.js"></script>
+<script type="module" src="/gacha-effects-v19.js"></script><script type="module" src="/gacha-approved-integration.js"></script>
 <script>
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const mode=$('demoMode');const refreshMode=()=>{const st=$('gachaStage');mode.textContent=st.classList.contains('v25-low-power')?'省エネ2.5Dモードで表示中':'プレミアム2.5Dモードで表示中'};
