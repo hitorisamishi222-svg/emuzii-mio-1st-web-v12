@@ -148,6 +148,10 @@
     {
       "src": "mio-whale-approved-demo.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "mio-royal-whale-v74.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -302,6 +306,10 @@
     {
       "src": "^/mio-whale-approved-demo(?:\\.html)?$",
       "dest": "/mio-whale-approved-demo.html"
+    },
+    {
+      "src": "^/mio-royal-whale-v74(?:\\.html)?$",
+      "dest": "/mio-royal-whale-v74.html"
     },
     {
       "src": "^/api(?:/.*)?$",
