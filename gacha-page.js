@@ -137,6 +137,8 @@ async function start(mode){
   // loadCatalog sets busy while fetching; avoid leaving buttons disabled after a failed refresh.
   if(!await loadCatalog(false)||!lastCatalog){if(lastCatalog)setButtons(lastCatalog);note('ガチャ設定を取得できませんでした。通信状態を確認して再試行してください。');return;}
   const c=lastCatalog;
+  $('drawNormal').disabled=true;
+  $('drawFest').disabled=true;
   const available=mode==='通常'
     ?c.normalOpen===true&&c.normal.ready&&c.confirmed&&c.remaining>0
     :c.festOpen===true&&c.festUnlocked&&c.fest.ready&&c.confirmed&&c.remaining>0;
