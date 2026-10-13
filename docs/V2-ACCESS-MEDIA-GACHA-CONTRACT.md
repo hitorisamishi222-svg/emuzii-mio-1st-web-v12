@@ -48,3 +48,5 @@ Suggested accepted audio: MP3, M4A, AAC, WAV, FLAC, OGG/OGA, OPUS. Browser playb
 - Added v2-gacha-engine.mjs transactional draw interface with secure random weighted rarity and idempotency key, plus tests.
 - Production database, transaction isolation, unique constraints, authenticated session issuer, and API routes are NOT connected. These modules must not be represented as a working live draw service.
 - The mock transaction in tests does not model concurrent requests; concurrency tests against a real transactional store are mandatory before production.
+
+- Added isolated v2-gacha-demo-store.mjs and v2-gacha-concurrency.test.mjs. The tests simulate 20 simultaneous calls against a serialized in-memory store; this is NOT evidence of real database isolation, persistence, or production safety.
