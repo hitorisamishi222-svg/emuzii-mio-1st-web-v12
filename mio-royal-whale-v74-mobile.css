@@ -1,0 +1,9 @@
+/* v74 approved artwork: mobile visibility patch, preview only. */
+.stage{aspect-ratio:1/1;overflow:hidden}
+.stage .art{object-fit:contain}
+.stage .prize{width:12%;top:84%;z-index:7;filter:drop-shadow(0 0 7px #90d9ff)}
+.stage .cap-gem{font-size:clamp(16px,4.5vw,26px)}
+.stage .glitter{opacity:0;pointer-events:none}
+.stage.shining .glitter{opacity:.42}
+@media(max-width:600px){main{padding:12px 12px calc(48px + env(safe-area-inset-bottom))}.stage{border-radius:18px}.panel{padding:14px 10px}.actions{gap:7px}.actions button{min-width:0;white-space:normal;overflow-wrap:anywhere;font-size:clamp(12px,3.2vw,16px);padding:12px 5px}.history{overflow-wrap:anywhere}}
+@media(prefers-reduced-motion:reduce){.stage.shining .glitter,.stage.shining .spark{animation:none}}
