@@ -25,6 +25,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function renderCatalog(target,c){target.replaceChildren();const p=document.createElement('p');p.className='catalog-status';p.textContent=c.message;target.append(p);for(const x of c.prizes||[]){const row=document.createElement('div');row.className='prize';const image=safeImage(x.image);if(image){const img=document.createElement('img');img.src=image;img.alt=x.name||'';img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});row.append(img)}const meta=document.createElement('div');const n=document.createElement('strong');n.textContent=x.name;const s=document.createElement('span');s.textContent=`${x.rarity?x.rarity+' · ':''}${x.chance}%`;meta.append(n,s);row.append(meta);target.append(row)}}
 function renderResult(d){lastResult=d;const stage=$('gachaStage'),card=$('drawResultCard'),img=$('drawResultImage');stage.classList.toggle('is-fest',d.mode==='ラキフェス');revealEffect(d.rarity,d.mode);card.hidden=false;card.classList.remove('result-pop');void card.offsetWidth;card.classList.add('result-pop');$('drawRarity').textContent=d.rarity||'';$('drawPrizeName').textContent=d.prize||'当選';$('drawOrdinal').textContent=`${d.ordinal}回目${d.replayed?'（確認済み結果）':''}`;const image=safeImage(d.image);if(image){img.src=image;img.alt=d.prize||'当選景品';img.hidden=false;img.onerror=()=>{img.hidden=true}}else{img.hidden=true;img.removeAttribute('src')}window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{rarity:d.rarity,mode:d.mode}}));if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)card.scrollIntoView({behavior:'smooth',block:'center'});else card.scrollIntoView({behavior:'auto',block:'center'})}
 function setButtons(c){
+  if(busy||confirming)return;
   const pending=remember(),start=Number(c.festAvailableFrom)||5,normalOpen=c.normalOpen===true,festOpen=c.festOpen===true;
   // Always explain why a button is locked, including on iOS where disabled taps do nothing.
   const reason=!c.confirmed?'管理者の承認待ち':Number(c.remaining)<1?'残り回数がありません':pending?'前回の抽選結果を確認してください':!normalOpen&&!festOpen?'管理画面で受付停止中':!c.normal?.ready&&!c.fest?.ready?'景品が未設定':'';
@@ -63,7 +64,7 @@ async function loadCatalog(includeHistory=true){
     return true
   }catch(e){
     $('drawPanel').hidden=false;$('drawNormal').disabled=true;$('drawFest').disabled=true;note(e.message);return false
-  }finally{busy=false}
+  }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
 }
 async function execute(pending){
   if(busy)return;
@@ -126,7 +127,9 @@ function confirmDraw(mode){
   });
 }
 async function start(mode){
-  if(!participant||busy||confirming||remember()||!lastCatalog)return;
+  if(busy||confirming)return;
+  if(!participant||!lastCatalog){note('参加情報を読み込み中です。再読み込みしてください。');return;}
+  if(remember()){note('前回の抽選結果を確認してください。');return;}
   $('drawNormal').disabled=true;$('drawFest').disabled=true;
   note('管理画面の受付と残り回数を確認しています…');
   // loadCatalog sets busy while fetching; avoid leaving buttons disabled after a failed refresh.
