@@ -164,9 +164,17 @@
     {
       "src": "mio-royal-whale-v74-mobile.css",
       "use": "@vercel/static"
+    },
+    {
+      "src": "passkey-preview.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "^/passkey-preview(?:\\.html)?$",
+      "dest": "/passkey-preview.html"
+    },
     {
       "src": "^/music-gallery-demo(?:\\.html)?$",
       "dest": "/music-gallery-demo.html"
