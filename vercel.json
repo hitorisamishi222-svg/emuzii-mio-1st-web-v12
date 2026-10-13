@@ -168,9 +168,17 @@
     {
       "src": "passkey-preview.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "login-recovery-demo.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "^/login-recovery-demo(?:\\.html)?$",
+      "dest": "/login-recovery-demo.html"
+    },
     {
       "src": "^/passkey-preview(?:\\.html)?$",
       "dest": "/passkey-preview.html"
