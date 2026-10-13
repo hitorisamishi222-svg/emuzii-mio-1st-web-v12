@@ -42,3 +42,9 @@ Suggested accepted audio: MP3, M4A, AAC, WAV, FLAC, OGG/OGA, OPUS. Browser playb
 ## Release gates
 - Working auth, member validation, owner role assignment, private storage, moderation, rate limits, audit logs, gacha idempotency, integration tests, rollback plan.
 - No automatic production deployment or real data migrations without explicit approval.
+
+## Implementation progress (2026-10-13)
+- Added pure role/music validation policy in v2-security-policy.mjs with regression tests.
+- Added v2-gacha-engine.mjs transactional draw interface with secure random weighted rarity and idempotency key, plus tests.
+- Production database, transaction isolation, unique constraints, authenticated session issuer, and API routes are NOT connected. These modules must not be represented as a working live draw service.
+- The mock transaction in tests does not model concurrent requests; concurrency tests against a real transactional store are mandatory before production.
