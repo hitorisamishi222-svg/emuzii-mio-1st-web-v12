@@ -144,6 +144,10 @@
     {
       "src": "gacha-tap-check.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "mio-whale-approved-demo.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -294,6 +298,10 @@
     {
       "src": "^/gacha-tap-check(?:\\.html)?$",
       "dest": "/gacha-tap-check.html"
+    },
+    {
+      "src": "^/mio-whale-approved-demo(?:\\.html)?$",
+      "dest": "/mio-whale-approved-demo.html"
     },
     {
       "src": "^/api(?:/.*)?$",
