@@ -152,6 +152,10 @@
     {
       "src": "mio-royal-whale-v74.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "mio-royal-whale-v74-mobile.css",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -310,6 +314,10 @@
     {
       "src": "^/mio-royal-whale-v74(?:\\.html)?$",
       "dest": "/mio-royal-whale-v74.html"
+    },
+    {
+      "src": "^/mio-royal-whale-v74-mobile\\.css$",
+      "dest": "/mio-royal-whale-v74-mobile.css"
     },
     {
       "src": "^/api(?:/.*)?$",
