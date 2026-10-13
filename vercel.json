@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "home-portrait-next.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "next-preview.html",
       "use": "@vercel/static"
     },
@@ -159,6 +163,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "^/home-portrait-next(?:\\.html)?$",
+      "dest": "/home-portrait-next.html"
+    },
     {
       "src": "^/$",
       "dest": "/next-preview.html"
