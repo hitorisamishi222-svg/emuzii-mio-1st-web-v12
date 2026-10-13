@@ -128,7 +128,8 @@ function confirmDraw(mode){
   });
 }
 async function start(mode){
-  if(busy||confirming)return;
+  if(busy){note('ガチャ情報を更新中です。完了後にもう一度押してください。');return;}
+  if(confirming){note('抽選確認画面の操作を完了してください。');return;}
   if(!participant||!lastCatalog){note('参加情報を読み込み中です。再読み込みしてください。');return;}
   if(remember()){note('前回の抽選結果を確認してください。');return;}
   $('drawNormal').disabled=true;$('drawFest').disabled=true;
@@ -153,7 +154,13 @@ async function start(mode){
   void execute(p)
 }
 $('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void execute(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
-function refreshOpenState(){if(!document.hidden&&!busy&&!confirming)void loadCatalog()}
+let lastBackgroundRefresh=0;
+function refreshOpenState(){
+  if(document.hidden||busy||confirming||!participant||!lastCatalog||remember())return;
+  if(Date.now()-lastBackgroundRefresh<30000)return;
+  lastBackgroundRefresh=Date.now();
+  void loadCatalog(false);
+}
 window.setInterval(refreshOpenState,30000);
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
