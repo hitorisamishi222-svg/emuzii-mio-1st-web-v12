@@ -140,6 +140,10 @@
     {
       "src": "gacha-page.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-tap-check.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -286,6 +290,10 @@
     {
       "src": "^/gacha-page\\.js$",
       "dest": "/gacha-page.js"
+    },
+    {
+      "src": "^/gacha-tap-check(?:\\.html)?$",
+      "dest": "/gacha-tap-check.html"
     },
     {
       "src": "^/api(?:/.*)?$",
