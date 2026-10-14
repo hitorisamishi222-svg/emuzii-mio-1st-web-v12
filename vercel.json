@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "release-readiness.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "music-gallery-demo.html",
       "use": "@vercel/static"
     },
@@ -175,6 +179,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "^/release-readiness(?:\\.html)?$",
+      "dest": "/release-readiness.html"
+    },
     {
       "src": "^/login-recovery-demo(?:\\.html)?$",
       "dest": "/login-recovery-demo.html"
