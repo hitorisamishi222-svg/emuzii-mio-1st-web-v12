@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "mkdir -p public && find . -maxdepth 1 -type f \\( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.ico' \\) -exec cp {} public/ \\;",
+  "buildCommand": "test -s integrated-live-demo.html && test -s home-portrait-next.html && test -s mio-royal-whale-v74.html && mkdir -p public && find . -maxdepth 1 -type f \\( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.svg' -o -name '*.png' -o -name '*.jpg' -o -name '*.webp' -o -name '*.ico' \\) -exec cp {} public/ \\; && test -s public/integrated-live-demo.html && test -s public/home-portrait-next.html && test -s public/mio-royal-whale-v74.html",
   "outputDirectory": "public",
   "rewrites": [
     {
