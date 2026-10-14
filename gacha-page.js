@@ -73,11 +73,11 @@ async function execute(pending){
   if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
   if(busy)return;
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
-  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:(fest?4700:3600);
+  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:(fest?7700:6600);
   let refreshAfter=false;
   startEffect(pending.mode);
   note(fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
-  const phaseTimers=[setTimeout(()=>note(fest?'🌟 黄金の光が集まっていく…！':'✨ クリスタルに光が集まっていく…！'),reduceMotion?150:950),setTimeout(()=>{note(fest?'👑 ラキフェス最高潮！運命のカプセルが現れる…！':'💫 光が最高潮！当たりの予感…！');particles(fest?105:70,fest?'ur':'sr')},reduceMotion?350:(fest?2800:2200))];
+  const phaseTimers=[setTimeout(()=>note(fest?'🌟 黄金の光が集まっていく…！':'✨ クリスタルに光が集まっていく…！'),reduceMotion?150:950),setTimeout(()=>{note(fest?'👑 ラキフェス最高潮！運命のカプセルが現れる…！':'💫 光が最高潮！当たりの予感…！');particles(fest?105:70,fest?'ur':'sr')},reduceMotion?350:(fest?5800:5200))];
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});
     const wait=Math.max(0,minMs-(performance.now()-started));if(wait)await sleep(wait);

@@ -192,7 +192,7 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
       sr:[['SR','金色の光が集まる…',950],['SR','SUPER RARE！',650]],
       ur:[['…','虹色の光が収束する…',520],['UR','UR確定！',900],['UR','特別な景品が登場！',720]]
     }[key];
-    watchdog=setTimeout(()=>{if(my===token)cleanup()},5200);
+    watchdog=setTimeout(()=>{if(my===token)cleanup()},8500);
     try{
       for(const [main,sub,ms] of seq){
         if(my!==token)return;title.textContent=main;caption.textContent=(fest?'LUCKY FESTIVAL · ':'')+sub;

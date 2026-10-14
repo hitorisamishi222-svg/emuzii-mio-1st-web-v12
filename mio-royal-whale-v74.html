@@ -125,9 +125,9 @@ function later(fn,ms){const id=setTimeout(fn,ms);timers.push(id)}
 function clear(){timers.forEach(clearTimeout);timers=[];busy=false;stage.classList.remove('shining','royal-finale');legend.textContent='';prize.classList.remove('drop','opening');void prize.offsetWidth;spin.disabled=false;handle.disabled=false;skip.disabled=true}
 function finish(){if(!busy)return;timers.forEach(clearTimeout);timers=[];stage.classList.remove('shining');stage.classList.add('royal-finale');legend.textContent=selectedRarity==='LUCKY_UR'?'🌈 ラッキーUR！':selectedRarity==='UR'?'✨ ULTRA RARE ✨':'';prize.classList.add('drop','opening');busy=false;turns++;count.textContent='デモ抽選：'+turns+'回';const item=document.createElement('div');item.textContent='💎 '+turns+'回目：'+selectedRarity+'・ダイヤ（デモ）';if(turns===1)historyItems.textContent='';historyItems.prepend(item);while(historyItems.children.length>5)historyItems.lastElementChild.remove();spin.disabled=false;handle.disabled=false;skip.disabled=true;status.textContent='💎 '+selectedRarity+' 演出：ダイヤをゲット！';result.dataset.rarity=selectedRarity;result.querySelector('h2').textContent=selectedRarity+' 💎 ダイヤをゲット！';if(!result.open){if(typeof result.showModal==='function')result.showModal();else result.setAttribute('open','')}}
 function run(){if(busy)return;clear();busy=true;spin.disabled=true;handle.disabled=true;skip.disabled=false;if(result.open)result.close();status.textContent='✨ '+selectedRarity+' の王宮エフェクト発動！';stage.classList.add('shining');
-if(reduced){later(finish,100);return;}later(()=>{stage.classList.remove('shining');status.textContent='🎁 カプセルが出てくるよ！';prize.classList.add('drop')},1550);
-later(()=>{prize.classList.add('opening');status.textContent='✨ カプセルがパカッと開いたよ！'},3000);
-later(finish,3900)}
+if(reduced){later(finish,100);return;}later(()=>{stage.classList.remove('shining');status.textContent='🎁 カプセルが出てくるよ！';prize.classList.add('drop')},2550);
+later(()=>{prize.classList.add('opening');status.textContent='✨ カプセルがパカッと開いたよ！'},5200);
+later(finish,6900)}
 spin.addEventListener('click',run);handle.addEventListener('click',run);
 skip.addEventListener('click',finish);
 reset.addEventListener('click',()=>{clear();if(result.open)result.close();status.textContent='準備OK！ ハンドルを回してね 💕'});
