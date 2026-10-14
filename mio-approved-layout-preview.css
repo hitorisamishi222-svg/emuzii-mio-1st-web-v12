@@ -1,0 +1,10 @@
+/* MIO anniversary — approved two-background layout. Preview branch only.
+   Upload /assets/mio-bg-princess.jpg and /assets/mio-bg-devil.jpg before activating.
+   Face is kept in the top third; panels remain readable and touch targets unobstructed. */
+:root{--mio-princess:url('/assets/mio-bg-princess.jpg');--mio-devil:url('/assets/mio-bg-devil.jpg')}
+body.mio-approved-bg{background-color:#071b42!important;background-image:linear-gradient(180deg,rgba(3,13,36,.03) 0%,rgba(3,13,36,.07) 28%,rgba(3,13,36,.44) 58%,rgba(3,13,36,.79) 100%),var(--mio-princess)!important;background-position:center top!important;background-size:100% auto!important;background-repeat:no-repeat!important;background-attachment:scroll!important}
+body.mio-approved-bg.mio-event-bg{background-image:linear-gradient(180deg,rgba(3,13,36,.03) 0%,rgba(3,13,36,.09) 28%,rgba(3,13,36,.47) 58%,rgba(3,13,36,.82) 100%),var(--mio-devil)!important}
+body.mio-approved-bg main,body.mio-approved-bg .app{position:relative;z-index:1}
+body.mio-approved-bg .glass,body.mio-approved-bg .panel,body.mio-approved-bg .card{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+@media(min-width:700px){body.mio-approved-bg{background-size:min(100vw,900px) auto!important;background-position:center top!important;background-color:#061734!important}}
+@media(prefers-reduced-motion:reduce){body.mio-approved-bg *{scroll-behavior:auto}}
