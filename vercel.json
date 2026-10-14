@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "mkdir -p public; cp -f ./*.html ./*.css ./*.js public/; test -s public/integrated-live-demo.html && test -s public/home-portrait-next.html && test -s public/mio-royal-whale-v74.html",
+  "buildCommand": "mkdir -p public; cp -f ./*.html ./*.css ./*.js public/; if [ -d assets ]; then cp -R assets public/assets; fi; test -s public/integrated-live-demo.html && test -s public/integrated-functional-test.html && test -s public/home-portrait-next.html && test -s public/mio-royal-whale-v74.html",
   "outputDirectory": "public",
   "rewrites": [
     {
