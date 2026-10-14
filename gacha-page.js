@@ -14,10 +14,11 @@ function revealEffect(rarity,mode){window.dispatchEvent(new CustomEvent('mio:gac
 function startEffect(mode){
   clearEffects();
   window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode}}));
-  const stage=$('gachaStage');stage?.classList.add('draw-active');stage?.classList.toggle('is-fest',mode==='ラキフェス');
+  const stage=$('gachaStage');stage?.classList.add('draw-active');stage?.classList.remove('v20-prize-visible','v191-rarity-n','v191-rarity-r','v191-rarity-sr','v191-rarity-ur');stage?.classList.toggle('is-fest',mode==='ラキフェス');
   particles(mode==='ラキフェス'?70:46,mode==='ラキフェス'?'sr':'n');
   setTimeout(()=>particles(mode==='ラキフェス'?60:34,mode==='ラキフェス'?'ur':'r'),700);
   setTimeout(()=>particles(mode==='ラキフェス'?80:42,mode==='ラキフェス'?'sr':'n'),1350);
+  setTimeout(()=>{if(stage?.classList.contains('draw-active'))particles(mode==='ラキフェス'?95:65,mode==='ラキフェス'?'ur':'sr')},2450);
 }
 function makeId(){return crypto.randomUUID?crypto.randomUUID().replaceAll('-',''):Array.from(crypto.getRandomValues(new Uint8Array(16)),x=>x.toString(16).padStart(2,'0')).join('')}
 function fmtDate(v){if(!v)return'';try{const d=new Date(v);if(!Number.isNaN(d.getTime()))return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}catch{}return String(v)}
