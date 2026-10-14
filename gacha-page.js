@@ -1,6 +1,7 @@
 const $=id=>document.getElementById(id);
 let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null;
 const pendingKey=()=>`mio_pending_draw_${participant||'unknown'}`;
+const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';
 function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'応答を確認できませんでした'}}}
 async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});const d=parse(await r.text());if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}return d}
 function note(t){$('drawMessage').textContent=t||''}
@@ -69,6 +70,7 @@ async function loadCatalog(includeHistory=true){
   }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
 }
 async function execute(pending){
+  if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
   if(busy)return;
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
   const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:(fest?4700:3600);
@@ -129,6 +131,7 @@ function confirmDraw(mode){
   });
 }
 async function start(mode){
+  if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
   if(busy){note('ガチャ情報を更新中です。完了後にもう一度押してください。');return;}
   if(confirming){note('抽選確認画面の操作を完了してください。');return;}
   if(!participant||!lastCatalog){note('参加情報を読み込み中です。再読み込みしてください。');return;}
@@ -168,5 +171,5 @@ window.setInterval(refreshOpenState,30000);
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
 window.addEventListener('pageshow',refreshOpenState);
-async function boot(){try{const s=await post('/api/status');participant=s.participantId;$('gachaUser').hidden=false;$('gachaApproval').textContent=s.status||'';$('gachaName').textContent=(s.name||'')+' さん';$('gachaId').textContent='登録ID：'+s.participantId;if(s.status!=='承認済み'){throw Error('管理者の登録承認後にガチャを利用できます。')}$('gachaUserMessage').textContent='ガチャ情報を読み込んでいます…';const loaded=await loadCatalog();$('gachaUserMessage').textContent=loaded?'ガチャ情報を表示しました。':'ガチャ設定を取得できませんでした。下の「設定・当選履歴を更新」から再試行してください。'}catch(e){$('gachaUserMessage').textContent=e.status===401?'先に企画ページでColorSing名を登録してください。':e.message;$('gachaUserMessage').classList.add('error')}}
+async function boot(){if(isPreview){$('gachaUserMessage').textContent='テスト版では実抽選を停止しています。演出デモで確認してください。';return;}try{const s=await post('/api/status');participant=s.participantId;$('gachaUser').hidden=false;$('gachaApproval').textContent=s.status||'';$('gachaName').textContent=(s.name||'')+' さん';$('gachaId').textContent='登録ID：'+s.participantId;if(s.status!=='承認済み'){throw Error('管理者の登録承認後にガチャを利用できます。')}$('gachaUserMessage').textContent='ガチャ情報を読み込んでいます…';const loaded=await loadCatalog();$('gachaUserMessage').textContent=loaded?'ガチャ情報を表示しました。':'ガチャ設定を取得できませんでした。下の「設定・当選履歴を更新」から再試行してください。'}catch(e){$('gachaUserMessage').textContent=e.status===401?'先に企画ページでColorSing名を登録してください。':e.message;$('gachaUserMessage').classList.add('error')}}
 void boot();
