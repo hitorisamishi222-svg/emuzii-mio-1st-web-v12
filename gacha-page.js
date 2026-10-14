@@ -70,19 +70,19 @@ async function loadCatalog(includeHistory=true){
 async function execute(pending){
   if(busy)return;
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
-  const started=performance.now(),fest=pending.mode==='ラキフェス',minMs=fest?2800:1800;
+  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:(fest?4700:3600);
   let refreshAfter=false;
   startEffect(pending.mode);
   note(fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
-  const mid=setTimeout(()=>note(fest?'🌟 光が最高潮に…秘蔵ガチャ結果を解放！':'✨ レアリティ判定中…！'),fest?1350:900);
+  const phaseTimers=[setTimeout(()=>note(fest?'🌟 黄金の光が集まっていく…！':'✨ クリスタルに光が集まっていく…！'),reduceMotion?150:950),setTimeout(()=>{note(fest?'👑 ラキフェス最高潮！運命のカプセルが現れる…！':'💫 光が最高潮！当たりの予感…！');particles(fest?105:70,fest?'ur':'sr')},reduceMotion?350:(fest?2800:2200))];
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});
     const wait=Math.max(0,minMs-(performance.now()-started));if(wait)await sleep(wait);
-    clearTimeout(mid);renderResult(d);forget();
+    phaseTimers.forEach(clearTimeout);renderResult(d);forget();
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
   }catch(e){
-    clearTimeout(mid);clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
+    phaseTimers.forEach(clearTimeout);clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
   }finally{
     $('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active');busy=false;$('retryDraw').disabled=false;
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
