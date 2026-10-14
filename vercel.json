@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "integrated-live-demo.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "release-readiness.html",
       "use": "@vercel/static"
     },
@@ -179,6 +183,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "^/integrated-live-demo(?:\\.html)?$",
+      "dest": "/integrated-live-demo.html"
+    },
     {
       "src": "^/release-readiness(?:\\.html)?$",
       "dest": "/release-readiness.html"
