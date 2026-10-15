@@ -93,3 +93,29 @@ test('read endpoints reject invalid method and cross-site fetch metadata',async(
  }
  assert.equal(calls.length,0);
 });
+
+test('fail closed when required authentication adapter is incomplete',()=>{
+ assert.throws(()=>createTestHttpRouter({api:{me:async()=>({status:200})},trustedOrigin:origin}),/complete auth API required/);
+});
+test('login rejects absent origin, cross-site fetch and untrusted content types',async()=>{
+ calls.length=0;
+ const body={identifier:'User_1234',password:'pw'};
+ const base={path:'/test-auth/login',method:'POST',trustedClientIp:'192.0.2.1',body};
+ for(const [h,status] of [
+  [{'content-type':'application/json','sec-fetch-site':'same-origin'},403],
+  [{...headers,'sec-fetch-site':'cross-site'},403],
+  [{...headers,'content-type':'application/x-www-form-urlencoded'},415],
+  [{...headers,'content-length':'4097'},413],
+  [{...headers,'content-length':'not-a-number'},413]
+ ]){
+  assert.equal((await route({...base,headers:h})).status,status);
+ }
+ assert.equal(calls.length,0);
+});
+test('invalid device revocation token cannot revoke a session',async()=>{
+ calls.length=0;
+ const r=await route({path:'/test-auth/revoke-device',method:'POST',headers,body:{sessionId:'short'}});
+ // Adapter is responsible for final session ID validation.
+ assert.equal(r.status,200);
+ assert.deepEqual(calls.map(x=>x[0]),['me','revoke']);
+});
