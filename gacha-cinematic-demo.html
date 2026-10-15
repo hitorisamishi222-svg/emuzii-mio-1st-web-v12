@@ -19,13 +19,26 @@ body{min-height:100vh}
 .demo-controls button:disabled{opacity:.45}
 @media(max-width:520px){.demo-controls{grid-template-columns:repeat(3,1fr)}}
 .demo-head{padding:20px 8px 24px}.demo-head .brand{font-weight:800;letter-spacing:.2em;color:#8feaff;text-shadow:0 0 16px #42bfff77}.demo-head h1{font-size:clamp(21px,5.2vw,34px);line-height:1.2;letter-spacing:.035em;color:#f6fdff;text-shadow:0 3px 22px #54caff66}.demo-subtitle{margin:10px auto 14px;color:#c9edff;font-size:13px;line-height:1.65}.demo-wrap{background:radial-gradient(ellipse at 50% 15%,#178dce22,transparent 52%)}.demo-controls button{box-shadow:inset 0 2px 2px #fff9,0 7px 16px #00102b66;transition:transform .2s ease,filter .2s ease}.demo-controls button:active{transform:scale(.95)}.demo-controls button:focus-visible{outline:3px solid #fff;outline-offset:3px}.demo-safe{line-height:1.5}.gacha-stage{box-shadow:inset 0 0 40px #0aa5ff20,0 16px 40px #000c2e50}.draw-result-card:not([hidden]){max-width:92%;overflow-wrap:anywhere}#demoMsg{line-height:1.8}@media(prefers-reduced-motion:reduce){.demo-controls button{transition:none}}
+
+.demo-controls{grid-template-columns:repeat(4,1fr)}.demo-controls button:last-child{background:linear-gradient(135deg,#e7fbff,#62d9ff)}
+.demo-pools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 8px}
+.demo-pools button{min-height:46px;border:1px solid #8bdfff88;border-radius:14px;padding:8px;background:#102c58;color:#effbff;font-weight:800}
+.demo-pools button[aria-pressed="true"]{background:linear-gradient(135deg,#fff1b8,#e6b044);color:#12254a;border-color:#fff1bd}
+#poolStatus,#imageLoadStatus{margin:7px 0;color:#ccecff;font-size:13px}
+#prizeGallery{margin-top:14px}.prize-group{margin:14px 0}.prize-group h3{color:#ffe6a8}.prize-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.prize-tile{min-width:0;padding:8px;border:1px solid #8bcfff66;border-radius:13px;background:#09244be8;text-align:left}
+.prize-tile img{display:block;width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:#07172e}
+.prize-tile strong,.prize-tile span{display:block;margin-top:5px;font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.prize-tile .prize-meta{color:#b9d9f4}
+#drawResultImage:not([hidden]){display:block;width:min(62vw,220px);max-height:32vh;object-fit:contain;margin:0 auto 10px;border-radius:12px}
+@media(max-width:520px){.demo-controls{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body class="next-premium-gacha">
 <main class="demo-wrap">
 <header class="demo-head">
 <div class="brand">翠央 1周年ガチャ</div>
-<h1>v2.0 BLUE WHALE GRAND GACHA</h1><p class="demo-subtitle">海のきらめきと、可愛いクジラのプレミアム抽選体験</p>
+<h1>v2.0 BLUE WHALE GRAND GACHA</h1><p class="demo-subtitle">メンシプ16景品・ラキフェス11景品。公開済みの景品画像で結果を確認できます</p>
 <div class="demo-safe">安全デモ：抽選API未接続・回数消費なし</div><p class="demo-mode" id="demoMode" aria-live="polite">2.5D演出を準備中</p>
 </header>
 <section class="glass" id="drawPanel">
@@ -42,47 +55,106 @@ body{min-height:100vh}
     <span class="draw-ordinal" id="drawOrdinal"></span>
   </div>
 </div>
-<p id="demoMsg" class="message">好きなレアリティをタップ！ クジラのお腹で宝石が舞い、景品が現れるよ。</p>
-<div class="demo-controls">
-<button data-r="N">N</button>
-<button data-r="R">R</button>
-<button data-r="SR">SR</button>
-<button data-r="UR">UR</button>
-<button data-r="UR" data-fest="1">ラキUR</button>
+<p id="demoMsg" class="message">モードとレアリティを選ぶと、景品画像つきの結果が表示されます。抽選権利は消費しません。</p>
+<div class="demo-pools" role="group" aria-label="ガチャの種類">
+<button type="button" data-mode="通常" aria-pressed="true">メンシプ（16景品）</button>
+<button type="button" data-mode="ラキフェス" aria-pressed="false">ラキフェス（11景品）</button>
 </div>
-<p class="muted">本番と同じ演出コードを使う確認用ページです。景品・回数・履歴は一切変更しません。</p>
+<p id="poolStatus" aria-live="polite">メンシプの景品を準備中…</p>
+<div class="demo-controls" role="group" aria-label="レアリティ">
+<button data-r="N" disabled>N</button>
+<button data-r="R" disabled>R</button>
+<button data-r="SR" disabled>SR</button>
+<button data-r="UR" disabled>UR</button>
+</div>
+<p id="imageLoadStatus" aria-live="polite">景品画像を確認中…</p>
+<details id="allPrizes"><summary>景品画像一覧（全27種類）</summary><div id="prizeGallery"></div></details>
+<p class="muted">TEST専用デモです。結果表示までの時間を3秒延長しています。API・参加者・履歴・ガチャ権利は変更しません。</p>
 </section>
 </main>
 <script type="module" src="/gacha-effects-v19.js"></script><script type="module" src="/gacha-approved-integration.js"></script>
 <script>
 const $=id=>document.getElementById(id),wait=ms=>new Promise(r=>setTimeout(r,ms));
-const mode=$('demoMode');const refreshMode=()=>{const st=$('gachaStage');mode.textContent=st.classList.contains('v25-low-power')?'省エネ2.5Dモードで表示中':'プレミアム2.5Dモードで表示中'};
-requestAnimationFrame(refreshMode);
-let running=false,seq=0;
-window.addEventListener('error',()=>{if(!running)return;running=false;document.querySelectorAll('[data-r]').forEach(b=>b.disabled=false);$('demoMsg').textContent='表示エラーが発生しました。もう一度お試しください。';window.dispatchEvent(new Event('mio:gacha-animation-error'));});
-async function play(rarity,fest){
-  if(running)return;running=true;
-  document.querySelectorAll('[data-r]').forEach(b=>b.disabled=true);
-  const stage=$('gachaStage'),card=$('drawResultCard');
-  card.hidden=true;card.classList.remove('result-pop');
-  stage.classList.toggle('is-fest',!!fest);stage.classList.add('draw-active');
-  $('demoMsg').textContent=(fest?'ラキフェス':'メンシプ')+'演出中…';
-  window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode:fest?'ラキフェス':'通常'}}));
-  await wait(1100);
-  window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{mode:fest?'ラキフェス':'通常',rarity}}));
-  const pre=rarity==='UR'?3100:rarity==='SR'?2350:rarity==='R'?1900:1700;
-  await wait(pre);
-  $('drawRarity').textContent=rarity;
-  $('drawPrizeName').textContent=rarity==='UR'?'1周年スペシャル景品':rarity==='SR'?'スペシャルレア景品':rarity==='R'?'レア景品':'ノーマル景品';
-  $('drawOrdinal').textContent=(++seq)+'回目・デモ結果';
-  card.hidden=false;card.classList.add('result-pop');
-  window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{mode:fest?'ラキフェス':'通常',rarity,ordinal:seq}}));
-  stage.classList.remove('draw-active');
-  await wait(rarity==='UR'?2900:rarity==='SR'?1800:1100);
-  $('demoMsg').textContent='演出確認完了。何度でも試せます。';
-  document.querySelectorAll('[data-r]').forEach(b=>b.disabled=false);
-  running=false;
+const controls=[...document.querySelectorAll('[data-r]')],modeButtons=[...document.querySelectorAll('[data-mode]')];
+let allPrizes=[],currentMode='通常',running=false,seq=0,loadedImages=0,failedImages=0;
+const modeLabel=mode=>mode==='通常'?'メンシプ':'ラキフェス';
+function updateMode(mode){
+ currentMode=mode;
+ modeButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+ const count=allPrizes.filter(p=>p.mode===mode).length;
+ $('poolStatus').textContent=modeLabel(mode)+'の景品を選択中（'+count+'種類）';
+ document.getElementById('gachaStage').classList.toggle('is-fest',mode==='ラキフェス');
 }
-document.querySelectorAll('[data-r]').forEach(b=>b.addEventListener('click',()=>play(b.dataset.r,b.dataset.fest==='1')));
+function weightedPrize(mode,rarity){
+ const pool=allPrizes.filter(p=>p.mode===mode&&p.rarity===rarity&&p.enabled&&p.imagePath);
+ const total=pool.reduce((s,p)=>s+Number(p.probabilityPercent||0),0);
+ if(!pool.length||total<=0)return null;
+ let n=Math.random()*total;
+ for(const item of pool){n-=Number(item.probabilityPercent||0);if(n<0)return item}
+ return pool[pool.length-1];
+}
+function imageState(ok){
+ if(ok)loadedImages++;else failedImages++;
+ $('imageLoadStatus').textContent='画像読込 '+loadedImages+'/'+allPrizes.length+(failedImages?'・読込失敗 '+failedImages:'');
+}
+function renderGallery(){
+ const host=$('prizeGallery');host.replaceChildren();
+ for(const mode of ['通常','ラキフェス']){
+  const group=document.createElement('section');group.className='prize-group';
+  const h=document.createElement('h3');h.textContent=modeLabel(mode)+' 景品（'+allPrizes.filter(p=>p.mode===mode).length+'種類）';group.append(h);
+  const grid=document.createElement('div');grid.className='prize-grid';
+  for(const p of allPrizes.filter(x=>x.mode===mode)){
+   const tile=document.createElement('article');tile.className='prize-tile';
+   const img=document.createElement('img');img.src=p.imagePath;img.alt=p.name;img.loading='eager';img.decoding='async';
+   img.addEventListener('load',()=>imageState(img.naturalWidth>0),{once:true});
+   img.addEventListener('error',()=>imageState(false),{once:true});
+   const name=document.createElement('strong');name.textContent=p.name;
+   const meta=document.createElement('span');meta.className='prize-meta';meta.textContent=p.id+' · '+p.rarity+' · '+p.probabilityPercent+'%';
+   tile.append(img,name,meta);grid.append(tile);
+  }
+  group.append(grid);host.append(group);
+ }
+}
+async function initialize(){
+ try{
+  const response=await fetch('/data/gacha-prizes-v2-preview.json',{cache:'no-store'});
+  if(!response.ok)throw new Error('景品データを取得できません（HTTP '+response.status+'）');
+  const data=await response.json();allPrizes=Array.isArray(data.prizes)?data.prizes:[];
+  const memberCount=allPrizes.filter(p=>p.mode==='通常').length,festCount=allPrizes.filter(p=>p.mode==='ラキフェス').length;
+  if(memberCount!==16||festCount!==11||allPrizes.length!==27)throw new Error('景品データが16＋11件ではありません');
+  renderGallery();updateMode(currentMode);controls.forEach(b=>b.disabled=false);
+ }catch(error){$('demoMsg').textContent='景品の準備に失敗しました：'+error.message;$('imageLoadStatus').textContent='景品画像を確認できません';}
+}
+window.addEventListener('error',()=>{if(!running)return;running=false;controls.forEach(b=>b.disabled=false);$('demoMsg').textContent='表示エラーが発生しました。もう一度お試しください。';window.dispatchEvent(new Event('mio:gacha-animation-error'));});
+async function play(rarity){
+ if(running)return;
+ const selected=weightedPrize(currentMode,rarity);
+ if(!selected){$('demoMsg').textContent=modeLabel(currentMode)+'に'+rarity+'景品がありません。';return}
+ running=true;controls.forEach(b=>b.disabled=true);
+ const stage=$('gachaStage'),card=$('drawResultCard'),image=$('drawResultImage');
+ card.hidden=true;card.classList.remove('result-pop');image.hidden=true;image.removeAttribute('src');
+ const mode=currentMode,fest=mode==='ラキフェス';
+ stage.classList.toggle('is-fest',fest);stage.classList.add('draw-active');
+ $('demoMsg').textContent=modeLabel(mode)+'演出中…';
+ window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode}}));
+ await wait(1100);
+ window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{mode,rarity,prizeId:selected.id}}));
+ await wait(3000);
+ const pre=rarity==='UR'?3100:rarity==='SR'?2350:rarity==='R'?1900:1700;
+ await wait(pre);
+ image.src=selected.imagePath;image.alt=selected.name;image.hidden=false;
+ $('drawRarity').textContent=selected.rarity;
+ $('drawPrizeName').textContent=selected.name;
+ $('drawOrdinal').textContent=selected.id+' · '+selected.probabilityPercent+'% · デモ結果';
+ card.hidden=false;card.classList.add('result-pop');
+ window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{mode,rarity,prizeId:selected.id,ordinal:++seq}}));
+ stage.classList.remove('draw-active');
+ await wait(rarity==='UR'?2900:rarity==='SR'?1800:1100);
+ $('demoMsg').textContent=modeLabel(mode)+'の景品画像を確認しました。何度でも試せます。';
+ controls.forEach(b=>b.disabled=false);running=false;
+}
+modeButtons.forEach(b=>b.addEventListener('click',()=>updateMode(b.dataset.mode)));
+controls.forEach(b=>b.addEventListener('click',()=>play(b.dataset.r)));
+initialize();
 </script>
 </body></html>
