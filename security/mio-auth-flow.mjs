@@ -26,5 +26,15 @@ export function createAuthFlow(pool,{sessions=createPostgresSessionStore(pool)}=
   const revoked=active?await sessions.revokeAll(active.accountId):0;
   return {revoked,setCookie:expireSessionCookie()};
  }
- return {login,current,logout,logoutAll};
+ async function devices(header){
+  const active=await current(header);
+  if(!active)return null;
+  return sessions.list(active.accountId);
+ }
+ async function revokeDevice(header,sessionId){
+  const active=await current(header);
+  if(!active)return null;
+  return sessions.revoke(active.accountId,sessionId);
+ }
+ return {login,current,logout,logoutAll,devices,revokeDevice};
 }
