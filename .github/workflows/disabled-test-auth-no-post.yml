@@ -1,0 +1,39 @@
+name: Disabled TEST auth does not transmit synthetic credentials
+on:
+  push:
+    branches:
+      - release/v2-next-integrated-replica
+    paths:
+      - '.github/workflows/disabled-test-auth-no-post.yml'
+      - 'release-prep/auth-disabled-preview-browser.integration.mjs'
+permissions:
+  contents: read
+jobs:
+  no-credential-post:
+    if: github.ref == 'refs/heads/release/v2-next-integrated-replica'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    env:
+      MIO_BROWSER: ${{ matrix.browser }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright in temporary CI directory
+        run: npm install --prefix "$RUNNER_TEMP/mio-no-post" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.56.1
+      - name: Install selected browser and system dependencies
+        run: '"$RUNNER_TEMP/mio-no-post/node_modules/.bin/playwright" install --with-deps "$MIO_BROWSER"'
+      - name: Create short lived CI-only localhost TLS certificate
+        run: openssl req -x509 -nodes -newkey rsa:2048 -keyout "$RUNNER_TEMP/mio-no-post.key" -out "$RUNNER_TEMP/mio-no-post.crt" -days 1 -subj '/CN=127.0.0.1' -addext 'subjectAltName=IP:127.0.0.1,DNS:localhost'
+      - name: Verify credentials are not sent after disabled API preflight
+        env:
+          CI: 'true'
+          MIO_BROWSER_MODULE: ${{ runner.temp }}/mio-no-post/node_modules/playwright
+          MIO_TEST_TLS_KEY: ${{ runner.temp }}/mio-no-post.key
+          MIO_TEST_TLS_CERT: ${{ runner.temp }}/mio-no-post.crt
+        run: node --test release-prep/auth-disabled-preview-browser.integration.mjs
