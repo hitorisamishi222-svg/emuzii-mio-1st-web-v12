@@ -1,16 +1,13 @@
 /**
- * NEXT TEST ONLY: signed device-session proof with durable revocation.
+ * NEXT TEST ONLY: signed per-device sessions with durable individual revocation.
  * This module does not connect to production, GAS, Sheets, a DB, or an HTTP route.
  *
- * The server must authenticate a device transfer/recovery separately, update the
- * participant's single active session in durable storage atomically, and supply
- * the resulting record to verifyTestDeviceSession on EVERY protected request.
- * A copied cookie remains a bearer credential until revoked. Browsers cannot
- * be reliably identified as the same person by fingerprinting alone.
+ * Each signed token maps to one persisted session row. Multiple rows may belong
+ * to one participant, so logging out one device leaves the other devices active.
  */
 import {createHash, createHmac, randomBytes, timingSafeEqual} from 'node:crypto';
 
-const DOMAIN='mio-next-device-v1';
+const DOMAIN='mio-next-device-v2';
 const DAY=86_400_000;
 const MAX_TTL=30*DAY;
 const ID=/^[A-Za-z0-9_-]{3,120}$/;
@@ -23,39 +20,31 @@ function requireKey(secret){
   return key;
 }
 function safeEqual(a,b){
-  if(!Buffer.isBuffer(a)||!Buffer.isBuffer(b)||a.length!==b.length)return false;
-  return timingSafeEqual(a,b);
+  return Buffer.isBuffer(a)&&Buffer.isBuffer(b)&&a.length===b.length&&timingSafeEqual(a,b);
 }
 function sessionDigest(sessionId){
   return createHash('sha256').update(DOMAIN+':'+sessionId,'utf8').digest('hex');
 }
 function isValidTime(now){return Number.isSafeInteger(now)&&now>=0}
-function isValidGeneration(value){return Number.isSafeInteger(value)&&value>=1}
 
-/**
- * Server-only TEST issuance. Save sessionDigest + active device + generation
- * transactionally in a TEST database before putting token in a secure cookie.
- * Server must generate its own deviceId rather than trusting a client-supplied ID.
- */
-export function issueTestDeviceSession({participantId,deviceId,generation,secret,now=Date.now(),ttlMs=7*DAY}){
+/** Server-only TEST issuance. Persist the returned row before setting a cookie. */
+export function issueTestDeviceSession({participantId,deviceId,secret,now=Date.now(),ttlMs=7*DAY}){
   const key=requireKey(secret);
   if(!ID.test(String(participantId||''))||!ID.test(String(deviceId||''))||
-      !isValidGeneration(generation)||!isValidTime(now)||!Number.isSafeInteger(ttlMs)||
-      ttlMs<=0||ttlMs>MAX_TTL||now+ttlMs>Number.MAX_SAFE_INTEGER)
+      !isValidTime(now)||!Number.isSafeInteger(ttlMs)||ttlMs<=0||
+      ttlMs>MAX_TTL||now+ttlMs>Number.MAX_SAFE_INTEGER)
     throw new Error('INVALID_TEST_SESSION_INPUT');
   const sessionId=randomBytes(32).toString('base64url');
   const expiresAt=now+ttlMs;
-  const payload={v:1,p:participantId,d:deviceId,g:generation,s:sessionId,i:now,e:expiresAt};
+  const payload={v:2,p:participantId,d:deviceId,sid:sessionId,i:now,e:expiresAt};
   const encoded=Buffer.from(JSON.stringify(payload),'utf8').toString('base64url');
   const signature=createHmac('sha256',key).update(DOMAIN+'.'+encoded,'utf8').digest('base64url');
-  return {token:encoded+'.'+signature,sessionDigest:sessionDigest(sessionId),expiresAt};
+  return {token:encoded+'.'+signature,sessionId,deviceId,sessionDigest:sessionDigest(sessionId),expiresAt};
 }
 
 /**
- * Every value in record must come from a server-side TEST database lookup
- * (never from request JSON or a UI approved toggle).
- * record: participantId, activeDeviceId, generation, sessionDigest,
- *         participantApproved, active.
+ * record must be fetched from the TEST session table on each protected request.
+ * Never derive participant identity or approval from request JSON.
  */
 export function verifyTestDeviceSession({token,secret,record,now=Date.now()}){
   const key=requireKey(secret);
@@ -72,21 +61,34 @@ export function verifyTestDeviceSession({token,secret,record,now=Date.now()}){
   try{session=JSON.parse(Buffer.from(encoded,'base64url').toString('utf8'))}
   catch{return deny('BAD_PAYLOAD')}
   if(!session||typeof session!=='object'||Array.isArray(session)||
-      session.v!==1||!ID.test(String(session.p||''))||!ID.test(String(session.d||''))||
-      !isValidGeneration(session.g)||typeof session.s!=='string'||
-      !/^[A-Za-z0-9_-]{43}$/.test(session.s)||
+      session.v!==2||!ID.test(String(session.p||''))||!ID.test(String(session.d||''))||
+      typeof session.sid!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(session.sid)||
       !isValidTime(session.i)||!isValidTime(session.e)||
-      session.e<=session.i||session.e-session.i>MAX_TTL||session.i>now||
-      session.e<=now)return deny('EXPIRED_OR_INVALID');
+      session.e<=session.i||session.e-session.i>MAX_TTL||session.i>now||session.e<=now)
+    return deny('EXPIRED_OR_INVALID');
   if(!record||record.active!==true||record.participantApproved!==true||
-      !ID.test(String(record.participantId||''))||
-      !ID.test(String(record.activeDeviceId||''))||
-      !isValidGeneration(record.generation)||
+      record.revoked===true||!ID.test(String(record.participantId||''))||
+      !ID.test(String(record.deviceId||''))||
+      typeof record.sessionId!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(record.sessionId)||
       typeof record.sessionDigest!=='string'||!DIGEST.test(record.sessionDigest))
     return deny('INACTIVE_OR_UNAPPROVED');
   if(record.participantId!==session.p)return deny('PARTICIPANT_MISMATCH');
-  if(record.activeDeviceId!==session.d||record.generation!==session.g)return deny('REVOKED_DEVICE');
-  if(!safeEqual(Buffer.from(record.sessionDigest,'hex'),Buffer.from(sessionDigest(session.s),'hex')))
+  if(record.deviceId!==session.d||record.sessionId!==session.sid)return deny('REVOKED_SESSION');
+  if(!safeEqual(Buffer.from(record.sessionDigest,'hex'),Buffer.from(sessionDigest(session.sid),'hex')))
     return deny('REVOKED_SESSION');
-  return {ok:true,participantId:session.p,deviceId:session.d,generation:session.g};
+  if(!isValidTime(record.expiresAt)||record.expiresAt<=now||record.expiresAt!==session.e)
+    return deny('EXPIRED_OR_INVALID');
+  return {ok:true,participantId:session.p,deviceId:session.d,sessionId:session.sid};
+}
+
+/** Revoke just this authenticated session; other devices remain signed in. */
+export async function revokeTestDeviceSession({store,participantId,sessionId,now=Date.now()}){
+  if(!ID.test(String(participantId||''))||
+      typeof sessionId!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(sessionId)||
+      !isValidTime(now))throw new Error('INVALID_TEST_LOGOUT_REQUEST');
+  if(!store||typeof store.transaction!=='function')throw new Error('TRANSACTIONAL_TEST_STORE_REQUIRED');
+  return store.transaction(async(tx)=>{
+    if(!tx||typeof tx.revokeSession!=='function')throw new Error('INCOMPLETE_TEST_TRANSACTION');
+    return tx.revokeSession({participantId,sessionId,revokedAt:now});
+  });
 }
