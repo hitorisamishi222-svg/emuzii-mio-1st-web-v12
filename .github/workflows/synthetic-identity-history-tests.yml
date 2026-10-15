@@ -1,0 +1,43 @@
+name: Reusable synthetic identity and history database tests
+on:
+  push:
+    branches:
+      - release/v2-next-integrated-replica
+    paths:
+      - '.github/workflows/synthetic-identity-history-tests.yml'
+      - 'release-prep/synthetic-identity-history.integration.mjs'
+      - 'release-prep/fixtures/synthetic-auth-data.mjs'
+permissions:
+  contents: read
+jobs:
+  synthetic-identity-history:
+    if: github.ref == 'refs/heads/release/v2-next-integrated-replica'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mio_test
+          POSTGRES_PASSWORD: mio_ci_only
+          POSTGRES_DB: mio_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mio_test -d mio_ci_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned PostgreSQL driver in temporary CI directory
+        run: npm install --prefix "$RUNNER_TEMP/mio-fixture-pg" --ignore-scripts --no-audit --no-fund --save-exact pg@8.16.3
+      - name: Run focused synthetic identity, history and shared-right checks
+        env:
+          CI: 'true'
+          MIO_TEST_DATABASE_URL: postgresql://mio_test:mio_ci_only@127.0.0.1:5432/mio_ci_test
+          MIO_TEST_PG_MODULE: ${{ runner.temp }}/mio-fixture-pg/node_modules/pg
+        run: node --test release-prep/synthetic-identity-history.integration.mjs
