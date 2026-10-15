@@ -23,7 +23,7 @@ function response(status,contentType,data){
 test('unconnected TEST login must not submit credentials',async()=>{
  const page=loadLogin(async()=>response(200,'text/html','<html></html>'));
  page.el('loginId').value='Example_1234';page.el('loginPassword').value='sample-only-password';
- await page.ctx.testLogin();
+ await page.ctx.handleTestLoginSubmit();
  assert.equal(page.calls.length,1);
  assert.equal(page.calls[0][0],'/test-auth/me');
  assert.equal(page.el('loginPassword').value,'sample-only-password');
@@ -33,7 +33,7 @@ test('unconnected TEST login must not submit credentials',async()=>{
 test('unexpected TEST API JSON must not submit credentials',async()=>{
  const page=loadLogin(async()=>response(200,'application/json',{ok:true}));
  page.el('loginId').value='Example_1234';page.el('loginPassword').value='test-password';
- await page.ctx.testLogin();
+ await page.ctx.handleTestLoginSubmit();
  assert.equal(page.calls.length,1);
  assert.match(page.el('result').textContent,/送信していません/);
 });
@@ -42,7 +42,7 @@ test('verified TEST API may receive credentials on same-origin request',async()=
   ?response(401,'application/json',{error:'unauthorized'})
   :response(200,'application/json',{accountId:'test-only-account'}));
  page.el('loginId').value='Example_1234';page.el('loginPassword').value='test-password';
- await page.ctx.testLogin();
+ await page.ctx.handleTestLoginSubmit();
  assert.equal(page.calls.length,2);
  assert.equal(page.calls[1][0],'/test-auth/login');
  assert.equal(page.calls[1][1].credentials,'same-origin');
@@ -55,7 +55,7 @@ test('failed TEST login retains retry ability and clears busy state',async()=>{
   ?response(401,'application/json',{error:'unauthorized'})
   :response(401,'application/json',{error:'invalid_credentials'}));
  page.el('loginId').value='Example_1234';page.el('loginPassword').value='incorrect-test-password';
- await page.ctx.testLogin();
+ await page.ctx.handleTestLoginSubmit();
  assert.equal(page.el('testLogin').disabled,false);
  assert.match(page.el('result').textContent,/パスワード/);
 });
