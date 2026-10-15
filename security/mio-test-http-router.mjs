@@ -22,7 +22,13 @@ export function createTestHttpRouter({api,throttle,trustedOrigin}={}){
   if(!guard.ok)return {status:guard.status,body:{error:guard.error}};
   const body=req.body;
   if(!body||typeof body!=='object'||Array.isArray(body))return {status:400,body:{error:'invalid_request'}};
-  if(path==='/test-auth/login')return login(req);
+  if(path==='/test-auth/login'){
+   if(typeof body.identifier!=='string'||body.identifier.length>100||
+      typeof body.password!=='string'||body.password.length>1024||
+      (body.deviceLabel!==undefined&&(typeof body.deviceLabel!=='string'||body.deviceLabel.length>80)))
+    return {status:400,body:{error:'invalid_request'}};
+   return login(req);
+  }
   if(path==='/test-auth/revoke-device')return api.revokeDevice(cookie,body.sessionId);
   return api[writes.get(path)](cookie);
  };
