@@ -1,0 +1,39 @@
+name: Remaining mobile browser checks
+on:
+  push:
+    branches:
+      - release/v2-next-integrated-replica
+    paths:
+      - '.github/workflows/remaining-browser-tests.yml'
+      - 'release-prep/mobile-browser.integration.mjs'
+permissions:
+  contents: read
+jobs:
+  mobile-browser:
+    if: github.ref == 'refs/heads/release/v2-next-integrated-replica'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    env:
+      MIO_BROWSER: ${{ matrix.browser }}
+      MIO_BROWSER_MODULE: ${{ runner.temp }}/mio-browser/node_modules/playwright
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser test runtime in temporary directory
+        run: npm install --prefix "$RUNNER_TEMP/mio-browser" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.56.1
+      - name: Install selected browser and system dependencies
+        run: '"$RUNNER_TEMP/mio-browser/node_modules/.bin/playwright" install --with-deps "$MIO_BROWSER"'
+      - name: Verify remaining pages at mobile viewport sizes with external traffic blocked
+        run: node --test release-prep/mobile-browser.integration.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-browser-${{ matrix.browser }}
+          path: artifacts/mobile-browser-${{ matrix.browser }}/
+          retention-days: 7
