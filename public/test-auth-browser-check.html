@@ -19,6 +19,7 @@ document.querySelector('#run').onclick=async()=>{
     li.textContent='TEST API停止中：開発専用の認証環境が未設定です。資格情報は送信せず、以下のテストも実行しません。';
     list.append(li);
     document.querySelector('#summary').textContent='環境未設定：テスト未実行（0/5）';
+    button.disabled=false;
     return;
    }
   }
