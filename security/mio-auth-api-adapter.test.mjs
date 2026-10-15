@@ -34,3 +34,18 @@ test('logout and logoutAll clear cookie',async()=>{
  assert.match(a.headers['Set-Cookie'],/Max-Age=0/);
  assert.equal(b.body.revoked,2);assert.match(b.headers['Set-Cookie'],/Max-Age=0/);
 });
+
+test('rate limited login returns 429 without invoking password verification',async()=>{
+ const {calls}=setup();
+ const flow={login:async()=>{throw Error('must not run')}};
+ const api=createAuthApiHandlers(null,{flow,throttle:{allow:async()=>false}});
+ const r=await api.login({identifier:'TestUser_2026',password:'good'});
+ assert.equal(r.status,429);assert.equal(r.headers['Retry-After'],'900');
+ assert.equal(calls.length,0);
+});
+test('allowed login passes through shared throttle',async()=>{
+ const keys=[],flow={login:async()=>({accountId:'account-1',setCookie:'secure-cookie'})};
+ const api=createAuthApiHandlers(null,{flow,throttle:{allow:async key=>{keys.push(key);return true}}});
+ const r=await api.login({identifier:'TestUser_2026',password:'good'});
+ assert.equal(r.status,200);assert.deepEqual(keys,['TestUser_2026']);
+});
