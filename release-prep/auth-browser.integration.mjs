@@ -193,9 +193,25 @@ test('virtual authenticator registers a passkey, signs in, and rejects challenge
     assert.equal((await context.credentials.get({rpId:'127.0.0.1'})).length,1,'virtual authenticator holds the registered private credential');
     const logout=await page.evaluate(async()=>{const r=await fetch('/test-auth/logout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});return r.status});
     assert.equal(logout,200);
+    const passkeyDiagnostics=[];
+    page.on('pageerror',error=>passkeyDiagnostics.push('pageerror:'+error.message));
+    page.on('response',async response=>{
+      if(response.url().includes('/test-auth/passkey-')){
+        let body='';
+        try{body=await response.text()}catch{}
+        passkeyDiagnostics.push(`api:${response.status()} ${new URL(response.url()).pathname} ${body}`);
+      }
+    });
     await page.locator('#identifier').fill(account.mioId);
     await page.locator('#login').click();
-    await page.getByText('パスキーでログインしました。').waitFor();
+    await page.waitForFunction(()=>{
+      const value=document.querySelector('#status')?.textContent?.trim()||'';
+      return value==='パスキーでログインしました。'||
+        (value!==''&&value!=='パスキーを登録しました。この端末でログインできます。');
+    },{timeout:12000}).catch(()=>{});
+    const loginMessage=(await page.locator('#status').innerText()).trim();
+    assert.match(loginMessage,/パスキーでログインしました。/,
+      `passkey login UI: ${loginMessage}; ${passkeyDiagnostics.join(' | ')}`);
     assert.ok((await context.cookies(appOrigin)).some(x=>x.name==='__Host-mio_session'),'passkey login issues the regular server session cookie');
     const replay=await page.evaluate(async()=>{
       const start=await post('/test-auth/passkey-login-options',{identifier:document.querySelector('#identifier').value});
