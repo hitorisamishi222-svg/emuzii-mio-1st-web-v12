@@ -6,7 +6,7 @@ const headers={origin,'sec-fetch-site':'same-origin','content-type':'application
 const calls=[];
 const api={
  login:async body=>{calls.push(['login',body]);return {status:200,body:{ok:true}}},
- me:async cookie=>{calls.push(['me',cookie]);return {status:200,body:{accountId:'demo'}}},
+ me:async cookie=>{calls.push(['me',cookie]);return cookie==='invalid'?{status:401,body:{error:'unauthorized'}}:{status:200,body:{accountId:'demo'}}},
  devices:async cookie=>{calls.push(['devices',cookie]);return {status:200,body:{devices:[]}}},
  logout:async cookie=>{calls.push(['logout',cookie]);return {status:200,body:{ok:true}}},
  logoutAll:async cookie=>{calls.push(['logoutAll',cookie]);return {status:200,body:{ok:true}}},
@@ -58,4 +58,13 @@ test('rejects invalid login fields before calling authentication or throttle',as
   assert.equal(res.status,400);
  }
  assert.equal(calls.length,0);
+});
+
+test('logout and device mutation reject missing active session',async()=>{
+ calls.length=0;
+ for(const path of ['/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device']){
+  const result=await route({path,method:'POST',headers:{...headers,cookie:'invalid'},body:{sessionId:'a'.repeat(64)}});
+  assert.equal(result.status,401,path);
+ }
+ assert.equal(calls.some(([kind])=>['logout','logoutAll','revoke'].includes(kind)),false);
 });
