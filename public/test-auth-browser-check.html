@@ -1,0 +1,20 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>みお開発版・通信検証</title><style>body{font-family:system-ui,sans-serif;max-width:600px;margin:32px auto;padding:16px;background:#101a2a;color:#fff}button{padding:14px 20px;border:0;border-radius:12px;background:#91e4bd;font-size:17px}li{margin:12px 0}small{color:#ccd}</style></head><body><h1>みお開発版・通信検証</h1><p>本番には接続しません。ブラウザから開発用APIへ実際にHTTPS通信します。</p><button id="run">通信テスト開始</button><ol id="results"></ol><p id="summary"></p><small>個人情報・ログイン情報は入力しません。テスト用DBの仮アカウントも作りません。</small><script>
+const tests=[
+ ['未ログイン拒否','/api/test-auth/me',{method:'GET'},401],
+ ['端末一覧の未認証拒否','/api/test-auth/devices',{method:'GET'},401],
+ ['不正メソッド拒否','/api/test-auth/me',{method:'POST'},405],
+ ['不正なJSON形式拒否','/api/test-auth/login',{method:'POST',headers:{'Content-Type':'text/plain'},body:'{}'},415],
+ ['無効なログイン入力拒否','/api/test-auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},400],
+ ['不正な失効要求の未認証拒否','/api/test-auth/revoke-device',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},401]
+];
+document.querySelector('#run').onclick=async()=>{
+ const list=document.querySelector('#results');list.replaceChildren();let passed=0;
+ for(const [name,url,options,expected] of tests){
+  const li=document.createElement('li');
+  try{const r=await fetch(url,{...options,credentials:'same-origin',cache:'no-store'});const ok=r.status===expected;passed+=Number(ok);li.textContent=(ok?'✅ ':'❌ ')+name+'：HTTP '+r.status+'（期待 '+expected+'）'}
+  catch(e){li.textContent='❌ '+name+'：通信失敗 '+String(e.message)}
+  list.append(li);
+ }
+ document.querySelector('#summary').textContent='結果：'+passed+'/'+tests.length+' 合格';
+};
+</script></body></html>
