@@ -11,14 +11,14 @@ export function validateLoginId(value){
 export function createDemoRegistry(){
  const accounts=new Map(),mioIds=new Map(),aliases=new Map();
  function register({accountId,mioId,loginId,attendance=0,rights=0}){
-  if(!accountId||!mioId||accounts.has(accountId)||mioIds.has(normalizeLoginId(mioId)))throw Error('duplicate account or MIO-ID');
+  if(!accountId||!mioId||accounts.has(accountId)||mioIds.has(normalizeLoginId(mioId))||aliases.has(normalizeLoginId(mioId)))throw Error('duplicate account or MIO-ID');
   if(validateLoginId(loginId))throw Error('invalid login ID');
   const canonical=normalizeLoginId(loginId);
   if(aliases.has(canonical)||mioIds.has(canonical))throw Error('identifier already used');
   const a={accountId,mioId,loginId,attendance,rights,sessions:new Set(),wins:[]};
   accounts.set(accountId,a);mioIds.set(normalizeLoginId(mioId),accountId);aliases.set(canonical,accountId);return a;
  }
- function resolve(identifier){const id=normalizeLoginId(identifier);return accounts.get(mioIds.get(id)||aliases.get(id))||null}
+ function resolve(identifier){if(typeof identifier!=='string'||!identifier)return null;const id=normalizeLoginId(identifier);return accounts.get(mioIds.get(id)||aliases.get(id))||null}
  function changeLoginId(accountId,newId){
   const a=accounts.get(accountId);if(!a)throw Error('account not found');
   if(validateLoginId(newId))throw Error('invalid login ID');
