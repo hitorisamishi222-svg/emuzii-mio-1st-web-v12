@@ -47,7 +47,7 @@ test('allowed login passes through shared throttle',async()=>{
  const keys=[],flow={login:async()=>({accountId:'account-1',setCookie:'secure-cookie'})};
  const api=createAuthApiHandlers(null,{flow,throttle:{allow:async key=>{keys.push(key);return true}}});
  const r=await api.login({identifier:'TestUser_2026',password:'good'});
- assert.equal(r.status,200);assert.deepEqual(keys,['TestUser_2026']);
+ assert.equal(r.status,200);assert.deepEqual(keys,['testuser_2026']);
 });
 
 test('device listing requires an authenticated account',async()=>{
@@ -75,4 +75,14 @@ test('malformed credentials are rejected before throttle or password verificatio
   assert.equal((await api.login(body)).status,400);
  }
  assert.deepEqual(calls,[]);
+});
+
+test('case and surrounding spaces cannot bypass shared login rate limiter',async()=>{
+ const keys=[];
+ const flow={login:async()=>({accountId:'test',setCookie:'cookie'})};
+ const throttle={allow:async key=>{keys.push(key);return true}};
+ const api=createAuthApiHandlers(null,{flow,throttle});
+ await api.login({identifier:' TestUser_2026 ',password:'good'});
+ await api.login({identifier:'testuser_2026',password:'good'});
+ assert.deepEqual(keys,['testuser_2026','testuser_2026']);
 });
