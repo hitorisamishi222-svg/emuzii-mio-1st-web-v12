@@ -10,7 +10,7 @@ export default async function handler(req,res){
  const gate=testAuthDeploymentGate(process.env);
  if(!gate.ok)return res.status(503).json({error:'test_environment_not_ready'});
  const host=String(req.headers.host||'');
- if(!/^emuzii-mio-1st-web-v12-68vp-[a-z0-9-]+\.vercel\.app$/.test(host))return res.status(403).json({error:'invalid_host'});
+ if(!/^emuzii-mio-1st-web-v12-[a-z0-9-]+\.vercel\.app$/.test(host))return res.status(403).json({error:'invalid_host'});
  const trustedOrigin='https://'+host;
  const path='/test-auth/'+String(req.query?.route||'');
  if(!['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device','/test-auth/passkey-register-options','/test-auth/passkey-register-verify','/test-auth/passkey-login-options','/test-auth/passkey-login-verify'].includes(path))return res.status(404).json({error:'not_found'});
