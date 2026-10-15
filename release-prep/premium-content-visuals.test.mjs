@@ -11,11 +11,11 @@ const pages=[
  'home-top-demo.html','home-updates-demo.html','news.html','schedule.html'
 ];
 test('premium design stylesheet is static, allowlisted, and accessible only within isolated preview',()=>{
- assert(cfg.builds.some(x=>x.src==='next-premium-v2.css'&&x.use==='@vercel/static'));
- const route=cfg.routes.find(x=>x.src==='^/next-premium-v2\\.css$');
- assert(route&&route.dest==='/next-premium-v2.css');
- assert(cfg.routes.indexOf(route)<cfg.routes.findIndex(x=>x.src==='^/api(?:/.*)?$'));
- assert(cfg.routes.some(x=>x.src==='^/api(?:/.*)?$'&&x.status===404));
+ assert(cfg.buildCommand.includes("-name '*.css'"));
+ assert(cfg.buildCommand.includes('cp -t public/'));
+ assert(cfg.buildCommand.includes("! -name 'api-*.js'"));
+ assert(cfg.buildCommand.includes("! -name 'bridge.js'"));
+ assert(!('builds' in cfg)&&!('routes' in cfg));
  for(const path of pages)assert(read(path).includes('href="/next-premium-v2.css"'),path);
 });
 
@@ -54,18 +54,14 @@ test('31-day attendance progress and medals use explicit demo labels and accessi
 });
 
 test('production-only code remains blocked from static replica routes',()=>{
- for(const path of ['/api/gacha','/api/checkin','/api/register','/bridge.js','/index.html']){
-  const first=cfg.routes.find(r=>new RegExp(r.src).test(path));
-  assert.equal(first?.status,404,path);
- }
- assert(!cfg.builds.some(x=>x.src==='index.html'||x.src==='gacha.html'||x.src==='bridge.js'||x.src.startsWith('api')));
+ for(const pattern of ["! -name 'api-*.js'","! -name 'bridge.js'","! -name 'index.html'","! -name 'gacha.html'"])assert(cfg.buildCommand.includes(pattern),pattern);
 });
 
 test('premium HOME keeps the existing approved desktop and mobile Mio portrait art',()=>{
  assert(read('backgrounds.css').includes("url('/assets/bg-top-desktop.webp')"));
  assert(read('backgrounds.css').includes("url('/assets/bg-top-mobile.webp')"));
  for(const image of ['assets/bg-top-desktop.webp','assets/bg-top-mobile.webp'])
-  assert(cfg.builds.some(x=>x.src===image&&x.use==='@vercel/static'),image);
+  assert(cfg.buildCommand.includes('cp -R assets public/assets'),image+' assets folder must be copied');
  assert(css.includes('body.next-experience,body.next-premium-community{\n background-image:'));
  assert(!css.includes('body.next-experience,body.next-premium-home,body.next-premium-community{\n background-image:'));
  assert(read('home-top-demo.html').includes('class="next-premium-home"'));
