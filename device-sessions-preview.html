@@ -13,7 +13,22 @@ document.getElementById('probe').onclick=async function(){
    for(const item of listData.devices){
     const row=document.createElement('div');row.className='device';
     const title=document.createElement('strong');title.textContent='📱 '+String(item.deviceLabel||'名前なしの端末');
-    row.append(title);box.append(row);
+    row.append(title);
+    if(typeof item.sessionId==='string'&&/^[0-9a-f]{64}$/.test(item.sessionId)){
+     const revoke=document.createElement('button');revoke.type='button';revoke.textContent='このTEST端末からログアウト';
+     revoke.onclick=async()=>{
+      if(!confirm('このTEST端末のログインを解除しますか？'))return;
+      revoke.disabled=true;
+      try{
+       const result=await fetch('/test-auth/revoke-device',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({sessionId:item.sessionId})});
+       if(!(result.headers.get('content-type')||'').includes('application/json'))throw Error('TEST API未接続');
+       const data=await result.json();if(!result.ok||data.revoked!==true)throw Error('解除できませんでした');
+       row.remove();out.textContent='TEST端末のログインを解除しました';
+      }catch{out.textContent='TEST端末の解除に失敗しました'}finally{revoke.disabled=false}
+     };
+     row.append(revoke);
+    }
+    box.append(row);
    }
    if(!listData.devices.length)box.textContent='登録端末はありません';
    document.getElementById('activeDevices').hidden=false;
