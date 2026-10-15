@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 function page(name) {
  const html=readFileSync(new URL('../'+name,import.meta.url),'utf8');
- const scripts=[...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/g)].map(x=>x[1]);
+ const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
  assert.ok(scripts.length>0,name+' must contain behavior');
  for(const source of scripts) new vm.Script(source,{filename:name});
  return html;
