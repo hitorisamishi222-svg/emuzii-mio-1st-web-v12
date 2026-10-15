@@ -26,7 +26,7 @@ export function createTestHttpRouter({api,throttle,trustedOrigin,passkeys}={}){
    if(path.endsWith('passkey-register-options')||path.endsWith('passkey-register-verify')){
     const session=await api.me(cookie);
     if(session.status!==200)return {status:401,body:{error:'unauthorized'}};
-    if(path.endsWith('/register/options'))return passkeys.registrationOptions(session.body.accountId);
+    if(path.endsWith('passkey-register-options'))return passkeys.registrationOptions(session.body.accountId);
     if(typeof body.challengeId!=='string'||body.challengeId.length>64||!body.response)return {status:400,body:{error:'invalid_request'}};
     return passkeys.verifyRegistration(session.body.accountId,body);
    }
