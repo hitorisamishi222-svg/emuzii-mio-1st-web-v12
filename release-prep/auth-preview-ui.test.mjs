@@ -36,6 +36,7 @@ test('browser API probe explains disabled TEST environment and does not claim fa
  const html=page('public/test-auth-browser-check.html');
  assert.match(html,/test_environment_not_ready/);
  assert.match(html,/環境未設定：テスト未実行（0\/5）/);
+ assert.match(html,/button\.disabled=false;\s*return/,'retry must remain available if preview config is corrected');
  assert.match(html,/credentials:'same-origin'/);
  assert.doesNotMatch(html,/fetch\(['"]https?:\/\//);
 });
