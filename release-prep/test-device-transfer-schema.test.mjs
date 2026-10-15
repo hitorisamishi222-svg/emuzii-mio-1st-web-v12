@@ -16,11 +16,14 @@ test('device transfer migration only adds TEST schema objects',()=>{
  ]);
  assert(!/\b(?:DROP|TRUNCATE|DELETE|UPDATE)\s+(?:TABLE\s+)?(?:public|emuzii|main)\./i.test(sql));
 });
-test('sessions rotate against participant identity, not browser identity',()=>{
- assert.match(sql,/test_participant_ref text PRIMARY KEY/);
- assert.match(sql,/active_device_id text NOT NULL/);
- assert.match(sql,/generation bigint NOT NULL CHECK \(generation >= 1\)/);
+test('sessions are stored per participant, device and revocable session',()=>{
+ assert.match(sql,/test_session_ref text PRIMARY KEY/);
+ assert.match(sql,/test_participant_ref text NOT NULL/);
+ assert.match(sql,/device_id text NOT NULL/);
  assert.match(sql,/session_digest char\(64\)/);
+ assert.match(sql,/revoked_at timestamptz/);
+ assert.match(sql,/idx_next_test_one_live_session_per_device/);
+ assert.match(sql,/idx_next_test_sessions_by_participant/);
  assert.doesNotMatch(sql,/raw_session_token|plain_login_id/i);
 });
 test('one-time verified approvals and test-only history retain participant ID',()=>{
@@ -29,6 +32,7 @@ test('one-time verified approvals and test-only history retain participant ID',(
  assert.match(sql,/consumed_at timestamptz/);
  assert.match(sql,/category IN \('attendance','gacha','gallery'\)/);
  assert.match(sql,/test_participant_ref text NOT NULL/);
+ assert.match(sql,/event_kind IN \('device_added','session_revoked'\)/);
  assert.doesNotMatch(sql,/CREATE TABLE IF NOT EXISTS\s+public\./i);
 });
 test('RLS is force enabled with zero client policies for all new tables',()=>{
@@ -39,4 +43,10 @@ test('RLS is force enabled with zero client policies for all new tables',()=>{
  }
  assert(sql.includes('REVOKE ALL ON ALL TABLES IN SCHEMA next_test FROM PUBLIC'));
  assert(!/^\s*CREATE\s+POLICY\b/im.test(sql),'SQL must contain no CREATE POLICY statement');
+});
+
+test('a participant may keep multiple devices active and revoke one session',()=>{
+ assert.doesNotMatch(sql,/test_participant_ref text PRIMARY KEY/);
+ assert.match(sql,/ON next_test\.test_device_sessions\(test_participant_ref,device_id\)\s+WHERE revoked_at IS NULL/);
+ assert.doesNotMatch(sql,/active_device_id|previous_generation|next_generation/);
 });
