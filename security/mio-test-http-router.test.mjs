@@ -68,3 +68,28 @@ test('logout and device mutation reject missing active session',async()=>{
  }
  assert.equal(calls.some(([kind])=>['logout','logoutAll','revoke'].includes(kind)),false);
 });
+
+test('rejects malformed mutation requests before invoking session or device services',async()=>{
+ calls.length=0;
+ const cases=[
+  {path:'/test-auth/revoke-device',method:'GET',headers,body:{sessionId:'a'.repeat(64)},status:405},
+  {path:'/test-auth/revoke-device',method:'POST',headers:{...headers,origin:'https://other.invalid'},body:{sessionId:'a'.repeat(64)},status:403},
+  {path:'/test-auth/logout-all',method:'POST',headers:{...headers,'sec-fetch-site':'cross-site'},body:{},status:403},
+  {path:'/test-auth/logout',method:'POST',headers:{...headers,'content-type':'text/plain'},body:{},status:415},
+  {path:'/test-auth/revoke-device',method:'POST',headers,body:null,status:400},
+  {path:'/test-auth/revoke-device',method:'POST',headers,body:[],status:400}
+ ];
+ for(const req of cases){
+  const result=await route(req);
+  assert.equal(result.status,req.status,req.path);
+ }
+ assert.equal(calls.length,0);
+});
+test('read endpoints reject invalid method and cross-site fetch metadata',async()=>{
+ calls.length=0;
+ for(const path of ['/test-auth/me','/test-auth/devices']){
+  assert.equal((await route({path,method:'POST',headers,body:{}})).status,405);
+  assert.equal((await route({path,method:'GET',headers:{'sec-fetch-site':'cross-site'}})).status,403);
+ }
+ assert.equal(calls.length,0);
+});
