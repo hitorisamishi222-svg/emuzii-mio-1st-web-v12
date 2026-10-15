@@ -30,6 +30,7 @@ const throttle = {async allow() { return true; }};
 const files = new Map([
   ['/login-recovery-demo.html', ['login-recovery-demo.html', 'text/html; charset=utf-8']],
   ['/device-sessions-preview.html', ['device-sessions-preview.html', 'text/html; charset=utf-8']],
+  ['/passkey-preview.html', ['passkey-preview.html', 'text/html; charset=utf-8']],
   ['/mio-approved-layout-preview.css', ['mio-approved-layout-preview.css', 'text/css; charset=utf-8']],
   ['/mio-approved-background-guard.js', ['mio-approved-background-guard.js', 'text/javascript; charset=utf-8']],
   ['/mio-auth-rules-v21.js', ['mio-auth-rules-v21.js', 'text/javascript; charset=utf-8']],
@@ -172,4 +173,36 @@ test('browser UI clears its current cookie and logout-all revokes every remainin
     await page2.locator('#probe').click();
     await page2.getByText('API応答あり・未ログイン').waitFor();
   } finally { await first.close(); await second.close(); }
+});
+
+
+test('virtual authenticator registers a passkey, signs in, and rejects challenge replay', async () => {
+  const context = await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  try {
+    await context.credentials.install();
+    const page = await login(context, account.loginId);
+    await page.goto(appOrigin + '/passkey-preview.html');
+    await page.getByText('TESTログイン中です。パスキーを登録できます。').waitFor();
+    await page.locator('#register').click();
+    await page.getByText('TESTログイン中です。パスキーを登録できます。').waitFor();
+    const saved = await pool.query('SELECT credential_id,public_key,sign_count FROM mio_passkey_credentials WHERE account_id=$1',[account.accountId]);
+    assert.equal(saved.rowCount,1,'server stores a public credential for the synthetic account');
+    assert.ok(saved.rows[0].public_key.length>32);
+    assert.equal((await context.credentials.get({rpId:'localhost'})).length,1,'virtual authenticator holds the registered private credential');
+    const logout=await page.evaluate(async()=>{const r=await fetch('/test-auth/logout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});return r.status});
+    assert.equal(logout,200);
+    await page.locator('#identifier').fill(account.mioId);
+    await page.locator('#login').click();
+    await page.getByText('パスキーでログインしました。').waitFor();
+    assert.ok((await context.cookies(appOrigin)).some(x=>x.name==='__Host-mio_session'),'passkey login issues the regular server session cookie');
+    const replay=await page.evaluate(async()=>{
+      const start=await post('/test-auth/passkey/login/options',{identifier:document.querySelector('#identifier').value});
+      const assertion=await navigator.credentials.get({publicKey:publicKeyOptions(start.d.options)});
+      const body={challengeId:start.d.challengeId,response:serialize(assertion),deviceLabel:'再送テスト'};
+      const first=await post('/test-auth/passkey/login/verify',body);
+      const second=await post('/test-auth/passkey/login/verify',body);
+      return [first.r.status,second.r.status,second.d.error];
+    });
+    assert.deepEqual(replay,[200,400,'challenge_expired'],'each authentication challenge is consumed once');
+  } finally { await context.close(); }
 });

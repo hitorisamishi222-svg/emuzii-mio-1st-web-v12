@@ -6,6 +6,8 @@ import {checkAuthRequest} from '../security/mio-auth-request-guard.mjs';
 import {createPostgresIdentifierStore} from '../security/mio-postgres-identifier-store.mjs';
 import {validateLoginId} from '../mio-auth-rules-v21.js';
 import {drawGachaTransaction} from '../security/mio-gacha-transaction.mjs';
+import {createPasskeyService} from '../security/mio-passkey-service.mjs';
+import {createTestHttpRouter} from '../security/mio-test-http-router.mjs';
 
 export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
   if (process.env.CI !== 'true') throw Error('CI-only HTTP harness');
@@ -19,6 +21,8 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
   checkAuthRequest({}, {trustedOrigin});
   if (typeof throttle?.allow !== 'function') throw Error('database throttle required');
   const flow = createAuthFlow(pool), api = createAuthApiHandlers(pool, {flow});
+  const passkeys=createPasskeyService(pool,{origin:trustedOrigin,rpID:new URL(trustedOrigin).hostname});
+  const testRouter=createTestHttpRouter({api,passkeys,trustedOrigin,throttle});
   const identifiers = createPostgresIdentifierStore(pool);
   const reads = new Set(['/test-auth/me', '/test-auth/devices']);
   const writes = new Set(['/test-auth/login', '/test-auth/logout', '/test-auth/logout-all',
@@ -31,7 +35,7 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
     }
     try {
       const path = new URL(req.url, 'http://127.0.0.1').pathname;
-      if (!reads.has(path) && !writes.has(path)) { req.resume(); return send(404, {error: 'not_found'}); }
+      if (!reads.has(path) && !writes.has(path) && !path.startsWith('/test-auth/passkey/')) { req.resume(); return send(404, {error: 'not_found'}); }
       if (reads.has(path)) {
         req.resume();
         if (req.method !== 'GET') return send(405, {error: 'method_not_allowed'});
@@ -46,12 +50,16 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
       let size = 0; const chunks = [];
       for await (const chunk of req) {
         size += chunk.length;
-        if (size > 4096) { req.resume(); return send(413, {error: 'payload_too_large'}); }
+        if (size > 65536) { req.resume(); return send(413, {error: 'payload_too_large'}); }
         chunks.push(chunk);
       }
       let body;
       try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return send(400, {error: 'invalid_json'}); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return send(400, {error: 'invalid_request'});
+      if(path.startsWith('/test-auth/passkey/')){
+        const result=await testRouter({path,method:req.method,headers:req.headers,body,trustedClientIp:req.socket.remoteAddress});
+        return send(result.status,result.body,result.headers);
+      }
       if (path === '/test-auth/login') {
         if (typeof body.identifier !== 'string' || body.identifier.length > 100 || typeof body.password !== 'string' || body.password.length > 1024 || (body.deviceLabel !== undefined && typeof body.deviceLabel !== 'string')) return send(400, {error: 'invalid_request'});
         // Socket peer only: client-supplied forwarding headers cannot bypass throttle.

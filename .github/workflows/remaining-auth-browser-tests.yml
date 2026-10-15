@@ -7,6 +7,10 @@ on:
       - '.github/workflows/remaining-auth-browser-tests.yml'
       - 'release-prep/auth-browser.integration.mjs'
       - 'release-prep/test-auth-http-server.mjs'
+      - 'security/mio-passkey-service.mjs'
+      - 'security/mio-test-http-router.mjs'
+      - 'security/mio-passkey-schema.preview.sql'
+      - 'passkey-preview.html'
       - 'login-recovery-demo.html'
       - 'device-sessions-preview.html'
 permissions:
@@ -42,7 +46,9 @@ jobs:
         with:
           node-version: '22'
       - name: Install pinned browser and database drivers into temporary CI directory
-        run: npm install --prefix "$RUNNER_TEMP/mio-auth-browser" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.56.1 pg@8.16.3
+        run: npm install --prefix "$RUNNER_TEMP/mio-auth-browser" --ignore-scripts --no-audit --no-fund --save-exact playwright@1.61.0 pg@8.16.3
+      - name: Install pinned WebAuthn server library in repository module resolution path
+        run: npm install --ignore-scripts --no-audit --no-fund --no-save --no-package-lock @simplewebauthn/server@13.2.2
       - name: Install selected browser and system dependencies
         run: '"$RUNNER_TEMP/mio-auth-browser/node_modules/.bin/playwright" install --with-deps "$MIO_BROWSER"'
       - name: Create short lived CI-only localhost TLS certificate
@@ -52,6 +58,7 @@ jobs:
           MIO_TEST_DATABASE_URL: postgresql://mio_test:mio_ci_only@127.0.0.1:5432/mio_ci_test
           MIO_TEST_PG_MODULE: ${{ runner.temp }}/mio-auth-browser/node_modules/pg
           MIO_BROWSER_MODULE: ${{ runner.temp }}/mio-auth-browser/node_modules/playwright
+          MIO_TEST_WEBAUTHN_MODULE: ${{ github.workspace }}/node_modules/@simplewebauthn/server
           MIO_TEST_TLS_KEY: ${{ runner.temp }}/mio-auth-test.key
           MIO_TEST_TLS_CERT: ${{ runner.temp }}/mio-auth-test.crt
         run: node --test release-prep/auth-browser.integration.mjs

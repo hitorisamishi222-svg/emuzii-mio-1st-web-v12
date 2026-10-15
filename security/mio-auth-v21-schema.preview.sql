@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS mio_gacha_draws_v21 (
  UNIQUE(account_id,request_key)
 );
 CREATE INDEX IF NOT EXISTS mio_gacha_draws_account_idx ON mio_gacha_draws_v21(account_id,created_at);
+CREATE TABLE IF NOT EXISTS mio_passkey_credentials(credential_id text PRIMARY KEY,account_id uuid NOT NULL REFERENCES mio_accounts_v21(account_id) ON DELETE CASCADE,public_key bytea NOT NULL,sign_count bigint NOT NULL DEFAULT 0 CHECK(sign_count>=0),transports text[] NOT NULL DEFAULT '{}',device_type text NOT NULL CHECK(device_type IN ('singleDevice','multiDevice')),backed_up boolean NOT NULL DEFAULT false,created_at timestamptz NOT NULL DEFAULT now(),last_used_at timestamptz);
+CREATE INDEX IF NOT EXISTS mio_passkey_credentials_account_idx ON mio_passkey_credentials(account_id);
+CREATE TABLE IF NOT EXISTS mio_passkey_challenges(challenge_id uuid PRIMARY KEY,account_id uuid NOT NULL REFERENCES mio_accounts_v21(account_id) ON DELETE CASCADE,challenge text NOT NULL,ceremony text NOT NULL CHECK(ceremony IN ('registration','authentication')),expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS mio_passkey_challenges_expiry_idx ON mio_passkey_challenges(expires_at);
 -- Application transaction: BEGIN; reserve idempotency key, UPDATE balance
 -- SET remaining=remaining-1 WHERE account_id=$1 AND remaining>0 RETURNING remaining;
 -- record outcome; COMMIT. On error ROLLBACK. Never consume rights in browser.

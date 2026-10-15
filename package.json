@@ -7,6 +7,7 @@
     "test": "node --test *.test.mjs *.test.js release-prep/*.test.mjs security/*.test.js security/*.test.mjs"
   },
   "dependencies": {
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "@simplewebauthn/server": "13.2.2"
   }
 }
