@@ -132,3 +132,13 @@ Vercel READY。ブラウザーで環境未設定表示と「0/5未実行」を�
 - 終了時の専用DB集計: 架空アカウント1件、識別子2件、セッション5件、失効済み5件、有効セッション0件、ガチャ残数レコード1件、ガチャ履歴0件。テスト用架空アカウントと共通fixtureは今後の検証用に保持。
 - これまでのCI合格結果は再実行していない。物理iPhone Safari/Android Chrome、Apple/Googleパスワードマネージャー、WebAuthn実装に依存するパスキー登録・署名検証・復旧、永続運用ストアでの負荷/再起動検証は引き続き未完了。
 - この作業中もmain、本番サイト、GAS、実参加者データには変更なし。
+
+
+## ログインフォーム・ブラウザー端末テスト追加 — 2026-10-15
+
+- [認証Cookie/端末ブラウザーCI 38817119428](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38817119428): Chromium 3/3、WebKit 3/3合格。テストは一時PostgreSQL 16と架空fixtureを使い、終了時にCI DBを破棄。
+- 実画面のログインフォームを意味的なHTML formにし、username/current-password autocomplete、Enter送信、TEST API検証後のログインを確認。Secure/HttpOnly/SameSite=Lax cookie、2つのブラウザーコンテキスト、個別端末失効、全端末ログアウトも確認。
+- 初回に検出したフォーム送信接続漏れと送信ハンドラー名の衝突を修正。過去のハンドラー名を前提にした契約テストも新名称に合わせ、[UI契約CI 38817332413](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38817332413) で合格。安全ゲート [38817119456](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38817119456) も成功。
+- 開発Previewは最新コード `f2db7d0585b9c0f06834ce00f117ec678f808463` でREADY。実機用URLは応答確認済み。CIはiPhone Safari/Android Chrome実機ではなく、端末内のApple/GoogleパスワードマネージャーUIも確認していない。
+- パスキーの画面・説明はあるが、WebAuthnサーバー登録/署名検証/失効/復旧機能は未実装で、パスキー認証テストは実行できない。既存の正直な未実装表示を維持する。
+- main、本番サイト、GAS、参加者データは変更なし。
