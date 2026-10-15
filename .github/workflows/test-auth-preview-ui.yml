@@ -1,0 +1,25 @@
+name: TEST auth preview UI contract
+on:
+  push:
+    branches:
+      - release/v2-next-integrated-replica
+    paths:
+      - 'login-recovery-demo.html'
+      - 'device-sessions-preview.html'
+      - 'release-prep/auth-preview-ui.test.mjs'
+      - '.github/workflows/test-auth-preview-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auth-preview-ui:
+    if: github.ref == 'refs/heads/release/v2-next-integrated-replica'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate only TEST auth preview UI contracts
+        run: node --test release-prep/auth-preview-ui.test.mjs
