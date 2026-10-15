@@ -1,1 +1,12 @@
-{"name":"emuzii-mio-anniversary","version":"1.8.1","private":true,"type":"module","scripts":{"test":"node --test *.test.mjs *.test.js release-prep/*.test.mjs security/*.test.js security/*.test.mjs"}}
+{
+  "name": "emuzii-mio-anniversary",
+  "version": "1.8.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test *.test.mjs *.test.js release-prep/*.test.mjs security/*.test.js security/*.test.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}
