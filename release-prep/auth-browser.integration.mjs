@@ -190,7 +190,7 @@ test('virtual authenticator registers a passkey, signs in, and rejects challenge
     const saved = await pool.query('SELECT credential_id,public_key,sign_count FROM mio_passkey_credentials WHERE account_id=$1',[account.accountId]);
     assert.equal(saved.rowCount,1,'server stores a public credential for the synthetic account');
     assert.ok(saved.rows[0].public_key.length>32);
-    assert.equal((await context.credentials.get({rpId:'localhost'})).length,1,'virtual authenticator holds the registered private credential');
+    assert.equal((await context.credentials.get({rpId:'127.0.0.1'})).length,1,'virtual authenticator holds the registered private credential');
     const logout=await page.evaluate(async()=>{const r=await fetch('/test-auth/logout',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});return r.status});
     assert.equal(logout,200);
     await page.locator('#identifier').fill(account.mioId);
