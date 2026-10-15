@@ -2,6 +2,7 @@ import {Pool} from 'pg';
 import {randomUUID} from 'node:crypto';
 import {hashPassword} from '../security/mio-auth-crypto.mjs';
 import {createAuthApiHandlers} from '../security/mio-auth-api-adapter.mjs';
+import {createTestHttpRouter} from '../security/mio-test-http-router.mjs';
 import {testAuthDeploymentGate} from '../security/mio-test-deployment-gate.mjs';
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
@@ -30,8 +31,22 @@ export default async function handler(req,res){
   const out=await api.logout(thirdCookie);
   const outExpired=await api.me(thirdCookie);
   const extraOk=second.status===200&&all.status===200&&all.body.revoked===1&&allExpired.status===401&&third.status===200&&out.status===200&&outExpired.status===401;
-  const ok=extraOk&&login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
-  return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401,logoutAll:all.status===200&&allExpired.status===401,logout:out.status===200&&outExpired.status===401}});
+  const origin='https://emuzii-mio-1st-web-v12-68vp-test.vercel.app';
+  const router=createTestHttpRouter({api,throttle:{allow:async()=>true},trustedOrigin:origin});
+  const request={path:'/test-auth/login',method:'POST',headers:{origin,'content-type':'application/json','sec-fetch-site':'same-origin'},trustedClientIp:'127.0.0.1',body:{identifier:loginId,password,deviceLabel:'TEST-HTTP'}};
+  const rejectedOrigin=await router({...request,headers:{...request.headers,origin:'https://evil.example'}});
+  const rejectedType=await router({...request,headers:{...request.headers,'content-type':'text/plain'}});
+  const rejectedIp=await router({...request,trustedClientIp:''});
+  const rejectedMethod=await router({...request,method:'GET'});
+  const accepted=await router(request);
+  const httpCookie=accepted.headers?.['Set-Cookie']?.split(';')[0]||'';
+  const httpMe=await router({path:'/test-auth/me',method:'GET',headers:{cookie:httpCookie}});
+  const httpDevices=await router({path:'/test-auth/devices',method:'GET',headers:{cookie:httpCookie}});
+  const httpLogout=await router({path:'/test-auth/logout',method:'POST',headers:{...request.headers,cookie:httpCookie},body:{}});
+  const httpExpired=await router({path:'/test-auth/me',method:'GET',headers:{cookie:httpCookie}});
+  const httpChecks={origin:rejectedOrigin.status===403,contentType:rejectedType.status===415,clientIp:rejectedIp.status===503,method:rejectedMethod.status===405,login:accepted.status===200,me:httpMe.status===200,devices:httpDevices.status===200,logout:httpLogout.status===200,expired:httpExpired.status===401};
+  const ok=Object.values(httpChecks).every(Boolean)&&extraOk&&login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
+  return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401,logoutAll:all.status===200&&allExpired.status===401,logout:out.status===200&&outExpired.status===401},httpChecks});
  }catch(e){return res.status(503).json({status:'failed',error:'test_execution_failed'})}
  finally{if(created)await pool.query('DELETE FROM mio_sessions_v21 WHERE account_id=$1',[id]).catch(()=>{});if(created)await pool.query('DELETE FROM mio_identifiers_v21 WHERE account_id=$1',[id]).catch(()=>{});if(created)await pool.query('DELETE FROM mio_accounts_v21 WHERE account_id=$1',[id]).catch(()=>{});await pool.end()}
 }
