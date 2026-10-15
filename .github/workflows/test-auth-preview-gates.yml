@@ -1,0 +1,28 @@
+name: TEST auth preview gate and router tests
+on:
+  push:
+    branches:
+      - release/v2-next-integrated-replica
+    paths:
+      - 'security/mio-test-deployment-gate.mjs'
+      - 'security/mio-test-deployment-gate.test.mjs'
+      - 'security/mio-test-http-router.mjs'
+      - 'security/mio-test-http-router.test.mjs'
+      - 'security/mio-login-route.mjs'
+      - 'security/mio-auth-request-guard.mjs'
+      - '.github/workflows/test-auth-preview-gates.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-auth-preview:
+    if: github.ref == 'refs/heads/release/v2-next-integrated-replica'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test only the changed TEST auth router and deployment gate
+        run: node --test security/mio-test-http-router.test.mjs security/mio-test-deployment-gate.test.mjs
