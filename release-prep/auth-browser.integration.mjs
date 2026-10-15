@@ -1,12 +1,13 @@
 // CI-only browser → HTTPS → test HTTP auth API → temporary PostgreSQL.
 // Runs the repository's actual login and device-management pages with synthetic accounts.
-import test, {before, after} from 'node:test';
+import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer as createHttpsServer} from 'node:https';
 import {request as httpRequest} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {registerAccountTransaction} from '../security/mio-postgres-registration.mjs';
+import {sessionTokenDigest} from '../security/mio-auth-crypto.mjs';
 import {startTestAuthHttpServer} from './test-auth-http-server.mjs';
 
 assert.equal(process.env.CI, 'true', 'browser auth verification is CI-only');
@@ -18,7 +19,7 @@ assert.equal(database.pathname, '/mio_ci_test');
 assert.equal(database.username, 'mio_test');
 const {Pool} = createRequire(import.meta.url)(process.env.MIO_TEST_PG_MODULE);
 const {chromium, webkit} = createRequire(import.meta.url)(process.env.MIO_BROWSER_MODULE);
-const pool = new Pool({connectionString: database.href, options: '-c search_path=mio_browser_ci,public',
+const pool = new Pool({connectionString: database.href, options: '-c search_path=mio_http_ci,public',
   max: 20, connectionTimeoutMillis: 5000, statement_timeout: 10000});
 const originFor = port => `https://127.0.0.1:${port}`;
 const password = 'Synthetic-Browser-Password-2026!';
@@ -54,7 +55,7 @@ async function openDevices(page, expectedCount) {
 before(async () => {
   const actual = (await pool.query('SELECT current_database() AS db,current_user AS username,current_schema() AS schema')).rows[0];
   assert.equal(actual.db, 'mio_ci_test'); assert.equal(actual.username, 'mio_test');
-  await pool.query('CREATE SCHEMA mio_browser_ci');
+  await pool.query('CREATE SCHEMA mio_http_ci');
   await pool.query(await readFile(new URL('../security/mio-auth-v21-schema.preview.sql', import.meta.url), 'utf8'));
   account = await registerAccountTransaction(pool, {mioId: 'SYNTH-BROWSER-MIO-001', loginId: 'Browser_User2026', password});
 
@@ -93,6 +94,9 @@ after(async () => {
   if (front) await new Promise(resolve => front.close(resolve));
   await pool.end();
 });
+afterEach(async () => {
+  if (account) await pool.query('DELETE FROM mio_sessions_v21 WHERE account_id=$1', [account.accountId]);
+});
 
 test('browser login uses the page UI and stores an actual Secure HttpOnly __Host cookie', async () => {
   const context = await browser.newContext({ignoreHTTPSErrors: true, viewport: {width: 390, height: 844}, isMobile: true, hasTouch: true});
@@ -116,9 +120,14 @@ test('two independent browser contexts share MIO account, and one device can be 
     const phone = await login(phoneContext, account.loginId);
     const tablet = await login(tabletContext, account.mioId);
     await openDevices(phone, 2);
-    // The preview labels both sessions "スマホ". Revoke the newest row (tablet)
-    // and verify its own browser cookie stops working while the other stays active.
-    const target = phone.locator('#activeDeviceList .device').first().getByRole('button', {name: 'このTEST端末からログアウト'});
+    // The UI currently labels both browser contexts "スマホ". Match the tablet's
+    // actual browser cookie digest to its row before revoking that specific session.
+    const tabletCookie = (await tabletContext.cookies(appOrigin)).find(x => x.name === '__Host-mio_session');
+    const tabletSessionId = sessionTokenDigest(tabletCookie.value);
+    const devices = await phone.evaluate(async () => (await (await fetch('/test-auth/devices', {credentials: 'same-origin'})).json()).devices);
+    const targetIndex = devices.findIndex(x => x.sessionId === tabletSessionId);
+    assert.notEqual(targetIndex, -1, 'tablet cookie must map to an account session');
+    const target = phone.locator('#activeDeviceList .device').nth(targetIndex).getByRole('button', {name: 'このTEST端末からログアウト'});
     assert.equal(await target.count(), 1);
     phone.once('dialog', dialog => dialog.accept());
     await target.click();

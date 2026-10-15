@@ -27,7 +27,7 @@ test('preview root and TEST auth rewrite are explicit; only the guarded TEST aut
  assert(route.includes('testAuthDeploymentGate(process.env)'),'TEST API must fail closed unless the preview environment gate passes');
  assert(route.indexOf('if(!gate.ok)')<route.indexOf('await pool.query'),'environment gate must run before any database query');
  for(const allowed of ['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device'])assert(route.includes(allowed),allowed);
- assert(!/\\/test-auth\\/register/.test(route),'public registration must not be exposed');
+ assert(!route.includes('/test-auth/register'),'public registration must not be exposed');
  assert.equal(config.outputDirectory,'public');
 });
 test('published preview pages do not link to withheld production gacha or missing HTML',()=>{
