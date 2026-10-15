@@ -39,3 +39,17 @@ test('malformed payload rejected before limiter',async()=>{
 test('shared limiter required at construction',()=>{
  assert.throws(()=>createLoginRoute({api:{login:async()=>{}},trustedOrigin:origin}));
 });
+
+test('oversized JSON request is rejected before authentication and limiter',async()=>{
+ const {route,calls}=setup();
+ const response=await route({...request,headers:{...request.headers,'content-length':'4097'}});
+ assert.equal(response.status,413);
+ assert.equal(calls.length,0);
+});
+test('missing Origin header is rejected before authentication and limiter',async()=>{
+ const {route,calls}=setup();
+ const {origin:unused,...headers}=request.headers;
+ const response=await route({...request,headers});
+ assert.equal(response.status,403);
+ assert.equal(calls.length,0);
+});
