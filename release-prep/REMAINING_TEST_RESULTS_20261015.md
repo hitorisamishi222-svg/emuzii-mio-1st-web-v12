@@ -68,6 +68,14 @@ https://emuzii-mio-1st-web-v12-cpyidjt44-gtgz8867jh-3139.vercel.app/home-portrai
 - [プレビュー認証ゲート／ルーターテスト 38799223454](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223454)、[セキュリティ基盤 38799223527](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223527)、[安全ゲート 38799223508](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223508) はすべて成功。
 - 公開プレビューの読み取り専用通信画面で現状を実ブラウザー確認。`/test-auth/me` と `/api/test-auth/me` は503 `test_environment_not_ready`。API未設定を5件の失敗と誤表示しないよう「環境未設定・テスト未実行（0/5）」に修正し、資格情報を送信せず、再試行ボタンを有効に保つ。画面契約テスト [38799672276](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799672276)、最終安全ゲート [38799963208](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799963208) は成功。
 
+## 架空IDを使った認証失敗ブラウザーテスト — 2026-10-16
+
+- [Actions 38801285898](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38801285898): Chromium 1/1、WebKit 1/1合格。
+- CI専用の一時PostgreSQLに架空アカウントを1件作成し、実際のログイン画面で「誤ったパスワード」と「存在しないID」を送信。
+- 両方が同じ一般エラー表示・HTTP 401となり、Cookieは発行されず、DBにもセッションが作られないことを確認した。
+- 初回実行では2回目のAPI応答を待たずに判定するテスト側の同期不備が見つかった。各応答を明示してから判定するよう直し、合格を確認。認証画面の修正ではない。
+- 実行コード: `4ee0ffdfb0ebebabec0eab94fa8687d0fb304fa5`。開発ブランチの安全ゲート [38801285771](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38801285771) も成功。
+
 ## 未完了・実行条件
 
 1. 開発プレビューのTEST認証API接続: ルートと画面の配線は済み。現状は専用のPreview環境変数・DBが未設定のためAPIが503で停止し、実際のプレビューでログインはできない。CIの実ブラウザーE2Eとは区別する。
