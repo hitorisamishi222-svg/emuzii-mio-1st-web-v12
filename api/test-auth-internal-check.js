@@ -44,7 +44,13 @@ export default async function handler(req,res){
   const httpDevices=await router({path:'/test-auth/devices',method:'GET',headers:{cookie:httpCookie}});
   const httpLogout=await router({path:'/test-auth/logout',method:'POST',headers:{...request.headers,cookie:httpCookie},body:{}});
   const httpExpired=await router({path:'/test-auth/me',method:'GET',headers:{cookie:httpCookie}});
-  const httpChecks={origin:rejectedOrigin.status===403,contentType:rejectedType.status===415,clientIp:rejectedIp.status===503,method:rejectedMethod.status===405,login:accepted.status===200,me:httpMe.status===200,devices:httpDevices.status===200,logout:httpLogout.status===200,expired:httpExpired.status===401};
+  const deniedCrossSite=await router({...request,headers:{...request.headers,'sec-fetch-site':'cross-site'}});
+  const deniedMissingOrigin=await router({...request,headers:{'content-type':'application/json','sec-fetch-site':'same-origin'}});
+  const deniedOversize=await router({...request,headers:{...request.headers,'content-length':'99999'}});
+  const deniedThrottle=await createTestHttpRouter({api,throttle:{allow:async()=>false},trustedOrigin:origin})(request);
+  const setCookie=String(accepted.headers?.['Set-Cookie']||'');
+  const cookieSafe=setCookie.includes('HttpOnly')&&setCookie.includes('Secure')&&setCookie.includes('SameSite=Lax')&&setCookie.startsWith('__Host-');
+  const httpChecks={crossSite:deniedCrossSite.status===403,missingOrigin:deniedMissingOrigin.status===403,oversize:deniedOversize.status===413,throttle:deniedThrottle.status===429,cookieSecurity:cookieSafe,origin:rejectedOrigin.status===403,contentType:rejectedType.status===415,clientIp:rejectedIp.status===503,method:rejectedMethod.status===405,login:accepted.status===200,me:httpMe.status===200,devices:httpDevices.status===200,logout:httpLogout.status===200,expired:httpExpired.status===401};
   const ok=Object.values(httpChecks).every(Boolean)&&extraOk&&login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
   return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401,logoutAll:all.status===200&&allExpired.status===401,logout:out.status===200&&outExpired.status===401},httpChecks});
  }catch(e){return res.status(503).json({status:'failed',error:'test_execution_failed'})}
