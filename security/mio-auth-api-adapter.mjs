@@ -29,5 +29,14 @@ export function createAuthApiHandlers(pool,{flow=createAuthFlow(pool),throttle}=
   const result=await flow.logoutAll(cookieHeader);
   return {status:200,headers:{'Set-Cookie':result.setCookie,'Cache-Control':'no-store'},body:{ok:true,revoked:result.revoked}};
  }
- return {login,me,logout,logoutAll};
+ async function devices(cookieHeader){
+  const items=await flow.devices(cookieHeader);
+  return {status:items?200:401,headers:{'Cache-Control':'no-store'},body:items?{devices:items}:{error:'unauthorized'}};
+ }
+ async function revokeDevice(cookieHeader,sessionId){
+  if(typeof sessionId!=='string'||!/^[0-9a-f]{64}$/.test(sessionId))return {status:400,body:{error:'invalid_session'}};
+  const revoked=await flow.revokeDevice(cookieHeader,sessionId);
+  return {status:revoked===null?401:200,headers:{'Cache-Control':'no-store'},body:revoked===null?{error:'unauthorized'}:{revoked}};
+ }
+ return {login,me,logout,logoutAll,devices,revokeDevice};
 }
