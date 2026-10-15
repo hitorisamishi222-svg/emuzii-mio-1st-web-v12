@@ -11,16 +11,24 @@ test('preview build excludes production pages and GAS bridge/API scripts',()=>{
  for(const pattern of ["! -name 'index.html'","! -name 'gacha.html'","! -name 'api-*.js'","! -name 'bridge.js'","! -name '*.test.js'","! -name '*.test.mjs'"])assert(buildScript.includes(pattern),pattern);
  assert(buildScript.includes('public/integrated-live-demo.html'));
  assert(buildScript.includes('public/integrated-functional-test.html'));
- assert(!('builds' in config)&&!('routes' in config),'preview must use the static output build, without Vercel functions or route mappings');
+ assert(!('builds' in config)&&!('routes' in config),'preview must use the static output build without legacy Vercel build/route configuration');
 });
 test('every production-only source remains present in checkout but excluded by build rules',()=>{
  for(const file of ['index.html','gacha.html','api-register.js','api-status.js','api-checkin.js','api-gacha.js','bridge.js'])assert(existsSync(new URL('../'+file,import.meta.url)),file+' source unexpectedly missing');
  assert(buildScript.includes("! -name 'index.html'")&&buildScript.includes("! -name 'gacha.html'"));
  assert(buildScript.includes("! -name 'api-*.js'")&&buildScript.includes("! -name 'bridge.js'"));
 });
-test('preview root points to preview menu and has no serverless API directory',()=>{
+test('preview root and TEST auth rewrite are explicit; only the guarded TEST auth function exists',()=>{
  assert(config.rewrites.some(x=>x.source==='/'&&x.destination==='/next-preview.html'));
- assert(!existsSync(new URL('../api',import.meta.url)),'no Vercel function directory may be deployed');
+ assert(config.rewrites.some(x=>x.source==='/test-auth/:route'&&x.destination==='/api/test-auth/:route'));
+ const routePath=new URL('../api/test-auth/[route].js',import.meta.url);
+ assert(existsSync(routePath),'isolated TEST auth API route is required');
+ const route=readFileSync(routePath,'utf8');
+ assert(route.includes('testAuthDeploymentGate(process.env)'),'TEST API must fail closed unless the preview environment gate passes');
+ assert(route.indexOf('if(!gate.ok)')<route.indexOf('await pool.query'),'environment gate must run before any database query');
+ for(const allowed of ['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device'])assert(route.includes(allowed),allowed);
+ assert(!/\\/test-auth\\/register/.test(route),'public registration must not be exposed');
+ assert.equal(config.outputDirectory,'public');
 });
 test('published preview pages do not link to withheld production gacha or missing HTML',()=>{
  const pages=['next-preview.html','home-portrait-next.html','integrated-live-demo.html','background-visual-audit.html'];
