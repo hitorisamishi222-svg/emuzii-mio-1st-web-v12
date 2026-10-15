@@ -6,6 +6,7 @@ on:
     paths:
       - 'login-recovery-demo.html'
       - 'device-sessions-preview.html'
+      - 'public/test-auth-browser-check.html'
       - 'release-prep/auth-preview-ui.test.mjs'
       - 'release-prep/auth-preview-behavior.test.mjs'
       - '.github/workflows/test-auth-preview-ui.yml'

@@ -7,13 +7,31 @@ const tests=[
  ['不正なログイン入力拒否','/api/test-auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},400]
 ];
 document.querySelector('#run').onclick=async()=>{
- const list=document.querySelector('#results');list.replaceChildren();let passed=0;
- for(const [name,url,options,expected] of tests){
-  const li=document.createElement('li');
-  try{const r=await fetch(url,{...options,credentials:'same-origin',cache:'no-store'});const ok=r.status===expected;passed+=Number(ok);li.textContent=(ok?'✅ ':'❌ ')+name+'：HTTP '+r.status+'（期待 '+expected+'）'}
-  catch(e){li.textContent='❌ '+name+'：通信失敗 '+String(e.message)}
-  list.append(li);
- }
- document.querySelector('#summary').textContent='結果：'+passed+'/'+tests.length+' 合格';
+ const button=document.querySelector('#run'),list=document.querySelector('#results');
+ list.replaceChildren();document.querySelector('#summary').textContent='';
+ button.disabled=true;
+ try{
+  const response=await fetch('/api/test-auth/me',{method:'GET',credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}});
+  if(response.status===503){
+   const data=await response.clone().json().catch(()=>null);
+   if(data?.error==='test_environment_not_ready'){
+    const li=document.createElement('li');
+    li.textContent='TEST API停止中：開発専用の認証環境が未設定です。資格情報は送信せず、以下のテストも実行しません。';
+    list.append(li);
+    document.querySelector('#summary').textContent='環境未設定：テスト未実行（0/5）';
+    return;
+   }
+  }
+ }catch{}
+ try{
+  let passed=0;
+  for(const [name,url,options,expected] of tests){
+   const li=document.createElement('li');
+   try{const r=await fetch(url,{...options,credentials:'same-origin',cache:'no-store'});const ok=r.status===expected;passed+=Number(ok);li.textContent=(ok?'✅ ':'❌ ')+name+'：HTTP '+r.status+'（期待 '+expected+'）'}
+   catch(e){li.textContent='❌ '+name+'：通信失敗 '+String(e.message)}
+   list.append(li);
+  }
+  document.querySelector('#summary').textContent='結果：'+passed+'/'+tests.length+' 合格';
+ }finally{button.disabled=false}
 };
 </script></body></html>
