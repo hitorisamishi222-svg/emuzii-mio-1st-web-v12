@@ -1,9 +1,14 @@
 // Framework-independent development API adapter. Not deployed as a public route.
 // HTTP integration must enforce same-origin, CSRF, rate limiting, TLS and request size.
 import {createAuthFlow} from './mio-auth-flow.mjs';
-export function createAuthApiHandlers(pool,{flow=createAuthFlow(pool)}={}){
+export function createAuthApiHandlers(pool,{flow=createAuthFlow(pool),throttle}={}){
  async function login(body){
   if(!body||typeof body!=='object'||Array.isArray(body))return {status:400,body:{error:'invalid_request'}};
+  if(throttle){
+   if(typeof throttle.allow!=='function')throw Error('shared throttle adapter required');
+   const allowed=await throttle.allow(body.identifier);
+   if(!allowed)return {status:429,headers:{'Cache-Control':'no-store','Retry-After':'900'},body:{error:'too_many_attempts'}};
+  }
   try{
    const result=await flow.login({identifier:body.identifier,password:body.password,deviceLabel:body.deviceLabel});
    return {status:200,headers:{'Set-Cookie':result.setCookie,'Cache-Control':'no-store'},body:{accountId:result.accountId}};
