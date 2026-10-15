@@ -16,7 +16,7 @@ export function testAuthDeploymentGate(env={}) {
  let origin;
  try{origin=new URL(env.MIO_TEST_ORIGIN)}catch{return {ok:false,reason:'test_origin_required'}}
  if(origin.protocol!=='https:'||origin.pathname!=='/'||origin.search||origin.hash||!origin.hostname.endsWith('.vercel.app')
-  ||!origin.hostname.startsWith('emuzii-mio-1st-web-v12-68vp-'))
+  ||!origin.hostname.startsWith('emuzii-mio-1st-web-v12-'))
   return {ok:false,reason:'test_origin_required'};
  return {ok:true,origin:origin.origin,databaseName:db};
 }

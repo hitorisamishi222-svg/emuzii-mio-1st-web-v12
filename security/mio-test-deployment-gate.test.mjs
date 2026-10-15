@@ -5,7 +5,7 @@ const valid={
  MIO_TEST_AUTH_ENABLED:'true',VERCEL_ENV:'preview',
  VERCEL_GIT_COMMIT_REF:'release/v2-next-integrated-replica',
  MIO_TEST_DATABASE_URL:'postgresql://mio_test:example@db.example.test:5432/mio_dev_test',
- MIO_TEST_ORIGIN:'https://emuzii-mio-1st-web-v12-68vp-sandbox.vercel.app'
+ MIO_TEST_ORIGIN:'https://emuzii-mio-1st-web-v12-cz7gbwuzu-gtgz8867jh-3139.vercel.app'
 };
 test('only explicitly enabled isolated preview is allowed',()=>{
  assert.equal(testAuthDeploymentGate(valid).ok,true);
