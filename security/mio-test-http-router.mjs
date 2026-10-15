@@ -31,7 +31,10 @@ export function createTestHttpRouter({api,throttle,trustedOrigin}={}){
   }
   const session=await api.me(cookie);
   if(session.status!==200)return {status:401,body:{error:'unauthorized'}};
-  if(path==='/test-auth/revoke-device')return api.revokeDevice(cookie,body.sessionId);
+  if(path==='/test-auth/revoke-device'){
+   if(typeof body.sessionId!=='string'||!/^[0-9a-f]{64}$/.test(body.sessionId))return {status:400,body:{error:'invalid_session'}};
+   return api.revokeDevice(cookie,body.sessionId);
+  }
   return api[writes.get(path)](cookie);
  };
 }
