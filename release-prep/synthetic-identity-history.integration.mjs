@@ -39,9 +39,9 @@ test('shared synthetic identity fixtures reject case-folded and cross-type ID co
  assert.equal(outcomes.filter(x=>x.status==='fulfilled').length,1);
  assert.equal(outcomes.filter(x=>x.status==='rejected').length,1);
  const winnerIndex=outcomes.findIndex(x=>x.status==='fulfilled');
- const winnerFixtureUsed=winnerIndex===0?winnerFixture:contenderFixture;
+ const winnerFixtureUsed=winnerIndex===0?winnerFixture:{...contenderFixture,loginId:winnerFixture.loginId.toUpperCase()};
  const winner=outcomes[winnerIndex].value;
- const loserFixture=winnerIndex===0?contenderFixture:winnerFixture;
+ const loserFixture=winnerIndex===0?{...contenderFixture,loginId:winnerFixture.loginId.toUpperCase()}:winnerFixture;
  const ids=createPostgresIdentifierStore(pool);
  assert.equal((await pool.query('SELECT count(*)::int AS n FROM mio_accounts_v21 WHERE lower(login_id)=lower($1)',[winnerFixture.loginId])).rows[0].n,1);
  assert.equal(await ids.resolve(loserFixture.mioId),null,'losing account identifier must roll back');
