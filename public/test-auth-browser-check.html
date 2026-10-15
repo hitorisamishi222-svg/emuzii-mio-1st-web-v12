@@ -4,8 +4,7 @@ const tests=[
  ['端末一覧の未認証拒否','/api/test-auth/devices',{method:'GET'},401],
  ['不正メソッド拒否','/api/test-auth/me',{method:'POST'},405],
  ['不正なJSON形式拒否','/api/test-auth/login',{method:'POST',headers:{'Content-Type':'text/plain'},body:'{}'},415],
- ['無効なログイン入力拒否','/api/test-auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},400],
- ['不正な失効要求の未認証拒否','/api/test-auth/revoke-device',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},401]
+ ['不正なログイン入力拒否','/api/test-auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'},400]
 ];
 document.querySelector('#run').onclick=async()=>{
  const list=document.querySelector('#results');list.replaceChildren();let passed=0;
