@@ -34,6 +34,7 @@ export function createAuthFlow(pool,{sessions=createPostgresSessionStore(pool)}=
  async function revokeDevice(header,sessionId){
   const active=await current(header);
   if(!active)return null;
+  if(typeof sessionId!=='string'||!/^[0-9a-f]{64}$/.test(sessionId))return false;
   return sessions.revoke(active.accountId,sessionId);
  }
  return {login,current,logout,logoutAll,devices,revokeDevice};
