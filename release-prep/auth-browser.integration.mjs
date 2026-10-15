@@ -184,7 +184,9 @@ test('virtual authenticator registers a passkey, signs in, and rejects challenge
     await page.goto(appOrigin + '/passkey-preview.html');
     await page.getByText('TESTログイン中です。パスキーを登録できます。').waitFor();
     await page.locator('#register').click();
-    await page.getByText('TESTログイン中です。パスキーを登録できます。').waitFor();
+    await page.waitForFunction(()=>!document.querySelector('#register').disabled);
+    const registrationMessage=await page.locator('#status').innerText();
+    assert.match(registrationMessage,/パスキーを登録しました/,`registration UI: ${registrationMessage}`);
     const saved = await pool.query('SELECT credential_id,public_key,sign_count FROM mio_passkey_credentials WHERE account_id=$1',[account.accountId]);
     assert.equal(saved.rowCount,1,'server stores a public credential for the synthetic account');
     assert.ok(saved.rows[0].public_key.length>32);

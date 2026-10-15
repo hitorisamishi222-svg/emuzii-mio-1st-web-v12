@@ -7,6 +7,9 @@ on:
       - '.github/workflows/remaining-http-tests.yml'
       - 'release-prep/auth-http.integration.mjs'
       - 'release-prep/test-auth-http-server.mjs'
+      - 'security/mio-passkey-service.mjs'
+      - 'security/mio-passkey-schema.preview.sql'
+      - 'security/mio-auth-v21-schema.preview.sql'
 permissions:
   contents: read
 jobs:
@@ -35,6 +38,8 @@ jobs:
           node-version: '22'
       - name: Install pinned database driver into temporary CI directory
         run: npm install --prefix "$RUNNER_TEMP/mio-pg-driver" --ignore-scripts --no-audit --no-fund --save-exact pg@8.16.3
+      - name: Install the pinned WebAuthn server package for the TEST-only route
+        run: npm install --ignore-scripts --no-audit --no-fund --no-save --no-package-lock @simplewebauthn/server@13.2.2
       - name: Verify HTTP authentication against real isolated PostgreSQL
         env:
           MIO_TEST_DATABASE_URL: postgresql://mio_test:mio_ci_only@127.0.0.1:5432/mio_ci_test
