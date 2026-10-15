@@ -19,7 +19,6 @@ jobs:
         browser: [chromium, webkit]
     env:
       MIO_BROWSER: ${{ matrix.browser }}
-      MIO_BROWSER_MODULE: ${{ runner.temp }}/mio-browser/node_modules/playwright
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +29,8 @@ jobs:
       - name: Install selected browser and system dependencies
         run: '"$RUNNER_TEMP/mio-browser/node_modules/.bin/playwright" install --with-deps "$MIO_BROWSER"'
       - name: Verify remaining pages at mobile viewport sizes with external traffic blocked
+        env:
+          MIO_BROWSER_MODULE: ${{ runner.temp }}/mio-browser/node_modules/playwright
         run: node --test release-prep/mobile-browser.integration.mjs
       - uses: actions/upload-artifact@v4
         if: always()
