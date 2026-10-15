@@ -3,7 +3,7 @@
 import {createAuthFlow} from './mio-auth-flow.mjs';
 export function createAuthApiHandlers(pool,{flow=createAuthFlow(pool),throttle}={}){
  async function login(body){
-  if(!body||typeof body!=='object'||Array.isArray(body))return {status:400,body:{error:'invalid_request'}};
+  if(!body||typeof body!=='object'||Array.isArray(body)||typeof body.identifier!=='string'||!body.identifier.trim()||typeof body.password!=='string'||!body.password)return {status:400,body:{error:'invalid_request'}};
   if(throttle){
    if(typeof throttle.allow!=='function')throw Error('shared throttle adapter required');
    const allowed=await throttle.allow(body.identifier);
