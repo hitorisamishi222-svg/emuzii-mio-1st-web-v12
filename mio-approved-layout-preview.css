@@ -29,3 +29,5 @@ body.mio-approved-bg.next-premium-home .app>.hero>h1,
 body.mio-approved-bg.next-premium-home .app>.hero>p{display:table;max-width:100%;width:fit-content}
 body.mio-approved-bg.next-premium-home .app>header>p{margin:8px auto 0}
 body.mio-approved-bg.next-premium-home .app>footer{background:rgba(4,18,45,.90);color:#f3f9ff;border-radius:12px;padding:12px}
+
+body.mio-approved-bg.next-premium-home .app>.hero>h1{font-size:clamp(24px,6vw,34px);line-height:1.45}

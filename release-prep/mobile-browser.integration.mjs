@@ -115,6 +115,9 @@ for (const width of widths) {
         assert.ok(background.width >= 100 && background.active, 'Approved background must be loaded');
         assert.ok(background.css.includes(background.name), 'Correct approved background must be selected');
       }
+      if (path === 'home-portrait-next.html') {
+        assert.equal(await page.evaluate(() => Math.round(scrollY)), 0, 'Top page must not auto-scroll past the face during background activation');
+      }
       if (['news.html', 'schedule.html', 'home-updates-demo.html'].includes(path)) {
         const backings = await page.locator('.app>header .brand,.app>header .version,.app>header>p,.app>.hero>h1,.app>.hero>p').evaluateAll(elements => elements.map(el => ({
           label: el.textContent.trim().slice(0, 30), background: getComputedStyle(el).backgroundColor,
@@ -124,6 +127,13 @@ for (const width of widths) {
           const rgba = block.background.match(/[\d.]+/g)?.map(Number) || [];
           const alpha = rgba.length === 4 ? rgba[3] : rgba.length === 3 ? 1 : 0;
           assert.ok(alpha >= 0.75, `Text needs a local dark backing over bright artwork: ${JSON.stringify(block)}`);
+        }
+        if (path === 'home-updates-demo.html') {
+          const lines = await page.locator('.app>.hero>h1').evaluate(el => {
+            const s = getComputedStyle(el);
+            return (el.getBoundingClientRect().height - parseFloat(s.paddingTop) - parseFloat(s.paddingBottom)) / parseFloat(s.lineHeight);
+          });
+          assert.ok(lines <= 2.1, `Preview heading must fit its intended two lines, observed ${lines}`);
         }
       }
       await page.screenshot({path: resolve(output, `${id}.png`)});
