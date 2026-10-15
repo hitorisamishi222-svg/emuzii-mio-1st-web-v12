@@ -33,9 +33,10 @@
 
 ## 公開TEST認証APIの実装ゲート（2026-10-15）
 
-- 現在のVercelプレビューは `build-preview.sh` により `public/` に静的ファイルを配置する構成で、`/test-auth/*` のサーバールートはない。UIの接続確認は未接続を正しく報告するためのもの。
+- Vercelプレビューは `build-preview.sh` で `public/` の静的画面を配置し、開発ブランチにはTEST認証だけのサーバールート `api/test-auth/[route].js` を置く。`vercel.json` の `/test-auth/:route` 書き換えから呼び出す。mainへの変更はない。
+- ルートは `MIO_TEST_AUTH_ENABLED`、Preview環境、指定開発ブランチ、TEST用DB名、HTTPS Preview originの条件が揃わない場合503で停止する。実プレビューでは `test_environment_not_ready` を確認。
 - `release-prep/test-auth-http-server.mjs` は `CI=true`、127.0.0.1 のCI専用DB、`mio_http_ci` スキーマを強制する。**これをVercelへそのまま移植しない。**
-- 開発APIを公開する前に、開発プロジェクトの環境変数とDB接続を本番から完全分離し、独立したテストアカウントを作る。課金や新規サービス契約は利用者承認まで行わない。
+- 現在、Vercel開発環境に当該ブランチ向けの環境変数・接続済みDBはない。追加契約なしで使える既存の専用TEST DB接続先が準備されるまで、実プレビューAPIは無効のままにする。課金や新規サービス契約は利用者承認まで行わない。
 - サーバー側で同一オリジン・CSRF・Fetch Metadata・実受信サイズ制限・共有レート制限・セッション検証・Cookieを強制する。UI側の事前接続確認だけを認証防御と見なさない。
 - 認証APIと端末管理APIを同じHTTPSオリジンで提供し、実機でCookieの保存・自動送信・失効を確認する。TESTの資格情報をリポジトリやHTMLへ埋め込まない。
 - 画面・HTTPテスト・DBテストの合格済み項目は、関連する変更がなければ再実行しない。

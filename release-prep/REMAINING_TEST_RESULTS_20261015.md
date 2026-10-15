@@ -50,7 +50,7 @@ remaining-http-tests.yml の isolated-http-tests は12/12合格、ジョブ11640
 
 release-prep/test-auth-http-server.mjs はCI専用で、127.0.0.1のランダムポートだけを待ち受ける。
 CI=true、接続URL、実DB名/ユーザー/スキーマ mio_http_ci を確認し、条件外では起動しない。
-Vercelの公開APIにはマウントしない。任意MIO-IDを登録する公開ルートは提供しない。
+CI専用ハーネスはVercelへ配置しない。開発プレビューには環境ゲート付き `/api/test-auth/[route]` を配置し、`/test-auth/:route` から接続する。ゲート無効時は503で停止し、任意MIO-IDを登録する公開ルートは提供しない。
 
 実HTTP経由で、MIO-ID/ログインIDの同一認証、Secure/HttpOnly/SameSite Cookieヘッダー、認証失敗の非開示、Origin/Fetch Metadata/JSON/実受信4096バイト制限、未認証/重複Cookie拒否、他アカウントからの失効拒否、個別/全ログアウト、変更時のアカウント指定無視・旧ID予約、2端末8同時ガチャの1消費/7再送、DBの試行回数制限とサーバー再起動後の維持を確認した。
 
@@ -59,13 +59,22 @@ HTTPクライアントがCookieヘッダーを明示送信するテストであ�
 追加コミットの開発プレビュー（HTTP200確認済み、静的画面の内容は前回と同じ）:
 https://emuzii-mio-1st-web-v12-cpyidjt44-gtgz8867jh-3139.vercel.app/home-portrait-next.html
 
+## 実ブラウザーでのログイン／Cookie／端末テスト — 2026-10-16
+
+- [Actions 38799223450](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223450): Chromium 3/3、WebKit 3/3。PlaywrightのブラウザーCookie jar＋HTTPS＋一時PostgreSQL16を使用。実機のiPhone Safari／Android Chromeではない。
+- 実際の `login-recovery-demo.html` と `device-sessions-preview.html` をブラウザーで開き、MIO-IDと変更可能ログインIDの両方でログイン、別コンテキストの端末一覧、Cookie発行、個別セッション失効、現在端末ログアウト、全端末ログアウトを確認。
+- `__Host-mio_session` の Secure、HttpOnly、SameSite=Lax、Path=/ をブラウザー側の保存値で検証。別端末のCookieだけを失効させ、もう一方の端末が使えることも確認した。
+- [HTTP＋実DB再検証 38799223347](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223347): 12/12合格。GET要求でブラウザーがOriginを省く場合を確認し、same-origin Fetch Metadataを必須にする修正を実施。
+- [プレビュー認証ゲート／ルーターテスト 38799223454](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223454)、[セキュリティ基盤 38799223527](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223527)、[安全ゲート 38799223508](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799223508) はすべて成功。
+- 公開プレビューの読み取り専用通信画面で現状を実ブラウザー確認。`/test-auth/me` と `/api/test-auth/me` は503 `test_environment_not_ready`。API未設定を5件の失敗と誤表示しないよう「環境未設定・テスト未実行（0/5）」に修正し、資格情報を送信せず、再試行ボタンを有効に保つ。画面契約テスト [38799672276](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799672276)、最終安全ゲート [38799963208](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38799963208) は成功。
+
 ## 未完了・実行条件
 
-1. 公開TEST認証APIとブラウザー画面を接続したHTTP/E2E: APIの公開接続が未実装。静的Vercelプレビューだけでは完了できない。
+1. 開発プレビューのTEST認証API接続: ルートと画面の配線は済み。現状は専用のPreview環境変数・DBが未設定のためAPIが503で停止し、実際のプレビューでログインはできない。CIの実ブラウザーE2Eとは区別する。
 2. パスキー登録/署名検証/失効/紛失復旧: WebAuthnサーバー処理が未実装。対応判定だけを登録成功扱いしない。
 3. iPhone Safari/Android Chromeの実機と、Apple/Googleパスワードマネージャー保存・自動入力: 今回のCIエミュレーションとは別に実機で行う。
 4. 運用環境の永続ストアを使うレート制限・負荷・再起動後の保存: CIでDB方式の試行回数制限とHTTPサーバー再起動を確認済み。永続の運用サーバー検証は未実施。
 
-開発プレビュー（検証コード70dd483）:
-https://emuzii-mio-1st-web-v12-cg5ji46j3-gtgz8867jh-3139.vercel.app/home-portrait-next.html
-Vercel READY、ホームHTTP200と警告文除去・初期背景クラスを確認済み。
+開発プレビュー（最終検証コード `7e0edbb578bf69dc9e0a66ee0d97cbc61d3a9a52`）:
+https://emuzii-mio-1st-web-v12-436tjbjtr-gtgz8867jh-3139.vercel.app/test-auth-browser-check.html
+Vercel READY。ブラウザーで環境未設定表示と「0/5未実行」を確認。実画面のログイン/API成功は環境変数が未設定のため行っていない。
