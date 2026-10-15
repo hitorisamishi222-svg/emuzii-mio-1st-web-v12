@@ -8,6 +8,7 @@ import {testAuthDeploymentGate} from '../security/mio-test-deployment-gate.mjs';
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='GET')return res.status(405).json({error:'method_not_allowed'});
+ if(req.headers['sec-fetch-site']&&req.headers['sec-fetch-site']!=='same-origin')return res.status(403).json({error:'cross_site_denied'});
  if(!testAuthDeploymentGate(process.env).ok)return res.status(503).json({status:'disabled'});
  const pool=new Pool({connectionString:process.env.MIO_TEST_DATABASE_URL,max:1,connectionTimeoutMillis:5000});
  const id=randomUUID(), loginId='test_'+id.replaceAll('-','').slice(0,12),password='T!'+randomUUID()+randomUUID();
