@@ -47,7 +47,9 @@ async function login(context, identifier) {
   await page.getByRole('button', {name: 'ログインIDが分かる'}).click();
   await page.locator('#loginId').fill(identifier);
   await page.locator('#loginPassword').fill(password);
-  await page.locator('#testLogin').click();
+  assert.equal(await page.locator('#testLoginForm').getAttribute('autocomplete'), 'on');
+  assert.equal(await page.locator('#testLogin').getAttribute('type'), 'submit');
+  await page.locator('#loginPassword').press('Enter');
   await page.locator('#result').waitFor({state: 'visible', timeout: 10000});
   const result = (await page.locator('#result').innerText()).trim();
   assert.equal(result, 'TESTログイン成功。端末管理画面で接続を確認できます。',
