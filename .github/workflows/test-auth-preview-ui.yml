@@ -7,6 +7,7 @@ on:
       - 'login-recovery-demo.html'
       - 'device-sessions-preview.html'
       - 'release-prep/auth-preview-ui.test.mjs'
+      - 'release-prep/auth-preview-behavior.test.mjs'
       - '.github/workflows/test-auth-preview-ui.yml'
   workflow_dispatch:
 permissions:
@@ -22,4 +23,4 @@ jobs:
         with:
           node-version: '22'
       - name: Validate only TEST auth preview UI contracts
-        run: node --test release-prep/auth-preview-ui.test.mjs
+        run: node --test release-prep/auth-preview-ui.test.mjs release-prep/auth-preview-behavior.test.mjs
