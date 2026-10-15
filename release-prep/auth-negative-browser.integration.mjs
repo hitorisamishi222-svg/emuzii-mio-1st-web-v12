@@ -7,6 +7,7 @@ import {readFile} from 'node:fs/promises';
 import {createRequire} from 'node:module';
 import {registerAccountTransaction} from '../security/mio-postgres-registration.mjs';
 import {startTestAuthHttpServer} from './test-auth-http-server.mjs';
+import {getSyntheticAuthFixture, syntheticAuthFixtures} from './fixtures/synthetic-auth-data.mjs';
 
 assert.equal(process.env.CI, 'true', 'negative browser auth test is CI-only');
 const database = new URL(process.env.MIO_TEST_DATABASE_URL || 'postgresql://invalid/');
@@ -19,8 +20,9 @@ const {Pool} = createRequire(import.meta.url)(process.env.MIO_TEST_PG_MODULE);
 const {chromium, webkit} = createRequire(import.meta.url)(process.env.MIO_BROWSER_MODULE);
 const pool = new Pool({connectionString: database.href, options: '-c search_path=mio_http_ci,public',
   max: 10, connectionTimeoutMillis: 5000, statement_timeout: 10000});
-const password = 'Synthetic-Negative-Password-2026!';
-const syntheticLoginId = 'Negative_User2026';
+const negativeFixture = getSyntheticAuthFixture('browserNegative');
+const password = negativeFixture.password;
+const syntheticLoginId = negativeFixture.loginId;
 let browser, front, api, appOrigin, account;
 const throttle = {async allow() { return true; }};
 const files = new Map([
@@ -37,11 +39,7 @@ before(async () => {
   assert.equal(actual.username, 'mio_test');
   await pool.query('CREATE SCHEMA mio_http_ci');
   await pool.query(await readFile(new URL('../security/mio-auth-v21-schema.preview.sql', import.meta.url), 'utf8'));
-  account = await registerAccountTransaction(pool, {
-    mioId: 'SYNTH-NEGATIVE-MIO-001',
-    loginId: syntheticLoginId,
-    password,
-  });
+  account = await registerAccountTransaction(pool, negativeFixture);
 
   const key = await readFile(process.env.MIO_TEST_TLS_KEY, 'utf8');
   const cert = await readFile(process.env.MIO_TEST_TLS_CERT, 'utf8');
@@ -94,7 +92,7 @@ test('browser gives the same generic error for a wrong password and an unknown s
 
     const attempt = async identifier => {
       await page.locator('#loginId').fill(identifier);
-      await page.locator('#loginPassword').fill('Wrong-Synthetic-Password-2026!');
+      await page.locator('#loginPassword').fill(syntheticAuthFixtures.wrongPassword);
       const responsePromise = page.waitForResponse(response =>
         new URL(response.url()).pathname === '/test-auth/login' && response.request().method() === 'POST');
       await page.locator('#testLogin').click();
@@ -107,7 +105,7 @@ test('browser gives the same generic error for a wrong password and an unknown s
     assert.equal(wrongPassword.message, 'IDまたはパスワードを確認してください。');
     assert.equal((await context.cookies(appOrigin)).some(cookie => cookie.name === '__Host-mio_session'), false);
 
-    const unknownId = await attempt('Missing_User2026');
+    const unknownId = await attempt(syntheticAuthFixtures.unknownLoginId);
     assert.equal(unknownId.status, 401);
     assert.equal(unknownId.message, wrongPassword.message, 'unknown identity must not disclose account existence');
     assert.equal((await context.cookies(appOrigin)).some(cookie => cookie.name === '__Host-mio_session'), false);

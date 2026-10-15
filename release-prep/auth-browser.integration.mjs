@@ -9,6 +9,7 @@ import {createRequire} from 'node:module';
 import {registerAccountTransaction} from '../security/mio-postgres-registration.mjs';
 import {sessionTokenDigest} from '../security/mio-auth-crypto.mjs';
 import {startTestAuthHttpServer} from './test-auth-http-server.mjs';
+import {getSyntheticAuthFixture} from './fixtures/synthetic-auth-data.mjs';
 
 assert.equal(process.env.CI, 'true', 'browser auth verification is CI-only');
 const database = new URL(process.env.MIO_TEST_DATABASE_URL || 'postgresql://invalid/');
@@ -22,7 +23,8 @@ const {chromium, webkit} = createRequire(import.meta.url)(process.env.MIO_BROWSE
 const pool = new Pool({connectionString: database.href, options: '-c search_path=mio_http_ci,public',
   max: 20, connectionTimeoutMillis: 5000, statement_timeout: 10000});
 const originFor = port => `https://127.0.0.1:${port}`;
-const password = 'Synthetic-Browser-Password-2026!';
+const browserFixture = getSyntheticAuthFixture('browserPrimary');
+const password = browserFixture.password;
 let browser, front, api, appOrigin, account;
 const throttle = {async allow() { return true; }};
 const files = new Map([
@@ -64,7 +66,7 @@ before(async () => {
   assert.equal(actual.db, 'mio_ci_test'); assert.equal(actual.username, 'mio_test');
   await pool.query('CREATE SCHEMA mio_http_ci');
   await pool.query(await readFile(new URL('../security/mio-auth-v21-schema.preview.sql', import.meta.url), 'utf8'));
-  account = await registerAccountTransaction(pool, {mioId: 'SYNTH-BROWSER-MIO-001', loginId: 'Browser_User2026', password});
+  account = await registerAccountTransaction(pool, browserFixture);
 
   const key = await readFile(process.env.MIO_TEST_TLS_KEY, 'utf8');
   const cert = await readFile(process.env.MIO_TEST_TLS_CERT, 'utf8');
