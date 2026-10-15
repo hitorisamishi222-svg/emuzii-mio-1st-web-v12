@@ -44,3 +44,18 @@ test('logout and revoke device require same-origin JSON POST',async()=>{
 test('unknown endpoints remain unavailable',async()=>{
  assert.equal((await route({path:'/test-auth/register',method:'POST',headers,body:{}})).status,404);
 });
+
+test('rejects invalid login fields before calling authentication or throttle',async()=>{
+ calls.length=0;
+ const good={path:'/test-auth/login',method:'POST',headers,trustedClientIp:'192.0.2.1'};
+ for(const body of [
+  {identifier:'x'.repeat(101),password:'good'},
+  {identifier:'User_1234',password:'x'.repeat(1025)},
+  {identifier:'User_1234',password:'good',deviceLabel:'x'.repeat(81)},
+  {identifier:'User_1234',password:'good',deviceLabel:42}
+ ]){
+  const res=await route({...good,body});
+  assert.equal(res.status,400);
+ }
+ assert.equal(calls.length,0);
+});
