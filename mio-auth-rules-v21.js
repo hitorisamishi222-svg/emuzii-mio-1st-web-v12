@@ -9,23 +9,30 @@ export function validateLoginId(value){
  return types<3?'英大文字・英小文字・数字・記号から3種類以上を組み合わせてください。':'';
 }
 export function createDemoRegistry(){
- const accounts=new Map(),mioIds=new Map(),aliases=new Map();
+ const accounts=new Map(),mioIds=new Map(),aliases=new Map(),reservedAliases=new Map();
  function register({accountId,mioId,loginId,attendance=0,rights=0}){
-  if(!accountId||!mioId||accounts.has(accountId)||mioIds.has(normalizeLoginId(mioId))||aliases.has(normalizeLoginId(mioId)))throw Error('duplicate account or MIO-ID');
+  const mioKey=normalizeLoginId(mioId||'');
+  if(!accountId||!mioId||accounts.has(accountId)||mioIds.has(mioKey)||aliases.has(mioKey)||reservedAliases.has(mioKey))throw Error('duplicate account or MIO-ID');
   if(validateLoginId(loginId))throw Error('invalid login ID');
   const canonical=normalizeLoginId(loginId);
-  if(aliases.has(canonical)||mioIds.has(canonical))throw Error('identifier already used');
-  const a={accountId,mioId,loginId,attendance,rights,sessions:new Set(),wins:[]};
-  accounts.set(accountId,a);mioIds.set(normalizeLoginId(mioId),accountId);aliases.set(canonical,accountId);return a;
+  if(aliases.has(canonical)||mioIds.has(canonical)||reservedAliases.has(canonical))throw Error('identifier already used');
+  const a={accountId,mioId,loginId,attendance,rights,sessions:new Set(),wins:[],loginIdHistory:[{event:'created',loginId}]};
+  accounts.set(accountId,a);mioIds.set(mioKey,accountId);aliases.set(canonical,accountId);reservedAliases.set(canonical,accountId);return a;
  }
  function resolve(identifier){if(typeof identifier!=='string'||!identifier)return null;const id=normalizeLoginId(identifier);return accounts.get(mioIds.get(id)||aliases.get(id))||null}
  function changeLoginId(accountId,newId){
   const a=accounts.get(accountId);if(!a)throw Error('account not found');
   if(validateLoginId(newId))throw Error('invalid login ID');
-  const key=normalizeLoginId(newId),owner=aliases.get(key);
-  if((owner&&owner!==accountId)||mioIds.has(key))throw Error('identifier already used');
+  const key=normalizeLoginId(newId),owner=aliases.get(key),reservedOwner=reservedAliases.get(key);
+  if((owner&&owner!==accountId)||(reservedOwner&&reservedOwner!==accountId)||mioIds.has(key))throw Error('identifier already used');
   if(key===normalizeLoginId(a.loginId)){a.loginId=newId;return a}
-  aliases.delete(normalizeLoginId(a.loginId));aliases.set(key,accountId);a.loginId=newId;return a;
+  const previous=a.loginId;
+  aliases.delete(normalizeLoginId(previous));
+  aliases.set(key,accountId);
+  reservedAliases.set(key,accountId);
+  a.loginId=newId;
+  a.loginIdHistory.push({event:'changed',from:previous,to:newId});
+  return a;
  }
  function signIn(accountId,deviceId){const a=accounts.get(accountId);if(!a)throw Error('account not found');a.sessions.add(deviceId);return a.sessions.size}
  function signOut(accountId,deviceId){const a=accounts.get(accountId);if(!a)throw Error('account not found');a.sessions.delete(deviceId);return a.sessions.size}
