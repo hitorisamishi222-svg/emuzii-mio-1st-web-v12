@@ -56,7 +56,7 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
       let body;
       try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return send(400, {error: 'invalid_json'}); }
       if (!body || typeof body !== 'object' || Array.isArray(body)) return send(400, {error: 'invalid_request'});
-      if(path.startsWith('/test-auth/passkey/')){
+      if(path.startsWith('/test-auth/passkey-')){
         const result=await testRouter({path,method:req.method,headers:req.headers,body,trustedClientIp:req.socket.remoteAddress});
         return send(result.status,result.body,result.headers);
       }
