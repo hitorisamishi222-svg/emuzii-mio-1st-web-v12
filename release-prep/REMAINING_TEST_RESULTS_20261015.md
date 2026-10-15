@@ -83,6 +83,15 @@ https://emuzii-mio-1st-web-v12-cpyidjt44-gtgz8867jh-3139.vercel.app/home-portrai
 - 開発Vercelプレビューでも同じ架空入力で「ログイン情報は送信していません」と表示されることを確認。これは画面の安全挙動確認であり、Preview DBを接続した実ログインではない。
 - 開発ブランチ安全ゲート [38802282566](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802282566) 成功。テスト専用コードは `64976a94e3f11cf4243e2ac66721504f84035512`。
 
+## 再利用用の架空認証データ
+
+- 共通フィクスチャ: [synthetic-auth-data.mjs](../release-prep/fixtures/synthetic-auth-data.mjs)
+- `getSyntheticAuthFixture('browserPrimary')` / `browserNegative` はブラウザー認証テスト用。
+- `duplicateRaceWinner` / `duplicateRaceContender` はID重複・競合用、`historyOwner` はID変更後の履歴保持テスト用。
+- 例: `await registerAccountTransaction(pool, getSyntheticAuthFixture('browserPrimary'))`
+- 値は全てテスト専用に作った架空ID/パスワード。実参加者や本番データには使わない。アカウント行はCIの一時PostgreSQL内だけに作成し、ジョブ終了時に破棄する。フィクスチャ定義自体は今後のテスト用にリポジトリへ残す。
+- フィクスチャ参照変更後の限定再検証: [ログインCookie・端末 E2E 38802813274](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802813274)、[認証失敗 E2E 38802813305](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802813305) は成功。安全ゲート [38802813263](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802813263) も成功。
+
 ## 未完了・実行条件
 
 1. 開発プレビューのTEST認証API接続: ルートと画面の配線は済み。現状は専用のPreview環境変数・DBが未設定のためAPIが503で停止し、実際のプレビューでログインはできない。CIの実ブラウザーE2Eとは区別する。
