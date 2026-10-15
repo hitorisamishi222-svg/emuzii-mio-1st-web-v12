@@ -1,4 +1,5 @@
 import {Pool} from 'pg';
+import authHandler from './test-auth/[route].js';
 import {randomUUID} from 'node:crypto';
 import {hashPassword} from '../security/mio-auth-crypto.mjs';
 import {createAuthApiHandlers} from '../security/mio-auth-api-adapter.mjs';
@@ -51,8 +52,20 @@ export default async function handler(req,res){
   const setCookie=String(accepted.headers?.['Set-Cookie']||'');
   const cookieSafe=setCookie.includes('HttpOnly')&&setCookie.includes('Secure')&&setCookie.includes('SameSite=Lax')&&setCookie.startsWith('__Host-');
   const httpChecks={crossSite:deniedCrossSite.status===403,missingOrigin:deniedMissingOrigin.status===403,oversize:deniedOversize.status===413,throttle:deniedThrottle.status===429,cookieSecurity:cookieSafe,origin:rejectedOrigin.status===403,contentType:rejectedType.status===415,clientIp:rejectedIp.status===503,method:rejectedMethod.status===405,login:accepted.status===200,me:httpMe.status===200,devices:httpDevices.status===200,logout:httpLogout.status===200,expired:httpExpired.status===401};
-  const ok=Object.values(httpChecks).every(Boolean)&&extraOk&&login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
-  return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401,logoutAll:all.status===200&&allExpired.status===401,logout:out.status===200&&outExpired.status===401},httpChecks});
+  async function invokeHandler(route,method,headers={},body={}){
+   let status=200, responseBody, responseHeaders={};
+   const res={setHeader(k,v){responseHeaders[k]=v;return this},status(v){status=v;return this},json(v){responseBody=v;return this}};
+   await authHandler({query:{route},method,headers:{host:'emuzii-mio-1st-web-v12-68vp-test.vercel.app',...headers},body},res);
+   return {status,body:responseBody,headers:responseHeaders};
+  }
+  const handlerUnauth=await invokeHandler('me','GET');
+  const handlerInvalidHost=await invokeHandler('me','GET',{host:'untrusted.example'});
+  const handlerUnknown=await invokeHandler('unknown','GET');
+  const handlerInvalidMethod=await invokeHandler('me','POST');
+  const handlerOversize=await invokeHandler('login','POST',{'content-length':'99999'});
+  const handlerChecks={unauthorized:handlerUnauth.status===401,host:handlerInvalidHost.status===403,unknown:handlerUnknown.status===404,method:handlerInvalidMethod.status===405,oversize:handlerOversize.status===413};
+  const ok=Object.values(handlerChecks).every(Boolean)&&Object.values(httpChecks).every(Boolean)&&extraOk&&login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
+  return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401,logoutAll:all.status===200&&allExpired.status===401,logout:out.status===200&&outExpired.status===401},httpChecks,handlerChecks});
  }catch(e){return res.status(503).json({status:'failed',error:'test_execution_failed'})}
  finally{if(created)await pool.query('DELETE FROM mio_sessions_v21 WHERE account_id=$1',[id]).catch(()=>{});if(created)await pool.query('DELETE FROM mio_identifiers_v21 WHERE account_id=$1',[id]).catch(()=>{});if(created)await pool.query('DELETE FROM mio_accounts_v21 WHERE account_id=$1',[id]).catch(()=>{});await pool.end()}
 }
