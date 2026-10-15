@@ -1,69 +1,75 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {issueTestDeviceSession,verifyTestDeviceSession} from './test-device-session.js';
+import {issueTestDeviceSession,verifyTestDeviceSession,revokeTestDeviceSession} from './test-device-session.js';
 
 const secret='TEST_only_secret_not_used_in_production_64_bytes_minimum_7h!25';
 const otherSecret='another_independent_TEST_secret_not_used_in_production_9z!';
 const now=Date.parse('2026-10-10T06:00:00Z');
-const original={participantId:'MIO-0001',deviceId:'TESTDEVICE_A',generation:1,secret,now,ttlMs:3600_000};
-const issued=()=>issueTestDeviceSession(original);
+const participantId='MIO-0001';
+const issue=(deviceId)=>issueTestDeviceSession({participantId,deviceId,secret,now,ttlMs:3600_000});
 const record=(session,overrides={})=>({
- participantId:original.participantId,
- activeDeviceId:original.deviceId,
- generation:original.generation,
- sessionDigest:session.sessionDigest,
- active:true,
- participantApproved:true,
- ...overrides
+ participantId,deviceId:session.deviceId,sessionId:session.sessionId,
+ sessionDigest:session.sessionDigest,expiresAt:session.expiresAt,
+ active:true,participantApproved:true,revoked:false,...overrides
 });
 const check=(session,state,overrides={})=>verifyTestDeviceSession({
  token:session.token,secret,record:state,now:now+1000,...overrides
 });
 
-test('trusted TEST participant can use current signed session',()=>{
- const session=issued();
+test('trusted TEST participant can use a persisted signed session',()=>{
+ const session=issue('TESTDEVICE_A');
  assert.match(session.sessionDigest,/^[a-f0-9]{64}$/);
  assert.equal(session.expiresAt,now+3600_000);
  assert.deepEqual(check(session,record(session)),{
-  ok:true,participantId:'MIO-0001',deviceId:'TESTDEVICE_A',generation:1
+  ok:true,participantId,deviceId:'TESTDEVICE_A',sessionId:session.sessionId
  });
 });
 
-test('old device fails after verified device transfer and generation rotation',()=>{
- const oldSession=issued();
- const nextSession=issueTestDeviceSession({...original,deviceId:'TESTDEVICE_B',generation:2});
- const newRecord=record(nextSession,{activeDeviceId:'TESTDEVICE_B',generation:2});
- assert.equal(check(oldSession,newRecord).reason,'REVOKED_DEVICE');
- assert.equal(check(nextSession,newRecord).ok,true);
+test('two devices can remain signed in at the same time',()=>{
+ const phone=issue('TESTDEVICE_PHONE'),tablet=issue('TESTDEVICE_TABLET');
+ assert.equal(check(phone,record(phone)).ok,true);
+ assert.equal(check(tablet,record(tablet)).ok,true);
 });
 
-test('logout or session replacement revokes earlier cookie even without device change',()=>{
- const first=issued(),replacement=issued();
- const state=record(replacement);
- assert.equal(check(first,state).reason,'REVOKED_SESSION');
- assert.equal(check(replacement,state).ok,true);
- assert.notEqual(first.sessionDigest,replacement.sessionDigest);
+test('individual logout revokes only the selected session',async()=>{
+ const phone=issue('TESTDEVICE_PHONE'),tablet=issue('TESTDEVICE_TABLET');
+ const rows=new Map([[phone.sessionId,record(phone)],[tablet.sessionId,record(tablet)]]);
+ const store={transaction:fn=>fn({async revokeSession({participantId:owner,sessionId,revokedAt}){
+  const row=rows.get(sessionId);
+  if(!row||row.participantId!==owner||row.revoked)return false;
+  rows.set(sessionId,{...row,revoked:true,revokedAt,active:false});return true;
+ }})};
+ assert.equal(await revokeTestDeviceSession({store,participantId,sessionId:phone.sessionId,now:now+2000}),true);
+ assert.equal(check(phone,rows.get(phone.sessionId)).reason,'INACTIVE_OR_UNAPPROVED');
+ assert.equal(check(tablet,rows.get(tablet.sessionId)).ok,true);
 });
 
-test('unapproved or deactivated participant cannot use a valid signed token',()=>{
- const session=issued();
+test('a different account cannot revoke another participant session',async()=>{
+ const phone=issue('TESTDEVICE_PHONE'),row=record(phone);
+ const store={transaction:fn=>fn({async revokeSession(){return false}})};
+ assert.equal(await revokeTestDeviceSession({store,participantId:'MIO-0002',sessionId:phone.sessionId,now}),false);
+ assert.equal(check(phone,row).ok,true);
+});
+
+test('expired, inactive, unapproved and mismatched session rows are rejected',()=>{
+ const session=issue('TESTDEVICE_A');
  for(const state of [
-  record(session,{participantApproved:false}),
-  record(session,{active:false}),
-  record(session,{participantId:'MIO-0002'}),
-  null,{}
+  record(session,{active:false}),record(session,{revoked:true}),
+  record(session,{participantApproved:false}),record(session,{participantId:'MIO-0002'}),
+  record(session,{deviceId:'TESTDEVICE_B'}),record(session,{sessionId:'x'.repeat(43)}),
+  record(session,{sessionDigest:'0'.repeat(64)}),record(session,{expiresAt:now+500})
  ])assert.equal(check(session,state).ok,false);
- assert.equal(check(session,record(session,{participantApproved:false})).reason,'INACTIVE_OR_UNAPPROVED');
+ assert.equal(check(session,record(session,{active:false})).reason,'INACTIVE_OR_UNAPPROVED');
 });
 
 test('expired and not-yet-issued tokens are rejected',()=>{
- const session=issued(),state=record(session);
+ const session=issue('TESTDEVICE_A'),state=record(session);
  assert.equal(check(session,state,{now:session.expiresAt}).reason,'EXPIRED_OR_INVALID');
  assert.equal(check(session,state,{now:now-1}).reason,'EXPIRED_OR_INVALID');
 });
 
-test('tampering, wrong secret and missing signed state are rejected',()=>{
- const session=issued(),state=record(session);
+test('tampering, wrong secret and malformed tokens are rejected',()=>{
+ const session=issue('TESTDEVICE_A'),state=record(session);
  const parts=session.token.split('.');
  const malicious=parts[0].slice(0,-2)+'xx.'+parts[1];
  assert.equal(check(session,state,{token:malicious}).ok,false);
@@ -72,40 +78,35 @@ test('tampering, wrong secret and missing signed state are rejected',()=>{
   assert.equal(check(session,state,{token}).ok,false);
 });
 
-test('client-submitted display names and unverified identity do not grant rights',()=>{
- const session=issued();
+test('browser supplied names or approval flags never authorize a session',()=>{
+ const session=issue('TESTDEVICE_A');
  for(const fakeState of [
-  {participantId:'MIO-0001',activeDeviceId:'TESTDEVICE_A',generation:1,active:true,participantApproved:true},
-  {participantId:'MIO-0001',activeDeviceId:'TESTDEVICE_A',generation:1,sessionDigest:'0'.repeat(64),active:true,participantApproved:true},
-  record(session,{activeDeviceId:null}),
-  record(session,{generation:undefined}),
-  record(session,{participantApproved:'true'})
+  {participantId,deviceId:'TESTDEVICE_A',sessionId:session.sessionId,
+   sessionDigest:session.sessionDigest,expiresAt:session.expiresAt,active:true},
+  record(session,{participantApproved:'true'}),record(session,{revoked:true})
  ])assert.equal(check(session,fakeState).ok,false);
 });
 
-test('issuance requires secure secret, participant ID, device ID and generation',()=>{
+test('issuance requires a strong TEST secret and valid participant/device IDs',()=>{
  for(const args of [
-  {...original,secret:'weak'},
-  {...original,participantId:''},
-  {...original,deviceId:''},
-  {...original,generation:0},
-  {...original,generation:1.1},
-  {...original,ttlMs:0},
-  {...original,ttlMs:31*86_400_000},
-  {...original,now:-1}
+  {participantId,deviceId:'TESTDEVICE_A',secret:'weak',now},
+  {participantId:'',deviceId:'TESTDEVICE_A',secret,now},
+  {participantId,deviceId:'',secret,now},
+  {participantId,deviceId:'TESTDEVICE_A',secret,now:-1},
+  {participantId,deviceId:'TESTDEVICE_A',secret,now,ttlMs:0},
+  {participantId,deviceId:'TESTDEVICE_A',secret,now,ttlMs:31*86_400_000}
  ])assert.throws(()=>issueTestDeviceSession(args));
 });
 
-test('tokens cannot be replayed for other participants or devices',()=>{
- const session=issued();
+test('session token cannot be replayed for a different participant or device',()=>{
+ const session=issue('TESTDEVICE_A');
  assert.equal(check(session,record(session,{participantId:'MIO-0002'})).reason,'PARTICIPANT_MISMATCH');
- assert.equal(check(session,record(session,{activeDeviceId:'TESTDEVICE_B'})).reason,'REVOKED_DEVICE');
+ assert.equal(check(session,record(session,{deviceId:'TESTDEVICE_B'})).reason,'REVOKED_SESSION');
 });
 
-test('no production or persistent storage is written by test proof helpers',()=>{
- const session=issued(),state=record(session);
- assert.equal(check(session,state).ok,true);
- // The returned digest must be persisted separately by a TEST-only service.
+test('proof helpers do not persist data or connect to production stores',()=>{
+ const session=issue('TESTDEVICE_A');
+ assert.equal(check(session,record(session)).ok,true);
  assert.equal(Object.hasOwn(session,'token'),true);
  assert.equal(Object.hasOwn(session,'record'),false);
 });
