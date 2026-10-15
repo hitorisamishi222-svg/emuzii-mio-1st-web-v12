@@ -92,6 +92,14 @@ https://emuzii-mio-1st-web-v12-cpyidjt44-gtgz8867jh-3139.vercel.app/home-portrai
 - 値は全てテスト専用に作った架空ID/パスワード。実参加者や本番データには使わない。アカウント行はCIの一時PostgreSQL内だけに作成し、ジョブ終了時に破棄する。フィクスチャ定義自体は今後のテスト用にリポジトリへ残す。
 - フィクスチャ参照変更後の限定再検証: [ログインCookie・端末 E2E 38802813274](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802813274)、[認証失敗 E2E 38802813305](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802813305) は成功。安全ゲート [38802813263](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802813263) も成功。
 
+## 追加の架空データ実DB検証 — 2026-10-16
+
+- [Actions 38803679086](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38803679086): 一時PostgreSQL 16で2/2合格。
+- 共通fixtureの架空データを使い、大小文字違いの同時ログインID登録、MIO-ID/ログインID間の名前空間衝突、敗者アカウントのロールバックを確認。
+- 履歴用アカウントでログインIDを変更し、旧ID予約、MIO-ID紐付け、2端末セッション、ガチャ履歴と残数の維持を確認。残り1回を2端末から同時要求し、1回だけ消費されることも確認。
+- 初回は競合勝者が2番目のfixtureだった場合にテストが候補の元IDを参照していたため失敗。勝者の確定IDを結果から取り直すよう修正し、2/2合格。アプリ実装の不具合ではない。
+- 安全ゲート [38803866971](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38803866971) 成功。テストコード: `66da7edb37fd53dfab5918db370f4eabf083cb67`。
+
 ## 未完了・実行条件
 
 1. 開発プレビューのTEST認証API接続: ルートと画面の配線は済み。現状は専用のPreview環境変数・DBが未設定のためAPIが503で停止し、実際のプレビューでログインはできない。CIの実ブラウザーE2Eとは区別する。
