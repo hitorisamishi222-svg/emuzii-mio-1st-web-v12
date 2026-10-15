@@ -76,6 +76,13 @@ https://emuzii-mio-1st-web-v12-cpyidjt44-gtgz8867jh-3139.vercel.app/home-portrai
 - 初回実行では2回目のAPI応答を待たずに判定するテスト側の同期不備が見つかった。各応答を明示してから判定するよう直し、合格を確認。認証画面の修正ではない。
 - 実行コード: `4ee0ffdfb0ebebabec0eab94fa8687d0fb304fa5`。開発ブランチの安全ゲート [38801285771](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38801285771) も成功。
 
+## TEST API未接続時の資格情報送信防止 — 2026-10-16
+
+- [Actions 38802282848](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802282848): Chromium 1/1、WebKit 1/1合格。
+- 実際のログインHTMLをローカルHTTPSで開き、APIの事前確認を `503 test_environment_not_ready` に固定。架空ID/パスワード入力後、サーバーの受信記録が `GET /test-auth/me` のみで、ログインPOSTなし、Cookie発行なしとなることを確認した。
+- 開発Vercelプレビューでも同じ架空入力で「ログイン情報は送信していません」と表示されることを確認。これは画面の安全挙動確認であり、Preview DBを接続した実ログインではない。
+- 開発ブランチ安全ゲート [38802282566](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38802282566) 成功。テスト専用コードは `64976a94e3f11cf4243e2ac66721504f84035512`。
+
 ## 未完了・実行条件
 
 1. 開発プレビューのTEST認証API接続: ルートと画面の配線は済み。現状は専用のPreview環境変数・DBが未設定のためAPIが503で停止し、実際のプレビューでログインはできない。CIの実ブラウザーE2Eとは区別する。
