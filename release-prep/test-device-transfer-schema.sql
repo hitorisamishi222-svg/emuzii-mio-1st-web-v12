@@ -5,14 +5,24 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS next_test.test_device_sessions (
-  test_participant_ref text PRIMARY KEY
+  test_session_ref text PRIMARY KEY
+    CHECK (length(test_session_ref) BETWEEN 32 AND 120),
+  test_participant_ref text NOT NULL
     REFERENCES next_test.community_profiles(test_participant_ref) ON DELETE RESTRICT,
-  active_device_id text NOT NULL CHECK (length(active_device_id) BETWEEN 3 AND 120),
-  generation bigint NOT NULL CHECK (generation >= 1),
+  device_id text NOT NULL CHECK (length(device_id) BETWEEN 3 AND 120),
   session_digest char(64) NOT NULL CHECK (session_digest ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz NOT NULL DEFAULT now(),
   expires_at timestamptz NOT NULL,
-  updated_at timestamptz NOT NULL DEFAULT now()
+  revoked_at timestamptz,
+  CHECK (revoked_at IS NULL OR revoked_at >= created_at),
+  UNIQUE(session_digest)
 );
+-- One active session per device, many devices per participant.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_next_test_one_live_session_per_device
+  ON next_test.test_device_sessions(test_participant_ref,device_id)
+  WHERE revoked_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_next_test_sessions_by_participant
+  ON next_test.test_device_sessions(test_participant_ref,created_at DESC);
 
 CREATE TABLE IF NOT EXISTS next_test.test_transfer_approvals (
   transfer_approval_id text PRIMARY KEY
@@ -49,13 +59,13 @@ CREATE TABLE IF NOT EXISTS next_test.test_device_transfer_audit (
   test_participant_ref text NOT NULL
     REFERENCES next_test.community_profiles(test_participant_ref) ON DELETE RESTRICT,
   transfer_approval_id text NOT NULL,
-  previous_generation bigint NOT NULL,
-  next_generation bigint NOT NULL,
+  device_id text NOT NULL CHECK (length(device_id) BETWEEN 3 AND 120),
   verified_operator_ref text NOT NULL,
   occurred_at timestamptz NOT NULL DEFAULT now(),
-  CHECK (next_generation=previous_generation+1)
+  event_kind text NOT NULL DEFAULT 'device_added'
+    CHECK (event_kind IN ('device_added','session_revoked'))
 );
--- Never store a raw cookie, session token, login ID or full private identifier
+-- Never store a raw cookie, session token or full private identifier
 -- in the audit table. Verify the operator in server-side TEST authorization.
 
 ALTER TABLE next_test.test_device_sessions ENABLE ROW LEVEL SECURITY;
@@ -70,6 +80,7 @@ REVOKE ALL ON ALL TABLES IN SCHEMA next_test FROM PUBLIC;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA next_test FROM PUBLIC;
 -- No CREATE POLICY grants: fail closed until dedicated TEST backend is designed.
 -- Service transactions MUST lock the approval and profile in a single transaction,
--- atomically mark the approval consumed, compare-and-swap generation,
--- rotate session_digest, and append an audit row. Rollback on any error.
+-- atomically consume approval, insert only the new device session, and append audit.
+-- Individual logout must set revoked_at for only the selected session row.
+-- Any error rolls the whole transaction back; other device sessions remain valid.
 COMMIT;
