@@ -32,7 +32,7 @@ test('invalid TEST database URLs and preview URLs are rejected',()=>{
   assert.equal(testAuthDeploymentGate({...valid,MIO_TEST_DATABASE_URL:url}).ok,false,url);
  }
  for(const url of ['http://emuzii-mio-1st-web-v12-68vp-foo.vercel.app',
-  'https://emuzii-mio-1st-web-v12-git-main.vercel.app',
+  'https://emuzii-mio-1st-web-v12.vercel.app',
   'https://emuzii-mio-1st-web-v12-68vp-foo.vercel.app/path']){
   assert.equal(testAuthDeploymentGate({...valid,MIO_TEST_ORIGIN:url}).ok,false,url);
  }
