@@ -1,7 +1,7 @@
 import {Pool} from 'pg';
-import {createAuthApiHandlers} from '../security/mio-auth-api-adapter.mjs';
-import {createTestHttpRouter} from '../security/mio-test-http-router.mjs';
-import {testAuthDeploymentGate} from '../security/mio-test-deployment-gate.mjs';
+import {createAuthApiHandlers} from '../../security/mio-auth-api-adapter.mjs';
+import {createTestHttpRouter} from '../../security/mio-test-http-router.mjs';
+import {testAuthDeploymentGate} from '../../security/mio-test-deployment-gate.mjs';
 import {createHash} from 'node:crypto';
 const pool=new Pool({connectionString:process.env.MIO_TEST_DATABASE_URL,max:3,connectionTimeoutMillis:5000});
 export default async function handler(req,res){
