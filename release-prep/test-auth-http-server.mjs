@@ -50,7 +50,7 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
       let size = 0; const chunks = [];
       for await (const chunk of req) {
         size += chunk.length;
-        if (size > 65536) { req.resume(); return send(413, {error: 'payload_too_large'}); }
+        if (size > (path.startsWith('/test-auth/passkey-')?65536:4096)) { req.resume(); return send(413, {error: 'payload_too_large'}); }
         chunks.push(chunk);
       }
       let body;
