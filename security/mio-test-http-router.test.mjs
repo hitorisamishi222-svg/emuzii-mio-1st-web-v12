@@ -37,7 +37,7 @@ test('logout and revoke device require same-origin JSON POST',async()=>{
   const r=await route({path,method:'POST',headers,body:{sessionId:'a'.repeat(64)}});
   assert.equal(r.status,200,path);
  }
- assert.deepEqual(calls.map(x=>x[0]),['logout','logoutAll','revoke']);
+ assert.deepEqual(calls.map(x=>x[0]),['me','logout','me','logoutAll','me','revoke']);
  assert.equal((await route({path:'/test-auth/logout',method:'GET',headers})).status,405);
  assert.equal((await route({path:'/test-auth/logout',method:'POST',headers:{...headers,'content-length':'4097'},body:{}})).status,413);
 });
