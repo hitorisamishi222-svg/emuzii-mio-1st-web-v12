@@ -21,8 +21,17 @@ export default async function handler(req,res){
   const devices=await api.devices(cookie);
   const revoke=await api.revokeDevice(cookie,devices.body?.devices?.[0]?.sessionId);
   const after=await api.me(cookie);
-  const ok=login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
-  return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401}});
+  const second=await api.login({identifier:loginId,password,deviceLabel:'TEST-B'});
+  const secondCookie=second.headers?.['Set-Cookie']?.split(';')[0]||'';
+  const all=await api.logoutAll(secondCookie);
+  const allExpired=await api.me(secondCookie);
+  const third=await api.login({identifier:loginId,password,deviceLabel:'TEST-C'});
+  const thirdCookie=third.headers?.['Set-Cookie']?.split(';')[0]||'';
+  const out=await api.logout(thirdCookie);
+  const outExpired=await api.me(thirdCookie);
+  const extraOk=second.status===200&&all.status===200&&all.body.revoked===1&&allExpired.status===401&&third.status===200&&out.status===200&&outExpired.status===401;
+  const ok=extraOk&&login.status===200&&me.status===200&&devices.status===200&&devices.body.devices.length===1&&revoke.status===200&&revoke.body.revoked===true&&after.status===401;
+  return res.status(ok?200:503).json({status:ok?'ok':'failed',checks:{login:login.status===200,me:me.status===200,devices:devices.status===200,revoke:revoke.body?.revoked===true,expired:after.status===401,logoutAll:all.status===200&&allExpired.status===401,logout:out.status===200&&outExpired.status===401}});
  }catch(e){return res.status(503).json({status:'failed',error:'test_execution_failed'})}
  finally{if(created)await pool.query('DELETE FROM mio_sessions_v21 WHERE account_id=$1',[id]).catch(()=>{});if(created)await pool.query('DELETE FROM mio_identifiers_v21 WHERE account_id=$1',[id]).catch(()=>{});if(created)await pool.query('DELETE FROM mio_accounts_v21 WHERE account_id=$1',[id]).catch(()=>{});await pool.end()}
 }
