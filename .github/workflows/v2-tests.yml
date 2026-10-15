@@ -9,6 +9,8 @@ on:
   workflow_dispatch:
 jobs:
   test:
+    if: github.ref == 'refs/heads/release/v2-next-integrated-replica'
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     permissions:
       contents: read
