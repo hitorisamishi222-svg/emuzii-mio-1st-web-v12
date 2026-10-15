@@ -110,3 +110,12 @@ https://emuzii-mio-1st-web-v12-cpyidjt44-gtgz8867jh-3139.vercel.app/home-portrai
 開発プレビュー（最終検証コード `7e0edbb578bf69dc9e0a66ee0d97cbc61d3a9a52`）:
 https://emuzii-mio-1st-web-v12-436tjbjtr-gtgz8867jh-3139.vercel.app/test-auth-browser-check.html
 Vercel READY。ブラウザーで環境未設定表示と「0/5未実行」を確認。実画面のログイン/API成功は環境変数が未設定のため行っていない。
+
+
+## 開発Previewの実HTTPS API疎通 — 2026-10-16
+
+- [現在の開発Preview](https://emuzii-mio-1st-web-v12-68vp-81c4ntdmu-gtgz8867jh-3139.vercel.app/test-auth-browser-check.html) をChrome実ブラウザーで開き、同一オリジンHTTPS通信で5/5合格。未ログイン拒否 401、未認証の端末一覧 401、不正メソッド 405、不正Content-Type 415、不正なログイン入力 400。
+- ブラウザー画面からのAPI実応答を確認。これは認証成功や端末Cookie発行のテストではない。別のCI一時PostgreSQL＋Chromium/WebKit成功テストとは区別する。
+- Preview側にはTEST API用環境変数が存在し、環境ゲートは通過。/api/test-auth/me が期待どおり401を返した後、5項目を実行した。
+- 安全確認でNeonの mio-dev-test-isolated ブランチが init_source: parent-data で、Neonプロジェクトの main ブランチを親にしていることを確認。DBの行データは読み取らず、同ブランチへのログイン試行・挿入・更新は行っていない。よって実Preview DBを使う認証成功・セッション・履歴テストは未実施。参加者データを除いた空のTEST DBに切り替えた後に実施する。
+- この状態は以前の「Preview環境変数未設定」という記録から更新された現状である。main/本番サイト/GAS/実参加者データには変更なし。
