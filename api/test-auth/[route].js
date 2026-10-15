@@ -14,7 +14,7 @@ export default async function handler(req,res){
  const path='/test-auth/'+String(req.query?.route||'');
  if(!['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device'].includes(path))return res.status(404).json({error:'not_found'});
  const contentLength=Number(req.headers['content-length']||0);
- if(contentLength>4096||JSON.stringify(req.body||{}).length>4096)return res.status(413).json({error:'payload_too_large'});
+ if(!Number.isFinite(contentLength)||contentLength<0||contentLength>4096||Buffer.byteLength(JSON.stringify(req.body||{}),'utf8')>4096)return res.status(413).json({error:'payload_too_large'});
  const throttle={allow:async(key)=>{
   const digest=createHash('sha256').update(key).digest('hex');
   const result=await pool.query("INSERT INTO mio_test_login_limits(attempt_key,attempts,window_start) VALUES($1,1,now()) ON CONFLICT(attempt_key) DO UPDATE SET attempts=CASE WHEN mio_test_login_limits.window_start < now()-interval '15 minutes' THEN 1 ELSE mio_test_login_limits.attempts+1 END, window_start=CASE WHEN mio_test_login_limits.window_start < now()-interval '15 minutes' THEN now() ELSE mio_test_login_limits.window_start END RETURNING attempts", [digest]);
@@ -23,7 +23,7 @@ export default async function handler(req,res){
  const api=createAuthApiHandlers(pool);
  const route=createTestHttpRouter({api,throttle,trustedOrigin});
  try{
-  const response=await route({path,method:req.method,headers:req.headers,body:req.body,trustedClientIp:String(req.headers['x-vercel-forwarded-for']||req.headers['x-real-ip']||'').split(',')[0].trim()});
+  const response=await route({path,method:req.method,headers:req.headers,body:req.body,trustedClientIp:String(req.headers['x-vercel-forwarded-for']||'').split(',')[0].trim()});
   for(const [k,v] of Object.entries(response.headers||{}))res.setHeader(k,v);
   return res.status(response.status).json(response.body);
  }catch{return res.status(503).json({error:'test_api_unavailable'})}
