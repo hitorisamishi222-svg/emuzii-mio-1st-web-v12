@@ -13,7 +13,8 @@ async function setup(){
   create:async(account,label)=>memory.create(account,label),
   lookup:async(token)=>memory.lookup(token),
   revoke:async(account,sid)=>memory.revoke(account,sid),
-  revokeAll:async(account)=>memory.revokeAll(account)
+  revokeAll:async(account)=>memory.revokeAll(account),
+  list:async(account)=>memory.list(account)
  };
  return {flow:createAuthFlow(db,{sessions}),memory};
 }
@@ -41,4 +42,25 @@ test('invalid cookies cannot authenticate',async()=>{
  const {flow}=await setup();
  assert.equal(await flow.current('unrelated=abc'),null);
  assert.match((await flow.logout('invalid')).setCookie,/Max-Age=0/);
+});
+
+test('authenticated user can list only their active devices',async()=>{
+ const {flow}=await setup(),a=await flow.login({identifier:'TestUser_2026',password,deviceLabel:'iPhone'});
+ await flow.login({identifier:'TestUser_2026',password,deviceLabel:'Android'});
+ const list=await flow.devices(header(a.setCookie));
+ assert.equal(list.length,2);
+ assert.equal(await flow.devices('invalid'),null);
+});
+test('authenticated user can revoke one selected device',async()=>{
+ const {flow}=await setup(),a=await flow.login({identifier:'TestUser_2026',password,deviceLabel:'iPhone'});
+ const b=await flow.login({identifier:'TestUser_2026',password,deviceLabel:'Android'});
+ const list=await flow.devices(header(a.setCookie));
+ const selected=list.find(x=>x.deviceLabel==='Android');
+ assert.equal(await flow.revokeDevice(header(a.setCookie),selected.sessionId),true);
+ assert.equal(await flow.current(header(b.setCookie)),null);
+ assert.equal((await flow.current(header(a.setCookie))).accountId,id);
+});
+test('unauthenticated request cannot revoke device',async()=>{
+ const {flow}=await setup();
+ assert.equal(await flow.revokeDevice('invalid','a'.repeat(64)),null);
 });
