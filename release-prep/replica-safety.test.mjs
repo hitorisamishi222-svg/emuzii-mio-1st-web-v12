@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,existsSync} from 'node:fs';
+import {readFileSync,existsSync,readdirSync} from 'node:fs';
 const read=x=>readFileSync(new URL('../'+x,import.meta.url),'utf8');
 const config=JSON.parse(read('vercel.json'));
 const build=config.buildCommand;
@@ -21,6 +21,23 @@ test('every production-only source remains present in checkout but excluded by b
 test('preview root points to preview menu and has no serverless API directory',()=>{
  assert(config.rewrites.some(x=>x.source==='/'&&x.destination==='/next-preview.html'));
  assert(!existsSync(new URL('../api',import.meta.url)),'no Vercel function directory may be deployed');
+});
+test('published preview pages do not link to withheld production gacha or missing HTML',()=>{
+ const pages=['next-preview.html','home-portrait-next.html','integrated-live-demo.html','background-visual-audit.html'];
+ for(const page of pages){
+  const html=read(page);
+  assert(!/href=["']\/gacha\.html["']|data-page=["']gacha\.html["']/.test(html),page+' links to withheld production gacha');
+ }
+ const published=new Set(['index.html','gacha.html']);
+ for(const entry of readdirSync(new URL('../',import.meta.url))){
+  if(!entry.endsWith('.html')||published.has(entry))continue;
+  const html=read(entry);
+  for(const match of html.matchAll(/(?:href|data-page)=["']([^"']+\.html(?:[?#][^"']*)?)["']/g)){
+   const target=match[1].split(/[?#]/)[0].replace(/^\//,'');
+   assert(!published.has(target),entry+' links to withheld '+target);
+   assert(existsSync(new URL('../'+target,import.meta.url)),entry+' links to missing '+target);
+  }
+ }
 });
 test('home page JS cannot call production API and info pages are seeded with fake data',()=>{
  const js=read('home-updates.js');
