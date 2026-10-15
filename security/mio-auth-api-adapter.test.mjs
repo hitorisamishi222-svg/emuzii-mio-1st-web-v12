@@ -49,3 +49,21 @@ test('allowed login passes through shared throttle',async()=>{
  const r=await api.login({identifier:'TestUser_2026',password:'good'});
  assert.equal(r.status,200);assert.deepEqual(keys,['TestUser_2026']);
 });
+
+test('device listing requires an authenticated account',async()=>{
+ const flow={devices:async h=>h==='valid'?[{sessionId:'a'.repeat(64),deviceLabel:'iPhone'}]:null};
+ const api=createAuthApiHandlers(null,{flow});
+ assert.equal((await api.devices('valid')).body.devices.length,1);
+ assert.equal((await api.devices('invalid')).status,401);
+});
+test('selected device revocation rejects malformed ID',async()=>{
+ const flow={revokeDevice:async()=>{throw Error('must not be called')}};
+ const api=createAuthApiHandlers(null,{flow});
+ assert.equal((await api.revokeDevice('valid','bad')).status,400);
+});
+test('selected device revocation requires authorization',async()=>{
+ const flow={revokeDevice:async h=>h==='valid'?true:null};
+ const api=createAuthApiHandlers(null,{flow});
+ assert.equal((await api.revokeDevice('invalid','a'.repeat(64))).status,401);
+ assert.equal((await api.revokeDevice('valid','a'.repeat(64))).body.revoked,true);
+});
