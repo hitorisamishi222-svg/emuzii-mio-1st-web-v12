@@ -115,7 +115,6 @@ test('login rejects absent origin, cross-site fetch and untrusted content types'
 test('invalid device revocation token cannot revoke a session',async()=>{
  calls.length=0;
  const r=await route({path:'/test-auth/revoke-device',method:'POST',headers,body:{sessionId:'short'}});
- // Adapter is responsible for final session ID validation.
- assert.equal(r.status,200);
- assert.deepEqual(calls.map(x=>x[0]),['me','revoke']);
+ assert.equal(r.status,400);
+ assert.deepEqual(calls.map(x=>x[0]),['me']);
 });
