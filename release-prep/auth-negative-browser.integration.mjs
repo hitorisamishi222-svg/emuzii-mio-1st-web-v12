@@ -92,22 +92,25 @@ test('browser gives the same generic error for a wrong password and an unknown s
     await page.goto(appOrigin + '/login-recovery-demo.html');
     await page.getByRole('button', {name: 'ログインIDが分かる'}).click();
 
-    await page.locator('#loginId').fill(syntheticLoginId);
-    await page.locator('#loginPassword').fill('Wrong-Synthetic-Password-2026!');
-    await page.locator('#testLogin').click();
-    await page.locator('#result').waitFor({state: 'visible'});
-    const wrongPasswordMessage = (await page.locator('#result').innerText()).trim();
-    assert.equal(wrongPasswordMessage, 'IDまたはパスワードを確認してください。');
+    const attempt = async identifier => {
+      await page.locator('#loginId').fill(identifier);
+      await page.locator('#loginPassword').fill('Wrong-Synthetic-Password-2026!');
+      const responsePromise = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/test-auth/login' && response.request().method() === 'POST');
+      await page.locator('#testLogin').click();
+      const response = await responsePromise;
+      await page.locator('#result').waitFor({state: 'visible'});
+      return {status: response.status(), message: (await page.locator('#result').innerText()).trim()};
+    };
+    const wrongPassword = await attempt(syntheticLoginId);
+    assert.equal(wrongPassword.status, 401);
+    assert.equal(wrongPassword.message, 'IDまたはパスワードを確認してください。');
     assert.equal((await context.cookies(appOrigin)).some(cookie => cookie.name === '__Host-mio_session'), false);
 
-    await page.locator('#loginId').fill('Missing_User2026');
-    await page.locator('#loginPassword').fill('Wrong-Synthetic-Password-2026!');
-    await page.locator('#testLogin').click();
-    await page.locator('#result').waitFor({state: 'visible'});
-    const unknownIdMessage = (await page.locator('#result').innerText()).trim();
-    assert.equal(unknownIdMessage, wrongPasswordMessage, 'unknown identity must not disclose account existence');
+    const unknownId = await attempt('Missing_User2026');
+    assert.equal(unknownId.status, 401);
+    assert.equal(unknownId.message, wrongPassword.message, 'unknown identity must not disclose account existence');
     assert.equal((await context.cookies(appOrigin)).some(cookie => cookie.name === '__Host-mio_session'), false);
-    assert.deepEqual(statuses.filter(x => x[0] === '/test-auth/login').map(x => x[1]), [401, 401]);
 
     const sessions = await pool.query('SELECT count(*)::int AS count FROM mio_sessions_v21 WHERE account_id=$1', [account.accountId]);
     assert.equal(sessions.rows[0].count, 0, 'failed synthetic logins must not create sessions');
