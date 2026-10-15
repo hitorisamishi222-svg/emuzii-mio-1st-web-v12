@@ -53,3 +53,17 @@ test('missing Origin header is rejected before authentication and limiter',async
  assert.equal(response.status,403);
  assert.equal(calls.length,0);
 });
+
+test('empty login fields are rejected before throttle',async()=>{
+ const {route,calls}=setup();
+ for(const invalid of [{identifier:'',password:'test'},{identifier:'  ',password:'test'},{identifier:'user',password:''}]){
+  assert.equal((await route({...request,body:invalid})).status,400);
+ }
+ assert.deepEqual(calls,[]);
+});
+test('login limiter groups identifier case and whitespace variations',async()=>{
+ const {route,calls}=setup();
+ await route({...request,body:{...body,identifier:' TestUser_2026 '}});
+ await route({...request,body:{...body,identifier:'testuser_2026'}});
+ assert.deepEqual(calls.filter(x=>x[0]==='limit').map(x=>x[1]),['192.0.2.10|testuser_2026','192.0.2.10|testuser_2026']);
+});
