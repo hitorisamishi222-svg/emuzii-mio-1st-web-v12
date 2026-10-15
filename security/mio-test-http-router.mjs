@@ -29,6 +29,8 @@ export function createTestHttpRouter({api,throttle,trustedOrigin}={}){
     return {status:400,body:{error:'invalid_request'}};
    return login(req);
   }
+  const session=await api.me(cookie);
+  if(session.status!==200)return {status:401,body:{error:'unauthorized'}};
   if(path==='/test-auth/revoke-device')return api.revokeDevice(cookie,body.sessionId);
   return api[writes.get(path)](cookie);
  };
