@@ -26,15 +26,15 @@ test('integration: rename preserves both device sessions and same account identi
  assert.equal(queries.includes('COMMIT'),true);
 });
 test('integration: gacha replay does not spend second right after device switch',async()=>{
- let remaining=1,stored=null;
+ let remaining=1;const stored=new Map();
  const pool={connect:async()=>({query:async(sql,args=[])=>{
   if(sql.startsWith('SELECT account_id'))return {rowCount:1,rows:[{account_id:accountId}]};
-  if(sql.startsWith('SELECT draw_id'))return stored?{rowCount:1,rows:[stored]}:{rowCount:0,rows:[]};
+  if(sql.startsWith('SELECT draw_id'))return stored.has(args[1])?{rowCount:1,rows:[stored.get(args[1])]}:{rowCount:0,rows:[]};
   if(sql.startsWith('UPDATE mio_gacha_balances')){
    if(remaining===0)return {rowCount:0,rows:[]};
    remaining--;return {rowCount:1,rows:[{remaining}]};
   }
-  if(sql.startsWith('INSERT INTO mio_gacha_draws')){stored={draw_id:args[0],prize_code:args[3]};return {rowCount:1,rows:[]}}
+  if(sql.startsWith('INSERT INTO mio_gacha_draws')){stored.set(args[2],{draw_id:args[0],prize_code:args[3]});return {rowCount:1,rows:[]}}
   return {rowCount:0,rows:[]};
  },release:()=>{}})};
  const sessions=createInMemorySessionStore();
