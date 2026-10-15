@@ -19,6 +19,8 @@ jobs:
         browser: [chromium, webkit]
     env:
       MIO_BROWSER: ${{ matrix.browser }}
+      # Rerun failures and pages affected by the visual fix; reuse other baseline passes.
+      MIO_BROWSER_CASES: '{"chromium":["320-home-portrait-next","320-news","320-schedule","320-home-updates-demo","320-integrated-live-demo","320-integrated-menu-navigation","375-home-portrait-next","375-news","375-schedule","375-home-updates-demo","375-integrated-live-demo","375-integrated-menu-navigation","390-home-portrait-next","390-news","390-schedule","390-home-updates-demo","390-integrated-live-demo","390-integrated-menu-navigation","430-home-portrait-next","430-news","430-schedule","430-home-updates-demo","430-integrated-live-demo","430-integrated-menu-navigation"],"webkit":["320-home-portrait-next","320-news","320-schedule","320-home-updates-demo","320-integrated-live-demo","320-integrated-menu-navigation","375-home-portrait-next","375-news","375-schedule","375-home-updates-demo","375-integrated-live-demo","375-integrated-menu-navigation","390-home-portrait-next","390-news","390-schedule","390-home-updates-demo","390-integrated-live-demo","390-integrated-menu-navigation","430-home-portrait-next","430-news","430-schedule","430-home-updates-demo","430-integrated-live-demo","430-integrated-menu-navigation"]}'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

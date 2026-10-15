@@ -11,3 +11,21 @@ body.mio-approved-bg main,body.mio-approved-bg .app{position:relative;z-index:1}
 body.mio-approved-bg .glass,body.mio-approved-bg .panel,body.mio-approved-bg .card{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 @media(min-width:700px){:root{--mio-portrait-space:clamp(310px,32vw,460px);--mio-portrait-y:-150px}body.mio-approved-bg::before{background-size:min(100vw,900px) auto!important;background-position:center var(--mio-portrait-y)!important}}
 @media(prefers-reduced-motion:reduce){body.mio-approved-bg *{scroll-behavior:auto}}
+
+/* Keep the artwork bright; protect only text that sits directly on it. */
+body.mio-approved-bg.next-premium-home .app>header .brand,
+body.mio-approved-bg.next-premium-home .app>header .version,
+body.mio-approved-bg.next-premium-home .app>header>p,
+body.mio-approved-bg.next-premium-home .app>.hero>h1,
+body.mio-approved-bg.next-premium-home .app>.hero>p{
+ background:rgba(4,18,45,.90);color:#f3f9ff;
+ border-radius:12px;padding:8px 12px;text-shadow:none;
+ -webkit-box-decoration-break:clone;box-decoration-break:clone;
+}
+body.mio-approved-bg.next-premium-home .app>header .brand,
+body.mio-approved-bg.next-premium-home .app>header .version{display:inline-block}
+body.mio-approved-bg.next-premium-home .app>header>p,
+body.mio-approved-bg.next-premium-home .app>.hero>h1,
+body.mio-approved-bg.next-premium-home .app>.hero>p{display:table;max-width:100%;width:fit-content}
+body.mio-approved-bg.next-premium-home .app>header>p{margin:8px auto 0}
+body.mio-approved-bg.next-premium-home .app>footer{background:rgba(4,18,45,.90);color:#f3f9ff;border-radius:12px;padding:12px}

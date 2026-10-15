@@ -115,6 +115,17 @@ for (const width of widths) {
         assert.ok(background.width >= 100 && background.active, 'Approved background must be loaded');
         assert.ok(background.css.includes(background.name), 'Correct approved background must be selected');
       }
+      if (['news.html', 'schedule.html', 'home-updates-demo.html'].includes(path)) {
+        const backings = await page.locator('.app>header .brand,.app>header .version,.app>header>p,.app>.hero>h1,.app>.hero>p').evaluateAll(elements => elements.map(el => ({
+          label: el.textContent.trim().slice(0, 30), background: getComputedStyle(el).backgroundColor,
+        })));
+        assert.ok(backings.length >= 5);
+        for (const block of backings) {
+          const rgba = block.background.match(/[\d.]+/g)?.map(Number) || [];
+          const alpha = rgba.length === 4 ? rgba[3] : rgba.length === 3 ? 1 : 0;
+          assert.ok(alpha >= 0.75, `Text needs a local dark backing over bright artwork: ${JSON.stringify(block)}`);
+        }
+      }
       await page.screenshot({path: resolve(output, `${id}.png`)});
       if (path === 'home-portrait-next.html') {
         await page.locator('a[href="/mypage-deluxe-demo.html"]').scrollIntoViewIfNeeded();
