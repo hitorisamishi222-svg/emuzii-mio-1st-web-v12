@@ -67,3 +67,12 @@ test('selected device revocation requires authorization',async()=>{
  assert.equal((await api.revokeDevice('invalid','a'.repeat(64))).status,401);
  assert.equal((await api.revokeDevice('valid','a'.repeat(64))).body.revoked,true);
 });
+
+test('malformed credentials are rejected before throttle or password verification',async()=>{
+ const calls=[];
+ const api=createAuthApiHandlers(null,{flow:{login:async()=>{calls.push('login');throw Error('must not run')}},throttle:{allow:async()=>{calls.push('limit');return true}}});
+ for(const body of [{identifier:'user'},{identifier:'',password:'test'},{identifier:'user',password:42},{identifier:'user',password:''}]){
+  assert.equal((await api.login(body)).status,400);
+ }
+ assert.deepEqual(calls,[]);
+});
