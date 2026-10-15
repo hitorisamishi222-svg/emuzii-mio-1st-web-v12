@@ -15,7 +15,7 @@ export function createTestHttpRouter({api,throttle,trustedOrigin,passkeys}={}){
    return api[reads.get(path)](cookie);
   }
   if(path!=='/test-auth/login'&&!writes.has(path)&&!passkeyPaths.has(path))return {status:404,body:{error:'not_found'}};
-  const guard=checkAuthRequest(req,{trustedOrigin,maxBodyBytes:65536});
+  const guard=checkAuthRequest(req,{trustedOrigin,maxBodyBytes:passkeyPaths.has(path)?65536:4096});
   if(!guard.ok)return {status:guard.status,body:{error:guard.error}};
   const body=req.body;
   if(!body||typeof body!=='object'||Array.isArray(body))return {status:400,body:{error:'invalid_request'}};

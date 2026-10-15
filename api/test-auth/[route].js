@@ -15,7 +15,8 @@ export default async function handler(req,res){
  const path='/test-auth/'+String(req.query?.route||'');
  if(!['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device','/test-auth/passkey/register/options','/test-auth/passkey/register/verify','/test-auth/passkey/login/options','/test-auth/passkey/login/verify'].includes(path))return res.status(404).json({error:'not_found'});
  const contentLength=Number(req.headers['content-length']||0);
- if(!Number.isFinite(contentLength)||contentLength<0||contentLength>65536||Buffer.byteLength(JSON.stringify(req.body||{}),'utf8')>65536)return res.status(413).json({error:'payload_too_large'});
+ const maxBodyBytes=path.startsWith('/test-auth/passkey/')?65536:4096;
+ if(!Number.isFinite(contentLength)||contentLength<0||contentLength>maxBodyBytes||Buffer.byteLength(JSON.stringify(req.body||{}),'utf8')>maxBodyBytes)return res.status(413).json({error:'payload_too_large'});
  const throttle={allow:async(key)=>{
   const digest=createHash('sha256').update(key).digest('hex');
   const result=await pool.query("INSERT INTO mio_test_login_limits(attempt_key,attempts,window_start) VALUES($1,1,now()) ON CONFLICT(attempt_key) DO UPDATE SET attempts=CASE WHEN mio_test_login_limits.window_start < now()-interval '15 minutes' THEN 1 ELSE mio_test_login_limits.attempts+1 END, window_start=CASE WHEN mio_test_login_limits.window_start < now()-interval '15 minutes' THEN now() ELSE mio_test_login_limits.window_start END RETURNING attempts", [digest]);
