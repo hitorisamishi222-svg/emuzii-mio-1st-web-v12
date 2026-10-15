@@ -198,11 +198,11 @@ test('virtual authenticator registers a passkey, signs in, and rejects challenge
     await page.getByText('パスキーでログインしました。').waitFor();
     assert.ok((await context.cookies(appOrigin)).some(x=>x.name==='__Host-mio_session'),'passkey login issues the regular server session cookie');
     const replay=await page.evaluate(async()=>{
-      const start=await post('/test-auth/passkey/login/options',{identifier:document.querySelector('#identifier').value});
+      const start=await post('/test-auth/passkey-login-options',{identifier:document.querySelector('#identifier').value});
       const assertion=await navigator.credentials.get({publicKey:publicKeyOptions(start.d.options)});
       const body={challengeId:start.d.challengeId,response:serialize(assertion),deviceLabel:'再送テスト'};
-      const first=await post('/test-auth/passkey/login/verify',body);
-      const second=await post('/test-auth/passkey/login/verify',body);
+      const first=await post('/test-auth/passkey-login-verify',body);
+      const second=await post('/test-auth/passkey-login-verify',body);
       return [first.r.status,second.r.status,second.d.error];
     });
     assert.deepEqual(replay,[200,400,'challenge_expired'],'each authentication challenge is consumed once');

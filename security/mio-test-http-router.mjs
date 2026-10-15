@@ -6,7 +6,7 @@ export function createTestHttpRouter({api,throttle,trustedOrigin,passkeys}={}){
  const login=createLoginRoute({api,throttle,trustedOrigin});
  const reads=new Map([['/test-auth/me','me'],['/test-auth/devices','devices']]);
  const writes=new Map([['/test-auth/logout','logout'],['/test-auth/logout-all','logoutAll'],['/test-auth/revoke-device','revokeDevice']]);
- const passkeyPaths=new Set(['/test-auth/passkey/register/options','/test-auth/passkey/register/verify','/test-auth/passkey/login/options','/test-auth/passkey/login/verify']);
+ const passkeyPaths=new Set(['/test-auth/passkey-register-options','/test-auth/passkey-register-verify','/test-auth/passkey-login-options','/test-auth/passkey-login-verify']);
  return async function route(req){
   const path=req?.path,headers=req?.headers||{},cookie=headers.cookie||'';
   if(reads.has(path)){
@@ -21,16 +21,16 @@ export function createTestHttpRouter({api,throttle,trustedOrigin,passkeys}={}){
   if(!body||typeof body!=='object'||Array.isArray(body))return {status:400,body:{error:'invalid_request'}};
   if(passkeyPaths.has(path)){
    if(!passkeys)return {status:503,body:{error:'passkey_not_configured'}};
-   const isLogin=path.includes('/login/');
+   const isLogin=path.includes('passkey-login-');
    if(isLogin&&throttle&&typeof throttle.allow==='function'&&!await throttle.allow('passkey:'+String(req.trustedClientIp||'unknown')))return {status:429,body:{error:'too_many_attempts'}};
-   if(path.endsWith('/register/options')||path.endsWith('/register/verify')){
+   if(path.endsWith('passkey-register-options')||path.endsWith('passkey-register-verify')){
     const session=await api.me(cookie);
     if(session.status!==200)return {status:401,body:{error:'unauthorized'}};
     if(path.endsWith('/register/options'))return passkeys.registrationOptions(session.body.accountId);
     if(typeof body.challengeId!=='string'||body.challengeId.length>64||!body.response)return {status:400,body:{error:'invalid_request'}};
     return passkeys.verifyRegistration(session.body.accountId,body);
    }
-   if(path.endsWith('/login/options')){
+   if(path.endsWith('passkey-login-options')){
     if(typeof body.identifier!=='string'||body.identifier.length>100)return {status:400,body:{error:'invalid_request'}};
     return passkeys.authenticationOptions(body.identifier);
    }

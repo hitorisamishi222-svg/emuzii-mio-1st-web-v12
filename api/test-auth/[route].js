@@ -13,9 +13,9 @@ export default async function handler(req,res){
  if(!/^emuzii-mio-1st-web-v12-68vp-[a-z0-9-]+\.vercel\.app$/.test(host))return res.status(403).json({error:'invalid_host'});
  const trustedOrigin='https://'+host;
  const path='/test-auth/'+String(req.query?.route||'');
- if(!['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device','/test-auth/passkey/register/options','/test-auth/passkey/register/verify','/test-auth/passkey/login/options','/test-auth/passkey/login/verify'].includes(path))return res.status(404).json({error:'not_found'});
+ if(!['/test-auth/me','/test-auth/devices','/test-auth/login','/test-auth/logout','/test-auth/logout-all','/test-auth/revoke-device','/test-auth/passkey-register-options','/test-auth/passkey-register-verify','/test-auth/passkey-login-options','/test-auth/passkey-login-verify'].includes(path))return res.status(404).json({error:'not_found'});
  const contentLength=Number(req.headers['content-length']||0);
- const maxBodyBytes=path.startsWith('/test-auth/passkey/')?65536:4096;
+ const maxBodyBytes=path.startsWith('/test-auth/passkey-')?65536:4096;
  if(!Number.isFinite(contentLength)||contentLength<0||contentLength>maxBodyBytes||Buffer.byteLength(JSON.stringify(req.body||{}),'utf8')>maxBodyBytes)return res.status(413).json({error:'payload_too_large'});
  const throttle={allow:async(key)=>{
   const digest=createHash('sha256').update(key).digest('hex');

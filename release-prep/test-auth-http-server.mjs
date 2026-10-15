@@ -35,7 +35,7 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
     }
     try {
       const path = new URL(req.url, 'http://127.0.0.1').pathname;
-      if (!reads.has(path) && !writes.has(path) && !path.startsWith('/test-auth/passkey/')) { req.resume(); return send(404, {error: 'not_found'}); }
+      if (!reads.has(path) && !writes.has(path) && !path.startsWith('/test-auth/passkey-')) { req.resume(); return send(404, {error: 'not_found'}); }
       if (reads.has(path)) {
         req.resume();
         if (req.method !== 'GET') return send(405, {error: 'method_not_allowed'});
