@@ -13,8 +13,10 @@ export function createTestHttpRouter({api,throttle,trustedOrigin}={}){
   const cookie=headers.cookie||'';
   if(reads.has(path)){
    if(req.method!=='GET')return {status:405,body:{error:'method_not_allowed'}};
-   if(headers.origin&&headers.origin!==trustedOrigin)return {status:403,body:{error:'origin_denied'}};
-   if(headers['sec-fetch-site']&&headers['sec-fetch-site']!=='same-origin')return {status:403,body:{error:'cross_site_denied'}};
+   if((headers.origin&&headers.origin!==trustedOrigin)||
+      (headers['sec-fetch-site']&&headers['sec-fetch-site']!=='same-origin')||
+      (!headers.origin&&headers['sec-fetch-site']!=='same-origin'))
+    return {status:403,body:{error:'origin_denied'}};
    return api[reads.get(path)](cookie);
   }
   if(path!=='/test-auth/login'&&!writes.has(path))return {status:404,body:{error:'not_found'}};

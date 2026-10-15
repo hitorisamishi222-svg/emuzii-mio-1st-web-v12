@@ -35,7 +35,9 @@ export async function startTestAuthHttpServer({pool, trustedOrigin, throttle}) {
       if (reads.has(path)) {
         req.resume();
         if (req.method !== 'GET') return send(405, {error: 'method_not_allowed'});
-        if (req.headers.origin !== trustedOrigin || (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin')) return send(403, {error: 'origin_denied'});
+        const origin = req.headers.origin;
+        const fetchSite = req.headers['sec-fetch-site'];
+        if ((origin && origin !== trustedOrigin) || (fetchSite && fetchSite !== 'same-origin') || (!origin && fetchSite !== 'same-origin')) return send(403, {error: 'origin_denied'});
         const result = await api[path.endsWith('/me') ? 'me' : 'devices'](req.headers.cookie);
         return send(result.status, result.body, result.headers);
       }

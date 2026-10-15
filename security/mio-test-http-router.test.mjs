@@ -19,6 +19,7 @@ test('GET me and devices route with cookie but cannot be used cross-site',async(
   assert.equal((await route({path,method:'GET',headers:{'sec-fetch-site':'same-origin',cookie:'sample'}})).status,200);
  assert.deepEqual(calls.map(x=>x[0]),['me','devices']);
  assert.equal((await route({path:'/test-auth/me',method:'GET',headers:{origin:'https://attacker.invalid'}})).status,403);
+ assert.equal((await route({path:'/test-auth/me',method:'GET',headers:{}})).status,403,'missing Origin must also carry same-origin Fetch Metadata');
  assert.equal((await route({path:'/test-auth/devices',method:'GET',headers:{'sec-fetch-site':'cross-site'}})).status,403);
 });
 test('login requires secure request and verified IP',async()=>{
