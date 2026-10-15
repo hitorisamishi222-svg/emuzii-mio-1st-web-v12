@@ -37,12 +37,19 @@ const files = new Map([
 
 async function login(context, identifier) {
   const page = await context.newPage();
+  const diagnostics = [];
+  page.on('pageerror', error => diagnostics.push(`pageerror:${error.message}`));
+  page.on('console', message => { if (message.type() === 'error') diagnostics.push(`console:${message.text()}`); });
+  page.on('response', response => { if (response.url().includes('/test-auth/')) diagnostics.push(`api:${response.status()} ${new URL(response.url()).pathname}`); });
   await page.goto(appOrigin + '/login-recovery-demo.html');
   await page.getByRole('button', {name: 'ログインIDが分かる'}).click();
   await page.locator('#loginId').fill(identifier);
   await page.locator('#loginPassword').fill(password);
   await page.locator('#testLogin').click();
-  await page.getByRole('status').getByText('TESTログイン成功。端末管理画面で接続を確認できます。').waitFor();
+  await page.locator('#result').waitFor({state: 'visible', timeout: 10000});
+  const result = (await page.locator('#result').innerText()).trim();
+  assert.equal(result, 'TESTログイン成功。端末管理画面で接続を確認できます。',
+    `login page result: ${result}; ${diagnostics.join(' | ')}`);
   return page;
 }
 
