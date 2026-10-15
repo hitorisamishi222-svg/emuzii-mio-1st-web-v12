@@ -64,3 +64,13 @@ test('unauthenticated request cannot revoke device',async()=>{
  const {flow}=await setup();
  assert.equal(await flow.revokeDevice('invalid','a'.repeat(64)),null);
 });
+
+test('rejects malformed device session ID without revoking active sessions',async()=>{
+ const {flow}=await setup();
+ const a=await flow.login({identifier:'TestUser_2026',password,deviceLabel:'iPhone'});
+ const cookie=header(a.setCookie);
+ assert.equal(await flow.revokeDevice(cookie,'bad'),false);
+ assert.equal(await flow.revokeDevice(cookie,'A'.repeat(64)),false);
+ assert.equal(await flow.revokeDevice(cookie,'a'.repeat(65)),false);
+ assert.equal((await flow.current(cookie)).accountId,id);
+});
