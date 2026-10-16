@@ -22,6 +22,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "community.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "music-gallery.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "style.css",
       "use": "@vercel/static"
     },
