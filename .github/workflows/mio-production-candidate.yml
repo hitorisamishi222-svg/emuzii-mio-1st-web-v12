@@ -18,3 +18,5 @@ jobs:
         run: node --test release-prep/production-candidate-safety.test.mjs release-prep/identity-safe-v197.test.mjs
       - name: Cross-test v1.9.7 core with historical v1.8.9 device switch functions
         run: node release-prep/test-v197-device-switch-compat.cjs
+      - name: Check retired browser fails closed in v1.9.7 switch candidate
+        run: node release-prep/test-v197-device-switch-safety.cjs
