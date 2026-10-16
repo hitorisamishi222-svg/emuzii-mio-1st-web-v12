@@ -86,3 +86,10 @@
 - `release-prep/test-v197-four-module-integration.cjs` を追加。ガチャ受付スイッチ、付与ボタンへのイベント委譲、既存端末・無関係参加者の状態維持、同名異MIOの誤リンク拒否、全4モジュールの関数名重複0と新トリガー作成コード0を含む **21ケースの合成データ試験合格**。GitHub CI: https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38929536133
 - 残件：本番稼働中 `GachaAdminV188.gs` のコードは未受領。GitHub保存版を本番用と決めつけて上書き禁止。P列の同名別MIO-ID・23行目不一致も未解消。本人確認と管理画面の現行ロジックを確認後に本番更新判断。
 - 未公開：GAS v12 / Vercel main / Google Sheetsは未変更。
+
+
+### 10/17 JST: GASガチャ回数付与・履歴保存の追加テスト
+- 接続済みGoogle Drive 2アカウントから本番Apps ScriptプロジェクトIDのDriveメタデータを取得しようとしたが、両方404で取得できなかった。Apps Scriptのコード本体がGoogle Driveのファイルとして取得できるわけではないため、現行 `GachaAdminV188.gs` は引き続き未照合。
+- `release-prep/GachaAdminV188-FULL-REPLACE.gs` の候補コードに対して、`release-prep/test-v197-gacha-grants-real-code.cjs` で **7ケースの合成データテスト** を追加：単一対象への1回付与、重複MIO-ID停止、不正回数停止、履歴保存失敗時の元回数復旧、履歴シート不在時停止、チェック解除無反応、該当MIO-ID不在時停止。初回CIはテスト用のGoogle Apps Script Sheet模擬オブジェクトに `getParent` が未実装だったため失敗。テスト模擬を修正し、再実行CI https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38953403978 は**成功**。本番データ/ガチャ抽選は未実行。
+- 実コードの確認が必要な点：現GAS `GachaAdminV188.gs` の `gachaOpenState_`、`handleGachaAdminEdit_`、`grantGachaFromAdmin_` およびスイッチ位置。候補版の末尾ラベル式スイッチと現行J17/J18が一致する保証はない。現ファイル全文照合なしに置換禁止。
+- 本番GAS v12、参加者台帳、`main` は未更新。公開停止継続。
