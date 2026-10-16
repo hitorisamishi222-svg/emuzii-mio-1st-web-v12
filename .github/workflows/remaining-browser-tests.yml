@@ -19,8 +19,8 @@ jobs:
         browser: [chromium, webkit]
     env:
       MIO_BROWSER: ${{ matrix.browser }}
-      # Run only newly added non-gacha profile, attendance, account and device checks.
-      MIO_BROWSER_CASES: '{"chromium":["safe-profile-attendance-local","safe-account-id-device-local"],"webkit":["safe-profile-attendance-local","safe-account-id-device-local"]}'
+      # Run only the new keyboard accessibility check; earlier cases have passed.
+      MIO_BROWSER_CASES: '{"chromium":["safe-keyboard-accessibility"],"webkit":["safe-keyboard-accessibility"]}'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -379,3 +379,56 @@ if (selected('safe-account-id-device-local')) test('safe-account-id-device-local
   assert.match(devices, /サブ: ログアウト/);
   assert.deepEqual(external(), [], 'account and device preview must stay local');
 }));
+
+
+if (selected('safe-keyboard-accessibility')) test('safe-keyboard-accessibility', {timeout: 60000}, async () => runCase('safe-keyboard-accessibility', 390, async page => {
+  const external = captureExternalRequests(page);
+  const unnamed = async () => page.locator('button:visible,a[href]:visible,input:visible,select:visible,textarea:visible').evaluateAll(elements =>
+    elements.filter(el => {
+      const labelledBy = (el.getAttribute('aria-labelledby') || '').split(/\\s+/).filter(Boolean)
+        .map(id => document.getElementById(id)?.textContent?.trim() || '').join(' ');
+      const labels = el.labels ? [...el.labels].map(label => label.textContent.trim()).join(' ') : '';
+      const name = el.getAttribute('aria-label') || labelledBy || labels ||
+        (el.matches('button,a') ? el.innerText.trim() : '') || el.getAttribute('title') || '';
+      return !name.trim();
+    }).map(el => el.outerHTML.slice(0,180))
+  );
+
+  await page.goto(`${base}/login-recovery-demo.html`, {waitUntil: 'load'});
+  assert.deepEqual(await unnamed(), [], 'visible recovery controls need accessible names');
+  await page.locator('#start button').first().focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#known').isVisible(), true, 'Enter should activate the focused recovery option');
+  assert.ok(await page.locator('#loginId').evaluate(el => el.labels.length > 0));
+  assert.ok(await page.locator('#loginPassword').evaluate(el => el.labels.length > 0));
+  await page.locator('#known button.sub').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#lost').isVisible(), true);
+  await page.locator('#lost button.sub').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#start').isVisible(), true);
+
+  await page.goto(`${base}/community-demo.html`, {waitUntil: 'load'});
+  assert.deepEqual(await unnamed(), [], 'visible community controls need accessible names');
+  const selectedTab = page.locator('#tab-chat');
+  await selectedTab.focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('#tab-video').getAttribute('aria-selected'), 'true');
+  assert.equal(await page.locator('#videoPanel').isVisible(), true);
+  assert.equal(await page.locator('#tab-video').evaluate(el => el.matches(':focus-visible')), true);
+  const focusStyle = await page.locator('#tab-video').evaluate(el => getComputedStyle(el).outlineStyle);
+  assert.notEqual(focusStyle, 'none', 'keyboard focus must have a visible outline');
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('#tab-photo').getAttribute('aria-selected'), 'true');
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.locator('#tab-chat').getAttribute('aria-selected'), 'true', 'right arrow should wrap to the first tab');
+  await page.keyboard.press('End');
+  assert.equal(await page.locator('#tab-photo').getAttribute('aria-selected'), 'true');
+  await page.keyboard.press('Home');
+  assert.equal(await page.locator('#tab-chat').getAttribute('aria-selected'), 'true');
+  for (const [tab,panel] of [['chat','chatPanel'],['video','videoPanel'],['photo','photoPanel']]) {
+    assert.equal(await page.locator(`#tab-${tab}`).getAttribute('aria-controls'), panel);
+    assert.equal(await page.locator(`#${panel}`).getAttribute('aria-labelledby'), `tab-${tab}`);
+  }
+  assert.deepEqual(external(), [], 'keyboard accessibility preview must stay local');
+}));
