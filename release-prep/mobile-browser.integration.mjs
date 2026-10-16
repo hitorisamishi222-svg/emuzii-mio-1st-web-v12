@@ -226,7 +226,7 @@ function captureExternalRequests(page) {
   return () => [...new Set(origins.filter(origin => origin !== base))];
 }
 
-test('safe-form-community-demo', {timeout: 60000}, async () => runCase('safe-form-community-demo', 390, async page => {
+if (selected('safe-form-community-demo')) test('safe-form-community-demo', {timeout: 60000}, async () => runCase('safe-form-community-demo', 390, async page => {
   const external = captureExternalRequests(page);
   await page.goto(`${base}/community-demo.html`, {waitUntil: 'load'});
   await page.locator('#roleSelect').selectOption('guest');
@@ -250,7 +250,7 @@ test('safe-form-community-demo', {timeout: 60000}, async () => runCase('safe-for
   assert.deepEqual(external(), [], 'community demo must not call external services');
 }));
 
-test('safe-form-music-gallery-demo', {timeout: 60000}, async () => runCase('safe-form-music-gallery-demo', 390, async page => {
+if (selected('safe-form-music-gallery-demo')) test('safe-form-music-gallery-demo', {timeout: 60000}, async () => runCase('safe-form-music-gallery-demo', 390, async page => {
   const external = captureExternalRequests(page);
   await page.goto(`${base}/music-gallery-demo.html`, {waitUntil: 'load'});
   await page.locator('#role').selectOption('member');
@@ -271,7 +271,7 @@ test('safe-form-music-gallery-demo', {timeout: 60000}, async () => runCase('safe
   assert.deepEqual(external(), [], 'music preview must stay in browser memory');
 }));
 
-test('safe-form-login-id-settings', {timeout: 30000}, async () => runCase('safe-form-login-id-settings', 390, async page => {
+if (selected('safe-form-login-id-settings')) test('safe-form-login-id-settings', {timeout: 30000}, async () => runCase('safe-form-login-id-settings', 390, async page => {
   const requests = [];
   page.on('request', request => requests.push(new URL(request.url()).pathname));
   await page.goto(`${base}/login-id-settings-preview.html`, {waitUntil: 'load'});
@@ -289,7 +289,7 @@ test('safe-form-login-id-settings', {timeout: 30000}, async () => runCase('safe-
 }));
 
 
-test('safe-form-community-photo-and-chat', {timeout: 60000}, async () => runCase('safe-form-community-photo-and-chat', 390, async page => {
+if (selected('safe-form-community-photo-and-chat')) test('safe-form-community-photo-and-chat', {timeout: 60000}, async () => runCase('safe-form-community-photo-and-chat', 390, async page => {
   const external = captureExternalRequests(page);
   await page.goto(`${base}/community-demo.html`, {waitUntil: 'load'});
   await page.locator('#roleSelect').selectOption('approved');
@@ -313,11 +313,69 @@ test('safe-form-community-photo-and-chat', {timeout: 60000}, async () => runCase
   assert.deepEqual(external(), [], 'community chat and photo preview must stay local');
 }));
 
-test('safe-admin-locked', {timeout: 30000}, async () => runCase('safe-admin-locked', 390, async page => {
+if (selected('safe-admin-locked')) test('safe-admin-locked', {timeout: 30000}, async () => runCase('safe-admin-locked', 390, async page => {
   await page.goto(`${base}/admin-center-demo.html`, {waitUntil: 'load'});
   assert.match(await page.locator('[role="alert"]').innerText(), /認証待ち/);
   const preview = page.locator('main.admin-preview-content');
   assert.equal(await preview.getAttribute('inert'), '');
   assert.equal(await preview.isVisible(), false);
   assert.equal(await page.locator('button:visible').count(), 0);
+}));
+
+
+if (selected('safe-profile-attendance-local')) test('safe-profile-attendance-local', {timeout: 45000}, async () => runCase('safe-profile-attendance-local', 390, async page => {
+  const external = captureExternalRequests(page);
+  const dialogs = [];
+  page.on('dialog', async dialog => { dialogs.push(dialog.message()); await dialog.accept(); });
+  await page.goto(`${base}/integrated-functional-test.html`, {waitUntil: 'load'});
+  const beforeRights = await page.locator('#tickets').innerText();
+  await page.locator('#name').fill('架空プロフィール確認');
+  await page.locator('#save').click();
+  assert.match(await page.locator('#who').innerText(), /架空プロフィール確認/);
+  await page.locator('#memo').fill('ローカル保存の再読込確認');
+  await page.locator('#memoSave').click();
+  assert.match(await page.locator('#memoStatus').innerText(), /保存済み/);
+  const today = await page.locator('#day').inputValue();
+  assert.match(today, /^2026-10-/);
+  await page.locator('#checkin').click();
+  await page.locator('#checkin').click();
+  assert.match(await page.locator('#attendance').innerText(), /選択日 2\/2回/);
+  await page.locator('#checkin').click();
+  assert.ok(dialogs.some(message => /2回記録済み/.test(message)), 'third same-day attendance must be refused');
+  const future = new Date(`${today}T12:00:00`);
+  future.setDate(future.getDate() + 1);
+  const futureDate = `${future.getFullYear()}-${String(future.getMonth()+1).padStart(2,'0')}-${String(future.getDate()).padStart(2,'0')}`;
+  await page.locator('#day').fill(futureDate);
+  await page.locator('#checkin').click();
+  assert.ok(dialogs.some(message => /未来の日付/.test(message)), 'future attendance must be refused');
+  assert.equal(await page.locator('#tickets').innerText(), beforeRights, 'attendance must not alter draw rights');
+  await page.locator('#reload').click();
+  await page.locator('#who').waitFor();
+  assert.match(await page.locator('#who').innerText(), /架空プロフィール確認/);
+  assert.match(await page.locator('#savedMemo').innerText(), /ローカル保存の再読込確認/);
+  assert.deepEqual(external(), [], 'profile and attendance demo must stay local');
+}));
+
+if (selected('safe-account-id-device-local')) test('safe-account-id-device-local', {timeout: 45000}, async () => runCase('safe-account-id-device-local', 390, async page => {
+  const external = captureExternalRequests(page);
+  await page.goto(`${base}/account-linkage-test.html`, {waitUntil: 'load'});
+  await page.locator('#alias').fill('abcdefgh');
+  await page.locator('#change').click();
+  assert.match(await page.locator('#feedback').innerText(), /8〜20文字|3種類以上/);
+  assert.match(await page.locator('#account').innerText(), /MioFan_2026/);
+  await page.locator('#alias').fill('NewMio_2026');
+  await page.locator('#change').click();
+  assert.match(await page.locator('#feedback').innerText(), /模擬ID変更成功/);
+  const account = await page.locator('#account').innerText();
+  assert.match(account, /MIO-TEST-001/);
+  assert.match(account, /NewMio_2026/);
+  assert.match(account, /皆勤記録: 17件/);
+  assert.match(account, /当選履歴: テスト景品/);
+  await page.locator('#add').click();
+  assert.match(await page.locator('#devices').innerText(), /サブ: ログイン中/);
+  await page.locator('#revoke').click();
+  const devices = await page.locator('#devices').innerText();
+  assert.match(devices, /メイン: ログイン中/);
+  assert.match(devices, /サブ: ログアウト/);
+  assert.deepEqual(external(), [], 'account and device preview must stay local');
 }));
