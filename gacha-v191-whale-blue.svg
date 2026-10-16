@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" role="img" aria-label="可愛いクジラ型ジュエリーガチャ">
+<defs>
+<linearGradient id="body" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#91edff"/><stop offset=".43" stop-color="#219fe5"/><stop offset="1" stop-color="#0865ad"/></linearGradient>
+<linearGradient id="belly" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#b7dcfa"/></linearGradient>
+<linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".36" stop-color="#d6f9ff"/><stop offset=".62" stop-color="#c18e43"/><stop offset=".83" stop-color="#fff"/><stop offset="1" stop-color="#d6f9ff"/></linearGradient>
+<radialGradient id="window" cx=".24" cy=".18" r=".9"><stop stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#7dd9ff" stop-opacity=".12"/><stop offset="1" stop-color="#061e52" stop-opacity=".43"/></radialGradient>
+</defs>
+<ellipse cx="362" cy="619" rx="274" ry="22" fill="#06132b" opacity=".28"/>
+<!-- unmistakable tail flukes on right, behind capsule hopper -->
+<path d="M542 275 Q573 201 625 180 Q657 162 651 119 Q681 134 678 195 Q676 256 625 299 Q680 302 690 350 Q663 377 624 356 Q573 336 540 313Z" fill="url(#body)" stroke="#d6f9ff" stroke-width="10" stroke-linejoin="round"/>
+<path d="M620 213 Q648 181 655 162 M619 312 Q660 322 674 340" stroke="#fff" stroke-width="8" opacity=".53" fill="none" stroke-linecap="round"/>
+<!-- long whale silhouette, head on left and tail on right -->
+<path d="M71 349 Q73 229 183 184 Q306 132 429 206 Q511 251 564 335 Q589 407 532 486 Q459 565 310 558 Q159 564 91 464 Q66 418 71 349Z" fill="url(#body)" stroke="#d6f9ff" stroke-width="11"/>
+<path d="M97 318 Q112 231 204 202" fill="none" stroke="#fff" stroke-width="18" opacity=".45" stroke-linecap="round"/>
+<!-- large smiling snout and white pleated belly -->
+<path d="M77 379 Q120 407 188 395 Q258 397 326 436 Q423 483 531 428 Q500 531 361 554 Q177 585 100 477 Q74 436 77 379Z" fill="url(#belly)" stroke="#e5f9ff" stroke-width="5"/>
+<path d="M116 413 Q138 486 192 523 M154 425 Q185 499 238 539 M198 428 Q234 500 286 548 M247 444 Q282 512 332 548" fill="none" stroke="#93b7df" stroke-width="4" opacity=".58"/>
+<path d="M80 382 Q127 412 187 398" fill="none" stroke="#125b9a" stroke-width="6" stroke-linecap="round"/>
+<path d="M90 381 Q115 389 141 381 Q129 415 103 404Z" fill="#f17cae" opacity=".9"/>
+<!-- eyes, cheek and smile on the LEFT, clearly a whale -->
+<ellipse cx="214" cy="335" rx="27" ry="33" fill="#fff"/>
+<ellipse cx="220" cy="337" rx="21" ry="27" fill="#102963"/>
+<ellipse cx="224" cy="339" rx="13" ry="20" fill="#3779d5"/>
+<ellipse cx="212" cy="325" rx="9" ry="11" fill="#fff"/>
+<circle cx="233" cy="348" r="4" fill="#fff"/>
+<ellipse cx="255" cy="384" rx="29" ry="17" fill="#ff9bc1" opacity=".88"/>
+<path d="M178 292 Q209 275 236 295" fill="none" stroke="#c9f5ff" stroke-width="5" stroke-linecap="round"/>
+<!-- front flipper -->
+<path d="M319 450 Q343 488 395 500 Q422 512 402 534 Q368 550 310 513 Q292 488 319 450Z" fill="url(#body)" stroke="#d6f9ff" stroke-width="7"/>
+<path d="M329 477 Q354 505 385 511" fill="none" stroke="#fff" stroke-width="6" opacity=".5" stroke-linecap="round"/>
+<!-- blowhole and magical fountain -->
+<ellipse cx="287" cy="179" rx="17" ry="7" fill="#0b4d8c" stroke="#d6f9ff" stroke-width="4"/>
+<path d="M287 175 Q248 136 255 103 Q278 109 290 140 Q309 98 338 92 Q338 129 294 174" fill="#91edff" stroke="#fff" stroke-width="5" opacity=".9"/>
+<path d="M287 138 L299 151 L287 165 L275 151Z" fill="#8bdfff" stroke="#fff" stroke-width="3"/>
+<!-- jewellery trim along the back -->
+<path d="M337 203 Q411 209 462 262" fill="none" stroke="#d6f9ff" stroke-width="7" stroke-dasharray="4 13" stroke-linecap="round"/>
+<path d="M393 200 l11 15-11 15-11-15Z" fill="#92edff" stroke="#fff" stroke-width="3"/>
+<!-- capsule box on the TAIL SIDE, no belly window -->
+<path d="M423 277 Q430 229 484 220 Q546 220 560 277 L560 394 Q546 426 490 428 Q437 421 422 394Z" fill="#0a356b" stroke="url(#rim)" stroke-width="11"/>
+<ellipse cx="491" cy="292" rx="79" ry="78" fill="url(#rim)" stroke="#fff" stroke-width="5"/>
+<ellipse cx="491" cy="292" rx="70" ry="69" fill="url(#window)" stroke="#fff" stroke-width="4"/>
+<path d="M438 268 Q456 231 487 230" fill="none" stroke="#fff" stroke-width="10" opacity=".65" stroke-linecap="round"/>
+<!-- visible capsules inside tail-side globe -->
+<g stroke="#fff" stroke-width="2" opacity=".9">
+<circle cx="465" cy="270" r="19" fill="#5ce5ff" fill-opacity=".62"/><circle cx="502" cy="262" r="18" fill="#f5a3ef" fill-opacity=".65"/><circle cx="522" cy="300" r="20" fill="#a6a0ff" fill-opacity=".7"/><circle cx="480" cy="316" r="20" fill="#ffe7a2" fill-opacity=".68"/>
+</g>
+<path d="M465 255 L476 270 L465 285 L454 270Z M503 250 L514 263 L503 277 L492 263Z M521 287 L535 302 L521 317 L508 302Z M480 302 L492 316 L480 329 L468 316Z" fill="#fff" opacity=".75"/>
+<!-- metal crank and capsule dispensing chute below globe -->
+<circle cx="488" cy="393" r="25" fill="#125b9c" stroke="url(#rim)" stroke-width="8"/>
+<circle cx="488" cy="393" r="12" fill="#d6f9ff" stroke="#fff" stroke-width="3"/>
+<path d="M488 383 V403 M478 393 H498" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+<rect x="453" y="432" width="78" height="55" rx="17" fill="#071c3d" stroke="url(#rim)" stroke-width="9"/>
+<rect x="463" y="445" width="58" height="29" rx="12" fill="#0c376b"/>
+<path d="M463 448 Q490 434 521 448" fill="none" stroke="#d8faff" stroke-width="4"/>
+<g fill="#fff" opacity=".85"><path d="m163 155 7 17 17 7-17 7-7 17-7-17-17-7 17-7z"/><circle cx="570" cy="206" r="5"/></g>
+</svg>

@@ -200,6 +200,46 @@
     {
       "src": "api-browser-pair-claim.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "backgrounds.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-static-chamber-preview.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-royal-integration.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v191-whale-blue.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-v191-whale-gold.svg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-royal-whale-machine.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/bg-gacha-membership.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/bg-gacha-lucky.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/bg-top-desktop.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/bg-top-mobile.webp",
+      "use": "@vercel/static"
     }
   ],
   "routes": [

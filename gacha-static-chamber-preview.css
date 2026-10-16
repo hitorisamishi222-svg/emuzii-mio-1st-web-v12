@@ -1,0 +1,28 @@
+/* v2 preview: chamber jewels remain static; draw API untouched */
+.gacha-stage .v191-gem,.gacha-stage.draw-active .v191-gem,.gacha-stage.v191-rarity-ur .v191-gem{animation:none!important;animation-delay:0s!important;will-change:auto!important;filter:none!important}
+.gacha-stage .v191-ball-chamber{opacity:.84;filter:none}
+.gacha-stage .v191-gem:nth-child(1){transform:translate(-110%,-125%)}
+.gacha-stage .v191-gem:nth-child(2){transform:translate(-10%,-130%)}
+.gacha-stage .v191-gem:nth-child(3){transform:translate(70%,-105%)}
+.gacha-stage .v191-gem:nth-child(4){transform:translate(-150%,-25%)}
+.gacha-stage .v191-gem:nth-child(5){transform:translate(-55%,-35%)}
+.gacha-stage .v191-gem:nth-child(6){transform:translate(40%,-15%)}
+.gacha-stage .v191-gem:nth-child(7){transform:translate(105%,0%)}
+.gacha-stage .v191-gem:nth-child(8){transform:translate(-125%,80%)}
+.gacha-stage .v191-gem:nth-child(9){transform:translate(-25%,80%)}
+.gacha-stage .v191-gem:nth-child(10){transform:translate(65%,90%)}
+.gacha-stage .v191-gem:nth-child(11){transform:translate(-70%,145%)}
+.gacha-stage .v191-gem:nth-child(12){transform:translate(35%,145%)}
+@media(max-width:390px){.gacha-stage .v191-ball-chamber{width:49%}.gacha-stage .v191-gem{width:28px;height:25px}}
+
+/* Draw-time sparkle on the chamber only; no orbiting capsules. */
+.gacha-stage.draw-active .v191-ball-chamber{
+ opacity:1;
+ box-shadow:0 0 16px 5px rgba(171,235,255,.65),0 0 36px 10px rgba(255,221,123,.36);
+ transition:box-shadow .2s ease,opacity .2s ease;
+}
+.gacha-stage.draw-active .v20-stage-pulse{opacity:.9}
+.gacha-stage .v191-gem{pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+ .gacha-stage.draw-active .v191-ball-chamber{transition:none}
+}
