@@ -58,6 +58,11 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 :is(.actual-card,.panel,.glass,.work-card,.information-card,.feature-card){border-color:#9ccdf480;box-shadow:inset 0 1px 0 #e1f5ff26,0 12px 35px #020e2a7a}
 :is(.actual-card,.panel,.glass,.work-card)::before{content:"";display:block;height:3px;pointer-events:none;background:linear-gradient(90deg,transparent,#7cb9e37c 18%,#f5dcb7aa 50%,#7cb9e37c 82%,transparent);border-radius:99px}
 @media(max-width:700px){body::after{opacity:.17}}
+
+/* Keep all gallery actions aligned across cards */
+#galleryGrid .work-card{display:flex;flex-direction:column;height:100%}
+#galleryGrid .work-info{display:flex;flex-direction:column;flex:1}
+#galleryGrid .work-info .work-link{margin-top:auto;align-self:stretch;text-align:center}
 </style>
 </head>
 <body>
