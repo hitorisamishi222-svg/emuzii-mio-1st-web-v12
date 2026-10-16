@@ -24,7 +24,7 @@ test('premium design stylesheet is static, allowlisted, and accessible only with
 
 test('premium theme is 100 percent presentation: no scripts, external imports, images or network calls',()=>{
  assert(css.length<25000,'CSS size budget');
- assert(!/@import|url\s*\(|https?:\/\/|fetch\s*\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage/i.test(css));
+ assert(!/@import|url\\s*\\(|https?:\\/\\/|fetch\\s*\\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage/i.test(css));
  assert(css.includes('prefers-reduced-motion:reduce'));
  assert(css.includes('@media(max-width:520px)'));
  assert(css.includes('focus-visible'));
@@ -42,7 +42,7 @@ test('all content groups receive a distinct visual treatment and unchanged safet
  for(const path of ['home-top-demo.html','home-updates-demo.html','news.html','schedule.html'])
   assert(read(path).includes('next-premium-home'),path);
  for(const path of ['community-demo.html','gacha-cinematic-demo.html'])
-  assert(!/fetch\s*\(|XMLHttpRequest|WebSocket/.test(read(path)),path+' must remain disconnected');
+  assert(!/fetch\\s*\\(|XMLHttpRequest|WebSocket/.test(read(path)),path+' must remain disconnected');
 });
 
 test('31-day attendance progress and medals use explicit demo labels and accessible structures',()=>{
@@ -53,7 +53,7 @@ test('31-day attendance progress and medals use explicit demo labels and accessi
  assert(html.includes('mio-milestones'));
  assert(html.includes('LOCKED · DEMO'));
  assert(html.includes('next-pages.js'));
- assert(!/fetch\s*\(/.test(html));
+ assert(!/fetch\\s*\\(/.test(html));
 });
 
 test('production-only code remains blocked from static replica routes',()=>{
@@ -65,7 +65,27 @@ test('premium HOME keeps the existing approved desktop and mobile Mio portrait a
  assert(read('backgrounds.css').includes("url('/assets/bg-top-mobile.webp')"));
  for(const image of ['assets/bg-top-desktop.webp','assets/bg-top-mobile.webp'])
   assert(buildScript.includes('cp -R assets public/assets'),image+' assets folder must be copied');
- assert(css.includes('body.next-experience,body.next-premium-community{\n background-image:'));
- assert(!css.includes('body.next-experience,body.next-premium-home,body.next-premium-community{\n background-image:'));
+ assert(css.includes('body.next-experience,body.next-premium-community{\\n background-image:'));
+ assert(!css.includes('body.next-experience,body.next-premium-home,body.next-premium-community{\\n background-image:'));
  assert(read('home-top-demo.html').includes('class="next-premium-home"'));
+});
+
+test('non-gacha replacement screens and approved backgrounds are required by the preview build',()=>{
+ const required=[
+  'home-portrait-next.html','home-updates-demo.html','news.html','schedule.html',
+  'attendance-deluxe-demo.html','mypage-deluxe-demo.html','community-demo.html',
+  'music-gallery-demo.html','login-recovery-demo.html','login-id-settings-preview.html',
+  'device-sessions-preview.html','passkey-preview.html','release-readiness.html','mobile-checklist.html'
+ ];
+ for(const path of required){
+  assert(buildScript.includes(path),path+' must be checked by build-preview');
+  assert(read(path).length>0,path+' must exist');
+ }
+ for(const asset of ['assets/mio-bg-princess.jpg','assets/mio-bg-devil.jpg']){
+  assert(buildScript.includes(asset),asset+' must be checked by build-preview');
+  assert(read(asset).length>0,asset+' must exist');
+ }
+ const index=read('next-preview.html');
+ for(const path of ['home-portrait-next.html','home-updates-demo.html','news.html','schedule.html','attendance-deluxe-demo.html','mypage-deluxe-demo.html','community-demo.html','music-gallery-demo.html','login-recovery-demo.html','passkey-preview.html'])
+  assert(index.includes('href="/'+path+'"'),path+' must be reachable from feature index');
 });
