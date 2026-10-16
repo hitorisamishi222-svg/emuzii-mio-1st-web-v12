@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id);
-let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null;
+let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null,animationTimers=[],skipRequested=false,skipWaitResolve=null;
 const pendingKey=()=>`mio_pending_draw_${participant||'unknown'}`;
 const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';
 function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'応答を確認できませんでした'}}}
@@ -9,17 +9,20 @@ function remember(){try{return JSON.parse(localStorage.getItem(pendingKey())||'n
 function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
 function safeImage(url){return typeof url==='string'&&/^https:\/\//i.test(url)?url:''}
 function rarityKey(v){const r=String(v||'').toUpperCase();return r.includes('UR')?'ur':r.includes('SR')?'sr':r==='R'||r.includes('レア')?'r':'n'}
-function clearEffects(){const stage=$('gachaStage');stage?.classList.remove('draw-active','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur');document.querySelectorAll('.gacha-particle,.gacha-flash,.gacha-ring').forEach(x=>x.remove())}
+function clearEffects(){const stage=$('gachaStage');stage?.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur');document.querySelectorAll('.gacha-particle,.gacha-flash,.gacha-ring').forEach(x=>x.remove())}
 function particles(count,kind){const stage=$('gachaStage');if(!stage)return;for(let i=0;i<count;i++){const x=document.createElement('i');x.className=`gacha-particle ${kind}`;x.style.setProperty('--x',`${Math.random()*100}%`);x.style.setProperty('--dx',`${(Math.random()-.5)*260}px`);x.style.setProperty('--delay',`${Math.random()*.35}s`);x.style.setProperty('--dur',`${1.05+Math.random()*1.25}s`);x.textContent=Math.random()>.46?'✦':Math.random()>.5?'◆':'★';stage.append(x);setTimeout(()=>x.remove(),3000)}}
 function revealEffect(rarity,mode){window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{rarity,mode}}));clearEffects();const stage=$('gachaStage'),key=rarityKey(rarity);stage?.classList.add('reveal',`rarity-${key}`,mode==='ラキフェス'?'is-fest':'is-normal');const flash=document.createElement('i');flash.className='gacha-flash';stage?.append(flash);const ring=document.createElement('i');ring.className='gacha-ring';stage?.append(ring);particles({n:26,r:42,sr:72,ur:110}[key]||30,key);setTimeout(()=>{flash.remove();ring.remove();stage?.classList.remove('reveal')},1900)}
+function clearAnimationTimers(){animationTimers.forEach(clearTimeout);animationTimers=[]}
 function startEffect(mode){
-  clearEffects();
+  clearEffects();clearAnimationTimers();
   window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode}}));
   const stage=$('gachaStage');stage?.classList.add('draw-active');stage?.classList.remove('v20-prize-visible','v191-rarity-n','v191-rarity-r','v191-rarity-sr','v191-rarity-ur');stage?.classList.toggle('is-fest',mode==='ラキフェス');
-  particles(mode==='ラキフェス'?70:46,mode==='ラキフェス'?'sr':'n');
-  setTimeout(()=>particles(mode==='ラキフェス'?60:34,mode==='ラキフェス'?'ur':'r'),700);
-  setTimeout(()=>particles(mode==='ラキフェス'?80:42,mode==='ラキフェス'?'sr':'n'),1350);
-  setTimeout(()=>{if(stage?.classList.contains('draw-active'))particles(mode==='ラキフェス'?95:65,mode==='ラキフェス'?'ur':'sr')},2450);
+  const fest=mode==='ラキフェス';
+  particles(fest?70:46,fest?'sr':'n');
+  animationTimers.push(setTimeout(()=>{stage?.classList.add('royal-charge');note(fest?'🌟 黄金の光が集まっていく…！':'✨ 王宮の光が集まっていく…！');particles(fest?60:34,fest?'ur':'r')},900));
+  animationTimers.push(setTimeout(()=>{stage?.classList.remove('royal-charge');stage?.classList.add('royal-release');note('🎁 光とともにカプセルが出てくるよ！');particles(fest?80:42,fest?'sr':'n')},1900));
+  animationTimers.push(setTimeout(()=>{stage?.classList.add('royal-climax');note(fest?'👑 ラキフェス最高潮！結果が現れる…！':'💫 光が最高潮！結果が現れる…！');particles(fest?95:65,'ur')},3650));
+  animationTimers.push(setTimeout(()=>{stage?.classList.remove('royal-charge','royal-release','royal-climax','draw-active');stage?.classList.add('royal-sequence-complete');note('演出が完了しました。抽選結果の確定を待っています…')},5000));
 }
 function makeId(){return crypto.randomUUID?crypto.randomUUID().replaceAll('-',''):Array.from(crypto.getRandomValues(new Uint8Array(16)),x=>x.toString(16).padStart(2,'0')).join('')}
 function fmtDate(v){if(!v)return'';try{const d=new Date(v);if(!Number.isNaN(d.getTime()))return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}catch{}return String(v)}
@@ -73,21 +76,22 @@ async function execute(pending){
   if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
   if(busy)return;
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
-  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:(fest?7700:6600);
+  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:5000;
+  skipRequested=false;$('skipDraw').hidden=reduceMotion;$('skipDraw').disabled=reduceMotion;
   let refreshAfter=false;
   startEffect(pending.mode);
   note(fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
-  const phaseTimers=[setTimeout(()=>note(fest?'🌟 黄金の光が集まっていく…！':'✨ クリスタルに光が集まっていく…！'),reduceMotion?150:950),setTimeout(()=>{note(fest?'👑 ラキフェス最高潮！運命のカプセルが現れる…！':'💫 光が最高潮！当たりの予感…！');particles(fest?105:70,fest?'ur':'sr')},reduceMotion?350:(fest?5800:5200))];
+  
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});
-    const wait=Math.max(0,minMs-(performance.now()-started));if(wait)await sleep(wait);
-    phaseTimers.forEach(clearTimeout);renderResult(d);forget();
+    const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
+    renderResult(d);forget();
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
   }catch(e){
-    phaseTimers.forEach(clearTimeout);clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
+    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
   }finally{
-    $('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active');busy=false;$('retryDraw').disabled=false;
+    clearAnimationTimers();$('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active','royal-charge','royal-release','royal-climax');busy=false;$('skipDraw').hidden=true;$('skipDraw').disabled=true;$('retryDraw').disabled=false;
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
   }
 }
@@ -159,6 +163,7 @@ async function start(mode){
   }
   void execute(p)
 }
+$('skipDraw').addEventListener('click',()=>{if(!busy)return;skipRequested=true;$('skipDraw').disabled=true;$('skipDraw').hidden=true;if(skipWaitResolve)skipWaitResolve();note('演出をスキップしました。確定した抽選結果を確認しています…')});
 $('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void execute(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
 let lastBackgroundRefresh=0;
 function refreshOpenState(){
@@ -173,3 +178,4 @@ document.addEventListener('visibilitychange',refreshOpenState);
 window.addEventListener('pageshow',refreshOpenState);
 async function boot(){if(isPreview){$('gachaUserMessage').textContent='テスト版では実抽選を停止しています。演出デモで確認してください。';return;}try{const s=await post('/api/status');participant=s.participantId;$('gachaUser').hidden=false;$('gachaApproval').textContent=s.status||'';$('gachaName').textContent=(s.name||'')+' さん';$('gachaId').textContent='登録ID：'+s.participantId;if(s.status!=='承認済み'){throw Error('管理者の登録承認後にガチャを利用できます。')}$('gachaUserMessage').textContent='ガチャ情報を読み込んでいます…';const loaded=await loadCatalog();$('gachaUserMessage').textContent=loaded?'ガチャ情報を表示しました。':'ガチャ設定を取得できませんでした。下の「設定・当選履歴を更新」から再試行してください。'}catch(e){$('gachaUserMessage').textContent=e.status===401?'先に企画ページでColorSing名を登録してください。':e.message;$('gachaUserMessage').classList.add('error')}}
 void boot();
+
