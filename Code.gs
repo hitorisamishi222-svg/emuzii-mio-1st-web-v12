@@ -249,7 +249,8 @@ function doPost(e) {
         if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
         var foundRow=findWebRowIndexById_(web,d.participantId);
         var existingLoginId=foundRow?ensureLoginIdForRow_(web,foundRow):'';
-        var healedId=found[0][7]||autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
+        // Preserve only the participant ID already verified by the operator.
+        var healedId=found[0][7]||'';
         return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||'',loginId:loginIdDisplay_(existingLoginId)});
       }
 
@@ -287,23 +288,18 @@ function doPost(e) {
       var newRow=webNextRow_(web);
       if(!newRow)return json_({ok:false,error:'登録上限です。運営に確認してください'});
       var issuedLoginId=loginIdDisplay_(newLoginId_());
-      web.getRange(newRow,1,1,LOGIN_ID_COL).setValues([[d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),'承認待ち','未確認',linked,'',matchState,linked||d.participantId,'確認待ち','','','','','','','','',issuedLoginId]]);
+      // A name match is merely a possible candidate, never an ownership check.
+      web.getRange(newRow,1,1,LOGIN_ID_COL).setValues([[d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),'承認待ち','未確認','','本人確認待ち：名前一致では自動接続しない',matchState,d.participantId,'確認待ち','','','','','','','','',issuedLoginId]]);
       ensureWebDerivedRow_(web,newRow);
       SpreadsheetApp.flush();
 
-      if(!linked)linked=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,name);
+      // Do not link to participant history before the operator verifies identity.
       try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
-      return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||'',loginId:issuedLoginId});
+      return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:'',loginId:issuedLoginId});
     }
 
-    if(found.length===1&&equal_(found[0][1],d.tokenHash)&&!found[0][7]){
-      var repairedId=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
-      if(repairedId){
-        all=webActualRows_(web);
-        found=all.filter(function(r){return r[0]===d.participantId});
-      }
-    }
+    // Missing MIO-ID references must be reviewed by the operator, not auto-repaired by nickname.
 
     if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
 
