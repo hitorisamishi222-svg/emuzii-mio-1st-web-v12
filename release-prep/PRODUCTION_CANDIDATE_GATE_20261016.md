@@ -68,3 +68,14 @@
 - 明示的切替本体 `switchApprovedWebRegistrationV189_` は参加者/皆勤/ガチャ/当選シートを直接書き換えない。失敗時は変更したWeb登録行のF/G/Q/R/S列の戻しを試みるが、Sheetsの複数更新が原子的である保証はない。実環境での安全性はまだ保証されない。
 - 新規登録承認フローの未整備箇所: v1.9.7では新しいブラウザが既存名義に一致してもH/K/Lを自動確定しない。一方 `BrowserAddV189Patch.gs` の `approveAdditionalBrowserV189Patch_` は H/K/P/Lの確定を必須とするため、本人確認を行った運営だけが明示的にMIO-IDを登録し、再照合・監査できる手順が必要。
 - 実GASバージョン12のv1.9.1自動承認処理はまだ未修正。本番 `main` は依然メンテナンス中。この修正候補は `release/mio-production-candidate-20261016` にのみ存在。
+
+### 10/17 JST: 本人認証・端末追加・切替の候補3モジュール統合検証
+- 候補3ファイルを開発ブランチに保存：`APPS_SCRIPT_Code_v1.9.7_MANUAL_IDENTITY_RELEASE.gs`、`release-prep/DeviceRecoveryV197_SAFE_INTEGRATION_CANDIDATE.gs`、`release-prep/BrowserAddV197_SAFE_CANDIDATE.gs`。実GASの `GachaAdminV188.gs` は保全対象で差し替えない。
+- 旧 `setupV189Complete`・`setupWebRecoveryV189_`・`webRecoveryOnEdit_` による旧トリガー復活を候補DeviceRecovery側で禁止した。ブラウザ追加側 `setupBrowserAddV189Patch` も候補版では初期化を拒否。
+- ブラウザ追加・切替の管理画面に候補行のWeb-ID・名前・MIO-ID・承認状態・端末状態・元シート行の照合を追加。本人確認の再利用防止のため一覧再作成時にはI列を未確認へ戻す。
+- `emuzii_重複整理` の候補表示を**重複行だけでなく全ての「承認待ち」行へ拡張**し、初回登録者も運営が確認可能とした。
+- 追加承認で対象が承認待ち以外、Q列旧端末、H/K/P/L不整合、参加者台帳に一意のIDと名前がない場合は停止。承認操作には操作ログ・ベストエフォート復元を追加。
+- 合成データで15ケースの3ファイル統合テスト合格：`release-prep/test-v197-three-module-integration.cjs`（https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38927642510）。旧ブラウザ維持・明示的切替・異MIO保護・初回登録の候補表示・本人未確認・行変更・誤ID・再承認・例外時復元を検証した。
+- **重大残件**: P列がColorSing名の先頭一致から導出される現行式だと、同名異MIO-IDを運営が確認できてもH/P整合要件に反して承認できない可能性。自動修復せず本人照合が必要。v1.9.7候補と実 `GachaAdminV188.gs` 全文の未照合も公開阻害。
+- 実GASファイルとの対応、承認手順、残件を `release-prep/V197_GAS_RELEASE_FILE_MAP.md` と `release-prep/BROWSER_APPROVAL_V197_OPERATOR_GUIDE.md` に記録。
+- **本番変更なし**：GAS稼働v12、Google Sheets、Vercel `main` と固定URLは未更新。公開不可の判定を維持。
