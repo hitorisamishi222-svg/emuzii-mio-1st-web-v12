@@ -24,3 +24,5 @@ jobs:
         run: node release-prep/test-v197-three-module-integration.cjs
       - name: Synthetic four-module gacha and browser management interaction tests
         run: node release-prep/test-v197-four-module-integration.cjs
+      - name: Check real gacha grant behavior using synthetic sheets
+        run: node release-prep/test-v197-gacha-grants-real-code.cjs
