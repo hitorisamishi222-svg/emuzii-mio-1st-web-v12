@@ -235,4 +235,32 @@ check('gacha admin unrelated edits never mutate web registrations',()=>{
   },value:'TRUE'});
   assert.equal(JSON.stringify(h.rows),before);
 });
+check('four GAS files have no duplicated top-level function definitions',()=>{
+  const files=[
+    'APPS_SCRIPT_Code_v1.9.7_MANUAL_IDENTITY_RELEASE.gs',
+    'release-prep/DeviceRecoveryV197_SAFE_INTEGRATION_CANDIDATE.gs',
+    'release-prep/BrowserAddV197_SAFE_CANDIDATE.gs',
+    'release-prep/GachaAdminV188-FULL-REPLACE.gs'
+  ];
+  const found=new Map();
+  for(const file of files){
+    const source=fs.readFileSync(file,'utf8');
+    for(const match of source.matchAll(/^function\s+([A-Za-z_][\w_]*)\s*\(/gm)){
+      if(found.has(match[1]))throw Error('Duplicate definition '+match[1]+' in '+found.get(match[1])+' and '+file);
+      found.set(match[1],file);
+    }
+    assert.doesNotMatch(source,/ScriptApp\.newTrigger\s*\(/,'must not create old trigger in '+file);
+  }
+  assert.equal(found.get('webRecoveryOnEditBrowserPatchV189_'),'release-prep/BrowserAddV197_SAFE_CANDIDATE.gs');
+  assert.equal(found.get('gachaOpenState_'),'release-prep/GachaAdminV188-FULL-REPLACE.gs');
+});
+check('same-nickname different MIO cannot pass name-derived P mismatch',()=>{
+  const h=harness();
+  h.rows[1][7]='MIO-0020';h.rows[1][10]='MIO-0020';h.rows[1][15]='MIO-0013';
+  h.putReview('NEW','MIO-0020');h.edit('このブラウザを追加');
+  assert.equal(h.rows[1][5],'承認待ち');
+  assert.equal(h.rows[0][5],'承認済み');
+  assert.equal(h.rows[2][5],'承認済み');
+  assert.match(h.reviewRows[1][10],/H\/K\/P\/L/);
+});
 console.log('OK: '+count+' synthetic 4-module integration cases passed');
