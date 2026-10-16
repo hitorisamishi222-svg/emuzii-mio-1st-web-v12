@@ -172,7 +172,7 @@ const interactionPages = [
 ];
 const actionSkip = /gacha|ガチャ|抽選|draw|logout|ログアウト|clear|削除|reset|リセット|初期化|grant|付与/i;
 
-test('all non-gacha internal page links resolve', {timeout: 90000}, async () => {
+if (selected('all-non-gacha-internal-links')) test('all non-gacha internal page links resolve', {timeout: 90000}, async () => {
   const context = await contextFor(390);
   const page = await context.newPage();
   page.setDefaultTimeout(10000);
@@ -216,3 +216,70 @@ for (const path of interactionPages) {
     }
   }));
 }
+
+
+function captureExternalRequests(page) {
+  const origins = [];
+  page.on('request', request => {
+    try { origins.push(new URL(request.url()).origin); } catch {}
+  });
+  return () => [...new Set(origins.filter(origin => origin !== base))];
+}
+
+test('safe-form-community-demo', {timeout: 60000}, async () => runCase('safe-form-community-demo', 390, async page => {
+  const external = captureExternalRequests(page);
+  await page.goto(`${base}/community-demo.html`, {waitUntil: 'load'});
+  await page.locator('#roleSelect').selectOption('guest');
+  await page.locator('[data-submit="video"]').click();
+  assert.match(await page.locator('#toast').innerText(), /承認済みメンバー限定/);
+  assert.equal(await page.locator('#submitModal').evaluate(el => el.open), false);
+  await page.locator('#roleSelect').selectOption('approved');
+  await page.locator('[data-submit="video"]').click();
+  await page.locator('#submitTitle').fill('テスト用の架空動画');
+  await page.locator('#submitNick').fill('テスト参加者');
+  await page.locator('#submitUrl').fill('https://example.com/video');
+  await page.locator('#submitConsent').check();
+  await page.locator('#submitForm button[type="submit"]').click();
+  assert.match(await page.locator('#submitError').innerText(), /媒体に合ったHTTPS/);
+  await page.locator('#submitUrl').fill('https://youtu.be/example123');
+  await page.locator('#submitForm button[type="submit"]').click();
+  assert.equal(await page.locator('#submitModal').evaluate(el => el.open), false);
+  assert.match(await page.locator('#videoPending').innerText(), /1件/);
+  assert.match(await page.locator('#toast').innerText(), /外部保存はされません/);
+  assert.deepEqual(external(), [], 'community demo must not call external services');
+}));
+
+test('safe-form-music-gallery-demo', {timeout: 60000}, async () => runCase('safe-form-music-gallery-demo', 390, async page => {
+  const external = captureExternalRequests(page);
+  await page.goto(`${base}/music-gallery-demo.html`, {waitUntil: 'load'});
+  await page.locator('#role').selectOption('member');
+  await page.locator('#title').fill('架空テスト曲');
+  await page.locator('#artist').fill('テスト参加者');
+  await page.locator('#rights').check();
+  await page.locator('#audio').setInputFiles({name: 'invalid-fixture.txt', mimeType: 'text/plain', buffer: Buffer.from('synthetic audio fixture')});
+  await page.locator('#submit').click();
+  assert.match(await page.locator('#message').innerText(), /対応する30MB以下/);
+  await page.locator('#audio').setInputFiles({name: 'synthetic-fixture.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic audio fixture')});
+  await page.locator('#submit').click();
+  assert.match(await page.locator('#message').innerText(), /この端末だけで再生プレビュー/);
+  assert.match(await page.locator('#tracks').innerText(), /架空テスト曲/);
+  assert.equal(await page.locator('#tracks button').count(), 1);
+  assert.deepEqual(external(), [], 'music preview must stay in browser memory');
+}));
+
+test('safe-form-login-id-settings', {timeout: 30000}, async () => runCase('safe-form-login-id-settings', 390, async page => {
+  const requests = [];
+  page.on('request', request => requests.push(new URL(request.url()).pathname));
+  await page.goto(`${base}/login-id-settings-preview.html`, {waitUntil: 'load'});
+  const input = page.locator('#loginId'), button = page.locator('#check'), feedback = page.locator('#feedback');
+  await input.fill('abcdefgh');
+  assert.equal(await button.isDisabled(), true);
+  assert.match(await feedback.innerText(), /3種類以上/);
+  await input.fill('MioFan_2026');
+  assert.equal(await button.isDisabled(), false);
+  assert.match(await feedback.innerText(), /形式はOK/);
+  await button.click();
+  assert.match(await feedback.innerText(), /登録・変更を実行しません/);
+  assert.equal(requests.some(path => path.startsWith('/test-auth') || path.startsWith('/api/')), false,
+    'ID format preview must not make auth or registration requests');
+}));
