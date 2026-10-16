@@ -188,7 +188,7 @@ test('historically approved but unlinked browser is not silently matched by nick
 });
 
 test('v1.9.7 contains no caller that invokes name-based MIO auto-repair',()=>{
-  assert.doesNotMatch(source,/=\\s*autoLinkWebParticipant_\\(/);
-  assert.doesNotMatch(source,/\\|\\|\\s*autoLinkWebParticipant_\\(/);
-  assert.match(source,/function autoLinkWebParticipant_\\([\\s\\S]{0,250}return '';/);
+  assert.doesNotMatch(source,/=\s*autoLinkWebParticipant_\(/);
+  assert.doesNotMatch(source,/\|\|\s*autoLinkWebParticipant_\(/);
+  assert.match(source,/function autoLinkWebParticipant_\([\s\S]{0,250}return '';/);
 });
