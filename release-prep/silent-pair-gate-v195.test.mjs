@@ -9,6 +9,8 @@ import {pairReleaseEnabled} from '../pair-release-gate.js';
 
 const read=(path)=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const release=process.env.MIO_PAIR_AUTH_RELEASE;
+const vercelEnv=process.env.VERCEL_ENV;
+process.env.VERCEL_ENV='production';
 const existingUrl=process.env.APPS_SCRIPT_URL;
 const existingSecret=process.env.APPS_SCRIPT_SECRET;
 const secret='r'.repeat(48);
@@ -126,5 +128,6 @@ process.on('exit',()=>{
  if(release===undefined)delete process.env.MIO_PAIR_AUTH_RELEASE;else process.env.MIO_PAIR_AUTH_RELEASE=release;
  if(existingSecret===undefined)delete process.env.APPS_SCRIPT_SECRET;else process.env.APPS_SCRIPT_SECRET=existingSecret;
  if(existingUrl===undefined)delete process.env.APPS_SCRIPT_URL;else process.env.APPS_SCRIPT_URL=existingUrl;
+ if(vercelEnv===undefined)delete process.env.VERCEL_ENV;else process.env.VERCEL_ENV=vercelEnv;
  globalThis.fetch=oldFetch;
 });

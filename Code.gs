@@ -7,6 +7,7 @@ var SHEET_ID = '1WqkXSV_UehRdpO9VVqRAL9ZTVXwD_GxlH3Ey50uX3PM';
 var WEB_TAB = 'emuzii_Web登録';
 function setup() {
   setupGacha_();
+  setupGachaAdminV188_();
   var ss=SpreadsheetApp.openById(SHEET_ID);
   var sheet=ss.getSheetByName(WEB_TAB);
   if(!sheet) {
@@ -22,6 +23,53 @@ function setup() {
   var props=PropertiesService.getScriptProperties();
   if(!props.getProperty('BRIDGE_SECRET'))props.setProperty('BRIDGE_SECRET',Utilities.getUuid()+Utilities.getUuid());
 }
+
+
+// 受付スイッチのみを設置。既存の参加者・景品・履歴・回数の計算式は変更しない。
+function setupGachaGate() {
+  setupGachaAdminV188_();
+  var state=gachaOpenState_(SpreadsheetApp.openById(SHEET_ID));
+  if(!state.configured)throw new Error('ガチャ受付スイッチを確認できません');
+  console.log('ガチャ受付設定: メンシプ='+state.normalOpen+', ラキフェス='+state.festOpen);
+  return state;
+}
+
+function gachaGateRows_(admin){
+  if(!admin)return {normalRow:0,festRow:0};
+  var last=admin.getLastRow();
+  if(last<1)return {normalRow:0,festRow:0};
+  var labels=admin.getRange(1,1,last,1).getDisplayValues(),normalRow=0,festRow=0;
+  for(var i=0;i<labels.length;i++){
+    if(String(labels[i][0]||'').trim()==='メンシプガチャ受付')normalRow=i+1;
+    if(String(labels[i][0]||'').trim()==='ラキフェス受付')festRow=i+1;
+  }
+  return {normalRow:normalRow,festRow:festRow};
+}
+function setupGachaAdminV188_(){
+  var ss=SpreadsheetApp.openById(SHEET_ID),admin=ss.getSheetByName('emuzii_管理画面');
+  if(!admin)throw new Error('emuzii_管理画面がありません');
+  var rows=gachaGateRows_(admin),next=Math.max(admin.getLastRow()+2,1);
+  if(!rows.normalRow){rows.normalRow=next++;admin.getRange(rows.normalRow,1).setValue('メンシプガチャ受付')}
+  if(!rows.festRow){rows.festRow=next++;admin.getRange(rows.festRow,1).setValue('ラキフェス受付')}
+  [rows.normalRow,rows.festRow].forEach(function(row){
+    var cell=admin.getRange(row,2),value=cell.getValue();
+    cell.insertCheckboxes();
+    cell.setValue(value===true);
+    admin.getRange(row,1,1,2).setBackground('#eaf2ff');
+    admin.getRange(row,1,1,1).setFontWeight('bold');
+  });
+}
+function gachaOpenState_(ss){
+  try{
+    var admin=ss.getSheetByName('emuzii_管理画面'),rows=gachaGateRows_(admin);
+    if(!rows.normalRow||!rows.festRow)return {normalOpen:false,festOpen:false,configured:false};
+    return {normalOpen:admin.getRange(rows.normalRow,2).getValue()===true,festOpen:admin.getRange(rows.festRow,2).getValue()===true,configured:true};
+  }catch(e){
+    console.error('gachaOpenState_: failed to read admin switches',e);
+    return {normalOpen:false,festOpen:false,configured:false};
+  }
+}
+
 function json_(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON)}
 function equal_(a,b){a=String(a||'');b=String(b||'');var diff=a.length^b.length;for(var i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return diff===0}
 function rows_(ss,name){var sh=ss.getSheetByName(name);return sh&&sh.getLastRow()>1?sh.getRange(2,1,sh.getLastRow()-1,sh.getLastColumn()).getValues():[]}
@@ -153,11 +201,15 @@ function gachaAction_(ss,r,d){
  if(!g||g[12]!=='OK'||g[13]!=='OK')return {ok:false,error:'運営によるガチャ回数の確認が必要です'};
  var manual=Number(g[6])+Number(g[9]),total=Number(g[5]),used=manual+history.length,remaining=total-used,confirmed=r[6]==='確認済み';
  if(!Number.isSafeInteger(manual)||!Number.isSafeInteger(total)||manual<0||total<0||remaining<0)return {ok:false,error:'ガチャ回数を運営が確認中です'};
- var normal=catalog_(ss,'通常'),fest=catalog_(ss,'ラキフェス');
- if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,festUnlocked:total>=5,normal:normal,fest:fest};
+ var gate=gachaOpenState_(ss);
+ var normal=gate.normalOpen?catalog_(ss,'通常'):{ready:false,message:'メンシプガチャは現在停止中です',prizes:[]};
+ var fest=gate.festOpen?catalog_(ss,'ラキフェス'):{ready:false,message:'ラキフェスガチャは現在停止中です',prizes:[]};
+ if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,festUnlocked:total>=5,normalOpen:gate.normalOpen,festOpen:gate.festOpen,gateConfigured:gate.configured,normal:normal,fest:fest};
  if(!/^[a-f0-9]{32}$/.test(d.drawId||'')||['通常','ラキフェス'].indexOf(d.mode)<0)return {ok:false,error:'抽選要求が不正です'};
  var previous=rows_(ss,DRAW_TAB).filter(function(x){return x[0]===d.drawId});
  if(previous.length){var old=previous[0];if(previous.length!==1||old[1]!==r[0]||old[2]!==id||old[4]!==d.mode)return {ok:false,error:'抽選IDを確認できません'};return {ok:true,participantId:r[0],drawId:old[0],prize:old[6],mode:old[4],ordinal:old[9],replayed:true};}
+ if(d.mode==='通常'&&!gate.normalOpen)return {ok:false,error:'メンシプガチャは現在停止中です'};
+ if(d.mode==='ラキフェス'&&!gate.festOpen)return {ok:false,error:'ラキフェスガチャは現在停止中です'};
  if(!confirmed)return {ok:false,error:'メンシプ購入の確認をお待ちください'};
  if(remaining<1)return {ok:false,error:'残り回数がありません'};
  if(d.mode==='ラキフェス'&&total<5)return {ok:false,error:'ラキフェスは総ガチャ権利5回以上で解放されます'};
