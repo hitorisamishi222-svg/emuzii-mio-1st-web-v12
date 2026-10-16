@@ -43,6 +43,14 @@ body{background:radial-gradient(ellipse at 50% 20%,#17497a 0%,#0a2b57 45%,#06193
 /* Mobile artwork crop: fill width and frame face / upper body. */
 .mio-art-banner{background-size:cover!important;background-position:center 33%!important;overflow:hidden}
 @media(max-width:700px){.mio-art-banner{height:clamp(280px,82vw,390px)!important;background-size:cover!important;background-position:center 32%!important}}
+
+/* Seamless full-width royal blue backdrop; portrait has no boxed side gaps. */
+html,body{background:#071e42!important}
+body{background-image:linear-gradient(180deg,#102f60 0%,#0c2d5a 28%,#081f43 65%,#06152e 100%)!important;background-attachment:fixed!important}
+.mio-art-banner{width:100%!important;max-width:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background-color:#102f60!important;background-size:cover!important;background-position:center 32%!important}
+.mio-art-banner:after{border-radius:0!important;background:linear-gradient(180deg,transparent 55%,#0c2d5a 100%)!important}
+.wrap{border-radius:0!important;box-shadow:none!important;background:linear-gradient(180deg,#0c2d5a 0%,#0b2b55 45%,#071b3b 100%)!important}
+@media(min-width:941px){.mio-art-banner{max-width:940px!important;margin:0 auto!important}}
 </style>
 </head>
 <body>
