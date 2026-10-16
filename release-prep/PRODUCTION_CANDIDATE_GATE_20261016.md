@@ -43,3 +43,12 @@
 
 ### 公開判定
 **未承認。** 少なくとも「本番GASを安全版に更新→バージョン・接続先確認→既存端末と手動承認の実環境検証→23行目の本人確認・不一致処理→本番候補の公開承認」が必要。無検証で main / 固定URL に反映しない。
+
+### 追加確認（23:xx JST）: 実GAS補助ファイル・端末トリガーの互換性
+- ユーザーの既存GAS編集画面に `Code.gs`, `DeviceRecoveryV187.gs`, `GachaAdminV188.gs`, `BrowserAddV189Patch.gs` の4ファイルが存在することを確認。
+- ユーザー提供の `BrowserAddV189Patch.gs` ソースを確認。管理画面 `emuzii_重複整理` の「確認済み」+「このブラウザを追加」を受け、`approveAdditionalBrowserV189Patch_` が H/K/P/L の整合、一意の名前・MIO-ID、対象WebIDの一意性を確認して承認。追加処理は既存承認端末の却下を実施せず、監査ログに記録する。
+- 同ファイルの `setupBrowserAddV189Patch` は旧 `webRecoveryOnEdit_` トリガーを消して `webRecoveryOnEditBrowserPatchV189_` を新設するが、**setupが実行済みか不明**。実稼働中のトリガー一覧をApps Script画面で確認するまで、旧端末が安全に維持されると断定しない。
+- 旧 `APPS_SCRIPT_DeviceRecovery_v1.8.7_NO_BACKUP.gs` の `webRecoveryOnEdit_` はWeb登録F列の「承認済み」への変更で同MIO-IDの他の承認済みWebIDを「却下／旧端末」に変更する。この古いトリガーが現行で有効なら「ブラウザを追加」の要件と衝突する。
+- `BrowserAddV189Patch.gs` の「この端末へ切替」経路は `switchApprovedWebRegistrationV189_` を呼ぶが、ユーザー提供のファイル本文に定義なし。GitHubの旧DeviceRecoveryアドオンにも定義なし。**実GASのDeviceRecoveryファイルの本文・補助ファイル/関数の有無は未確認**。
+- 追加承認関数は対象レコードの H/K/P/L をあらかじめ整合済みとして要求する。一方 v1.9.7 の新ブラウザ登録は本人確認前にHを空欄にする。したがって**承認前の管理者による安全な明示的本人照合・ID紐付け手順（権限・監査・既存ID非破壊）が必要**。Web登録23行目は本人確認なしに自動補修禁止。
+- 次はApps Scriptの「トリガー」画面のスクショで稼働トリガーを確認し、`DeviceRecoveryV187.gs` を読取専用で確認する。 `setupBrowserAddV189Patch` / `setupV187Complete` を実行しない。GASや参加者Sheetを勝手に保存・デプロイしない。
