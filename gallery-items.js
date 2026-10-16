@@ -12,7 +12,7 @@ export const approvedGalleryItems = [
     creator: 'えむじー🐱',
     description: '',
     url: 'https://vt.tiktok.com/ZSgFvmy7Q/',
-    thumbnail: '/assets/gallery-emuzii-mio-cover.svg'
+    thumbnail: '/assets/gallery-emuzii-mio-cover.webp'
   },
   {
     category: '音声・楽曲',
