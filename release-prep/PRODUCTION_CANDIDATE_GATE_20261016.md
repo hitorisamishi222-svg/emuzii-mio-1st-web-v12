@@ -60,3 +60,11 @@
 - **注意: ユーザーが送った現在の実GAS `DeviceRecoveryV187.gs` の冒頭は過去GitHub版と完全一致しない。** 現行の `setupV189Complete` は `setupWebRecoveryV189_` を呼び旧 `webRecoveryOnEdit_` を再作成可能だが、過去GitHub版は `setupV189DuplicateReview_` のみ。両者を同一コードとみなさず、**現行スクリプトの `switchApprovedWebRegistrationV189_` 本文確認まで本番切替安全性は未確定**。
 - 端末管理トリガー画面は1件、`webRecoveryOnEditBrowserPatchV189_`、エラー率表示0%。旧 `webRecoveryOnEdit_` のトリガー表示なし。ただしユーザーに見えない別所有者のトリガーの不存在までは証明しない。
 - 本番GAS v12は本人認証の安全対策が未適用であり、修正版v1.9.7も実プロジェクトへ未保存/未デプロイ。公開可否は引き続き不合格。
+
+### 10/17 JST: 稼働プロジェクトのDeviceRecoveryV187.gs全文を本人提供で確認
+- 実GASの `DeviceRecoveryV187.gs` はラベルこそV187だが、内部は `v1.8.9 端末切替・重複整理`。関数 `switchApprovedWebRegistrationV189_` が存在し、旧GitHubブランチの同名関数と処理構成が一致：Lock、対象WebIDの一意照合、既存のMIO-ID/名前/H-K-P-L状態の整合、管理者テスト参加者の保護、対象と同一MIO-IDの承認済み旧端末のみ「却下／旧端末」、既存メンシプ継承、操作履歴、例外時のベストエフォート復元。
+- 重要な差異: 現行GASの `setupV189Complete()` は `setupV189DuplicateReview_()` の後に `setupWebRecoveryV189_()` を実行して旧 `webRecoveryOnEdit_` トリガーを**新規作成する**。**実行禁止**。現在の画面で確認した稼働トリガーは `webRecoveryOnEditBrowserPatchV189_` のみであり、新トリガーを追加すると追加と切替の操作が競合する危険がある。既存トリガーは変更しない。
+- 実GAS内の `webRecoveryOnEdit_` は、スプレッドシート Web登録 F列の「承認済み」を操作すると、条件次第で名前照合からH/K/Lを自動確定する。稼働トリガーがないと確認された所有者の範囲では実行されていないが、**設定を再実行すれば認証安全対策を回避し得る**。
+- 明示的切替本体 `switchApprovedWebRegistrationV189_` は参加者/皆勤/ガチャ/当選シートを直接書き換えない。失敗時は変更したWeb登録行のF/G/Q/R/S列の戻しを試みるが、Sheetsの複数更新が原子的である保証はない。実環境での安全性はまだ保証されない。
+- 新規登録承認フローの未整備箇所: v1.9.7では新しいブラウザが既存名義に一致してもH/K/Lを自動確定しない。一方 `BrowserAddV189Patch.gs` の `approveAdditionalBrowserV189Patch_` は H/K/P/Lの確定を必須とするため、本人確認を行った運営だけが明示的にMIO-IDを登録し、再照合・監査できる手順が必要。
+- 実GASバージョン12のv1.9.1自動承認処理はまだ未修正。本番 `main` は依然メンテナンス中。この修正候補は `release/mio-production-candidate-20261016` にのみ存在。
