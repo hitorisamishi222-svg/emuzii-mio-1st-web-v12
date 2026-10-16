@@ -230,6 +230,7 @@ test('safe-form-community-demo', {timeout: 60000}, async () => runCase('safe-for
   const external = captureExternalRequests(page);
   await page.goto(`${base}/community-demo.html`, {waitUntil: 'load'});
   await page.locator('#roleSelect').selectOption('guest');
+  await page.locator('[data-tab="video"]').click();
   await page.locator('[data-submit="video"]').click();
   assert.match(await page.locator('#toast').innerText(), /承認済みメンバー限定/);
   assert.equal(await page.locator('#submitModal').evaluate(el => el.open), false);
