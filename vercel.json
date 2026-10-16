@@ -22,6 +22,22 @@
       "use": "@vercel/static"
     },
     {
+      "src": "gallery.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gallery-items.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "community.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "music-gallery.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "style.css",
       "use": "@vercel/static"
     },
@@ -282,6 +298,10 @@
     {
       "src": "/api/gacha",
       "dest": "/api-gacha.js"
+    },
+    {
+      "src": "/gallery.html",
+      "dest": "/gallery.html"
     },
     {
       "src": "/gacha.html",
