@@ -26,6 +26,16 @@ test('community and gallery are deliberately read-only until backend approval',(
   assert(read('music-gallery.html').includes('src="/mio-awakening.mp3"'));
   assert(home.includes('登録名の一致のみで本人確認はできません'));
 });
+test('new browser registration defaults to disabled until GAS identity safety verified',()=>{
+  const register=read('api-register.js');
+  assert(register.includes("process.env.MIO_REGISTRATION_RELEASE!=='verified-gas-identity-20261016'"),'release gate must deny registration by default');
+  assert(register.indexOf("process.env.MIO_REGISTRATION_RELEASE")<register.indexOf("makeIdentity()"),'identity gate must run before any registration attempt');
+  assert(register.indexOf("process.env.MIO_REGISTRATION_RELEASE")<register.indexOf("bridge('register'"),'guard must prevent writes to live GAS');
+  assert(register.includes("res.status(503)"),'gated registration must return maintenance response');
+  for(const p of ['api-status.js','api-checkin.js','api-gacha.js']){
+    assert(!read(p).includes("MIO_REGISTRATION_RELEASE"),'do not block existing approved participant actions: '+p);
+  }
+});
 test('existing API enforces production only; client result follows server draw',()=>{
   const api=read('bridge.js');
   assert(api.includes("process.env.VERCEL_ENV!=='production'"));
