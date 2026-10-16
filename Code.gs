@@ -262,50 +262,26 @@ function doPost(e) {
       var peopleByName=rows_(ss,'emuzii_参加者').filter(function(p){return nameKey_(p[1])===nameKey});
       var linked=peopleByName.length===1?peopleByName[0][0]:'';
       var matchState=peopleByName.length>1?'重複要確認':peopleByName.length===1?'既存一致':'フォーム/Web新規';
-      var submittedLoginId=loginIdFormat_(d.loginId);
 
       if(duplicates.length){
-        var safeBase=safeApprovedDuplicateBase_(duplicates,linked);
-        if(!submittedLoginId&&safeBase){
-          var autoLoginId=loginIdDisplay_(newLoginId_());
-          var auto=appendBrowserCandidate_(
-            web,d,name,linked,'承認済み',String(safeBase[6]||'未確認'),
-            '同一ColorSing名・既存承認済みMIO-ID一致のため別ブラウザ自動承認',
-            '既存一致','確認済み','使用中',
-            '別ブラウザ自動承認／MIO-ID一致／ログインID入力不要',
-            autoLoginId
-          );
-          if(!auto.ok)return json_(auto);
-          try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
-          return json_({ok:true,verified:true,participantId:d.participantId,status:'承認済み',integratedParticipantId:linked,loginId:'',recovered:true,autoApproved:true});
-        }
-        if(!submittedLoginId){
-          var pending=appendBrowserCandidate_(
-            web,d,name,linked||'','承認待ち','未確認',
-            '同名登録あり・自動承認条件外のため管理確認待ち',
-            linked?'既存一致':'重複要確認','確認待ち','未指定',
-            '管理確認待ち／ログインID入力は利用者に求めない',
-            loginIdDisplay_(newLoginId_())
-          );
-          if(!pending.ok)return json_(pending);
-          try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
-          return json_({ok:true,verified:true,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||'',loginId:'',pendingReview:true});
-        }
-        var matched=duplicates.map(function(r,i){return {r:r,idx:i};}).filter(function(x){return loginIdFormat_(x.r[20])===submittedLoginId;});
-        if(matched.length!==1)return json_({ok:false,error:'管理者確認が必要です。運営へ連絡してください',needsLoginId:false});
-        var base=matched[0].r;
-        linked=String(base[7]||linked||'');
-        if(!/^MIO-\d{4}$/.test(linked))return json_({ok:false,error:'運営による参加者IDの照合が必要です'});
-        var status=String(base[5]||'承認待ち'),member=String(base[6]||'未確認');
-        var newLoginId=loginIdDisplay_(submittedLoginId);
-        var newAuth=status==='却下'?'承認待ち':status;
-        var newRowLogin=webNextRow_(web);
-        if(!newRowLogin)return json_({ok:false,error:'登録上限です。運営に確認してください'});
-        web.getRange(newRowLogin,1,1,LOGIN_ID_COL).setValues([[d.participantId,d.tokenHash,safeText_(name),'申告なし',new Date(),newAuth,member,linked,'ログインID一致・同一参加者として自動接続','ログインID一致',linked,'確認済み',new Date(),'','','','使用中','ログインID一致／別ブラウザ自動接続',new Date(),'',newLoginId]]);
-        ensureWebDerivedRow_(web,newRowLogin);
-        SpreadsheetApp.flush();
+        // Same nickname or a supplied login ID is not proof of identity.
+        // Never auto-approve or bind a new browser to an existing MIO-ID here.
+        // Existing verified browser sessions take the 'found' branch above.
+        // A new browser needs operator-controlled identity verification first.
+        var pending=appendBrowserCandidate_(
+          web,d,name,'','承認待ち','未確認',
+          '同名登録あり・別ブラウザの本人確認が必要',
+          '重複要確認','確認待ち','未指定',
+          '管理確認待ち／名前・ログインIDの一致のみで自動承認しない',
+          loginIdDisplay_(newLoginId_())
+        );
+        if(!pending.ok)return json_(pending);
         try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
-        return json_({ok:true,verified:true,participantId:d.participantId,status:newAuth,integratedParticipantId:linked,loginId:newLoginId,recovered:true});
+        return json_({
+          ok:true,verified:true,participantId:d.participantId,
+          status:'承認待ち',integratedParticipantId:'',loginId:'',
+          pendingReview:true
+        });
       }
 
       var newRow=webNextRow_(web);
