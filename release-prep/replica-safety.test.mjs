@@ -77,6 +77,18 @@ test('luxury preview pages have working local-only UI, not live APIs',()=>{
  assert(read('next-preview.html').includes('/attendance-deluxe-demo.html'));
  assert(read('next-preview.html').includes('/admin-center-demo.html'));
 });
+test('candidate GAS never auto-approves or auto-links a new browser by nickname or supplied login ID',()=>{
+ const gas=read('Code.gs');
+ assert.match(gas,/Same nickname or a supplied login ID is not proof of identity/);
+ assert.match(gas,/status:'承認待ち',integratedParticipantId:'',loginId:''/);
+ assert.match(gas,/status:'承認待ち',integratedParticipantId:'',loginId:issuedLoginId/);
+ assert.match(gas,/本人確認待ち：名前一致では自動接続しない/);
+ assert.doesNotMatch(gas,/\|\|\s*autoLinkWebParticipant_\(/);
+ assert.doesNotMatch(gas,/=\s*autoLinkWebParticipant_\(/);
+ assert.doesNotMatch(gas,/var matched=duplicates\.map/);
+ assert.doesNotMatch(gas,/var safeBase=safeApprovedDuplicateBase_\(duplicates,linked\)/);
+});
+
 test('replica includes source login ID recovery and moderation building blocks',()=>{
  const js=read('app.js');const api=read('api-register.js');
  assert(js.includes('mioLoginId'));assert(api.includes('loginId'));
