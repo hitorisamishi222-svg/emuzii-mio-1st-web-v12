@@ -33,37 +33,14 @@ a{color:inherit}.wrap{width:min(100%,940px);margin:auto;padding:20px 16px 112px}
 <div class="eyebrow">✦ MIO FAMILY'S WORKS ✦</div>
 <h1>翠央っ子ギャラリー</h1>
 <p>応援の気持ちがつまった動画、画像、歌や音声、ファンアート。<br>翠央っ子のみんなの作品を、ひとつの場所に集めます。</p>
-<div class="hero-actions"><a class="btn primary" href="#works">作品を見る ↓</a><a class="btn" href="#apply">掲載を申し込む ↗</a></div>
+<div class="hero-actions"><a class="btn primary" href="#works">作品を見る ↓</a><a class="btn" href="#apply">応募受付は後日開始 🔒</a></div>
 </header>
 <section class="panel" aria-label="掲載について"><h2>✧ ギャラリーのご案内</h2>
 <p class="explain"><strong>このギャラリーは「受付型」です。</strong><br>作品は自動投稿されません。運営が内容と掲載許可を確認したものだけを公開します。掲載までお時間をいただく場合や、掲載できない場合があります。</p>
 <p>主に X・TikTok・YouTube など、すでに公開されている作品へのリンクを掲載します。動画・音声のファイルは原則として外部の投稿先で管理し、このサイトに直接アップロードしません。サムネイルは運営が確認して設定します。</p>
 </section>
 <section id="works" aria-labelledby="worksTitle"><div class="section-head"><h2 id="worksTitle">✦ みんなの作品</h2><small>運営確認済み</small></div><div class="gallery-grid" id="galleryGrid" aria-live="polite"></div><p class="empty" id="galleryEmpty" hidden>掲載作品は準備中です。公開を楽しみにしていてね ✧</p></section>
-<section class="panel" id="apply" aria-labelledby="applyTitle"><h2 id="applyTitle">💌 作品の受付</h2>
-<p><strong>掲載したい作品を運営に送ってください。</strong> X / TikTok / YouTube の公開リンク、または閲覧可能な作品リンクに対応します。ファンアートは既存の応募フォームも使えます。</p>
-<p class="note">お名前とリンクを運営へお知らせください。本人や権利者の許可のない作品、個人情報を含む作品は掲載できません。</p>
-<a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSd6twv0ADY9Uqc0pPWdjMixWThl_WHmWJ-oq8j2eYrIVpWZeQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🎨 ファンアート応募フォーム ↗</a>
-<details id="makeDraft"><summary>✉️ 動画・画像・音声・SNS投稿の応募文を作る</summary>
-<p class="note">この入力欄は運営への送信フォームではありません。作成した文章をコピーし、普段の連絡手段で運営へ送ってください。入力内容はサイトに保存されません。</p>
-<form class="apply-form" id="applicationForm">
-<label>掲載時のお名前<input name="creator" type="text" maxlength="40" required autocomplete="off" placeholder="掲載したいお名前"></label>
-<label>作品の種類<select name="category"><option>応援動画</option><option>応援画像</option><option>音声・楽曲</option><option>ファンアート</option><option>SNS投稿</option><option>その他</option></select></label>
-<label>作品名（任意）<input name="title" type="text" maxlength="90" placeholder="作品のタイトル"></label>
-<label>作品の公開URL<input name="url" type="url" maxlength="1000" inputmode="url" required placeholder="https://..."></label>
-<label>紹介文（任意）<textarea name="description" maxlength="200" placeholder="作品についてひとこと"></textarea></label>
-<label><input type="checkbox" name="permission" required style="width:auto;min-height:0;margin-right:7px">自分の作品、または掲載許可を得た作品です</label>
-<button class="btn primary" type="submit">送付用の文章を作る</button>
-</form>
-<div class="draft-output" id="draftOutput" hidden>
-<label for="draftText">この文章を運営へ送ってください</label>
-<textarea class="draft-text" id="draftText" readonly></textarea>
-<button class="btn primary" id="copyDraft" type="button">文章をコピー</button>
-<button class="btn" id="shareDraft" type="button" hidden>スマホの共有メニューを開く</button>
-<p class="status" id="draftStatus" role="status" aria-live="polite"></p>
-<p class="note"><strong>コピーや共有だけでは受付完了になりません。</strong>運営へ実際に送付し、確認を受けてください。</p>
-</div>
-</details></section>
+<section class="panel" id="apply" aria-labelledby="applyTitle"><h2 id="applyTitle">💌 翠央っ子ギャラリー作品受付</h2><p><strong>作品の応募受付は後日開始します。</strong></p><p class="note">動画・画像・音声・作品リンクの応募に対応する専用フォームを準備中です。受付開始までお待ちください。</p><button class="btn" type="button" disabled aria-disabled="true" style="opacity:.65;cursor:not-allowed">🔒 応募受付は準備中（後日開始）</button></section>
 <footer>翠央1周年 ✦ 翠央っ子ギャラリー</footer>
 </main>
 <script type="module">
@@ -91,20 +68,5 @@ for(const item of approvedGalleryItems){
  card.append(cover,info);grid.append(card);
 }
 document.getElementById('galleryEmpty').hidden=grid.childElementCount>0;
-const form=document.getElementById('applicationForm'),out=document.getElementById('draftOutput'),draft=document.getElementById('draftText'),status=document.getElementById('draftStatus');
-form.addEventListener('submit',e=>{
- e.preventDefault();if(!form.reportValidity())return;
- const data=new FormData(form),url=allowedLink(String(data.get('url')||'').trim());
- if(!url||!url.startsWith('https://')){status.textContent='公開URLは https:// で始まるリンクを入力してください。';return}
- const fields=[['お名前',data.get('creator')],['種類',data.get('category')],['作品名',data.get('title')||'（無題）'],['作品URL',url],['紹介文',data.get('description')||'なし']];
- draft.value='【翠央っ子ギャラリー 掲載希望】\n'+fields.map(([a,b])=>a+'：'+String(b).trim()).join('\n')+'\n自作または掲載許可取得済みです。\n運営確認後の掲載を希望します。';
- out.hidden=false;status.textContent='送付用の文章ができました。コピーして運営へ送ってください。';out.scrollIntoView({behavior:'smooth',block:'nearest'})
-});
-document.getElementById('copyDraft').addEventListener('click',async()=>{
- let copied=false;try{await navigator.clipboard.writeText(draft.value);copied=true}catch{}
- if(!copied){draft.focus();draft.select();try{copied=document.execCommand('copy')}catch{}}
- status.textContent=copied?'コピーできました。普段の連絡手段で運営へ送ってください。':'コピーできませんでした。文章を選択して手動でコピーしてください。'
-});
-if(typeof navigator.share==='function'){const share=document.getElementById('shareDraft');share.hidden=false;share.addEventListener('click',async()=>{try{await navigator.share({text:draft.value})}catch{};status.textContent='共有画面から運営宛に送ってください。共有だけでは受付確認はできません。'})}
 </script>
 </body></html>
