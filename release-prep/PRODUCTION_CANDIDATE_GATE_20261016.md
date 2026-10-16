@@ -79,3 +79,10 @@
 - **重大残件**: P列がColorSing名の先頭一致から導出される現行式だと、同名異MIO-IDを運営が確認できてもH/P整合要件に反して承認できない可能性。自動修復せず本人照合が必要。v1.9.7候補と実 `GachaAdminV188.gs` 全文の未照合も公開阻害。
 - 実GASファイルとの対応、承認手順、残件を `release-prep/V197_GAS_RELEASE_FILE_MAP.md` と `release-prep/BROWSER_APPROVAL_V197_OPERATOR_GUIDE.md` に記録。
 - **本番変更なし**：GAS稼働v12、Google Sheets、Vercel `main` と固定URLは未更新。公開不可の判定を維持。
+
+
+### 10/17 JST: ガチャ管理を含む4モジュールの統合模擬試験
+- GitHub候補 `release-prep/GachaAdminV188-FULL-REPLACE.gs` の `handleGachaAdminEdit_` を既存ブラウザ管理用の `webRecoveryOnEditBrowserPatchV189_` から呼ぶディスパッチを開発版に追加。既存1件の編集トリガーを共用し、トリガーの追加/再生成なし。
+- `release-prep/test-v197-four-module-integration.cjs` を追加。ガチャ受付スイッチ、付与ボタンへのイベント委譲、既存端末・無関係参加者の状態維持、同名異MIOの誤リンク拒否、全4モジュールの関数名重複0と新トリガー作成コード0を含む **21ケースの合成データ試験合格**。GitHub CI: https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38929536133
+- 残件：本番稼働中 `GachaAdminV188.gs` のコードは未受領。GitHub保存版を本番用と決めつけて上書き禁止。P列の同名別MIO-ID・23行目不一致も未解消。本人確認と管理画面の現行ロジックを確認後に本番更新判断。
+- 未公開：GAS v12 / Vercel main / Google Sheetsは未変更。
