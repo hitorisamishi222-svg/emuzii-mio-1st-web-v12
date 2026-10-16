@@ -30,6 +30,15 @@ a{color:inherit}.wrap{width:min(100%,940px);margin:auto;padding:20px 16px 112px}
 .wrap{background:linear-gradient(180deg,#0a2750cc,#061a3deb 44%,#05132df5);border-radius:0 0 24px 24px}
 .hero,.panel,.work-card{background-color:#0c2a50d9;backdrop-filter:blur(6px)}
 @media(max-width:700px){.mio-art-banner{height:clamp(290px,94vw,450px);background-position:center 15%;background-size:cover;margin:10px 12px 0}.wrap{padding-top:12px}}
+
+/* Continuous royal-blue surroundings, including the side gutters and center. */
+html{background:#061934}
+body{background:radial-gradient(ellipse at 50% 20%,#17497a 0%,#0a2b57 45%,#061934 100%)!important}
+.mio-art-banner{position:relative;width:min(calc(100% - 24px),940px);margin:12px auto 0;background-color:#10345c;background-size:contain;background-position:center top;background-repeat:no-repeat;border-radius:24px 24px 0 0}
+.mio-art-banner:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#0a2b57 0%,transparent 19%,transparent 81%,#0a2b57 100%),linear-gradient(180deg,transparent 54%,#0a2b57 100%);border-radius:inherit}
+.wrap{background:linear-gradient(180deg,#0a2b57 0%,#0b315f 28%,#08254b 65%,#061934 100%)!important;box-shadow:0 12px 45px #020a1b88}
+.hero,.panel,.work-card{background:linear-gradient(145deg,#174674e8,#0a2a52ef)!important}
+@media(max-width:700px){.mio-art-banner{height:clamp(300px,96vw,490px);background-size:contain;background-position:center top}.wrap{margin-top:0}}
 </style>
 </head>
 <body>
