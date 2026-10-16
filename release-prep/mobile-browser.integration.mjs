@@ -170,7 +170,7 @@ const interactionPages = [
   'integrated-live-demo.html', 'integrated-functional-test.html',
   'release-readiness.html', 'mobile-checklist.html',
 ];
-const actionSkip = /gacha|ガチャ|抽選|draw|logout|ログアウト|clear|削除|reset|初期化|grant|付与/i;
+const actionSkip = /gacha|ガチャ|抽選|draw|logout|ログアウト|clear|削除|reset|リセット|初期化|grant|付与/i;
 
 test('all non-gacha internal page links resolve', {timeout: 90000}, async () => {
   const context = await contextFor(390);
