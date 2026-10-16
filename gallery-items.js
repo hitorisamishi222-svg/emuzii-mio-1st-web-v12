@@ -7,6 +7,14 @@
  */
 export const approvedGalleryItems = [
   {
+    category: '動画',
+    title: '翠の覚醒 -MIO- 魔王チャレンジ応援ソング',
+    creator: 'えむじー🐱',
+    description: '',
+    url: 'https://vt.tiktok.com/ZSgFvmy7Q/',
+    thumbnail: '/assets/gallery-emuzii-mio-cover.svg'
+  },
+  {
     category: '音声・楽曲',
     title: '翠の覚醒 -MIO-',
     creator: '翠央1周年 記念曲',
