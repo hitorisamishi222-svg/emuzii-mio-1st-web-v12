@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07162f">
+<title>王宮クジラガチャ・統合画面プレビュー</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#081d43,#030b1b);color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif}
+main{max-width:760px;margin:auto;padding:16px 14px 40px}header{margin-bottom:18px;padding:14px 16px;border:1px solid #8acfff55;border-radius:18px;background:#071b35d9}
+a{color:#c7e9ff}.back{display:inline-block;margin-bottom:12px}.brand{font-weight:900;color:#ffe7a3;font-size:18px}.version{float:right;color:#9bc8ed;font-size:12px}
+h1{font-size:clamp(22px,6vw,32px);text-align:center;color:#ffe6a1;margin:12px 0 8px}.lead{text-align:center;color:#d4e7ff;line-height:1.65}
+.notice{margin:14px 0;padding:13px 15px;border-radius:14px;background:#073c4f;border:1px solid #62e8ff88;color:#e8fbff;line-height:1.6}
+.panel{padding:14px;border:1px solid #f0d48899;border-radius:22px;background:#091d3de8;box-shadow:0 12px 36px #0007}
+.balance{margin:4px 0 10px;text-align:center;font-weight:800;color:#eaf8ff}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px auto}
+button{font:inherit;font-weight:850;border:1px solid #fff1c7;border-radius:13px;padding:13px 8px;color:#12315a;background:linear-gradient(#fff3c9,#e4b347);cursor:pointer;touch-action:manipulation}
+button.fest{color:#3b2607;background:linear-gradient(#fff4bd,#d39a27)}
+button.secondary{display:block;margin:7px auto;background:#123866;color:#fff}
+button:focus-visible{outline:3px solid #fff;outline-offset:2px}button:disabled{opacity:.55}
+.stage{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border:2px solid #f1d487;border-radius:20px;background:#0b2a5e;isolation:isolate;box-shadow:inset 0 0 35px #5d95ff70,0 0 24px #a9c8ff55}
+.stage img{width:100%;height:100%;object-fit:cover;display:block}
+.stage.is-fest{border-color:#ffe6a1;box-shadow:inset 0 0 45px #ffcf4c65,0 0 28px #ffcf4c55}
+.stage.is-fest img{filter:sepia(.12) saturate(1.2)}
+.glow{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 48%,#fff9 0,#86e9ff5e 35%,transparent 72%);mix-blend-mode:screen}
+.stage.charge .glow{opacity:.85;animation:charge .65s ease-in-out infinite alternate}
+.stage.release:after{content:"";position:absolute;inset:0;pointer-events:none;background:#fff9;animation:flash .65s ease-out}
+.stage.climax:before{content:"✦  ✧  ✨  ✧  ✦";position:absolute;inset:32% 0 auto;text-align:center;color:#fff3b2;font-size:clamp(22px,7vw,44px);text-shadow:0 0 18px #fff;animation:burst .8s ease-out both}
+.stage.complete{outline:2px solid #fff0a4;outline-offset:-7px}
+.status{min-height:28px;margin:10px 0 4px;text-align:center;font-weight:750;color:#e4f7ff}
+.result{margin:10px auto 0;padding:13px;border-radius:16px;background:#07162f;border:1px solid #ffe7a0;text-align:center;font-weight:850}
+.note{margin:14px 2px 0;color:#c4d6ea;font-size:13px;line-height:1.7}
+@keyframes charge{to{opacity:.35;filter:brightness(1.7)}}@keyframes flash{35%{opacity:.9}100%{opacity:0}}@keyframes burst{0%{opacity:0;transform:scale(.5)}40%{opacity:1}100%{opacity:0;transform:scale(1.25)}}
+@media(max-width:390px){main{padding:10px 10px 28px}.controls{gap:6px}.controls button{font-size:13px;padding:12px 5px}.stage{border-radius:16px}}
+@media(prefers-reduced-motion:reduce){.stage.charge .glow,.stage.release:after,.stage.climax:before{animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+<header><a class="back" href="/">← 次期大型更新テストへ戻る</a><div><span class="brand">翠央 1周年ガチャ</span><span class="version">PREVIEW · DISPLAY ONLY</span></div></header>
+<h1>🐳 王宮クジラガチャ</h1>
+<p class="lead">採用済みデザインを、みおシステム内の画面配置で確認できます。</p>
+<div class="notice">🧪 表示確認専用です。ボタンを押しても抽選・権利消費・参加者データの読み書きは行いません。</div>
+<section class="panel" aria-label="ガチャ画面プレビュー">
+<p class="balance">演出確認用 · 抽選権の消費なし</p>
+<div class="controls"><button id="normal" type="button">メンシプガチャ演出</button><button class="fest" id="lucky" type="button">ラキフェス演出</button></div>
+<button class="secondary" id="skip" type="button" hidden>演出をスキップ</button>
+<div class="stage" id="stage"><img src="/assets/mio-royal-whale-machine.jpg" alt="採用済みの王冠クジラガチャマシン"><div class="glow" aria-hidden="true"></div></div>
+<p class="status" id="status" role="status" aria-live="polite">通常またはラキフェスの演出を選んでください。</p>
+<div class="result" id="result" hidden>✨ 5秒演出の確認完了（当選結果はありません）</div>
+<p class="note">0秒開始 → 0.9秒 光を集める → 1.9秒 カプセル排出 → 3.65秒 クライマックス → 5秒演出終了。スキップは表示確認だけを早送りし、実抽選には接続しません。</p>
+</section>
+</main>
+<script>
+(()=>{const stage=document.getElementById('stage'),status=document.getElementById('status'),skip=document.getElementById('skip'),result=document.getElementById('result'),buttons=[document.getElementById('normal'),document.getElementById('lucky')];let timers=[],busy=false;
+function clear(){timers.forEach(clearTimeout);timers=[];stage.classList.remove('charge','release','climax','complete');busy=false;buttons.forEach(b=>b.disabled=false);skip.hidden=true;skip.disabled=false}
+function finish(skipped=false){if(!busy)return;timers.forEach(clearTimeout);timers=[];stage.classList.remove('charge','release','climax');stage.classList.add('complete');busy=false;buttons.forEach(b=>b.disabled=false);skip.hidden=true;result.hidden=false;status.textContent=skipped?'演出をスキップしました（表示確認のみ）。':'演出が完了しました（抽選なし）。'}
+function play(mode){if(busy)return;clear();busy=true;result.hidden=true;buttons.forEach(b=>b.disabled=true);skip.hidden=false;stage.classList.toggle('is-fest',mode==='ラキフェス');status.textContent=mode+'演出を再生中…';timers.push(setTimeout(()=>{stage.classList.add('charge');status.textContent='✨ 王宮の光が集まっています…'},900));timers.push(setTimeout(()=>{stage.classList.remove('charge');stage.classList.add('release');status.textContent='🎁 カプセルが出てきます…'},1900));timers.push(setTimeout(()=>{stage.classList.add('climax');status.textContent='💫 クライマックス！'},3650));timers.push(setTimeout(()=>finish(false),5000))}
+buttons[0].addEventListener('click',()=>play('メンシプ'));buttons[1].addEventListener('click',()=>play('ラキフェス'));skip.addEventListener('click',()=>finish(true));
+})();
+</script>
+</body>
+</html>
