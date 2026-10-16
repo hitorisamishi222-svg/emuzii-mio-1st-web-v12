@@ -10,13 +10,14 @@ function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
 function safeImage(url){return typeof url==='string'&&/^https:\/\//i.test(url)?url:''}
 function rarityKey(v){const r=String(v||'').toUpperCase();return r.includes('UR')?'ur':r.includes('SR')?'sr':r==='R'||r.includes('レア')?'r':'n'}
 function clearEffects(){const stage=$('gachaStage');stage?.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur');document.querySelectorAll('.gacha-particle,.gacha-flash,.gacha-ring').forEach(x=>x.remove())}
-function particles(count,kind){const stage=$('gachaStage');if(!stage)return;for(let i=0;i<count;i++){const x=document.createElement('i');x.className=`gacha-particle ${kind}`;x.style.setProperty('--x',`${Math.random()*100}%`);x.style.setProperty('--dx',`${(Math.random()-.5)*260}px`);x.style.setProperty('--delay',`${Math.random()*.35}s`);x.style.setProperty('--dur',`${1.05+Math.random()*1.25}s`);x.textContent=Math.random()>.46?'✦':Math.random()>.5?'◆':'★';stage.append(x);setTimeout(()=>x.remove(),3000)}}
-function revealEffect(rarity,mode){window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{rarity,mode}}));clearEffects();const stage=$('gachaStage'),key=rarityKey(rarity);stage?.classList.add('reveal',`rarity-${key}`,mode==='ラキフェス'?'is-fest':'is-normal');const flash=document.createElement('i');flash.className='gacha-flash';stage?.append(flash);const ring=document.createElement('i');ring.className='gacha-ring';stage?.append(ring);particles({n:26,r:42,sr:72,ur:110}[key]||30,key);setTimeout(()=>{flash.remove();ring.remove();stage?.classList.remove('reveal')},1900)}
+function particles(count,kind){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const stage=$('gachaStage');if(!stage)return;for(let i=0;i<count;i++){const x=document.createElement('i');x.className=`gacha-particle ${kind}`;x.style.setProperty('--x',`${Math.random()*100}%`);x.style.setProperty('--dx',`${(Math.random()-.5)*260}px`);x.style.setProperty('--delay',`${Math.random()*.35}s`);x.style.setProperty('--dur',`${1.05+Math.random()*1.25}s`);x.textContent=Math.random()>.46?'✦':Math.random()>.5?'◆':'★';stage.append(x);setTimeout(()=>x.remove(),3000)}}
+function revealEffect(rarity,mode){window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{rarity,mode}}));clearEffects();const stage=$('gachaStage'),key=rarityKey(rarity);stage?.classList.add(`rarity-${key}`,mode==='ラキフェス'?'is-fest':'is-normal');if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;stage?.classList.add('reveal');const flash=document.createElement('i');flash.className='gacha-flash';stage?.append(flash);const ring=document.createElement('i');ring.className='gacha-ring';stage?.append(ring);particles({n:26,r:42,sr:72,ur:110}[key]||30,key);setTimeout(()=>{flash.remove();ring.remove();stage?.classList.remove('reveal')},1900)}
 function clearAnimationTimers(){animationTimers.forEach(clearTimeout);animationTimers=[]}
 function startEffect(mode){
   clearEffects();clearAnimationTimers();
   window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode}}));
   const stage=$('gachaStage');stage?.classList.add('draw-active');stage?.classList.remove('v20-prize-visible','v191-rarity-n','v191-rarity-r','v191-rarity-sr','v191-rarity-ur');stage?.classList.toggle('is-fest',mode==='ラキフェス');
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){stage?.classList.add('royal-sequence-complete');note('演出を短縮しています。抽選結果を確認しています…');return}
   const fest=mode==='ラキフェス';
   particles(fest?70:46,fest?'sr':'n');
   animationTimers.push(setTimeout(()=>{stage?.classList.add('royal-charge');note(fest?'🌟 黄金の光が集まっていく…！':'✨ 王宮の光が集まっていく…！');particles(fest?60:34,fest?'ur':'r')},900));
@@ -80,7 +81,7 @@ async function execute(pending){
   skipRequested=false;$('skipDraw').hidden=reduceMotion;$('skipDraw').disabled=reduceMotion;
   let refreshAfter=false;
   startEffect(pending.mode);
-  note(fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
+  note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});

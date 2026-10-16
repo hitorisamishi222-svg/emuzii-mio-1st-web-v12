@@ -55,7 +55,10 @@ test('home page JS cannot call production API and info pages are seeded with fak
 });
 test('community and whale demos have no write endpoint calls',()=>{
  assert(!/fetch\s*\(/.test(read('community-demo.html')));
- assert(!/fetch\s*\(/.test(read('gacha-cinematic-demo.html')));
+ const html=read('gacha-cinematic-demo.html');
+ assert.equal((html.match(/fetch\s*\(/g)||[]).length,1,'only the local preview catalog may be fetched');
+ assert.match(html,/fetch\(['"]\/data\/gacha-prizes-v2-preview\.json['"]/);
+ assert(!/\/api\/|XMLHttpRequest|WebSocket/.test(html));
 });
 test('luxury preview pages have working local-only UI, not live APIs',()=>{
  for(const path of ['attendance-deluxe-demo.html','mypage-deluxe-demo.html','admin-center-demo.html']){

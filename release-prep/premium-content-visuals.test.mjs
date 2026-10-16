@@ -41,8 +41,11 @@ test('all content groups receive a distinct visual treatment and unchanged safet
  assert(read('gacha-cinematic-demo.html').includes('class="next-premium-gacha"'));
  for(const path of ['home-top-demo.html','home-updates-demo.html','news.html','schedule.html'])
   assert(read(path).includes('next-premium-home'),path);
- for(const path of ['community-demo.html','gacha-cinematic-demo.html'])
-  assert(!/fetch\s*\(|XMLHttpRequest|WebSocket/.test(read(path)),path+' must remain disconnected');
+ assert(!/fetch\s*\(|XMLHttpRequest|WebSocket/.test(read('community-demo.html')),'community demo must remain disconnected');
+ const gachaDemo=read('gacha-cinematic-demo.html');
+ assert.equal((gachaDemo.match(/fetch\s*\(/g)||[]).length,1,'gacha demo may load only its local static catalog');
+ assert.match(gachaDemo,/fetch\(['"]\/data\/gacha-prizes-v2-preview\.json['"]/,'gacha demo must use the bundled preview-only catalog');
+ assert(!/\/api\/|XMLHttpRequest|WebSocket/.test(gachaDemo),'gacha demo must not connect to live APIs');
 });
 
 test('31-day attendance progress and medals use explicit demo labels and accessible structures',()=>{
