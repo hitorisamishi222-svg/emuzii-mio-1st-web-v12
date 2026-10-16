@@ -19,8 +19,8 @@ jobs:
         browser: [chromium, webkit]
     env:
       MIO_BROWSER: ${{ matrix.browser }}
-      # Run only the new isolated form tests; reuse earlier visual, link, and safe-control passes.
-      MIO_BROWSER_CASES: '{"chromium":["safe-form-community-demo","safe-form-music-gallery-demo","safe-form-login-id-settings"],"webkit":["safe-form-community-demo","safe-form-music-gallery-demo","safe-form-login-id-settings"]}'
+      # Run only the changed playback and new synthetic form/admin-lock checks.
+      MIO_BROWSER_CASES: '{"chromium":["safe-form-music-gallery-demo","safe-form-community-photo-and-chat","safe-admin-locked"],"webkit":["safe-form-music-gallery-demo","safe-form-community-photo-and-chat","safe-admin-locked"]}'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
