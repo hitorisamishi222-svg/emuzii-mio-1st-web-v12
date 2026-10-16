@@ -24,9 +24,16 @@ a{color:inherit}.wrap{width:min(100%,940px);margin:auto;padding:20px 16px 112px}
 @media(min-width:720px){.gallery-grid{gap:20px}.work-info{padding:18px}.panel{padding:28px}.work-cover{aspect-ratio:5/4}.work-cover .fallback-icon{font-size:80px}}
 @media(max-width:370px){.wrap{padding-left:10px;padding-right:10px}.gallery-grid{gap:8px}.work-info{padding:10px}.work-info p{font-size:11px}.work-link{font-size:11px;padding:6px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Adopted Mio princess art: keep face and upper body above content. */
+.mio-art-banner{height:clamp(300px,92vw,510px);margin:16px auto 0;border-radius:24px 24px 0 0;background:linear-gradient(180deg,transparent 57%,#071d42 100%),url('/assets/mio-bg-princess.jpg') center 18%/cover no-repeat;border:1px solid #9ed8ff69;border-bottom:0;box-shadow:0 10px 38px #0008}
+.wrap{background:linear-gradient(180deg,#0a2750cc,#061a3deb 44%,#05132df5);border-radius:0 0 24px 24px}
+.hero,.panel,.work-card{background-color:#0c2a50d9;backdrop-filter:blur(6px)}
+@media(max-width:700px){.mio-art-banner{height:clamp(290px,94vw,450px);background-position:center 15%;background-size:cover;margin:10px 12px 0}.wrap{padding-top:12px}}
 </style>
 </head>
 <body>
+<div class="mio-art-banner" role="img" aria-label="翠央のお姫様背景イラスト"></div>
 <main class="wrap">
 <nav class="site-nav" aria-label="ページ移動"><a href="/">← 翠央1周年 トップ</a><span class="mark">MIO ✧ 1ST ANNIVERSARY</span></nav>
 <header class="hero">
