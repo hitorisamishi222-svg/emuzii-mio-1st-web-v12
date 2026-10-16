@@ -22,3 +22,5 @@ jobs:
         run: node release-prep/test-v197-device-switch-safety.cjs
       - name: Three-module real-code synthetic integration tests
         run: node release-prep/test-v197-three-module-integration.cjs
+      - name: Synthetic four-module gacha and browser management interaction tests
+        run: node release-prep/test-v197-four-module-integration.cjs
