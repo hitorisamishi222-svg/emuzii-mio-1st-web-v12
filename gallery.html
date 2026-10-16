@@ -39,6 +39,10 @@ body{background:radial-gradient(ellipse at 50% 20%,#17497a 0%,#0a2b57 45%,#06193
 .wrap{background:linear-gradient(180deg,#0a2b57 0%,#0b315f 28%,#08254b 65%,#061934 100%)!important;box-shadow:0 12px 45px #020a1b88}
 .hero,.panel,.work-card{background:linear-gradient(145deg,#174674e8,#0a2a52ef)!important}
 @media(max-width:700px){.mio-art-banner{height:clamp(300px,96vw,490px);background-size:contain;background-position:center top}.wrap{margin-top:0}}
+
+/* Mobile artwork crop: fill width and frame face / upper body. */
+.mio-art-banner{background-size:cover!important;background-position:center 33%!important;overflow:hidden}
+@media(max-width:700px){.mio-art-banner{height:clamp(280px,82vw,390px)!important;background-size:cover!important;background-position:center 32%!important}}
 </style>
 </head>
 <body>
