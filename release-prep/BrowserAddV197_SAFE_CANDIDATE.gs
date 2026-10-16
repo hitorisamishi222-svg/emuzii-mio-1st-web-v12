@@ -51,6 +51,11 @@ function confirmBrowserReviewSnapshotV197_(review,row,webId,mioId){
 function webRecoveryOnEditBrowserPatchV189_(e){
   if(!e||!e.range||e.range.getNumRows()!==1||e.range.getNumColumns()!==1)return;
   var sh=e.range.getSheet(),row=e.range.getRow(),col=e.range.getColumn();
+  // The only installed spreadsheet onEdit trigger also handles gacha management.
+  if(sh.getName()==='emuzii_管理画面'){
+    if(typeof handleGachaAdminEdit_==='function')return handleGachaAdminEdit_(e);
+    return false;
+  }
   if(sh.getName()!=='emuzii_重複整理')return;
   if(row===2&&col===14&&String(e.value||'')==='更新'){
     refreshBrowserAddReviewV189Patch_();
