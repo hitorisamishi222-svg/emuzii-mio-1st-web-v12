@@ -51,6 +51,13 @@ body{background-image:linear-gradient(180deg,#102f60 0%,#0c2d5a 28%,#081f43 65%,
 .mio-art-banner:after{border-radius:0!important;background:linear-gradient(180deg,transparent 55%,#0c2d5a 100%)!important}
 .wrap{border-radius:0!important;box-shadow:none!important;background:linear-gradient(180deg,#0c2d5a 0%,#0b2b55 45%,#071b3b 100%)!important}
 @media(min-width:941px){.mio-art-banner{max-width:940px!important;margin:0 auto!important}}
+
+/* Architectural columns, jewels and lace-inspired highlights around Mio artwork. */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.27;background:radial-gradient(ellipse at 50% 4%,#b7eaff55,transparent 48%),repeating-linear-gradient(90deg,transparent 0%,transparent 17%,#a7d8fa30 17.2%,transparent 17.6%,transparent 33%);mix-blend-mode:screen}
+body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,body>footer{position:relative;z-index:1}
+:is(.actual-card,.panel,.glass,.work-card,.information-card,.feature-card){border-color:#9ccdf480;box-shadow:inset 0 1px 0 #e1f5ff26,0 12px 35px #020e2a7a}
+:is(.actual-card,.panel,.glass,.work-card)::before{content:"";display:block;height:3px;pointer-events:none;background:linear-gradient(90deg,transparent,#7cb9e37c 18%,#f5dcb7aa 50%,#7cb9e37c 82%,transparent);border-radius:99px}
+@media(max-width:700px){body::after{opacity:.17}}
 </style>
 </head>
 <body>
