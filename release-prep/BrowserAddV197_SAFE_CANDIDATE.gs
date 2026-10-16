@@ -1,6 +1,7 @@
 /**
  * MIO browser-add v1.9.7 SAFE CANDIDATE: review snapshots, fail-closed approvals,
  * retired-device protection, per-Web-ID audit and best-effort rollback.
+ * Lists every pending first-time registration and duplicate candidate for operator review.
  * Uses current admin sheets and existing trigger. DO NOT DEPLOY WITHOUT REVIEW.
  */
 
@@ -22,7 +23,7 @@ function refreshBrowserAddReviewV189Patch_(){
   var output=[];
   rows.forEach(function(r,i){
     var w=String(r[0]||''),n=String(r[2]||''),id=String(r[7]||'');
-    if(!w||!((nameCount[n]||0)>1||(idCount[id]||0)>1))return;
+    if(!w||!(String(r[5]||'')==='承認待ち'||(nameCount[n]||0)>1||(idCount[id]||0)>1))return;
     output.push([n,id,w,String(r[5]||''),String(r[16]||''),r[4]||'',nameCount[n]||0,/^MIO-\d{4}$/.test(id)?idCount[id]||0:0,'未確認','保留','','',i+2]);
   });
   if(output.length)review.getRange(2,1,output.length,13).setValues(output);
