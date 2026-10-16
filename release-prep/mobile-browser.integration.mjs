@@ -265,6 +265,9 @@ test('safe-form-music-gallery-demo', {timeout: 60000}, async () => runCase('safe
   assert.match(await page.locator('#message').innerText(), /この端末だけで再生プレビュー/);
   assert.match(await page.locator('#tracks').innerText(), /架空テスト曲/);
   assert.equal(await page.locator('#tracks button').count(), 1);
+  await page.locator('#tracks button').click();
+  assert.equal(await page.locator('#stickyPlayer').isVisible(), true);
+  assert.match(await page.locator('#nowPlaying').innerText(), /架空テスト曲/);
   assert.deepEqual(external(), [], 'music preview must stay in browser memory');
 }));
 
@@ -283,4 +286,38 @@ test('safe-form-login-id-settings', {timeout: 30000}, async () => runCase('safe-
   assert.match(await feedback.innerText(), /登録・変更を実行しません/);
   assert.equal(requests.some(path => path.startsWith('/test-auth') || path.startsWith('/api/')), false,
     'ID format preview must not make auth or registration requests');
+}));
+
+
+test('safe-form-community-photo-and-chat', {timeout: 60000}, async () => runCase('safe-form-community-photo-and-chat', 390, async page => {
+  const external = captureExternalRequests(page);
+  await page.goto(`${base}/community-demo.html`, {waitUntil: 'load'});
+  await page.locator('#roleSelect').selectOption('approved');
+  await page.locator('#messageInput').fill('仮想データでの投稿確認');
+  await page.locator('#sendButton').click();
+  assert.match(await page.locator('#chatWindow').innerText(), /仮想データでの投稿確認/);
+  assert.equal(await page.locator('#messageInput').inputValue(), '');
+  await page.locator('[data-tab="photo"]').click();
+  await page.locator('[data-submit="photo"]').click();
+  await page.locator('#submitTitle').fill('架空の投稿画像');
+  await page.locator('#submitNick').fill('テスト参加者');
+  await page.locator('#submitSource').selectOption('file');
+  await page.locator('#submitFile').setInputFiles({
+    name: 'synthetic-image.png', mimeType: 'image/png',
+    buffer: Buffer.from('synthetic image bytes'),
+  });
+  await page.locator('#submitConsent').check();
+  await page.locator('#submitForm button[type="submit"]').click();
+  assert.equal(await page.locator('#submitModal').evaluate(el => el.open), false);
+  assert.match(await page.locator('#photoPending').innerText(), /1件/);
+  assert.deepEqual(external(), [], 'community chat and photo preview must stay local');
+}));
+
+test('safe-admin-locked', {timeout: 30000}, async () => runCase('safe-admin-locked', 390, async page => {
+  await page.goto(`${base}/admin-center-demo.html`, {waitUntil: 'load'});
+  assert.match(await page.locator('[role="alert"]').innerText(), /認証待ち/);
+  const preview = page.locator('main.admin-preview-content');
+  assert.equal(await preview.getAttribute('inert'), '');
+  assert.equal(await preview.isVisible(), false);
+  assert.equal(await page.locator('button:visible').count(), 0);
 }));
