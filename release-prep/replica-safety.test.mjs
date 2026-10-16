@@ -19,7 +19,9 @@ test('every production-only source remains present in checkout but excluded by b
  assert(buildScript.includes("! -name 'api-*.js'")&&buildScript.includes("! -name 'bridge.js'"));
 });
 test('preview root and TEST auth rewrite are explicit; only the guarded TEST auth function exists',()=>{
- assert(config.rewrites.some(x=>x.source==='/'&&x.destination==='/next-preview.html'));
+ assert(config.rewrites.some(x=>x.source==='/'&&x.destination==='/home-portrait-next.html'),'preview root must be the approved homepage, not the rejected portal');
+ assert(read('home-portrait-next.html').includes('/community-demo.html'),'approved homepage must link to community preview');
+ assert(read('home-portrait-next.html').includes('/music-gallery-demo.html'),'approved homepage must link to music gallery preview');
  assert(config.rewrites.some(x=>x.source==='/test-auth/:route'&&x.destination==='/api/test-auth/:route'));
  const routePath=new URL('../api/test-auth/[route].js',import.meta.url);
  assert(existsSync(routePath),'isolated TEST auth API route is required');
