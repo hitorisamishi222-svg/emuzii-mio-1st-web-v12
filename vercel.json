@@ -248,6 +248,14 @@
     {
       "src": "assets/mio-bg-devil.jpg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "next-integrated.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "next-premium.css",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
