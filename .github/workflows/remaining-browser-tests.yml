@@ -19,8 +19,8 @@ jobs:
         browser: [chromium, webkit]
     env:
       MIO_BROWSER: ${{ matrix.browser }}
-      # Run only the changed playback and new synthetic form/admin-lock checks.
-      MIO_BROWSER_CASES: '{"chromium":["safe-form-music-gallery-demo","safe-form-community-photo-and-chat","safe-admin-locked"],"webkit":["safe-form-music-gallery-demo","safe-form-community-photo-and-chat","safe-admin-locked"]}'
+      # Run only newly added non-gacha profile, attendance, account and device checks.
+      MIO_BROWSER_CASES: '{"chromium":["safe-profile-attendance-local","safe-account-id-device-local"],"webkit":["safe-profile-attendance-local","safe-account-id-device-local"]}'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
