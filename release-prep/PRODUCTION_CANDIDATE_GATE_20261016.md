@@ -52,3 +52,11 @@
 - `BrowserAddV189Patch.gs` の「この端末へ切替」経路は `switchApprovedWebRegistrationV189_` を呼ぶが、ユーザー提供のファイル本文に定義なし。GitHubの旧DeviceRecoveryアドオンにも定義なし。**実GASのDeviceRecoveryファイルの本文・補助ファイル/関数の有無は未確認**。
 - 追加承認関数は対象レコードの H/K/P/L をあらかじめ整合済みとして要求する。一方 v1.9.7 の新ブラウザ登録は本人確認前にHを空欄にする。したがって**承認前の管理者による安全な明示的本人照合・ID紐付け手順（権限・監査・既存ID非破壊）が必要**。Web登録23行目は本人確認なしに自動補修禁止。
 - 次はApps Scriptの「トリガー」画面のスクショで稼働トリガーを確認し、`DeviceRecoveryV187.gs` を読取専用で確認する。 `setupBrowserAddV189Patch` / `setupV187Complete` を実行しない。GASや参加者Sheetを勝手に保存・デプロイしない。
+
+### 10/17 JST: v1.8.9 端末切替の過去版コードを発見・互換テスト
+- GitHubの過去ブランチ `feature/mio-device-switch-v189` に `APPS_SCRIPT_DeviceRecovery_v1.8.9_V188_INTEGRATED.gs` と `test-device-switch-v189.cjs` が存在した。開発候補には読取専用の比較用ソース `release-prep/DeviceRecovery_v189_source_reference.gs` を別ファイルとして保存した。**実GASのコードを上書きしていない**。
+- 過去コードの `switchApprovedWebRegistrationV189_` は Lock、Web-ID一意性、H/K/P/L、MIO-IDと名前、既存ユーザー・管理者テストユーザー保護、操作ログ、ベストエフォート巻き戻しを含む。
+- 新コア `APPS_SCRIPT_Code_v1.9.7_MANUAL_IDENTITY_RELEASE.gs` と過去切替処理を模擬実行する `release-prep/test-v197-device-switch-compat.cjs` を追加。過去テストの安全条件に合格した。統合CI: https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38921128572 で合格。
+- **注意: ユーザーが送った現在の実GAS `DeviceRecoveryV187.gs` の冒頭は過去GitHub版と完全一致しない。** 現行の `setupV189Complete` は `setupWebRecoveryV189_` を呼び旧 `webRecoveryOnEdit_` を再作成可能だが、過去GitHub版は `setupV189DuplicateReview_` のみ。両者を同一コードとみなさず、**現行スクリプトの `switchApprovedWebRegistrationV189_` 本文確認まで本番切替安全性は未確定**。
+- 端末管理トリガー画面は1件、`webRecoveryOnEditBrowserPatchV189_`、エラー率表示0%。旧 `webRecoveryOnEdit_` のトリガー表示なし。ただしユーザーに見えない別所有者のトリガーの不存在までは証明しない。
+- 本番GAS v12は本人認証の安全対策が未適用であり、修正版v1.9.7も実プロジェクトへ未保存/未デプロイ。公開可否は引き続き不合格。
