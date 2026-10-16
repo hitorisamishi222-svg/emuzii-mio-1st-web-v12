@@ -24,6 +24,16 @@ function setup() {
   if(!props.getProperty('BRIDGE_SECRET'))props.setProperty('BRIDGE_SECRET',Utilities.getUuid()+Utilities.getUuid());
 }
 
+
+// 受付スイッチのみを設置。既存の参加者・景品・履歴・回数の計算式は変更しない。
+function setupGachaGate() {
+  setupGachaAdminV188_();
+  var state=gachaOpenState_(SpreadsheetApp.openById(SHEET_ID));
+  if(!state.configured)throw new Error('ガチャ受付スイッチを確認できません');
+  console.log('ガチャ受付設定: メンシプ='+state.normalOpen+', ラキフェス='+state.festOpen);
+  return state;
+}
+
 function gachaGateRows_(admin){
   if(!admin)return {normalRow:0,festRow:0};
   var last=admin.getLastRow();
