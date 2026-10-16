@@ -191,7 +191,9 @@ function gachaAction_(ss,r,d){
  if(!g||g[12]!=='OK'||g[13]!=='OK')return {ok:false,error:'運営によるガチャ回数の確認が必要です'};
  var manual=Number(g[6])+Number(g[9]),total=Number(g[5]),used=manual+history.length,remaining=total-used,confirmed=r[6]==='確認済み';
  if(!Number.isSafeInteger(manual)||!Number.isSafeInteger(total)||manual<0||total<0||remaining<0)return {ok:false,error:'ガチャ回数を運営が確認中です'};
- var normal=catalog_(ss,'通常'),fest=catalog_(ss,'ラキフェス'),gate=gachaOpenState_(ss);
+ var gate=gachaOpenState_(ss);
+ var normal=gate.normalOpen?catalog_(ss,'通常'):{ready:false,message:'メンシプガチャは現在停止中です',prizes:[]};
+ var fest=gate.festOpen?catalog_(ss,'ラキフェス'):{ready:false,message:'ラキフェスガチャは現在停止中です',prizes:[]};
  if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,festUnlocked:total>=5,normalOpen:gate.normalOpen,festOpen:gate.festOpen,gateConfigured:gate.configured,normal:normal,fest:fest};
  if(!/^[a-f0-9]{32}$/.test(d.drawId||'')||['通常','ラキフェス'].indexOf(d.mode)<0)return {ok:false,error:'抽選要求が不正です'};
  var previous=rows_(ss,DRAW_TAB).filter(function(x){return x[0]===d.drawId});
