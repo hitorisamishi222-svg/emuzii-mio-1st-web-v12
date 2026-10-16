@@ -20,3 +20,5 @@ jobs:
         run: node release-prep/test-v197-device-switch-compat.cjs
       - name: Check retired browser fails closed in v1.9.7 switch candidate
         run: node release-prep/test-v197-device-switch-safety.cjs
+      - name: Three-module real-code synthetic integration tests
+        run: node release-prep/test-v197-three-module-integration.cjs
