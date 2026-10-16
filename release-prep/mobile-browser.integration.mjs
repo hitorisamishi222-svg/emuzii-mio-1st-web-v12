@@ -34,7 +34,7 @@ before(async () => {
   server = createServer(async (request, response) => {
     try {
       const path = decodeURIComponent(new URL(request.url, 'http://127.0.0.1').pathname);
-      const name = path.slice(1);
+      const name = path === '/' ? 'next-preview.html' : path.slice(1);
       const allowed = name.startsWith('assets/') || /^[a-z0-9_.-]+\.(html|css|js|png)$/i.test(name);
       if (!allowed || /^(?:index\.html|gacha\.html|api-|bridge\.js)/i.test(name) || path.includes('..')) {
         response.writeHead(403); response.end('Preview-only server'); return;
@@ -154,5 +154,65 @@ for (const width of widths) {
     await page.frameLocator('#frame').locator('body').waitFor();
     assert.match(await page.locator('#direct').getAttribute('href'), /mypage-deluxe-demo\.html$/);
     await page.screenshot({path: resolve(output, `${id}.png`)});
+  }));
+}
+
+ 
+// Broad non-gacha interaction sweep: internal destinations and safe visible controls.
+// Auth mutations, ticket/draw actions, logout, reset/delete, and form submissions have
+// dedicated isolated tests and are intentionally not triggered by this generic sweep.
+const interactionPages = [
+  'next-preview.html', 'home-portrait-next.html', 'home-top-demo.html',
+  'home-updates-demo.html', 'news.html', 'schedule.html',
+  'attendance-deluxe-demo.html', 'mypage-deluxe-demo.html', 'admin-center-demo.html',
+  'community-demo.html', 'music-gallery-demo.html', 'login-recovery-demo.html',
+  'login-id-settings-preview.html', 'device-sessions-preview.html', 'passkey-preview.html',
+  'integrated-live-demo.html', 'integrated-functional-test.html',
+  'release-readiness.html', 'mobile-checklist.html',
+];
+const actionSkip = /gacha|ガチャ|抽選|draw|logout|ログアウト|clear|削除|reset|初期化|grant|付与/i;
+
+test('all non-gacha internal page links resolve', {timeout: 90000}, async () => {
+  const context = await contextFor(390);
+  const page = await context.newPage();
+  page.setDefaultTimeout(10000);
+  try {
+    for (const source of interactionPages) {
+      const response = await page.goto(`${base}/${source}`, {waitUntil: 'load'});
+      assert.equal(response.status(), 200, `${source} must load`);
+      const hrefs = await page.locator('a[href]').evaluateAll(links => links.map(a => a.getAttribute('href')));
+      for (const href of hrefs) {
+        if (!href || href.startsWith('#') || /^(mailto:|tel:|javascript:)/i.test(href)) continue;
+        const target = new URL(href, `${base}/${source}`);
+        if (target.origin !== base || (!/\.html?$/i.test(target.pathname) && target.pathname !== '/')) continue;
+        const path = target.pathname === '/' ? '/next-preview.html' : target.pathname;
+        const destination = await page.request.get(`${base}${path}`);
+        assert.equal(destination.status(), 200, `${source} link ${href} must resolve`);
+      }
+    }
+  } finally { await context.close(); }
+});
+
+for (const path of interactionPages) {
+  if (['integrated-functional-test.html', 'device-sessions-preview.html'].includes(path)) continue;
+  const id = `safe-controls-${path.replace('.html','')}`;
+  if (!selected(id)) continue;
+  test(id, {timeout: 60000}, async () => runCase(id, 390, async page => {
+    await page.goto(`${base}/${path}`, {waitUntil: 'load'});
+    const controls = page.locator('button:visible:not(:disabled)');
+    const count = await controls.count();
+    for (let i = 0; i < count; i++) {
+      const button = controls.nth(i);
+      const type = await button.getAttribute('type') || 'submit';
+      const label = ((await button.innerText().catch(() => '')) || await button.getAttribute('aria-label') || '').trim();
+      if (type === 'submit' || actionSkip.test(label)) continue;
+      const before = await page.locator('body').innerHTML();
+      const beforeUrl = page.url();
+      await button.click();
+      await page.waitForTimeout(120);
+      assert.equal(page.url(), beforeUrl, `${path}: safe control unexpectedly navigated`);
+      const after = await page.locator('body').innerHTML();
+      assert.notEqual(after, before, `${path}: "${label || ('button ' + (i+1))}" did not change visible page state`);
+    }
   }));
 }
