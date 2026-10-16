@@ -240,6 +240,14 @@
     {
       "src": "assets/bg-top-mobile.webp",
       "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-bg-princess.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-bg-devil.jpg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
