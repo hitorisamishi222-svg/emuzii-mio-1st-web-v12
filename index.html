@@ -20,6 +20,9 @@
 .actual-progress .counts>div{padding:16px;border:1px solid #81d7ff44;border-radius:16px}
 .actual-progress .counts b{display:block;font-size:24px}
 .actual-progress .message{color:#ffe6a8}
+/* Keep participant action buttons separate and fully tappable on narrow phones. */
+.actual-progress #personal>a.button,.actual-progress #personal>button.secondary{display:block;position:static;float:none;transform:none;width:100%;max-width:100%;box-sizing:border-box;margin:12px 0 0;text-align:center;line-height:1.5;min-height:48px;height:auto;white-space:normal}
+.actual-progress #personal>a.button+button.secondary{margin-top:14px}
 .actual-progress .muted{line-height:1.8}
 .actual-music .music-controls{display:grid;gap:12px}
 .actual-music input[type=range]{padding:0}
