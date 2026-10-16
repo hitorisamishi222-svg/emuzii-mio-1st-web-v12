@@ -1,39 +1,72 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#081a36">
-  <title>メンテナンスのお知らせ｜翠央1周年</title>
-  <style>
-    * {box-sizing:border-box}
-    html,body {margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif}
-    body {min-height:100svh;display:grid;place-items:center;padding:20px;background:#08162c;color:#f5fbff;position:relative;isolation:isolate}
-    body::before {content:"";position:fixed;inset:0;z-index:-2;background:url("/assets/mio-bg-princess.jpg") center top/cover no-repeat;opacity:.4}
-    body::after {content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,#041127e3,#081a33ba 44%,#041128f0)}
-    main {width:min(100%,560px);background:#071c3cdd;border:1px solid #b5e3ff72;border-radius:24px;text-align:center;padding:clamp(25px,6vw,46px) clamp(20px,5vw,40px);box-shadow:0 18px 50px #0009;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-    .eyebrow {font-weight:800;color:#ffe1a4;letter-spacing:.13em;font-size:12px}
-    .ornament {font-size:40px;color:#ffe1a4;margin:15px 0 2px}
-    h1 {font-size:clamp(24px,6vw,32px);line-height:1.5;margin:12px 0 22px}
-    p {font-size:clamp(14px,3.7vw,16px);line-height:1.95;color:#e0f2ff}
-    .notice {border:1px solid #bde9ff7a;background:#123662b8;border-radius:16px;padding:20px 16px;margin:24px 0}
-    .notice strong {display:block;color:#ffe6b1;line-height:1.75;font-size:clamp(16px,4vw,19px)}
-    .notice p {margin:11px 0 0}
-    footer {margin-top:25px;font-size:11px;color:#a9cce4;letter-spacing:.04em}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06162e">
+<meta name="description" content="翠央1周年のイベント、ファンアート、皆勤賞、メンバーシップガチャの公式案内。">
+<title>翠央 1周年</title>
+<link rel="stylesheet" href="/next-integrated.css">
+<link rel="stylesheet" href="/next-premium.css">
+<style>
+.actual-card{max-width:920px;margin:28px auto;padding:clamp(20px,4vw,38px);border:1px solid #81d7ff61;border-radius:24px;background:linear-gradient(145deg,#0b2a57f2,#061a39f5);box-shadow:0 20px 55px #0008}
+.actual-card h2,.actual-card h3{color:#eff9ff}
+.actual-card p,.actual-card small,.actual-card label{color:#b6d3e8}
+.actual-card form{display:grid;gap:12px;margin-top:22px}
+.actual-card input,.actual-card select{width:100%;min-height:48px;border:1px solid #81d7ff66;border-radius:12px;background:#06152e;color:#eff9ff;padding:12px;font:inherit}
+.actual-card button,.actual-card .button,.actual-card .secondary{min-height:48px;border:1px solid #81d7ff66;border-radius:12px;background:#103968;color:#eff9ff;padding:12px 18px;font:inherit;font-weight:800}
+.actual-progress [hidden]{display:none!important}
+.actual-progress .counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.actual-progress .counts>div{padding:16px;border:1px solid #81d7ff44;border-radius:16px}
+.actual-progress .counts b{display:block;font-size:24px}
+.actual-progress .message{color:#ffe6a8}
+.actual-progress .muted{line-height:1.8}
+.actual-music .music-controls{display:grid;gap:12px}
+.actual-music input[type=range]{padding:0}
+.site-footer{padding:28px 16px 100px;text-align:center}
+@media(max-width:700px){.actual-card{margin:20px 12px;padding:20px}.actual-progress .counts{grid-template-columns:1fr 1fr}.cinematic-hero .hero-actions a{white-space:nowrap;letter-spacing:0;gap:6px;font-size:9px;padding-inline:8px}}
+
+/* Two additional feature routes, consistent with the existing anniversary UI. */
+@media(max-width:640px){.desktop-nav{gap:6px}.event-grid>.information-card{min-height:130px}}
+</style>
 </head>
-<body>
-<main>
-  <div class="eyebrow">MIO · 1ST ANNIVERSARY</div>
-  <div class="ornament" aria-hidden="true">✦</div>
-  <h1>ただいまメンテナンス中です</h1>
-  <p>翠央1周年イベントシステムをご利用いただき、ありがとうございます。<br>現在、システム調整のため一時的にご利用を停止しております。</p>
-  <section class="notice" aria-label="メンテナンス時間のお知らせ">
-    <strong>メンテナンス終了時刻は未定です。</strong>
-    <p>19:00を過ぎても調整が続いております。大変申し訳ございません。</p>
-  </section>
-  <p>ご利用の皆さまにはご不便をおかけしてしまい、申し訳ございません。<br>何卒ご理解いただきますようお願いいたします。</p>
-  <footer>翠央1周年イベントシステム · 運営からのお知らせ</footer>
+<body class="next-integrated next-experience">
+<a class="skip-link" href="#main">本文へ移動</a>
+<header class="site-header"><div class="site-header-inner">
+<a class="site-brand" href="/" aria-label="翠央1周年 トップへ">✦ 翠央 <small>1ST ANNIVERSARY</small></a>
+<span class="test-tag" style="color:#ffe6a8;border-color:#ffe6a866">翠央1周年 ✦ 限定公開</span>
+<nav class="desktop-nav" aria-label="メインメニュー"><a href="#events">イベント</a><a href="#music">記念曲</a><a href="#progress">参加状況</a><a href="/gacha.html">ガチャ</a><a href="/gallery.html">翠央っ子ギャラリー</a></nav>
+</div></header>
+<main id="main">
+<section class="mio-hero cinematic-hero" aria-label="翠央1周年の記念トップ画面">
+<picture class="hero-picture" aria-hidden="true"><source media="(max-width: 700px)" srcset="/assets/mio-bg-princess.jpg"><img src="/assets/mio-bg-princess.jpg" alt="" fetchpriority="high" decoding="async"></picture>
+<div class="hero-shade" aria-hidden="true"></div><div class="cinema-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="hero-crest" aria-hidden="true"><span>✧</span><strong>01</strong><small>ANNIVERSARY</small></div>
+<div class="hero-copy"><span class="hero-date">OCTOBER 01 — 31 / 2026</span><span class="hero-edition">MIO 1ST ANNIVERSARY <b>✦</b> STARRY DIAMOND</span>
+<h1>翠央と彩る、<br><em>一周年の物語。</em></h1><p>出会えた奇跡を、未来の宝物に。<br>歌と笑顔が輝く、31日間を一緒に。</p>
+<div class="hero-actions"><a class="action-primary" href="#events">イベントを楽しむ <span aria-hidden="true">↓</span></a><a class="action-secondary" href="#progress">参加状況を確認 <span aria-hidden="true">↗</span></a></div></div>
+<div class="hero-foot" aria-hidden="true"><span>SCROLL TO EXPLORE</span><span class="hero-foot-line"></span><span>01 / 03</span></div>
+</section>
+<div class="content-wrap">
+<section id="events" class="section-block premium-events" aria-labelledby="eventsTitle">
+<div class="section-heading"><div><span class="eyebrow">THE ANNIVERSARY COLLECTION</span><h2 id="eventsTitle">この瞬間を、宝物に。</h2><p class="section-lead">記念の31日間と、特別なガチャ。思い出をひとつずつ重ねていこう。</p></div><span class="section-star" aria-hidden="true">✧</span></div>
+<div class="event-grid">
+<a class="feature-card attendance premium-feature" href="#progress"><div class="premium-art calendar-art" aria-hidden="true"><div class="art-points">✦　·　✧</div><div class="calendar-glass"><span class="calendar-head">ANNIVERSARY / OCTOBER</span><div class="calendar-month"><span>OCT</span><strong>31</strong></div><div class="calendar-tiles"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span></div></div><span class="art-corner">EST. 2026 / MIO</span></div><div class="premium-copy"><span class="feature-kicker">01 · DAILY MEMORY</span><h3>1周年月間皆勤賞</h3><p>毎日の小さな「会えたね」を、きらめく31日間の記録に。</p><span class="feature-cta">皆勤賞を確認 <span aria-hidden="true">↗</span></span></div></a>
+<a class="feature-card gacha premium-feature" href="/gacha.html"><div class="premium-art whale-art"><span class="art-halo art-halo-a"></span><span class="art-halo art-halo-b"></span><img class="whale-illustration whale-blue" src="/gacha-v191-whale-blue.svg" alt="" loading="lazy"><img class="whale-illustration whale-gold" src="/gacha-v191-whale-gold.svg" alt="" loading="lazy"><span class="diamond-shine">✦</span><span class="art-corner">BLUE / GOLD EDITION</span></div><div class="premium-copy"><span class="feature-kicker">02 · SPECIAL EXPERIENCE</span><h3>プレミアムガチャ</h3><p>メンシプとラキフェス、ふたつの世界が重なる特別演出。</p><span class="feature-cta">ガチャページへ <span aria-hidden="true">↗</span></span></div></a>
+<a class="information-card" href="https://docs.google.com/forms/d/e/1FAIpQLSfXDpsgOdK9CHZpnVCqwNb_0T-YmcgUOGEhiMjNtF65ZFxEgA/viewform?usp=send_form" target="_blank" rel="noopener noreferrer"><span class="mini-icon">🎯</span><span class="card-label">ANNIVERSARY EVENT</span><strong>1周年予想</strong><span>予想フォームへ ↗</span></a>
+<a class="information-card schedule-card" href="https://docs.google.com/forms/d/e/1FAIpQLSd6twv0ADY9Uqc0pPWdjMixWThl_WHmWJ-oq8j2eYrIVpWZeQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer"><span class="mini-icon">🎨</span><span class="card-label">FAN ART</span><strong>ファンアート応募</strong><span>作品を応募する ↗</span></a>
+<a class="information-card" href="/gallery.html" aria-label="翠央っ子ギャラリーへ"><span class="mini-icon">✨</span><span class="card-label">MIO FAMILY GALLERY</span><strong>翠央っ子ギャラリー</strong><span>みんなの作品・掲載受付へ ↗</span></a>
+</div></section>
+<section class="actual-card actual-music" id="music"><h2>🎵 翠の覚醒-MIO-</h2><p class="muted">1周年記念曲を聴きながら参加できます。</p><audio id="mioBgm" preload="metadata" playsinline loop src="/mio-awakening.mp3"></audio><div class="music-controls"><button type="button" class="button" id="musicToggle">▶ 再生</button><label for="musicVolume">音量</label><input id="musicVolume" type="range" min="0" max="1" step="0.05" value="0.7" aria-label="BGM音量"></div><p id="musicStatus" class="muted">ボタンを押すと再生します。</p></section>
+<section class="actual-card actual-progress" id="progress"><h2>自分の参加状況</h2><p class="muted">ColorSing名は運営の照合用です。一般公開しません。<br>フォーム応募は上のボタンから直接行えます。</p>
+<p id="message" class="message" role="status" aria-live="polite">参加状況を確認しています…</p>
+<form id="register"><h3>👤 ColorSing名登録・確認</h3><p class="muted" role="status" style="border-left:4px solid #ffe3a2;padding:12px;background:#173c68;color:#fff2c8"><strong>新規登録・別端末登録は本人確認の安全点検のため一時休止中です。</strong>以前登録した端末では自動的に参加状況を確認できます。端末変更が必要な場合は運営へご連絡ください。</p><p class="muted">初めての方はColorSing名を入力してください。登録済みの方は自動で参加状況を確認します。</p><p class="muted"><strong>別端末・別ブラウザでの利用には本人確認が必要です。登録名の一致のみで本人確認はできません。未承認の場合は運営にご連絡ください。</strong></p><label for="name">ColorSing名</label><input id="name" name="name" autocomplete="nickname" maxlength="40" required placeholder="フォームで入力したColorSing名"><label for="loginId">ログインID（登録済みの方）</label><input id="loginId" name="loginId" autocomplete="one-time-code" maxlength="32" placeholder="以前発行されたログインID"><small>登録済みと表示された場合は、以前発行されたログインIDを入力してください。分からない場合は運営に復旧を依頼してください。再登録は不要です。</small><button class="button" type="submit" id="registerButton">参加状況を確認</button><small>登録済みの方も、同じColorSing名を入力してください。確認が必要な場合は運営側で対応します。</small></form>
+<div id="attendanceEntry"><h3>📅 皆勤賞確認</h3><p class="muted">10/1〜10/31から日付を選び、その日に配信で発表された確認文字を入力してください。</p><p class="muted"><strong>確認文字の入力は各日2回までです。3回目からは入力不可のためライバーにご連絡ください。</strong></p><label for="attendanceDay">確認する日</label><select id="attendanceDay" class="input"><option value="1">10/1</option><option value="2">10/2</option><option value="3">10/3</option><option value="4">10/4</option><option value="5">10/5</option><option value="6">10/6</option><option value="7">10/7</option><option value="8">10/8</option><option value="9">10/9</option><option value="10">10/10</option><option value="11">10/11</option><option value="12">10/12</option><option value="13">10/13</option><option value="14">10/14</option><option value="15">10/15</option><option value="16">10/16</option><option value="17">10/17</option><option value="18">10/18</option><option value="19">10/19</option><option value="20">10/20</option><option value="21">10/21</option><option value="22">10/22</option><option value="23">10/23</option><option value="24">10/24</option><option value="25">10/25</option><option value="26">10/26</option><option value="27">10/27</option><option value="28">10/28</option><option value="29">10/29</option><option value="30">10/30</option><option value="31">10/31</option></select><label for="attendanceKeyword">確認文字</label><input id="attendanceKeyword" type="text" maxlength="40" autocomplete="off" inputmode="text" placeholder="その日に発表された文字"><button type="button" id="attendanceSubmit" class="button">確認文字を送信</button><p id="attendanceMessage" class="message" role="status" aria-live="polite"></p></div>
+<div id="personal" hidden><span class="badge" id="status"></span><h3 id="greeting"></h3><p id="participantId" class="muted"></p><div id="counts" class="counts" hidden><div>予想<b id="prediction">—</b><small id="predictionMeta"></small></div><div>皆勤<b id="attendance">—</b><small id="attendanceMeta"></small></div><div>ファンアート受付<b id="fa">—</b><small id="faMeta"></small></div><div>ガチャ残り<b id="remaining">—</b><small id="remainingMeta"></small></div></div><p id="gachaDetail" class="muted"></p><a class="button" id="gachaPageLink" href="/gacha.html">ガチャページへ →</a><button type="button" id="refresh" class="secondary">最新の状況に更新</button></div>
+</section>
+</div>
 </main>
-</body>
-</html>
+<nav class="bottom-nav" aria-label="スマホ用メニュー"><a href="#events"><span class="nav-icon">✧</span><small>ホーム</small></a><a href="#progress"><span class="nav-icon">◷</span><small>皆勤賞</small></a><a href="/gacha.html"><span class="nav-icon">◇</span><small>ガチャ</small></a><a href="/gallery.html"><span class="nav-icon">✧</span><small>ギャラリー</small></a></nav>
+<footer class="site-footer">翠央 1周年 ✦ <span>v1.9.5</span></footer>
+<script type="module" src="/app.js"></script>
+</body></html>
