@@ -37,3 +37,12 @@
 6. 運営本人による実行承認、ホーム画面とガチャ等の品質確認を終えてからのみ `main` と本番表示を更新する。
 
 **本人確認手順**：`release-prep/BROWSER_APPROVAL_V197_OPERATOR_GUIDE.md`。
+
+
+## 10/17 JST 補足：ガチャ管理との候補版4モジュール統合
+- 登録済みトリガーが `webRecoveryOnEditBrowserPatchV189_` 1件であることを受け、`BrowserAddV197_SAFE_CANDIDATE.gs` に `emuzii_管理画面` の編集を `handleGachaAdminEdit_(e)` へ明示的に中継する処理を追加。別トリガーは作成しない。
+- `release-prep/GachaAdminV188-FULL-REPLACE.gs` は **GitHub保存版の候補** としてのみ読み込み。本番実ファイルの同一性は未確認。既存管理シートを上書きしない。
+- `release-prep/test-v197-four-module-integration.cjs`：4候補モジュールの合成データ21ケース、GitHub Actions https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/38929536133 で合格。管理画面J25 TRUEの関数ディスパッチ、ガチャ受付OFF条件、異MIOの不正紐付け拒否、退役端末の再承認拒否、トップレベル関数名の重複ゼロ、トリガーの新規作成コードゼロ等を確認。
+- **このテストは実GAS `GachaAdminV188.gs` と本番データに接続していない。** GachaAdmin実ファイルのコード本文確認および実シートのガチャスイッチ位置・編集トリガーとの相性は別途必須。
+- 同名別MIO-IDの新しいブラウザでは、P列がC列の名前から最初の参加者を参照する現行の数式のため、正しいH/KでもH/P不一致になることがある。テストは **誤承認を拒否して保留** することを確認した。**本人確認フローを別途設計するまで対応完了とはしない**。
+- 本番GASの4ファイル、参加者データ、Vercel main、固定URLは未変更。
