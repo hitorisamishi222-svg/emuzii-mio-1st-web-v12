@@ -14,6 +14,7 @@ function mock({duplicated=false,failAudit=false,failRows=false}={}){
   }
   const admin={
     getName:()=> 'emuzii_管理画面',
+    getParent:()=>ss,
     getRange:(key)=>cell(key)
   };
   const gacha={
