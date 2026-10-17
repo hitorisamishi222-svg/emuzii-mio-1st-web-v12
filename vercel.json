@@ -284,9 +284,21 @@
     {
       "src": "api-gallery-capabilities.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-gallery-passkey.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gallery-passkey-register.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/passkey",
+      "dest": "/api-gallery-passkey.js"
+    },
     {
       "src": "/api/gallery/capabilities",
       "dest": "/api-gallery-capabilities.js"
