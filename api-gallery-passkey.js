@@ -1,4 +1,4 @@
-import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import pg from 'pg';
 const { Pool } = pg;
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
@@ -158,7 +158,7 @@ export default async function handler(req,res){
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Vary','Cookie');
  const host=(req.headers.host||'').toLowerCase();
- if(!/^[a-z0-9.-]+$/.test(host)||!host.endsWith('.vercel.app'))return error(res,403,'ORIGIN_NOT_ALLOWED');
+ if(host!=='emuzii-mio-1st-web-v12.vercel.app')return error(res,403,'ORIGIN_NOT_ALLOWED');
  if(!process.env.GALLERY_DATABASE_URL)return error(res,503,'ADMIN_AUTH_NOT_CONFIGURED');
  const action=req.method==='GET'?'status':req.body?.action;
  if(req.method!=='GET'&&req.method!=='POST'){res.setHeader('Allow','GET, POST');return error(res,405,'METHOD_NOT_ALLOWED')}
