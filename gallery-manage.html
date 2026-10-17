@@ -158,6 +158,19 @@ async function thumbnailData(file,fit){
   return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(Error('画像を読み取れません'));reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.readAsDataURL(blob)});
  }finally{URL.revokeObjectURL(temp)}
 }
+let pendingThumbURL=null;
+$('uploadImage').addEventListener('change',()=>{
+ if(pendingThumbURL){URL.revokeObjectURL(pendingThumbURL);pendingThumbURL=null}
+ const file=$('uploadImage').files?.[0];
+ if(!file){imagePreview();return}
+ if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>10*1024*1024){notice('画像は10MB以内のPNG/JPEG/WebP/GIFを選んでください。');imagePreview();return}
+ pendingThumbURL=URL.createObjectURL(file);
+ const holder=$('preview');holder.replaceChildren();
+ const img=document.createElement('img');img.alt='アップロード前の画像';img.src=pendingThumbURL;
+ img.style.width='100%';img.style.height='100%';img.style.objectFit=$('imageFit').value;
+ holder.append(img);
+});
+$('imageFit').addEventListener('change',()=>{const img=$('preview').querySelector('img');if(img)img.style.objectFit=$('imageFit').value});
 $('uploadThumb').addEventListener('click',async()=>{
  if(busy||!active)return;
  const file=$('uploadImage').files?.[0];
@@ -176,7 +189,7 @@ $('uploadThumb').addEventListener('click',async()=>{
   loadItem();
   notice('✅ サムネイルを保存しました。公開ギャラリーへ反映されています。');
  }catch(e){notice('⚠️ 画像変更に失敗しました：'+e.message)}
- finally{busy=false;$('uploadThumb').disabled=false;}
+ finally{busy=false;$('uploadThumb').disabled=false;if(active)loadItem();}
 });
 $('save').addEventListener('click',()=>act('update'));
 $('hide').addEventListener('click',()=>act('hide'));
