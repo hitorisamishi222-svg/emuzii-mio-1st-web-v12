@@ -54,7 +54,7 @@ a{color:#b5e3ff}.eyebrow{color:#ffdda0;font-size:12px;font-weight:700;letter-spa
 <label for="imageFit">画像の収め方</label>
 <select id="imageFit"><option value="contain">画像全体を表示（余白あり）</option><option value="cover">枠いっぱいに拡大（端を切り抜く）</option></select>
 
-<p class="small">画像は480×600のWebPに変換します。画像を選んだら下の「画像も含めて変更を保存・反映」を押すだけで保存できます。</p>
+<p class="small">画像は480×600のWebPまたはJPEGに変換します。画像を選んだら下の「画像も含めて変更を保存・反映」を押すだけで保存できます。</p>
 <div id="saveStatus" role="status" aria-live="polite" style="padding:12px;border:1px solid #8dcced;border-radius:12px;margin-top:12px;background:#092b50">画像を選んだら保存ボタンを押してください。</div>
 <div class="buttons">
 <button class="save" id="save" type="button">画像も含めて変更を保存・反映</button>
@@ -133,11 +133,11 @@ async function act(action){
   let next;
   if(selectedImage){
    notice('画像と作品情報をまとめて保存しています…');
-   const webp=await thumbnailData(selectedImage,$('imageFit').value);
+   const converted=await thumbnailData(selectedImage,$('imageFit').value);
    notice('③ サーバーに画像を送信しています…');
    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),25000);
    let response;
-   try{response=await fetch('/api/gallery/thumbnail',{method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,webp,item,saveFields:true})});}finally{clearTimeout(timeout)}
+   try{response=await fetch('/api/gallery/thumbnail',{method:'POST',credentials:'same-origin',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,image:converted.base64,format:converted.format,item,saveFields:true})});}finally{clearTimeout(timeout)}
    const result=await response.json().catch(()=>({code:'IMAGE_SERVER_ERROR'}));
    if(!response.ok||!result.ok)throw Error('HTTP '+response.status+' / '+(result.code||'IMAGE_UPLOAD_FAILED'));
    next={...active,...result.item};
@@ -205,11 +205,17 @@ async function thumbnailData(file,fit){
  // On some iPhone in-app browsers, canvas.toBlob/FileReader callbacks can remain pending.
  // Encode directly to WebP base64 so the save button cannot wait forever for either callback.
  notice('② WebP形式に変換しています…');
- const encoded=canvas.toDataURL('image/webp',0.76);
- if(!encoded.startsWith('data:image/webp;base64,'))throw Error('WebP形式に変換できないブラウザです');
- const base64=encoded.slice('data:image/webp;base64,'.length);
+ let encoded=canvas.toDataURL('image/webp',0.76);
+ let format='webp';
+ if(!encoded.startsWith('data:image/webp;base64,')){
+  notice('② このブラウザはWebP非対応のためJPEGに切り替えています…');
+  encoded=canvas.toDataURL('image/jpeg',0.76);
+  format='jpeg';
+ }
+ if(!encoded.startsWith('data:image/'+format+';base64,'))throw Error('画像をJPEG形式にも変換できませんでした');
+ const base64=encoded.split(',')[1];
  if(base64.length>1000000)throw Error('画像が大きすぎます。別の画像で試してください');
- return base64;
+ return {base64,format};
 }
 let pendingThumbURL=null;
 $('uploadImage').addEventListener('change',()=>{
