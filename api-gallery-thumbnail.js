@@ -21,7 +21,7 @@ const authorized=async(c,req)=>{
  return q.rows[0]||null;
 };
 const ownedBlob=u=>{
- try{const p=new URL(u);return p.protocol==='https:'&&/^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(p.hostname)&&/^\/mio-gallery\/[0-9a-f-]+\.webp$/.test(p.pathname)}catch{return false}
+ try{const p=new URL(u);return p.protocol==='https:'&&/^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(p.hostname)&&/^\/mio-gallery\/[0-9a-f-]+\.(?:webp|jpe?g)$/.test(p.pathname)}catch{return false}
 };
 const validItem=value=>{
  if(!value||typeof value!=='object')return null;
@@ -45,10 +45,15 @@ export default async function handler(req,res){
  if(!base)return fail(res,404,'ITEM_NOT_FOUND');
  const fields=input.saveFields===true?validItem(input.item):null;
  if(input.saveFields===true&&!fields)return fail(res,400,'FIELDS_INVALID');
- const b64=input.webp;
+ const format=input.format==='jpeg'?'jpeg':input.format==='webp'||input.format===undefined?'webp':null;
+ if(!format)return fail(res,400,'FORMAT_NOT_SUPPORTED');
+ const b64=typeof input.image==='string'?input.image:input.webp;
  if(typeof b64!=='string'||b64.length>1100000||b64.length<40||!/^[A-Za-z0-9+/]+={0,2}$/.test(b64))return fail(res,400,'IMAGE_INVALID');
  const image=Buffer.from(b64,'base64');
- if(image.length<20||image.length>750000||image.toString('ascii',0,4)!=='RIFF'||image.toString('ascii',8,12)!=='WEBP')return fail(res,400,'WEBP_REQUIRED');
+ if(image.length<20||image.length>750000)return fail(res,400,'IMAGE_SIZE_INVALID');
+ const webp=image.toString('ascii',0,4)==='RIFF'&&image.toString('ascii',8,12)==='WEBP';
+ const jpeg=image[0]===0xff&&image[1]===0xd8&&image[2]===0xff&&image[image.length-2]===0xff&&image[image.length-1]===0xd9;
+ if(format==='webp'?!webp:!jpeg)return fail(res,400,'IMAGE_FORMAT_MISMATCH');
  const pool=new Pool({connectionString:process.env.GALLERY_DATABASE_URL,max:1,connectionTimeoutMillis:4000});
  let c,createdURL=null,oldURL=null,updated=false;
  try{
@@ -63,8 +68,9 @@ export default async function handler(req,res){
    if(rev!==input.revision){await c.query('ROLLBACK');return fail(res,409,'ITEM_CHANGED_RELOAD')}
    oldURL=row?.thumbnail_url??base.thumbnail??'';
    const chosen=fields||{title:row?.title??base.title,creator:row?.creator??base.creator,description:row?.description??base.description??'',category:row?.category??base.category,url:row?.external_url??base.url};
-   const path='mio-gallery/'+randomUUID()+'.webp';
-   const stored=await put(path,image,{access:'public',contentType:'image/webp',addRandomSuffix:false,cacheControlMaxAge:60});
+   const extension=format==='jpeg'?'jpg':'webp';
+   const path='mio-gallery/'+randomUUID()+'.'+extension;
+   const stored=await put(path,image,{access:'public',contentType:format==='jpeg'?'image/jpeg':'image/webp',addRandomSuffix:false,cacheControlMaxAge:60});
    if(!stored?.url||!ownedBlob(stored.url))throw Error('BLOB_SAVE_INVALID');
    createdURL=stored.url;
    const response=await c.query(`INSERT INTO gallery_live_overrides(item_id,title,creator,description,category,external_url,thumbnail_url,hidden,deleted,revision,updated_by,updated_at)
