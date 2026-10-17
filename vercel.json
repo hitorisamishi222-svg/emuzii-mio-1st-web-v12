@@ -340,6 +340,10 @@
   ],
   "routes": [
     {
+      "src": "/api/gallery/announcements",
+      "dest": "/api-announcements.js"
+    },
+    {
       "src": "/api/announcements",
       "dest": "/api-announcements.js"
     },
