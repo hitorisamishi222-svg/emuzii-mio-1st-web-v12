@@ -68,12 +68,12 @@ export default async function handler(req,res){
  try{
   c=await pool.connect();
   const admin=await findAdmin(c,req);
-  if(!admin)return error(res,401,'ADMIN_LOGIN_REQUIRED');
+  if(!admin){if(req.method==='GET')return res.status(200).json({ok:true,authorized:false,items:[]});return error(res,401,'ADMIN_LOGIN_REQUIRED');}
   if(req.method==='GET'){
    const rows=await c.query('SELECT * FROM gallery_live_overrides WHERE item_id=ANY($1::text[])',[approvedGalleryItems.map(x=>x.id)]);
    const byId=new Map(rows.rows.map(r=>[r.item_id,r]));
    const items=approvedGalleryItems.map(item=>merge(item,byId.get(item.id)));
-   return res.status(200).json({ok:true,items,role:admin.role,authorizedDevice:true});
+   return res.status(200).json({ok:true,items,role:admin.role,authorized:true,authorizedDevice:true});
   }
   const body=req.body;
   const action=body?.action;
