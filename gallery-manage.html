@@ -117,6 +117,7 @@ async function act(action){
  if(busy||!active)return;
  const id=active.id,revision=active.revision;
  const selectedImage=action==='update'?$('uploadImage').files?.[0]:null;
+ if(action==='update'&&!selectedImage){if(!confirm('画像が選ばれていません。作品タイトルや説明だけを保存しますか？')){notice('画像の保存は行われていません。写真を選んでから保存してください。');return;}}
  const explanations={
   hide:'この作品を公開ギャラリーから直ちに非公開にしますか？',
   restore:'この作品を再公開してもよいですか？権利確認が済んでから実行してください。',
