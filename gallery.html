@@ -87,12 +87,19 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 <footer>翠央1周年 ✦ 翠央っ子ギャラリー</footer>
 </main>
 <script type="module">
-import {approvedGalleryItems} from '/gallery-items.js';
+// The server-side catalog is authoritative for moderation and emergency takedowns.
 const grid=document.getElementById('galleryGrid');
-const allowedImage=p=>typeof p==='string'&&/^\/assets\/[A-Za-z0-9_\/-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(p)?p:'';
+const allowedImage=p=>{if(typeof p!=='string')return'';if(/^\/assets\/[A-Za-z0-9_\/-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(p))return p;try{const u=new URL(p);return u.protocol==='https:'&&u.hostname.endsWith('.public.blob.vercel-storage.com')&&/\.(?:png|jpe?g|webp)$/i.test(u.pathname)?u.href:''}catch{return''}};
 const allowedLink=p=>{if(typeof p!=='string')return'';if(/^\/[A-Za-z0-9_./-]+$/.test(p)&&!p.includes('..'))return p;try{const u=new URL(p);return u.protocol==='https:'?u.href:''}catch{return''}};
 const icons={'応援動画':'🎬','応援画像':'🖼️','音声・楽曲':'🎵','ファンアート':'🎨','SNS投稿':'💌','その他':'✧'};
-for(const item of approvedGalleryItems){
+async function showGallery(){
+ try{
+ const response=await fetch('/api/gallery/items',{cache:'no-store'});
+ if(!response.ok)throw Error('CATALOG_UNAVAILABLE');
+ const result=await response.json();
+ if(!result.ok||!Array.isArray(result.items))throw Error('CATALOG_INVALID');
+ grid.replaceChildren();
+ for(const item of result.items){
  if(!item||item.hidden===true||!allowedLink(item.url)||!String(item.title||'').trim())continue;
  const card=document.createElement('article');card.className='work-card';
  const cover=document.createElement('div');cover.className='work-cover';
@@ -111,5 +118,14 @@ for(const item of approvedGalleryItems){
  card.append(cover,info);grid.append(card);
 }
 document.getElementById('galleryEmpty').hidden=grid.childElementCount>0;
+ }catch(e){
+ grid.replaceChildren();
+ const empty=document.getElementById('galleryEmpty');
+ empty.hidden=false;
+ empty.textContent='現在、掲載作品を安全に確認できないため、ギャラリーの表示を一時停止しています。時間をおいて再度お試しください。';
+ console.warn('Gallery catalog temporarily unavailable',e?.message);
+ }
+}
+showGallery();
 </script>
 </body></html>
