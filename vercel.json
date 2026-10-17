@@ -296,9 +296,17 @@
     {
       "src": "gallery-moderation.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-gallery-items.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/items",
+      "dest": "/api-gallery-items.js"
+    },
     {
       "src": "/api/gallery/passkey",
       "dest": "/api-gallery-passkey.js"
