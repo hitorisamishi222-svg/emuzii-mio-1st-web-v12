@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>掲載済みギャラリー管理｜翠央1周年</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#08172f,#12355f 47%,#06152b);color:#f6fbff;font:16px/1.7 -apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif;min-height:100dvh}
+main{max-width:680px;padding:27px 16px 80px;margin:auto}h1{font-size:25px;line-height:1.35;margin:8px 0 18px}h2{font-size:18px;margin:0 0 12px}
+.panel,.work{border:1px solid #8ac4ee8c;border-radius:18px;background:#112b4cde;padding:18px;margin:14px 0}
+.work{border-color:#b5cbe26e}.work p{margin:5px 0}.muted{color:#c2d9ec}.small{font-size:13px}
+a{color:#a6defb}.action{display:block;width:100%;padding:14px;margin:12px 0;background:#e9d394;color:#0d2546;border:0;border-radius:12px;font-weight:800;font-size:16px;text-decoration:none;text-align:center}
+button{padding:10px 14px;border:1px solid #8accff;border-radius:10px;color:white;background:#164a79;cursor:pointer;font:inherit}button:focus,a:focus{outline:3px solid #ffdca2;outline-offset:2px}
+.status{color:#ffdda1;font-size:13px}.id{font-family:ui-monospace,monospace;overflow-wrap:anywhere;color:#c5d9f0;font-size:13px}
+ol{padding-left:24px}li{margin:7px 0}.heading{color:#ffe4b0;font-size:12px;letter-spacing:.15em;font-weight:700}
+</style></head><body><main>
+<div class="heading">MIO ✧ GALLERY MODERATION</div>
+<h1>🛡️ 掲載済み作品の管理</h1>
+<div class="panel">
+<p><strong>権利確認・誤掲載にすぐ対応するための管理入口です。</strong></p>
+<p class="muted">現在、みおシステム共通認証への改修中のため、サイト上のFace ID管理者操作は停止しています。代わりに、既存GitHubリポジトリへの<strong>書き込み権限がある管理者</strong>だけが、作品を一時非公開・再公開・修正できます。</p>
+<a class="action" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/workflows/gallery-moderation.yml" target="_blank" rel="noopener noreferrer">掲載管理を開く（GitHubログイン） ↗</a>
+<ol>
+<li>上のリンクからGitHubにログインします。</li>
+<li><strong>Run workflow</strong>を開き、下の作品IDと操作を選びます。</li>
+<li><strong>hide</strong>で非公開、<strong>restore</strong>で再公開、<strong>edit</strong>でタイトル・URL・画像パスなどを修正します。</li>
+<li>実行が成功し、本番の自動更新が完了すると反映されます。<strong>緊急の非公開でも反映まで少し時間がかかります。</strong></li>
+</ol>
+<p class="small status">非公開はギャラリーでの表示停止です。サムネイルや音源の元ファイル、外部投稿、過去のキャッシュを削除するものではありません。完全削除が必要な場合は別途対応してください。</p>
+</div>
+<h2>管理対象の作品</h2>
+<div id="items" aria-live="polite"></div>
+<p class="small muted">この画面自体は管理者ログイン画面ではありません。実際の変更操作はGitHub側で書き込み権限を検証します。</p>
+<a href="/gallery.html">← 公開ギャラリーへ戻る</a>
+</main>
+<script type="module">
+import {approvedGalleryItems} from '/gallery-items.js';
+const list=document.getElementById('items');
+for(const item of approvedGalleryItems){
+ const div=document.createElement('div');div.className='work';
+ const name=document.createElement('p');const strong=document.createElement('strong');strong.textContent=item.title;name.append(strong);
+ const state=document.createElement('p');state.className='small muted';state.textContent='表示：'+(item.hidden?'非公開':'公開中')+' ／ '+item.category;
+ const id=document.createElement('p');id.className='id';id.textContent='作品ID：'+item.id;
+ const btn=document.createElement('button');btn.type='button';btn.textContent='作品IDをコピー';
+ const message=document.createElement('span');message.className='small';message.setAttribute('role','status');
+ btn.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(item.id);message.textContent=' コピーしました';}catch{message.textContent=' IDを長押ししてコピーしてください';}});
+ div.append(name,state,id,btn,message);list.append(div);
+}
+</script></body></html>
