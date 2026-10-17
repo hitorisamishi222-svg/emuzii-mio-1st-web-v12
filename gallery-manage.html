@@ -136,7 +136,6 @@ async function act(action){
    const result=await response.json().catch(()=>({code:'IMAGE_SERVER_ERROR'}));
    if(!response.ok||!result.ok)throw Error(result.code||'IMAGE_UPLOAD_FAILED');
    next={...active,...result.item};
-   $('uploadImage').value='';
   }else{
    const r=await fetch(ENDPOINT,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,action,item})});
    const data=await r.json().catch(()=>({code:'SAVE_SERVER_ERROR'}));
@@ -145,14 +144,25 @@ async function act(action){
   }
   items=items.map(x=>x.id===id?next:x);
   loadItem();
+  if(action==='update' && selectedImage){
+   notice('画像を保存しました。公開サイトで反映を確認しています…');
+   const check=await fetch('/api/gallery/items?verify='+Date.now(),{cache:'no-store',credentials:'same-origin'});
+   const publicData=await check.json().catch(()=>({}));
+   const published=publicData.items?.find(x=>x.id===id);
+   if(!check.ok||!publicData.ok||!published||published.thumbnail!==next.thumbnail)throw Error('PUBLIC_IMAGE_NOT_CONFIRMED');
+   $('uploadImage').value='';
+   if(pendingThumbURL){URL.revokeObjectURL(pendingThumbURL);pendingThumbURL=null;}
+  }
   notice('✅ '+(action==='hide'?'非公開':action==='restore'?'再公開':action==='delete'?'掲載停止':'変更保存')+'が完了しました。公開ギャラリーで確認できます。');
  }catch(e){
   if(e.message==='ITEM_CHANGED_RELOAD')notice('⚠️ 別の変更が先に保存されました。更新してから再操作してください。');
   else if(e.message==='ADMIN_LOGIN_REQUIRED'){notice('🔒 管理者ログインが期限切れです。');$('locked').hidden=false;$('editor').hidden=true;}
-  else notice('⚠️ 保存できませんでした：'+e.message);
+  else if(e.message==='PUBLIC_IMAGE_NOT_CONFIRMED')notice('⚠️ 保存応答はありましたが、公開ギャラリーへの画像反映を確認できませんでした。画像は選択したままです。');
+  else notice('⚠️ 保存できませんでした：'+e.message+'。選択した画像は残しています。');
  }finally{
   busy=false;
-  if(active)loadItem();
+  for(const key of ['save','hide','restore','delete'])$(key).disabled=false;
+  if(active){$('restore').disabled=!active.hidden&&!active.deleted;$('hide').disabled=!!active.hidden;$('delete').disabled=!!active.deleted;}
  }
 }
 $('itemId').addEventListener('change',loadItem);
