@@ -30,7 +30,7 @@ const validItem=value=>{
  const item=Object.fromEntries(keys.map(k=>[k,value[k].trim()]));
  if(!item.title||item.title.length>120||!item.creator||item.creator.length>80||item.description.length>1000||!['動画','イラスト','音声・楽曲','ファンアート','その他'].includes(item.category)||!item.url||item.url.length>2048)return null;
  const url=item.url;
- if(/^\\/[A-Za-z0-9_./-]+$/.test(url)&&!url.startsWith('//')&&!url.includes('..'))return item;
+ if(/^\/[A-Za-z0-9_./-]+$/.test(url)&&!url.startsWith('//')&&!url.includes('..'))return item;
  try{const parsed=new URL(url);return parsed.protocol==='https:'&&!parsed.username&&!parsed.password?item:null}catch{return null}
 };
 export default async function handler(req,res){
