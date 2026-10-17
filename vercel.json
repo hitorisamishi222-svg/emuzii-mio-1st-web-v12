@@ -308,9 +308,17 @@
     {
       "src": "gallery-manage.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-gallery-manage.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/manage",
+      "dest": "/api-gallery-manage.js"
+    },
     {
       "src": "/api/gallery/moderate",
       "dest": "/api-gallery-moderate.js"
