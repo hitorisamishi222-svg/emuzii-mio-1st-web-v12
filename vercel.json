@@ -26,6 +26,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "announcements.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gallery-items.js",
       "use": "@vercel/static"
     },
@@ -382,6 +386,10 @@
     {
       "src": "/api/gacha",
       "dest": "/api-gacha.js"
+    },
+    {
+      "src": "/announcements.html",
+      "dest": "/announcements.html"
     },
     {
       "src": "/gallery.html",
