@@ -13,7 +13,20 @@ export default async function handler(req,res){
  if(req.method==='POST'&&(req.headers.origin!=='https://'+HOST||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')||Number(req.headers['content-length']||0)>14000))return fail(res,403,'REQUEST_REJECTED');
  const pool=new Pool({connectionString:process.env.GALLERY_DATABASE_URL,max:1,connectionTimeoutMillis:4000});let c;
  try{
-  c=await pool.connect();let admin=null;
+  c=await pool.connect();
+  // This isolated content table is initialized idempotently on the gallery-admin database.
+  // It never modifies attendance, gacha, or registration tables.
+  await c.query(`CREATE TABLE IF NOT EXISTS anniversary_announcements (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title TEXT NOT NULL CHECK(char_length(title) BETWEEN 1 AND 120),
+    body TEXT NOT NULL CHECK(char_length(body) BETWEEN 1 AND 5000),
+    published BOOLEAN NOT NULL DEFAULT FALSE,
+    revision INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_by TEXT
+  )`);
+  let admin=null;
   const token=cookie(req,'mio_gallery_session'),device=cookie(req,'mio_gallery_device');
   if(/^[A-Za-z0-9_-]{40,64}$/.test(token)&&/^[A-Za-z0-9_-]{40,64}$/.test(device)){
    const auth=await c.query(`SELECT u.id,u.role FROM gallery_admin_sessions s JOIN gallery_admin_users u ON u.id=s.user_id JOIN gallery_admin_devices d ON d.id=s.device_id WHERE s.token_hash=$1 AND s.expires_at>now() AND s.revoked_at IS NULL AND u.status='active' AND u.role IN ('owner','admin') AND d.user_id=u.id AND d.device_public_id=$2 AND d.status='approved' LIMIT 1`,[hash(token),hash(device)]);
