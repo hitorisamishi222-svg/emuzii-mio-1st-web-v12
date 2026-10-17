@@ -1,0 +1,104 @@
+name: 掲載済み作品の管理（管理者限定）
+run-name: ギャラリー ${{ inputs.action }} / ${{ inputs.item_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      item_id:
+        description: "編集対象の作品"
+        required: true
+        type: choice
+        options:
+          - mio-awakening-video
+          - mio-awakening-song
+      action:
+        description: "操作"
+        required: true
+        type: choice
+        options:
+          - hide
+          - restore
+          - edit
+          - clear_description
+          - clear_thumbnail
+      title:
+        description: "edit時のみ：新タイトル（空欄なら変更しない）"
+        required: false
+        type: string
+      creator:
+        description: "edit時のみ：投稿者名（空欄なら変更しない）"
+        required: false
+        type: string
+      description:
+        description: "edit時のみ：説明（空欄なら変更しない）"
+        required: false
+        type: string
+      url:
+        description: "edit時のみ：作品URL（https:// またはサイト内リンク）"
+        required: false
+        type: string
+      thumbnail:
+        description: "edit時のみ：既存画像のパス（例 /assets/name.webp）"
+        required: false
+        type: string
+      category:
+        description: "edit時のみ：カテゴリ"
+        required: false
+        type: choice
+        default: "変更しない"
+        options:
+          - "変更しない"
+          - "動画"
+          - "イラスト"
+          - "音声・楽曲"
+          - "ファンアート"
+          - "その他"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mio-gallery-moderation
+  cancel-in-progress: false
+
+jobs:
+  moderate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout approved gallery list
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply validated moderation
+        env:
+          GALLERY_ACTION: ${{ inputs.action }}
+          GALLERY_ITEM_ID: ${{ inputs.item_id }}
+          GALLERY_TITLE: ${{ inputs.title }}
+          GALLERY_CREATOR: ${{ inputs.creator }}
+          GALLERY_DESCRIPTION: ${{ inputs.description }}
+          GALLERY_URL: ${{ inputs.url }}
+          GALLERY_THUMBNAIL: ${{ inputs.thumbnail }}
+          GALLERY_CATEGORY: ${{ inputs.category }}
+        run: node scripts/gallery-moderate.mjs
+      - name: Publish change with GitHub audit trail
+        env:
+          ACTION: ${{ inputs.action }}
+          ITEM: ${{ inputs.item_id }}
+        run: |
+          if git diff --quiet -- gallery-items.js; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "mio-gallery-moderator[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- gallery-items.js
+          git commit -m "gallery: ${ACTION} ${ITEM} (by ${GITHUB_ACTOR})"
+          git pull --rebase origin main
+          git push origin HEAD:main
