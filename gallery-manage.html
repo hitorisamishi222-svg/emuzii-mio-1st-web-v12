@@ -32,6 +32,11 @@ a{color:#b5e3ff}.eyebrow{color:#ffdda0;font-size:12px;font-weight:700;letter-spa
 <p class="small">この端末の管理者セッションが確認できません。共通認証への切り替え作業中のため、現在は新しいパスキー登録・ログインを停止しています。第三者による変更を防ぐため、未認証では編集できません。</p>
 </div>
 <div id="editor" hidden>
+<div class="panel"><h2>🔐 この端末の管理者ログイン</h2>
+<p class="small">Face ID・パスキーの新規認証は一時停止中ですが、すでに認証済みの端末は安全なセッションを使用できます。</p>
+<button id="remember" type="button">この端末の管理者認証を30日間保持する</button>
+<button id="logout" type="button" style="background:#5c384b;margin-left:6px">この端末からログアウト</button>
+<p class="small">共有端末では「30日間保持」を使用しないでください。現在の端末承認が有効な場合に限ります。</p></div>
 <div class="panel">
 <label for="itemId">掲載済み作品を選ぶ</label><select id="itemId"></select>
 <p class="small" id="meta"></p>
@@ -195,5 +200,17 @@ $('save').addEventListener('click',()=>act('update'));
 $('hide').addEventListener('click',()=>act('hide'));
 $('restore').addEventListener('click',()=>act('restore'));
 $('delete').addEventListener('click',()=>act('delete'));
+async function sessionAction(action){
+ if(!confirm(action==='remember'?'この端末で管理者ログインを30日間保持しますか？':'この端末の管理者セッションを終了しますか？'))return;
+ try{
+  const r=await fetch('/api/gallery/session',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
+  const d=await r.json();
+  if(!r.ok||!d.ok)throw Error(d.code||'SESSION_FAILED');
+  if(action==='logout'){$('editor').hidden=true;$('locked').hidden=false;notice('管理者ログインを終了しました。');return;}
+  notice('✅ この承認済み端末では管理者セッションを30日間保持します。');
+ }catch(e){notice('⚠️ 認証設定の変更に失敗：'+e.message)}
+}
+$('remember').addEventListener('click',()=>sessionAction('remember'));
+$('logout').addEventListener('click',()=>sessionAction('logout'));
 fetchAdmin();
 </script></body></html>
