@@ -28,7 +28,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#153b63;bor
 </div>
 <div class="panel"><p id="status" role="status" aria-live="polite">認証機能の準備状況を確認しています…</p></div>
 <p class="small">管理者登録は参加者のMIO-IDとは別の仕組みです。パスキーの秘密鍵はサーバーに保存しません。登録が完了するまではギャラリーへの直接投稿は停止中です。</p>
-<p><a href="/gallery-admin-preview.html">← ギャラリー作品プレビューに戻る</a></p>
+<p><a href="/gallery-moderation.html">掲載済み作品の管理（GitHub管理者用） →</a></p><p><a href="/gallery-admin-preview.html">← ギャラリー作品プレビューに戻る</a></p>
 </main>
 <script>
 'use strict';
@@ -123,5 +123,7 @@ async function listDevices(){
  }catch(e){devicesEl.textContent='端末一覧を読み込めません：'+e.message;}
 }
 document.getElementById('refreshDevices').addEventListener('click',listDevices);
-state();
+say('🔒 Face ID・パスキー登録とログインは共通認証への仕様変更中のため停止しています。登録済み情報は保持しています。','error');
+registerBtn.disabled=true;loginBtn.disabled=true;
+document.getElementById('inviteHint').textContent='新規登録は現在できません。既存のギャラリー管理はGitHub管理者専用画面をご利用ください。';
 </script></body></html>
