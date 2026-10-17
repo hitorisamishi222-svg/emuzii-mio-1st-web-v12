@@ -316,9 +316,17 @@
     {
       "src": "api-gallery-thumbnail.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-gallery-session.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/session",
+      "dest": "/api-gallery-session.js"
+    },
     {
       "src": "/api/gallery/thumbnail",
       "dest": "/api-gallery-thumbnail.js"
