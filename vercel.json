@@ -337,7 +337,11 @@
     },
     {
       "src": "/gallery.html",
-      "dest": "/gallery.html"
+      "dest": "/gallery.html",
+      "headers": {
+        "Cache-Control": "no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff"
+      }
     },
     {
       "src": "/gacha.html",
@@ -346,6 +350,14 @@
     {
       "src": "/",
       "dest": "/index.html"
+    },
+    {
+      "src": "/gallery-items.js",
+      "dest": "/gallery-items.js",
+      "headers": {
+        "Cache-Control": "no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff"
+      }
     },
     {
       "src": "/(.*)",
