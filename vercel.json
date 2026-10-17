@@ -328,9 +328,21 @@
     {
       "src": "assets/gallery-emuzii-mio-cover.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "announcements-manage.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-announcements.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/announcements",
+      "dest": "/api-announcements.js"
+    },
     {
       "src": "/api/gallery/session",
       "dest": "/api-gallery-session.js"
