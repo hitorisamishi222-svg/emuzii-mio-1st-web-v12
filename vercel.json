@@ -280,9 +280,17 @@
     {
       "src": "api-gallery-publish.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-gallery-capabilities.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/capabilities",
+      "dest": "/api-gallery-capabilities.js"
+    },
     {
       "src": "/api/gallery/publish",
       "dest": "/api-gallery-publish.js"
