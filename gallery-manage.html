@@ -128,22 +128,21 @@ async function act(action){
  for(const key of ['save','hide','restore','delete'])$(key).disabled=true;
  notice('変更内容を保存しています…');
  try{
-  let currentRevision=revision;
+  let next;
   if(selectedImage){
-   notice('選択した画像を変換・保存しています…');
+   notice('画像と作品情報をまとめて保存しています…');
    const webp=await thumbnailData(selectedImage,$('imageFit').value);
-   const uploaded=await fetch('/api/gallery/thumbnail',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision:currentRevision,webp})});
-   const result=await uploaded.json().catch(()=>({code:'IMAGE_SERVER_ERROR'}));
-   if(!uploaded.ok||!result.ok)throw Error(result.code||'IMAGE_UPLOAD_FAILED');
-   currentRevision=result.revision;
-   item.thumbnail=result.thumbnail;
-   items=items.map(x=>x.id===id?{...x,thumbnail:result.thumbnail,revision:currentRevision}:x);
+   const response=await fetch('/api/gallery/thumbnail',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,webp,item,saveFields:true})});
+   const result=await response.json().catch(()=>({code:'IMAGE_SERVER_ERROR'}));
+   if(!response.ok||!result.ok)throw Error(result.code||'IMAGE_UPLOAD_FAILED');
+   next={...active,...result.item};
    $('uploadImage').value='';
+  }else{
+   const r=await fetch(ENDPOINT,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,action,item})});
+   const data=await r.json().catch(()=>({code:'SAVE_SERVER_ERROR'}));
+   if(!r.ok||!data.ok)throw Error(data.code||'SERVER_ERROR');
+   next=data.item;
   }
-  const r=await fetch(ENDPOINT,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision:currentRevision,action,item})});
-  const data=await r.json().catch(()=>({code:'SAVE_SERVER_ERROR'}));
-  if(!r.ok||!data.ok)throw Error(data.code||'SERVER_ERROR');
-  const next=data.item;
   items=items.map(x=>x.id===id?next:x);
   loadItem();
   notice('✅ '+(action==='hide'?'非公開':action==='restore'?'再公開':action==='delete'?'掲載停止':'変更保存')+'が完了しました。公開ギャラリーで確認できます。');
