@@ -93,7 +93,7 @@ const allowedImage=p=>typeof p==='string'&&/^\/assets\/[A-Za-z0-9_\/-]+\.(?:png|
 const allowedLink=p=>{if(typeof p!=='string')return'';if(/^\/[A-Za-z0-9_./-]+$/.test(p)&&!p.includes('..'))return p;try{const u=new URL(p);return u.protocol==='https:'?u.href:''}catch{return''}};
 const icons={'応援動画':'🎬','応援画像':'🖼️','音声・楽曲':'🎵','ファンアート':'🎨','SNS投稿':'💌','その他':'✧'};
 for(const item of approvedGalleryItems){
- if(!item||!allowedLink(item.url)||!String(item.title||'').trim())continue;
+ if(!item||item.hidden===true||!allowedLink(item.url)||!String(item.title||'').trim())continue;
  const card=document.createElement('article');card.className='work-card';
  const cover=document.createElement('div');cover.className='work-cover';
  const image=allowedImage(item.thumbnail);
