@@ -272,6 +272,10 @@
     {
       "src": "next-premium.css",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gallery-admin-preview.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
