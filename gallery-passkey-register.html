@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>えむじー専用｜ギャラリー管理者パスキー登録</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#06162e,#0a3361 50%,#071b37);color:#f1f7ff;font:16px/1.7 system-ui,-apple-system,sans-serif;min-height:100dvh}
+main{max-width:580px;margin:auto;padding:28px 18px 64px}.eyebrow{color:#f7d998;font-size:13px;font-weight:700;letter-spacing:.09em}h1{line-height:1.3;font-size:26px;margin:10px 0 20px}.panel{background:#092647eb;border:1px solid #c9ac6d8c;border-radius:20px;padding:20px 17px;margin:16px 0;box-shadow:0 12px 30px #0003}
+.small{font-size:13px;color:#c2d6eb}.muted{color:#bcd6f0}button{border:1px solid #f4d795;border-radius:13px;width:100%;padding:15px 12px;font:700 17px system-ui;background:linear-gradient(90deg,#d9ac54,#f8df9b);color:#15213b;margin:10px 0;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#153b63;border-color:#8ebfe3;color:#fff}.error{color:#ffd8b2}.success{color:#b8ffd9}code{background:#102c49;padding:2px 5px}ol{padding-left:22px}a{color:#ace1ff}#status{overflow-wrap:anywhere}
+</style></head><body>
+<main>
+<div class="eyebrow">翠央1周年イベントシステム｜管理者専用</div>
+<h1>🔑 パスキー登録・管理者認証</h1>
+<div class="panel">
+<p><strong>えむじー本人の初回登録</strong></p>
+<p class="muted">招待された本人のみ、Face IDなどでパスキーを作成できます。招待リンクがない場合、誰でも管理者登録できる仕組みにはなっていません。</p>
+<button id="register" disabled>Face IDなどで初回登録</button>
+<p id="inviteHint" class="small"></p>
+</div>
+<div class="panel">
+<p><strong>登録済み管理者のログイン</strong></p>
+<button id="login" class="secondary" disabled>パスキーでログイン</button>
+<p class="small">新しい端末では、パスキー認証後も、既に承認された端末からの追加承認が必要です。</p>
+</div>
+<div id="ownerPanel" class="panel" hidden>
+<p><strong>端末の承認待ち一覧</strong></p>
+<div id="devices" class="small"></div>
+<button class="secondary" id="refreshDevices">承認待ちを更新</button>
+</div>
+<div class="panel"><p id="status" role="status" aria-live="polite">認証機能の準備状況を確認しています…</p></div>
+<p class="small">管理者登録は参加者のMIO-IDとは別の仕組みです。パスキーの秘密鍵はサーバーに保存しません。登録が完了するまではギャラリーへの直接投稿は停止中です。</p>
+<p><a href="/gallery-admin-preview.html">← ギャラリー作品プレビューに戻る</a></p>
+</main>
+<script>
+'use strict';
+const API='/api/gallery/passkey',statusEl=document.getElementById('status'),registerBtn=document.getElementById('register'),loginBtn=document.getElementById('login');
+const ownerPanel=document.getElementById('ownerPanel'),devicesEl=document.getElementById('devices');
+const hash=new URLSearchParams(location.hash.slice(1));
+let invite=hash.get('invite')||'';
+history.replaceState(null,'',location.pathname+location.search);
+const say=(message,kind='')=>{statusEl.textContent=message;statusEl.className=kind};
+const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
+const encode=v=>btoa(String.fromCharCode(...new Uint8Array(v))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+function creationOptions(json){
+ if(PublicKeyCredential.parseCreationOptionsFromJSON)return PublicKeyCredential.parseCreationOptionsFromJSON(json);
+ return {...json,challenge:decode(json.challenge),user:{...json.user,id:decode(json.user.id)},excludeCredentials:(json.excludeCredentials||[]).map(v=>({...v,id:decode(v.id)}))};
+}
+function requestOptions(json){
+ if(PublicKeyCredential.parseRequestOptionsFromJSON)return PublicKeyCredential.parseRequestOptionsFromJSON(json);
+ return {...json,challenge:decode(json.challenge),allowCredentials:(json.allowCredentials||[]).map(v=>({...v,id:decode(v.id)}))};
+}
+function registrationJSON(cred){
+ if(typeof cred.toJSON==='function')return cred.toJSON();
+ return {id:cred.id,rawId:encode(cred.rawId),type:cred.type,response:{attestationObject:encode(cred.response.attestationObject),clientDataJSON:encode(cred.response.clientDataJSON),transports:cred.response.getTransports?.()||[]},clientExtensionResults:cred.getClientExtensionResults()};
+}
+function authenticationJSON(cred){
+ if(typeof cred.toJSON==='function')return cred.toJSON();
+ return {id:cred.id,rawId:encode(cred.rawId),type:cred.type,response:{authenticatorData:encode(cred.response.authenticatorData),clientDataJSON:encode(cred.response.clientDataJSON),signature:encode(cred.response.signature),userHandle:cred.response.userHandle?encode(cred.response.userHandle):null},clientExtensionResults:cred.getClientExtensionResults()};
+}
+async function post(action,other={}){
+ const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify({action,...other})});
+ const d=await r.json().catch(()=>({code:'NETWORK_ERROR'}));
+ if(!r.ok||!d.ok)throw Error(d.code||'SERVER_ERROR');
+ return d;
+}
+async function state(){
+ try{
+ const r=await fetch(API,{credentials:'same-origin',cache:'no-store'}),d=await r.json();
+ if(!r.ok||!d.ok)throw Error(d.code||'NOT_READY');
+ if(d.authenticated){say('✅ この端末は管理者として認証されています。','success');ownerPanel.hidden=false;await listDevices();}
+ else say(invite?'招待を確認しました。Face IDなどで初回登録を開始できます。':'登録済み管理者は、パスキーでログインしてください。');
+ const capable=!!window.PublicKeyCredential&&window.isSecureContext;
+ registerBtn.disabled=!capable||invite.length<40;
+ loginBtn.disabled=!capable;
+ document.getElementById('inviteHint').textContent=invite?'初回登録用の招待を受け取っています。':'初回登録にはえむじー本人だけに渡す専用リンクが必要です。';
+ if(!capable)say('⚠️ このブラウザではパスキーを利用できません。Safariなどの対応ブラウザとHTTPSを確認してください。','error');
+ }catch(e){
+ say('🔒 管理者認証は準備中です。現在は登録を受け付けていません。（'+e.message+'）','error');
+ registerBtn.disabled=true;loginBtn.disabled=true;
+ }
+}
+registerBtn.addEventListener('click',async()=>{
+ registerBtn.disabled=true;
+ try{
+  say('登録用のチャレンジを準備しています…');
+  const {options}=await post('registerOptions',{invite});
+  const credential=await navigator.credentials.create({publicKey:creationOptions(options)});
+  if(!credential)throw Error('登録がキャンセルされました');
+  const result=await post('registerVerify',{invite,credential:registrationJSON(credential)});
+  if(result.registered){invite='';say('✅ パスキー登録完了。最初の端末も承認されました！','success');ownerPanel.hidden=false;await listDevices();}
+ }catch(e){say('登録を完了できませんでした：'+e.message,'error');}
+ finally{registerBtn.disabled=!invite;}
+});
+loginBtn.addEventListener('click',async()=>{
+ loginBtn.disabled=true;
+ try{
+  say('パスキー認証を開始します…');
+  const {options}=await post('loginOptions');
+  const credential=await navigator.credentials.get({publicKey:requestOptions(options)});
+  if(!credential)throw Error('認証がキャンセルされました');
+  const result=await post('loginVerify',{credential:authenticationJSON(credential)});
+  if(result.deviceApproved){say('✅ この端末でログインできました。','success');ownerPanel.hidden=false;await listDevices();}
+  else say('🔒 パスキー認証は成功しましたが、この端末は承認待ちです。以前承認した端末から許可してください。');
+ }catch(e){say('ログインできませんでした：'+e.message,'error');}
+ finally{loginBtn.disabled=false;}
+});
+async function listDevices(){
+ try{
+ const {devices,authorizedDevice}=await post('devices');
+ devicesEl.replaceChildren();
+ if(!devices.length){devicesEl.textContent='端末の登録はありません。';return;}
+ for(const d of devices){
+  const p=document.createElement('p');
+  const label=document.createElement('span');
+  label.textContent='端末 '+d.id.slice(0,8)+' ／ '+(d.status==='approved'?'承認済み':d.status==='pending'?'承認待ち':'無効')+(d.id===authorizedDevice?'（この端末）':'');
+  p.append(label);
+  if(d.status==='pending'){
+   const btn=document.createElement('button');btn.textContent='この端末を承認';
+   btn.addEventListener('click',async()=>{if(!confirm('新しい端末を管理者端末として承認しますか？'))return;btn.disabled=true;try{await post('approveDevice',{deviceId:d.id});say('✅ 端末を承認しました。新しい端末で再度ログインしてください。','success');await listDevices();}catch(e){say('承認に失敗：'+e.message,'error');btn.disabled=false}});
+   p.append(btn);
+  }
+  devicesEl.append(p);
+ }
+ }catch(e){devicesEl.textContent='端末一覧を読み込めません：'+e.message;}
+}
+document.getElementById('refreshDevices').addEventListener('click',listDevices);
+state();
+</script></body></html>
