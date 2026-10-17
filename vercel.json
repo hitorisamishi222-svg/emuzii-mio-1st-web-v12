@@ -304,6 +304,10 @@
     {
       "src": "api-gallery-moderate.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "gallery-manage.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
