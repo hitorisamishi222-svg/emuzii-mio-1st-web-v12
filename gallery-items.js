@@ -7,6 +7,8 @@
  */
 export const approvedGalleryItems = [
   {
+    id: 'mio-awakening-video',
+    hidden: false,
     category: '動画',
     title: '翠の覚醒 -MIO- 魔王チャレンジ応援ソング',
     creator: 'えむじー🐱',
@@ -15,6 +17,8 @@ export const approvedGalleryItems = [
     thumbnail: '/assets/gallery-emuzii-mio-cover.svg'
   },
   {
+    id: 'mio-awakening-song',
+    hidden: false,
     category: '音声・楽曲',
     title: '翠の覚醒 -MIO-',
     creator: '翠央1周年 記念曲',
