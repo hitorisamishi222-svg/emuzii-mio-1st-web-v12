@@ -292,6 +292,10 @@
     {
       "src": "gallery-passkey-register.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "gallery-moderation.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
