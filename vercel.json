@@ -320,6 +320,10 @@
     {
       "src": "api-gallery-session.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "assets/gallery-emuzii-mio-cover.svg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
