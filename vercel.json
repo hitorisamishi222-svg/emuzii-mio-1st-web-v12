@@ -276,9 +276,17 @@
     {
       "src": "gallery-admin-preview.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-gallery-publish.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/publish",
+      "dest": "/api-gallery-publish.js"
+    },
     {
       "src": "/api/browser-pair/claim",
       "dest": "/api-browser-pair-claim.js"
