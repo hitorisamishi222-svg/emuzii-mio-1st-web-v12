@@ -139,6 +139,7 @@ async function act(action){
    const result=await response.json().catch(()=>({code:'IMAGE_SERVER_ERROR'}));
    if(!response.ok||!result.ok)throw Error('HTTP '+response.status+' / '+(result.code||'IMAGE_UPLOAD_FAILED'));
    next={...active,...result.item};
+   notice('④ 公開ギャラリーへの反映を確認しています…');
   }else{
    const r=await fetch(ENDPOINT,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,action,item})});
    const data=await r.json().catch(()=>({code:'SAVE_SERVER_ERROR'}));
@@ -148,7 +149,7 @@ async function act(action){
   items=items.map(x=>x.id===id?next:x);
   loadItem();
   if(action==='update' && selectedImage){
-   notice('画像を保存しました。公開サイトで反映を確認しています…');
+   notice('④ 公開サイトで新しい画像を確認しています…');
    const check=await fetch('/api/gallery/items?verify='+Date.now(),{cache:'no-store',credentials:'same-origin'});
    const publicData=await check.json().catch(()=>({}));
    const published=publicData.items?.find(x=>x.id===id);
@@ -171,22 +172,42 @@ async function act(action){
 $('itemId').addEventListener('change',loadItem);
 $('thumbnail').addEventListener('input',imagePreview);
 async function thumbnailData(file,fit){
- if(!file||file.size>10*1024*1024||!(file.type.startsWith('image/')&&!['image/svg+xml'].includes(file.type)||/\.(?:heic|heif|jpe?g|png|webp|gif)$/i.test(file.name)))throw Error('10MB以内の写真を選んでください（HEICも変換を試します）');
- const temp=URL.createObjectURL(file);
- try{
-  const img=await new Promise((resolve,reject)=>{const picture=new Image();picture.onload=()=>resolve(picture);picture.onerror=()=>reject(Error('この画像形式をブラウザで開けません。iPhoneなら写真をスクリーンショットで撮り直して選んでください'));picture.src=temp;});
-  const canvas=document.createElement('canvas');canvas.width=480;canvas.height=600;
-  const ctx=canvas.getContext('2d');if(!ctx)throw Error('変換処理を使用できません');
-  ctx.fillStyle='#082341';ctx.fillRect(0,0,480,600);
-  const w=img.naturalWidth,h=img.naturalHeight;
-  if(!w||!h)throw Error('画像サイズを読み取れません');
-  const ratio=fit==='cover'?Math.max(480/w,600/h):Math.min(480/w,600/h);
-  const dw=w*ratio,dh=h*ratio;
-  ctx.drawImage(img,(480-dw)/2,(600-dh)/2,dw,dh);
-  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('WebPに変換できません')),'image/webp',0.8));
-  if(blob.size>750000)throw Error('変換後の画像サイズが大きすぎます');
-  return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(Error('画像を読み取れません'));reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.readAsDataURL(blob)});
- }finally{URL.revokeObjectURL(temp)}
+ if(!file||file.size>10*1024*1024||!(file.type.startsWith('image/')&&file.type!=='image/svg+xml'||/\.(?:heic|heif|jpe?g|png|webp|gif)$/i.test(file.name)))throw Error('10MB以内の写真を選んでください');
+ notice('① 写真を読み込んでいます…');
+ const existing=$('preview').querySelector('img[src^="blob:"]');
+ const loadImage=async()=>{
+  if(existing&&existing.complete&&existing.naturalWidth>0)return existing;
+  const source=pendingThumbURL||URL.createObjectURL(file);
+  const own=!pendingThumbURL;
+  try{
+   return await Promise.race([
+    new Promise((resolve,reject)=>{
+     const img=new Image();
+     img.onload=()=>resolve(img);
+     img.onerror=()=>reject(Error('画像を開けません。iPhoneでは画像のスクリーンショットを選んで試してください'));
+     img.src=source;
+    }),
+    new Promise((_,reject)=>setTimeout(()=>reject(Error('画像の読み込みが15秒で完了しませんでした')),15000))
+   ]);
+  }finally{if(own)URL.revokeObjectURL(source)}
+ };
+ const img=await loadImage();
+ const canvas=document.createElement('canvas');canvas.width=480;canvas.height=600;
+ const ctx=canvas.getContext('2d');if(!ctx)throw Error('画像の変換処理を使用できません');
+ ctx.fillStyle='#082341';ctx.fillRect(0,0,480,600);
+ const w=img.naturalWidth,h=img.naturalHeight;
+ if(!w||!h)throw Error('画像サイズを読み取れません');
+ const ratio=fit==='cover'?Math.max(480/w,600/h):Math.min(480/w,600/h);
+ const dw=w*ratio,dh=h*ratio;
+ ctx.drawImage(img,(480-dw)/2,(600-dh)/2,dw,dh);
+ // On some iPhone in-app browsers, canvas.toBlob/FileReader callbacks can remain pending.
+ // Encode directly to WebP base64 so the save button cannot wait forever for either callback.
+ notice('② WebP形式に変換しています…');
+ const encoded=canvas.toDataURL('image/webp',0.76);
+ if(!encoded.startsWith('data:image/webp;base64,'))throw Error('WebP形式に変換できないブラウザです');
+ const base64=encoded.slice('data:image/webp;base64,'.length);
+ if(base64.length>1000000)throw Error('画像が大きすぎます。別の画像で試してください');
+ return base64;
 }
 let pendingThumbURL=null;
 $('uploadImage').addEventListener('change',()=>{
