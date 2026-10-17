@@ -300,9 +300,17 @@
     {
       "src": "api-gallery-items.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-gallery-moderate.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/gallery/moderate",
+      "dest": "/api-gallery-moderate.js"
+    },
     {
       "src": "/api/gallery/items",
       "dest": "/api-gallery-items.js"
