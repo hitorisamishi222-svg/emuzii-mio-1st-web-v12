@@ -10,7 +10,7 @@
 :root{color-scheme:dark;--ink:#f5fbff;--muted:#d5e8fc;--line:#92cfff8c;--gold:#ffdda1}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif;color:var(--ink);min-height:100svh;background:radial-gradient(ellipse at 10% 0%,#2352a0b9,transparent 48%),radial-gradient(ellipse at 90% 32%,#12488a,transparent 55%),linear-gradient(160deg,#03112d,#061c43 47%,#06102a)}
 body:before{content:"";pointer-events:none;position:fixed;inset:0;z-index:-1;opacity:.8;background-image:radial-gradient(2px 2px at 14% 11%,#fff 99%,transparent),radial-gradient(2px 2px at 57% 18%,#a1e1ff 99%,transparent),radial-gradient(3px 3px at 84% 29%,#fff 99%,transparent),radial-gradient(1px 1px at 28% 57%,#bde9ff 99%,transparent),radial-gradient(2px 2px at 67% 68%,#fff 99%,transparent),radial-gradient(2px 2px at 91% 83%,#9edfff 99%,transparent);background-size:340px 410px}
-a{color:inherit}.wrap{width:min(100%,940px);margin:auto;padding:20px 16px 112px}
+a{color:inherit}.gallery-admin-only[hidden]{display:none!important}.wrap{width:min(100%,940px);margin:auto;padding:20px 16px 112px}
 .site-nav{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.site-nav a{display:inline-flex;gap:8px;text-decoration:none;align-items:center;min-height:44px;border:1px solid #94cbff6b;border-radius:14px;background:#102c55c2;padding:10px 14px;font-size:14px;font-weight:700}.mark{color:var(--gold);font:700 11px Georgia,serif;letter-spacing:.18em}
 .hero{text-align:center;margin:26px 0 24px;padding:40px 20px;border-radius:28px;background:linear-gradient(140deg,#1c50979c,#081c49e8 66%);border:1px solid #8dd5ff8f;box-shadow:0 14px 48px #0008;position:relative;overflow:hidden}
 .hero:after{content:"✧   ✦  ✧";white-space:pre;position:absolute;right:18px;top:14px;color:#f7e6b866;letter-spacing:1.4em;pointer-events:none}
@@ -71,7 +71,7 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 <body>
 <div class="mio-art-banner" role="img" aria-label="翠央のお姫様背景イラスト"></div>
 <main class="wrap">
-<nav class="site-nav" aria-label="ページ移動"><a href="/">← 翠央1周年 トップ</a><span class="mark">MIO ✧ 1ST ANNIVERSARY</span></nav>
+<nav class="site-nav" aria-label="ページ移動"><a href="/">← 翠央1周年 トップ</a><a class="gallery-admin-only" href="/gallery-manage.html" hidden>🛡️ 掲載管理へ</a><span class="mark">MIO ✧ 1ST ANNIVERSARY</span></nav>
 <header class="hero">
 <div class="eyebrow">✦ MIO FAMILY'S WORKS ✦</div>
 <h1>翠央っ子ギャラリー</h1>
@@ -84,7 +84,7 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 </section>
 <section id="works" aria-labelledby="worksTitle"><div class="section-head"><h2 id="worksTitle">✦ みんなの作品</h2><small>運営確認済み</small></div><div class="gallery-grid" id="galleryGrid" aria-live="polite"></div><p class="empty" id="galleryEmpty" hidden>掲載作品は準備中です。公開を楽しみにしていてね ✧</p></section>
 <section class="panel" id="apply" aria-labelledby="applyTitle"><h2 id="applyTitle">💌 翠央っ子ギャラリー作品受付</h2><p><strong>作品の応募受付は後日開始します。</strong></p><p class="note">動画・画像・音声・作品リンクの応募に対応する専用フォームを準備中です。受付開始までお待ちください。</p><button class="btn" type="button" disabled aria-disabled="true" style="opacity:.65;cursor:not-allowed">🔒 応募受付は準備中（後日開始）</button></section>
-<footer>翠央1周年 ✦ 翠央っ子ギャラリー</footer>
+<footer><a class="gallery-admin-only" href="/gallery-manage.html" hidden>🛡️ 掲載管理に戻る ↑</a><p>翠央1周年 ✦ 翠央っ子ギャラリー</p></footer>
 </main>
 <script type="module">
 // The server-side catalog is authoritative for moderation and emergency takedowns.
@@ -127,5 +127,17 @@ document.getElementById('galleryEmpty').hidden=grid.childElementCount>0;
  }
 }
 showGallery();
+// Show navigation to protected gallery editing only after server-side admin and device authorization.
+async function showAdminNavigation(){
+ try{
+  const response=await fetch("/api/gallery/moderate",{credentials:"same-origin",cache:"no-store"});
+  if(!response.ok)return;
+  const result=await response.json();
+  if(result.ok===true&&result.authorized===true&&result.authorizedDevice===true){
+   document.querySelectorAll(".gallery-admin-only").forEach(link=>{link.hidden=false});
+  }
+ }catch{ /* Fail closed if session verification is unavailable. */ }
+}
+showAdminNavigation();
 </script>
 </body></html>
