@@ -53,7 +53,7 @@ a{color:#b5e3ff}.eyebrow{color:#ffdda0;font-size:12px;font-weight:700;letter-spa
 <input id="uploadImage" type="file" accept="image/*">
 <label for="imageFit">画像の収め方</label>
 <select id="imageFit"><option value="contain">画像全体を表示（余白あり）</option><option value="cover">枠いっぱいに拡大（端を切り抜く）</option></select>
-<button id="uploadThumb" type="button">画像だけ先にアップロードする</button>
+
 <p class="small">画像は480×600のWebPに変換します。画像を選んだら下の「画像も含めて変更を保存・反映」を押すだけで保存できます。</p>
 <div class="buttons">
 <button class="save" id="save" type="button">画像も含めて変更を保存・反映</button>
@@ -188,26 +188,6 @@ $('uploadImage').addEventListener('change',()=>{
  holder.append(img);
 });
 $('imageFit').addEventListener('change',()=>{const img=$('preview').querySelector('img');if(img)img.style.objectFit=$('imageFit').value});
-$('uploadThumb').addEventListener('click',async()=>{
- if(busy||!active)return;
- const file=$('uploadImage').files?.[0];
- if(!file){notice('先に画像を選んでください。');return}
- if(!confirm('サムネイル画像を公開サイトで差し替えますか？（未保存の文字編集は反映されません）'))return;
- const selected=active.id,revision=active.revision;
- busy=true;$('uploadThumb').disabled=true;
- notice('画像をWebPに変換してアップロードしています…');
- try{
-  const webp=await thumbnailData(file,$('imageFit').value);
-  const r=await fetch('/api/gallery/thumbnail',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:selected,revision,webp})});
-  const result=await r.json();
-  if(!r.ok||!result.ok)throw Error(result.code||'UPLOAD_FAILED');
-  items=items.map(i=>i.id===selected?{...i,thumbnail:result.thumbnail,revision:result.revision}:i);
-  $('uploadImage').value='';
-  loadItem();
-  notice('✅ サムネイルを保存しました。公開ギャラリーへ反映されています。');
- }catch(e){notice('⚠️ 画像変更に失敗しました：'+e.message)}
- finally{busy=false;$('uploadThumb').disabled=false;if(active)loadItem();}
-});
 $('save').addEventListener('click',()=>act('update'));
 $('hide').addEventListener('click',()=>act('hide'));
 $('restore').addEventListener('click',()=>act('restore'));
