@@ -23,6 +23,16 @@ const authorized=async(c,req)=>{
 const ownedBlob=u=>{
  try{const p=new URL(u);return p.protocol==='https:'&&/^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(p.hostname)&&/^\/mio-gallery\/[0-9a-f-]+\.webp$/.test(p.pathname)}catch{return false}
 };
+const validItem=value=>{
+ if(!value||typeof value!=='object')return null;
+ const keys=['title','creator','description','category','url'];
+ if(keys.some(k=>typeof value[k]!=='string'))return null;
+ const item=Object.fromEntries(keys.map(k=>[k,value[k].trim()]));
+ if(!item.title||item.title.length>120||!item.creator||item.creator.length>80||item.description.length>1000||!['動画','イラスト','音声・楽曲','ファンアート','その他'].includes(item.category)||!item.url||item.url.length>2048)return null;
+ const url=item.url;
+ if(/^\\/[A-Za-z0-9_./-]+$/.test(url)&&!url.startsWith('//')&&!url.includes('..'))return item;
+ try{const parsed=new URL(url);return parsed.protocol==='https:'&&!parsed.username&&!parsed.password?item:null}catch{return null}
+};
 export default async function handler(req,res){
  res.setHeader('Cache-Control','private,no-store');
  res.setHeader('X-Content-Type-Options','nosniff');
@@ -33,6 +43,8 @@ export default async function handler(req,res){
  if(!input||typeof input!=='object'||typeof input.id!=='string'||!Number.isSafeInteger(input.revision)||input.revision<0)return fail(res,400,'INVALID_REQUEST');
  const base=approvedGalleryItems.find(x=>x.id===input.id);
  if(!base)return fail(res,404,'ITEM_NOT_FOUND');
+ const fields=input.saveFields===true?validItem(input.item):null;
+ if(input.saveFields===true&&!fields)return fail(res,400,'FIELDS_INVALID');
  const b64=input.webp;
  if(typeof b64!=='string'||b64.length>1100000||b64.length<40||!/^[A-Za-z0-9+/]+={0,2}$/.test(b64))return fail(res,400,'IMAGE_INVALID');
  const image=Buffer.from(b64,'base64');
@@ -50,6 +62,7 @@ export default async function handler(req,res){
    const rev=Number(row?.revision||0);
    if(rev!==input.revision){await c.query('ROLLBACK');return fail(res,409,'ITEM_CHANGED_RELOAD')}
    oldURL=row?.thumbnail_url??base.thumbnail??'';
+   const chosen=fields||{title:row?.title??base.title,creator:row?.creator??base.creator,description:row?.description??base.description??'',category:row?.category??base.category,url:row?.external_url??base.url};
    const path='mio-gallery/'+randomUUID()+'.webp';
    const stored=await put(path,image,{access:'public',contentType:'image/webp',addRandomSuffix:false,cacheControlMaxAge:60});
    if(!stored?.url||!ownedBlob(stored.url))throw Error('BLOB_SAVE_INVALID');
@@ -57,15 +70,17 @@ export default async function handler(req,res){
    const response=await c.query(`INSERT INTO gallery_live_overrides(item_id,title,creator,description,category,external_url,thumbnail_url,hidden,deleted,revision,updated_by,updated_at)
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,1,$10,now())
     ON CONFLICT(item_id) DO UPDATE SET
+    title=EXCLUDED.title,creator=EXCLUDED.creator,description=EXCLUDED.description,
+    category=EXCLUDED.category,external_url=EXCLUDED.external_url,
     thumbnail_url=EXCLUDED.thumbnail_url,revision=gallery_live_overrides.revision+1,updated_by=EXCLUDED.updated_by,updated_at=now()
     WHERE gallery_live_overrides.revision=$11
     RETURNING revision`,
-   [base.id,row?.title??base.title,row?.creator??base.creator,row?.description??base.description??'',row?.category??base.category,row?.external_url??base.url,createdURL,row?.hidden??Boolean(base.hidden),row?.deleted??false,admin.id,input.revision]);
+   [base.id,chosen.title,chosen.creator,chosen.description,chosen.category,chosen.url,createdURL,row?.hidden??Boolean(base.hidden),row?.deleted??false,admin.id,input.revision]);
    if(!response.rowCount){await c.query('ROLLBACK');return fail(res,409,'ITEM_CHANGED_RELOAD')}
    await c.query("INSERT INTO gallery_admin_audit(actor_id,action,target,result) VALUES($1,'gallery_thumbnail_uploaded',$2,'success')",[admin.id,base.id]);
    await c.query('COMMIT');
    updated=true;
-   res.status(200).json({ok:true,id:base.id,thumbnail:createdURL,revision:Number(response.rows[0].revision)});
+   res.status(200).json({ok:true,id:base.id,thumbnail:createdURL,revision:Number(response.rows[0].revision),item:{...chosen,id:base.id,thumbnail:createdURL,hidden:row?.hidden??Boolean(base.hidden),deleted:row?.deleted??false,revision:Number(response.rows[0].revision)}});
   }catch(e){await c.query('ROLLBACK').catch(()=>{});throw e}
  }catch(e){
   console.error('gallery thumbnail:',e?.code||e?.message||'error');
