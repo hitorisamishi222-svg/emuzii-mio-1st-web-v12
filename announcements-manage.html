@@ -12,7 +12,7 @@
 <div class="actions"><button id="save" type="button">内容を保存</button><button id="publish" type="button" disabled>公開する</button><button id="unpublish" type="button" disabled>非公開にする</button><button id="delete" class="danger" type="button" disabled>削除</button></div>
 <p class="warn">削除は取り消せません。必要な場合は先に非公開にしてください。</p></section>
 </div></main><script>
-'use strict';const $=id=>document.getElementById(id);let items=[],active=null,busy=false;const api='/api/announcements';
+'use strict';const $=id=>document.getElementById(id);let items=[],active=null,busy=false;const api='/api/gallery/announcements';
 function status(s){$('status').textContent=s}
 function preview(){$('previewTitle').textContent=$('title').value.trim()||'タイトル';$('previewBody').textContent=$('body').value.trim()||'本文を入力すると表示されます。'}
 function fill(id){active=items.find(x=>x.id===id)||null;$('title').value=active?.title||'';$('body').value=active?.body||'';$('editTitle').textContent=active?'お知らせを編集':'新規作成';$('publication').textContent=active?(active.published?'🟢 公開中':'🔒 非公開'):'新規のお知らせは非公開で保存されます。';$('publish').disabled=!active||active.published;$('unpublish').disabled=!active||!active.published;$('delete').disabled=!active;preview()}
