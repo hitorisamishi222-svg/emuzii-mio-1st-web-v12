@@ -89,6 +89,7 @@ async function fetchAdmin(){
   const r=await fetch(ENDPOINT,{credentials:'same-origin',cache:'no-store'});
   const data=await r.json();
   if(!r.ok||!data.ok)throw Error(data.code||'SERVER_ERROR');
+  if(!data.authorized)throw Error('ADMIN_LOGIN_REQUIRED');
   items=data.items;
   $('itemId').replaceChildren();
   for(const item of items){const opt=document.createElement('option');opt.value=item.id;opt.textContent=item.title+(item.hidden?'（非公開）':'');$('itemId').append(opt)}
