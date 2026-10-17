@@ -38,6 +38,8 @@ a:focus-visible{outline:3px solid #ffe2a2;outline-offset:3px}
 <h1>📢 お知らせ</h1>
 <p>翠央1周年イベントに関するご案内をまとめています。</p>
 </header>
+<section id="adminNavigation" hidden><a href="/announcements-manage.html" style="display:inline-block;min-height:44px;padding:10px 15px;border:1px solid #91caff;border-radius:12px;background:#123e70;text-decoration:none;font-weight:700">🛡️ お知らせを編集する</a></section>
+<section id="managedNotices" aria-label="管理者が公開したお知らせ" hidden></section>
 <section aria-label="運営からのご案内">
 <article>
 <time datetime="2026-10-17">2026.10.17</time>
@@ -61,5 +63,32 @@ a:focus-visible{outline:3px solid #ffe2a2;outline-offset:3px}
 </section>
 <footer>翠央1周年 ✦ INFORMATION</footer>
 </main>
+<script>
+(async()=>{
+ try{
+  const response=await fetch('/api/announcements',{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return;
+  const data=await response.json();
+  if(!data.ok||!Array.isArray(data.items))return;
+  const root=document.getElementById('managedNotices');
+  for(const item of data.items){
+   if(!item.published||typeof item.title!=='string'||typeof item.body!=='string')continue;
+   const article=document.createElement('article'),date=document.createElement('time'),heading=document.createElement('h2'),body=document.createElement('p');
+   date.dateTime=String(item.updatedAt||'').slice(0,10);date.textContent='運営からのお知らせ';
+   heading.textContent=item.title;body.textContent=item.body;body.style.whiteSpace='pre-wrap';body.style.overflowWrap='anywhere';
+   article.append(date,heading,body);root.append(article);
+  }
+  root.hidden=!root.childElementCount;
+ }catch{}
+})();
+(async()=>{
+ try{
+  const response=await fetch('/api/gallery/moderate',{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)return;
+  const data=await response.json();
+  if(data.ok===true&&data.authorized===true&&data.authorizedDevice===true)document.getElementById('adminNavigation').hidden=false;
+ }catch{}
+})();
+</script>
 </body>
 </html>
