@@ -50,7 +50,7 @@ a{color:#b5e3ff}.eyebrow{color:#ffdda0;font-size:12px;font-weight:700;letter-spa
 <p class="small">サムネイル欄を空白にして保存すると、公開ギャラリーから画像の表示を外せます。画像ファイルの完全削除とは異なります。</p>
 <div class="preview" id="preview"><span>画像なし</span></div>
 <label for="uploadImage">スマホから新しいサムネイルを選ぶ</label>
-<input id="uploadImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+<input id="uploadImage" type="file" accept="image/*">
 <label for="imageFit">画像の収め方</label>
 <select id="imageFit"><option value="contain">画像全体を表示（余白あり）</option><option value="cover">枠いっぱいに拡大（端を切り抜く）</option></select>
 <button id="uploadThumb" type="button">画像だけ先にアップロードする</button>
@@ -159,10 +159,10 @@ async function act(action){
 $('itemId').addEventListener('change',loadItem);
 $('thumbnail').addEventListener('input',imagePreview);
 async function thumbnailData(file,fit){
- if(!file||!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>10*1024*1024)throw Error('画像はPNG/JPEG/WebP/GIFの10MB以内を選んでください');
+ if(!file||file.size>10*1024*1024||!(file.type.startsWith('image/')&&!['image/svg+xml'].includes(file.type)||/\.(?:heic|heif|jpe?g|png|webp|gif)$/i.test(file.name)))throw Error('10MB以内の写真を選んでください（HEICも変換を試します）');
  const temp=URL.createObjectURL(file);
  try{
-  const img=await new Promise((resolve,reject)=>{const picture=new Image();picture.onload=()=>resolve(picture);picture.onerror=()=>reject(Error('画像を開けません'));picture.src=temp;});
+  const img=await new Promise((resolve,reject)=>{const picture=new Image();picture.onload=()=>resolve(picture);picture.onerror=()=>reject(Error('この画像形式をブラウザで開けません。iPhoneなら写真をスクリーンショットで撮り直して選んでください'));picture.src=temp;});
   const canvas=document.createElement('canvas');canvas.width=480;canvas.height=600;
   const ctx=canvas.getContext('2d');if(!ctx)throw Error('変換処理を使用できません');
   ctx.fillStyle='#082341';ctx.fillRect(0,0,480,600);
@@ -181,7 +181,7 @@ $('uploadImage').addEventListener('change',()=>{
  if(pendingThumbURL){URL.revokeObjectURL(pendingThumbURL);pendingThumbURL=null}
  const file=$('uploadImage').files?.[0];
  if(!file){imagePreview();return}
- if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>10*1024*1024){notice('画像は10MB以内のPNG/JPEG/WebP/GIFを選んでください。');imagePreview();return}
+ if(file.size>10*1024*1024||!(file.type.startsWith('image/')&&file.type!=='image/svg+xml'||/\.(?:heic|heif|jpe?g|png|webp|gif)$/i.test(file.name))){notice('10MB以内の写真を選んでください（HEICも変換を試します）。');imagePreview();return}
  pendingThumbURL=URL.createObjectURL(file);
  const holder=$('preview');holder.replaceChildren();
  const img=document.createElement('img');img.alt='アップロード前の画像';img.src=pendingThumbURL;
