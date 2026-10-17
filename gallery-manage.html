@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>ギャラリー掲載管理｜翠央1周年</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;background:linear-gradient(155deg,#06172f,#103a69 45%,#071b37);color:#f4f9ff;font:16px/1.65 -apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif}
+main{width:min(100%,710px);margin:auto;padding:24px 16px 90px}
+h1{font-size:25px;line-height:1.35;margin:4px 0 16px}
+h2{font-size:18px;margin:0 0 12px}
+.panel{border:1px solid #a9c8ee95;background:#102c4ee8;border-radius:18px;padding:17px;margin:15px 0;box-shadow:0 10px 28px #0003}
+label{font-weight:700;display:block;margin:15px 0 6px}
+input,select,textarea{width:100%;min-height:46px;border:1px solid #9ecef0;border-radius:11px;background:#061d3d;color:#fff;font:inherit;padding:11px 12px}
+textarea{min-height:95px;resize:vertical}
+button{border-radius:12px;padding:13px 14px;font:700 16px system-ui;min-height:48px;background:#176098;border:1px solid #8dcced;color:#fff;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #ffe2a2;outline-offset:2px}
+.buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 10px}
+.buttons button{margin:0}.save{background:#e4c57c!important;color:#0a2747!important;grid-column:span 2}
+.hide{background:#8e3342}.restore{background:#206d65}.delete{background:#572838}
+.small{font-size:13px;color:#c7dbee}
+#status{border:1px solid #9ccbec85;background:#0d2b51;border-radius:12px;padding:13px;margin:16px 0;overflow-wrap:anywhere}
+a{color:#b5e3ff}.eyebrow{color:#ffdda0;font-size:12px;font-weight:700;letter-spacing:.12em}
+.preview{aspect-ratio:4/3;max-width:320px;border-radius:14px;background:#082341;border:1px solid #8cb7d5;margin:14px auto;display:flex;justify-content:center;align-items:center;overflow:hidden;color:#c3dced;font-size:13px}
+.preview img{max-width:100%;max-height:100%;object-fit:contain}.warning{color:#ffdfa1}
+[hidden]{display:none!important}
+</style></head><body><main>
+<div class="eyebrow">MIO ✧ 1ST ANNIVERSARY</div>
+<h1>🛡️ ギャラリー掲載管理</h1>
+<p class="small">サイト内で掲載済み作品を修正・非公開・再公開できます。変更はデータベースに保存し、公開ギャラリーへ反映します。</p>
+<div id="status" role="status" aria-live="polite">管理者権限を確認しています…</div>
+<div class="panel" id="locked" hidden>
+<h2>管理者認証が必要です</h2>
+<p class="small">この端末の管理者セッションが確認できません。共通認証への切り替え作業中のため、現在は新しいパスキー登録・ログインを停止しています。第三者による変更を防ぐため、未認証では編集できません。</p>
+</div>
+<div id="editor" hidden>
+<div class="panel">
+<label for="itemId">掲載済み作品を選ぶ</label><select id="itemId"></select>
+<p class="small" id="meta"></p>
+<label for="title">作品タイトル</label><input id="title" maxlength="120" required>
+<label for="creator">投稿者名</label><input id="creator" maxlength="80" required>
+<label for="category">カテゴリ</label>
+<select id="category"><option>動画</option><option>イラスト</option><option>音声・楽曲</option><option>ファンアート</option><option>その他</option></select>
+<label for="description">作品の説明</label><textarea id="description" maxlength="1000"></textarea>
+<label for="url">作品のリンク（https またはサイト内）</label><input id="url" maxlength="2048" required>
+<label for="thumbnail">サムネイルURL・画像パス</label><input id="thumbnail" maxlength="1024" placeholder="/assets/画像名.webp">
+<p class="small">サムネイル欄を空白にして保存すると、公開ギャラリーから画像の表示を外せます。画像ファイルの完全削除とは異なります。</p>
+<div class="preview" id="preview"><span>画像なし</span></div>
+<div class="buttons">
+<button class="save" id="save" type="button">変更を保存して公開サイトへ反映</button>
+<button class="hide" id="hide" type="button">緊急・一時非公開</button>
+<button class="restore" id="restore" type="button">掲載を再開</button>
+<button class="delete" id="delete" type="button">掲載データを非表示にする</button>
+</div>
+<p class="small warning">「掲載データを非表示」は復元可能な掲載停止です。画像・音声の実ファイルや外部SNSの投稿自体は削除されません。作品の削除依頼があった場合は、元ファイルも別途確認してください。</p>
+</div>
+</div>
+<div class="panel"><a href="/gallery.html">公開ギャラリーを確認する ↗</a><p><a href="/gallery-admin-preview.html">新しい作品のプレビューに戻る →</a></p></div>
+</main>
+<script>
+'use strict';
+const ENDPOINT='/api/gallery/moderate';
+const $=id=>document.getElementById(id);
+let items=[],active=null,busy=false;
+const fields=['title','creator','category','description','url','thumbnail'];
+function notice(text){$('status').textContent=text;}
+function loadItem(){
+ const id=$('itemId').value;
+ active=items.find(item=>item.id===id)||null;
+ if(!active)return;
+ fields.forEach(key=>{$(key).value=active[key]||''});
+ const state=active.deleted?'掲載停止（削除扱い）':active.hidden?'非公開':'公開中';
+ $('meta').textContent='作品ID：'+active.id+' ／ 状態：'+state+' ／ 編集版：'+active.revision;
+ $('restore').disabled=!active.hidden&&!active.deleted;
+ $('hide').disabled=!!active.hidden||busy;
+ $('delete').disabled=!!active.deleted||busy;
+ imagePreview();
+}
+function imagePreview(){
+ const holder=$('preview');holder.replaceChildren();
+ const value=$('thumbnail').value.trim();
+ if(!value){holder.textContent='サムネイルなし（代替表示）';return}
+ let u;
+ try{u=new URL(value,location.origin);if(u.protocol!=='https:')throw Error()}catch{holder.textContent='画像URLを確認してください';return}
+ const img=document.createElement('img');img.alt='編集するサムネイルの確認用';img.src=u.href;img.onerror=()=>{holder.textContent='画像を読み込めません'};
+ holder.append(img);
+}
+async function fetchAdmin(){
+ notice('管理者権限と作品一覧を確認しています…');
+ try{
+  const r=await fetch(ENDPOINT,{credentials:'same-origin',cache:'no-store'});
+  const data=await r.json();
+  if(!r.ok||!data.ok)throw Error(data.code||'SERVER_ERROR');
+  items=data.items;
+  $('itemId').replaceChildren();
+  for(const item of items){const opt=document.createElement('option');opt.value=item.id;opt.textContent=item.title+(item.hidden?'（非公開）':'');$('itemId').append(opt)}
+  $('editor').hidden=false;$('locked').hidden=true;
+  notice('✅ 管理者権限を確認しました。掲載済み作品を編集できます。');
+  if(items.length)loadItem();
+ }catch(e){
+  $('editor').hidden=true;$('locked').hidden=false;
+  notice('🔒 編集不可：'+(e.message==='ADMIN_LOGIN_REQUIRED'?'管理者のログインが必要です。':'管理システムを利用できません。')+'（'+e.message+'）');
+ }
+}
+async function act(action){
+ if(busy||!active)return;
+ const id=active.id,revision=active.revision;
+ const explanations={
+  hide:'この作品を公開ギャラリーから直ちに非公開にしますか？',
+  restore:'この作品を再公開してもよいですか？権利確認が済んでから実行してください。',
+  delete:'この作品の掲載を停止しますか？実ファイルの削除ではありません。',
+  update:'入力内容を公開ギャラリーに反映しますか？'
+ };
+ if(!confirm(explanations[action]))return;
+ const item=Object.fromEntries(fields.map(key=>[key,$(key).value]));
+ busy=true;
+ for(const key of ['save','hide','restore','delete'])$(key).disabled=true;
+ notice('変更内容を保存しています…');
+ try{
+  const r=await fetch(ENDPOINT,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,revision,action,item})});
+  const data=await r.json();
+  if(!r.ok||!data.ok)throw Error(data.code||'SERVER_ERROR');
+  const next=data.item;
+  items=items.map(x=>x.id===id?next:x);
+  loadItem();
+  notice('✅ '+(action==='hide'?'非公開':action==='restore'?'再公開':action==='delete'?'掲載停止':'変更保存')+'が完了しました。公開ギャラリーで確認できます。');
+ }catch(e){
+  if(e.message==='ITEM_CHANGED_RELOAD')notice('⚠️ 別の変更が先に保存されました。更新してから再操作してください。');
+  else if(e.message==='ADMIN_LOGIN_REQUIRED'){notice('🔒 管理者ログインが期限切れです。');$('locked').hidden=false;$('editor').hidden=true;}
+  else notice('⚠️ 保存できませんでした：'+e.message);
+ }finally{
+  busy=false;
+  if(active)loadItem();
+ }
+}
+$('itemId').addEventListener('change',loadItem);
+$('thumbnail').addEventListener('input',imagePreview);
+$('save').addEventListener('click',()=>act('update'));
+$('hide').addEventListener('click',()=>act('hide'));
+$('restore').addEventListener('click',()=>act('restore'));
+$('delete').addEventListener('click',()=>act('delete'));
+fetchAdmin();
+</script></body></html>
