@@ -161,10 +161,16 @@ function ensureWebDerivedExisting_(ss){
 }
 
 function webNextRow_(web){
-  var next=webActualLastRow_(web)+1;
-  if(next<2)next=2;
-  if(next>500)return 0;
-  return next;
+  // Column A can be blank on an incomplete/legacy row even when other cells contain data.
+  // Skip those rows rather than overwriting existing sheet content.
+  var next=Math.max(2,webActualLastRow_(web)+1);
+  var limit=Math.min(500,web.getMaxRows());
+  for(var row=next;row<=limit;row++){
+    var values=web.getRange(row,1,1,LOGIN_ID_COL).getDisplayValues()[0];
+    var occupied=values.some(function(v){return String(v||'').trim()!==''});
+    if(!occupied)return row;
+  }
+  return 0;
 }
 
 function webIntegrityOk_(row){
