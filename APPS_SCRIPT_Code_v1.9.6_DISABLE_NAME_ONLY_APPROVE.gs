@@ -290,7 +290,7 @@ function doPost(e) {
       ensureWebDerivedRow_(web,newRow);
       SpreadsheetApp.flush();
 
-      if(!linked)linked=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,name);
+      // SECURITY: Newly registered unapproved browsers must never be linked by name alone.
       try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
       return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||'',loginId:issuedLoginId});
