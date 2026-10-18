@@ -160,7 +160,13 @@ export default async function handler(req,res){
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Vary','Cookie');
  const host=(req.headers.host||'').toLowerCase();
- if(host!=='emuzii-mio-1st-web-v12.vercel.app')return error(res,403,'ORIGIN_NOT_ALLOWED');
+ const productionHost='emuzii-mio-1st-web-v12.vercel.app';
+ const previewHost=(process.env.GALLERY_PASSKEY_PREVIEW_HOST||'').toLowerCase();
+ const previewAllowed=process.env.VERCEL_ENV==='preview'
+  && process.env.VERCEL_GIT_COMMIT_REF==='fix/announcements-passkey-auth-review'
+  && /^emuzii-mio-1st-web-v12-[a-z0-9-]+\\.vercel\\.app$/.test(previewHost)
+  && host===previewHost;
+ if(host!==productionHost&&!previewAllowed)return error(res,403,'ORIGIN_NOT_ALLOWED');
  if(!process.env.GALLERY_DATABASE_URL)return error(res,503,'ADMIN_AUTH_NOT_CONFIGURED');
  const action=req.method==='GET'?'status':req.body?.action;
  if(req.method!=='GET'&&req.method!=='POST'){res.setHeader('Allow','GET, POST');return error(res,405,'METHOD_NOT_ALLOWED')}
