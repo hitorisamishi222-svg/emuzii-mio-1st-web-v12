@@ -12,3 +12,10 @@ test('cross-origin passkey writes are rejected',()=>{
  assert.match(source,/req\.headers\.origin!=='https:\/\/'\+host/);
  assert.match(source,/REQUEST_ORIGIN_INVALID/);
 });
+
+test('registration UI always rechecks server readiness after an attempt',()=>{
+ const ui=readFileSync('gallery-passkey-register.html','utf8');
+ assert.match(ui,/finally\{await state\(\);\}/);
+ assert.match(ui,/registerBtn\.disabled=true;loginBtn\.disabled=true;/);
+ assert.match(ui,/if\(!r\.ok\|\|!d\.ok\)throw Error/);
+});
