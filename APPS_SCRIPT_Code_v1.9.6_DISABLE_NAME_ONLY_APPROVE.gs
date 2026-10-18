@@ -195,6 +195,8 @@ function autoLinkWebParticipant_(ss,web,participantId,tokenHash,name){
     if(values[i][0]===participantId&&equal_(values[i][1],tokenHash)){row=i+2;break}
   }
   if(!row)return '';
+  // Defense in depth: a pending browser must never be linked by name.
+  if(String(web.getRange(row,6).getValue()||'')!=='承認済み')return '';
 
   var matched=[];
   for(var attempt=0;attempt<6;attempt++){
