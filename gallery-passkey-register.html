@@ -124,6 +124,5 @@ async function listDevices(){
 }
 document.getElementById('refreshDevices').addEventListener('click',listDevices);
 state();
-registerBtn.disabled=true;loginBtn.disabled=true;
-document.getElementById('inviteHint').textContent='新規登録は現在できません。既存のギャラリー管理はGitHub管理者専用画面をご利用ください。';
+// Availability and device authorization are controlled by state() and the server.
 </script></body></html>
