@@ -154,10 +154,8 @@ const approveDevice=async(c,req,res,body)=>{
  }catch{await c.query('ROLLBACK');return error(res,500,'APPROVAL_FAILED')}
 };
 export default async function handler(req,res){
- // Production safety pause: shared MIO-ID linking and gallery moderation are not ready.
- res.setHeader('Cache-Control','no-store');
- return res.status(503).json({ok:false,code:'PASSKEY_TEMPORARILY_DISABLED',error:'共通認証への仕様変更中のためパスキー登録・ログインは停止しています'});
-
+ // Dedicated gallery-admin passkey authentication; participant MIO-ID is not accepted.
+ // Keep this change on the review branch until end-to-end device tests pass.
  res.setHeader('Cache-Control','private,no-store');
  res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Vary','Cookie');
