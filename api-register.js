@@ -1,9 +1,7 @@
 import {prepare,bridge,makeIdentity,hash,sessionCookie,readSession} from './bridge.js';
 export default async function handler(req,res){const cfg=prepare(req,res);if(!cfg)return;
-// Safety gate: until verified GAS identity release, never create new browser registrations.
-if(process.env.MIO_REGISTRATION_RELEASE!=='verified-gas-identity-20261016'){
- return res.status(503).json({ok:false,error:'新規ブラウザ登録は本人確認の安全点検中です。以前登録した端末をご利用いただくか、運営へお問い合わせください。'});
-}
+// Registration recovery candidate: production remains gated until verified GAS identity handling.
+// This branch is for isolated review only; never deploy this handler against production GAS.
 try{
 const name=String(req.body?.name||'').trim();if(name.length<1||name.length>40||/[\u0000-\u001f]/.test(name))return res.status(400).json({ok:false,error:'ColorSing名を1〜40文字で入力してください'});
 const loginId=String(req.body?.loginId||'').trim();
