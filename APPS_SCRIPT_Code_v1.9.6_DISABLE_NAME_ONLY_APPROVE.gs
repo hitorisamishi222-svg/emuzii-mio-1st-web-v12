@@ -250,7 +250,7 @@ function doPost(e) {
         if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
         var foundRow=findWebRowIndexById_(web,d.participantId);
         var existingLoginId=foundRow?ensureLoginIdForRow_(web,foundRow):'';
-        var healedId=found[0][7]||autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
+        var healedId=found[0][7]||((found[0][5]==='承認済み')?autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]):'');
         return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||'',loginId:loginIdDisplay_(existingLoginId)});
       }
 
