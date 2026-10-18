@@ -123,7 +123,7 @@ async function listDevices(){
  }catch(e){devicesEl.textContent='端末一覧を読み込めません：'+e.message;}
 }
 document.getElementById('refreshDevices').addEventListener('click',listDevices);
-say('🔒 Face ID・パスキー登録とログインは共通認証への仕様変更中のため停止しています。登録済み情報は保持しています。','error');
+state();
 registerBtn.disabled=true;loginBtn.disabled=true;
 document.getElementById('inviteHint').textContent='新規登録は現在できません。既存のギャラリー管理はGitHub管理者専用画面をご利用ください。';
 </script></body></html>
