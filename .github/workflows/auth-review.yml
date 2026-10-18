@@ -1,0 +1,19 @@
+name: Review branch authentication checks
+on:
+  push:
+    branches:
+      - fix/announcements-passkey-auth-review
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auth-static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated static regression tests
+        run: npm test
