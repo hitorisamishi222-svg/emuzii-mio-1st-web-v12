@@ -13,3 +13,6 @@ test('session cookie integrity and distinct IDs',()=>{const secret='test-only-se
 test('registration candidate still checks prior sessions',()=>{assert.match(register,/readSession\(req.headers.cookie,cfg.secret\)/);assert.match(register,/d.participantId!==id\|\|d.verified!==true/)});
 test('GAS reference guards existing identities',()=>{assert.match(gas,/duplicates.length \|\| peopleByName.length/);assert.match(gas,/pendingReview:true,needsIdentityProof:true,autoApproved:false/);assert.match(gas,/status:'承認待ち'/)});
 test('public pause notice must be updated only at release',()=>{assert.match(main,/新規登録・別端末登録は本人確認の安全点検のため一時休止中/)});
+
+test('duplicate registrations never disclose issued login ID without identity proof',()=>{assert.match(gas,/if\(duplicates.length \|\| peopleByName.length\)/);assert.match(gas,/loginId:'',/);assert.match(gas,/needsIdentityProof:true/)});
+test('GAS reference requires authenticated bridge secret and identity hash',()=>{assert.match(gas,/getProperty\('BRIDGE_SECRET'\)/);assert.match(gas,/invalid identity/);assert.match(gas,/equal_\(found\[0\]\[1\],d.tokenHash\)/)});
