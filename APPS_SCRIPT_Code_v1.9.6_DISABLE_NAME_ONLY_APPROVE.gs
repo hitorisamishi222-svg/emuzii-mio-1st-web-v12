@@ -103,6 +103,11 @@ function appendBrowserCandidate_(web,d,name,linked,auth,member,memo,matchState,c
   ]]);
   ensureWebDerivedRow_(web,row);
   SpreadsheetApp.flush();
+  // A successful setValues() does not prove that the browser candidate persisted.
+  // Confirm identity on the exact row before acknowledging a new browser.
+  var saved=web.getRange(row,1,1,2).getValues()[0];
+  if(String(saved[0]||'')!==String(d.participantId)||!equal_(saved[1],d.tokenHash))
+    return {ok:false,error:'登録の保存を確認できませんでした'};
   return {ok:true,row:row};
 }
 
