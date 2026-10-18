@@ -10,7 +10,7 @@ const source = fs.readFileSync(
   'utf8'
 );
 
-function fixture({mode = 'normal', duplicate = false, invalidSecret = false} = {}) {
+function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orphan = false} = {}) {
   let counter = 0;
   const sheets = new Map();
   function makeSheet(name) {
@@ -76,6 +76,8 @@ function fixture({mode = 'normal', duplicate = false, invalidSecret = false} = {
     ]);
     people.seed(2, ['MIO-0004', '既存参加者']);
   }
+  // A legacy orphan with an empty participant ID must never be overwritten.
+  if (orphan) web.seed(duplicate ? 3 : 2, ['', '', '', '', '', '承認待ち']);
   const dv = {
     requireValueInList() { return this; },
     setAllowInvalid() { return this; },
@@ -120,7 +122,7 @@ function fixture({mode = 'normal', duplicate = false, invalidSecret = false} = {
     loginId: ''
   };
   const result = JSON.parse(handler({postData: {contents: JSON.stringify(payload)}}).text);
-  return {result, payload, web, registrationRow: duplicate ? 3 : 2};
+  return {result, payload, web, registrationRow: (duplicate ? 3 : 2) + (orphan ? 1 : 0)};
 }
 
 test('new participant is persisted and verified', () => {
@@ -164,4 +166,21 @@ test('invalid bridge secret is rejected before any insert', () => {
   assert.equal(f.result.ok, false);
   assert.equal(f.result.error, 'unauthorized');
   assert.equal(f.web.value(f.registrationRow, 1), '');
+});
+
+test('nonempty orphan row without a participant ID is not overwritten', () => {
+  const f = fixture({orphan: true});
+  assert.equal(f.result.ok, true);
+  assert.equal(f.web.value(2, 6), '承認待ち');
+  assert.equal(f.web.value(2, 1), '');
+  assert.equal(f.web.value(3, 1), f.payload.participantId);
+});
+
+test('same-name candidate skips orphan and remains unlinked', () => {
+  const f = fixture({duplicate: true, orphan: true});
+  assert.equal(f.result.ok, true);
+  assert.equal(f.web.value(3, 6), '承認待ち');
+  assert.equal(f.web.value(3, 1), '');
+  assert.equal(f.web.value(4, 1), f.payload.participantId);
+  assert.equal(f.web.value(4, 8), '');
 });
