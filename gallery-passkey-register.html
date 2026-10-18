@@ -88,7 +88,7 @@ registerBtn.addEventListener('click',async()=>{
   const result=await post('registerVerify',{invite,credential:registrationJSON(credential)});
   if(result.registered){invite='';say('✅ パスキー登録完了。最初の端末も承認されました！','success');ownerPanel.hidden=false;await listDevices();}
  }catch(e){say('登録を完了できませんでした：'+e.message,'error');}
- finally{registerBtn.disabled=!invite;}
+ finally{await state();}
 });
 loginBtn.addEventListener('click',async()=>{
  loginBtn.disabled=true;
