@@ -16,3 +16,5 @@ test('public pause notice must be updated only at release',()=>{assert.match(mai
 
 test('duplicate registrations never disclose issued login ID without identity proof',()=>{assert.match(gas,/if\(duplicates.length \|\| peopleByName.length\)/);assert.match(gas,/loginId:'',/);assert.match(gas,/needsIdentityProof:true/)});
 test('GAS reference requires authenticated bridge secret and identity hash',()=>{assert.match(gas,/getProperty\('BRIDGE_SECRET'\)/);assert.match(gas,/invalid identity/);assert.match(gas,/equal_\(found\[0\]\[1\],d.tokenHash\)/)});
+
+test('legacy GAS browser auto-connection must not return',()=>{const old=fs.readFileSync(new URL('../APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs',import.meta.url),'utf8');assert.match(old,/ログインID一致・同一参加者として自動接続/);assert.doesNotMatch(gas,/ログインID一致・同一参加者として自動接続/);});
