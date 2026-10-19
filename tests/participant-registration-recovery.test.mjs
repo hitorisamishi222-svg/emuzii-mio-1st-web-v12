@@ -19,4 +19,4 @@ test('GAS reference requires authenticated bridge secret and identity hash',()=>
 
 test('legacy GAS browser auto-connection must not return',()=>{const old=fs.readFileSync(new URL('../APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs',import.meta.url),'utf8');assert.match(old,/ログインID一致・同一参加者として自動接続/);assert.doesNotMatch(gas,/ログインID一致・同一参加者として自動接続/);});
 
-test('identity repair requires approved status',()=>{assert.match(gas,/found\[0\]\[5\]==='承認済み'/);});
+test('existing identity links are never changed by name-only recovery during public requests',()=>{assert.doesNotMatch(gas,/=autoLinkWebParticipant_\(ss,web,d\.participantId/);assert.match(gas,/if\(!h\)return false/);});
