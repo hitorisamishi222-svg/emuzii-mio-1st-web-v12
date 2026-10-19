@@ -17,6 +17,9 @@ export async function auditEnrollmentIP(req,browserId,eventType){
  const ip=requestIP(req),key=process.env.MIO_IP_AUDIT_SECRET;
  if(!ip||!key||key.length<48)return false;
  const ipHash=createHmac('sha256',key).update('mio-ip-v202:'+ip).digest('hex');
- await db().query('INSERT INTO mio_ip_audit_v202(browser_id,ip_hash,ip_family,event_type) VALUES($1,$2,$3,$4)',[browserId,ipHash,isIP(ip),eventType]);
+ await db().query(`INSERT INTO mio_ip_audit_v202(browser_id,ip_hash,ip_family,event_type)
+ SELECT $1,$2,$3,$4 WHERE NOT EXISTS (
+ SELECT 1 FROM mio_ip_audit_v202 WHERE browser_id=$1 AND ip_hash=$2 AND event_type=$4
+ AND created_at > now() - interval '24 hours')`,[browserId,ipHash,isIP(ip),eventType]);
  return true;
 }
