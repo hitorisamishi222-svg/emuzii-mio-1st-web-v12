@@ -340,9 +340,21 @@
     {
       "src": "api-registration-v2.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "registration-v2-preview.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/registration-v2-preview.html",
+      "dest": "/registration-v2-preview.html",
+      "headers": {
+        "Cache-Control": "no-store, max-age=0",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
     {
       "src": "/api/registration-v2",
       "dest": "/api-registration-v2.js"
