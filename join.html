@@ -1,0 +1,31 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#071a35"><title>新規登録｜翠央1周年</title>
+<style>body{margin:0;background:linear-gradient(155deg,#06162e,#123d6a);color:#f1faff;font:16px/1.75 system-ui,sans-serif;min-height:100vh}main{max-width:600px;margin:auto;padding:24px 16px 70px}h1{font-size:clamp(24px,6vw,34px);line-height:1.4}h2{font-size:22px}p{margin:14px 0}section{border:1px solid #86cce48c;background:#0a2548d9;border-radius:22px;padding:22px;margin:18px 0;box-shadow:0 20px 30px #01081944}label{display:block;font-weight:bold;margin:18px 0 7px}input{box-sizing:border-box;width:100%;font:inherit;padding:14px;border-radius:10px;border:2px solid #a3d9fa;background:white;color:#09182b}button,.go{display:block;width:100%;box-sizing:border-box;padding:15px 12px;border-radius:12px;border:0;margin:15px 0;background:#f4d996;color:#112340;text-align:center;font:700 16px/1.4 system-ui,sans-serif;text-decoration:none}button:disabled{opacity:.5}.go.other{background:#17466f;color:white;border:1px solid #a2dbf5}.muted{color:#b9d9e6;font-size:14px}.result{background:#103a61;border-radius:12px;padding:16px;white-space:pre-line;min-height:46px}.error{color:#ffd1c3}a{color:#daf4ff}nav a{margin-right:15px}.hide{display:none}</style></head><body><main>
+<nav><a href="/">← 記念館トップ</a><a href="/gallery.html">ギャラリー</a></nav>
+<h1>✦ 翠央1周年 新規登録</h1><p>ColorSing名を登録すると、フォーム応募とギャラリーへすぐ進めます。</p>
+<section><h2>ColorSing名を登録</h2><p class="muted">歌推し名簿は不要です。名前の登録は、既存MIO-ID・皆勤・ガチャの認証には使用しません。既存参加者の方は以前の情報をそのままご利用ください。</p>
+<form id="join"><label for="nickname">ColorSing名</label><input id="nickname" maxlength="40" autocomplete="nickname" required placeholder="現在のColorSing名"><button id="submit" type="submit">この名前で登録する</button></form>
+<div id="result" role="status" aria-live="polite" class="result">登録状態を確認しています…</div></section>
+<section id="next"><h2>応募・ギャラリー</h2><p>ここは登録完了を待たず利用できます。応募フォームの受付状況は各フォーム内でご確認ください。</p>
+<a class="go" href="https://docs.google.com/forms/d/e/1FAIpQLSfXDpsgOdK9CHZpnVCqwNb_0T-YmcgUOGEhiMjNtF65ZFxEgA/viewform?usp=send_form" target="_blank" rel="noopener noreferrer">🎯 1周年予想フォームへ</a>
+<a class="go" href="https://docs.google.com/forms/d/e/1FAIpQLSd6twv0ADY9Uqc0pPWdjMixWThl_WHmWJ-oq8j2eYrIVpWZeQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🎨 ファンアート応募へ</a>
+<a class="go other" href="/gallery.html">✨ 翠央っ子ギャラリーを見る</a></section>
+<p class="muted">別端末での既存データ引継ぎ・ガチャ・皆勤は、管理者による本人確認が必要です。名前だけで以前の参加記録が移動することはありません。</p></main>
+<script>
+const KEY='mioLightEnrollmentRetryV1';
+const form=document.getElementById('join'),result=document.getElementById('result'),button=document.getElementById('submit'),nickname=document.getElementById('nickname');
+const set=(s,bad=false)=>{result.textContent=s;result.classList.toggle('error',bad)};
+async function api(payload){const r=await fetch('/api/enroll-lite',{method:payload?'POST':'GET',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,credentials:'same-origin',cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'接続先を確認できませんでした');return d}
+const done=d=>{form.classList.add('hide');set('登録完了！ '+d.name+' さん\n受付ID：'+d.participantId+'\n下のフォーム・ギャラリーをすぐ利用できます。')};
+(async()=>{try{const d=await api();if(d.registered)done(d);else set('名前を入力して登録してください。フォーム・ギャラリーは登録なしでも利用できます。')}catch(e){set('登録情報の確認ができません。フォーム・ギャラリーは下からご利用ください。',true)}})();
+form.addEventListener('submit',async e=>{e.preventDefault();const name=nickname.value.trim();if(!name)return;button.disabled=true;set('登録を保存しています…');
+try{
+ let saved=JSON.parse(localStorage.getItem(KEY)||'null');
+ if(saved&&saved.name!==name)throw Error('前回の登録確認が残っています。前回と同じ名前で再送してください。');
+ if(!saved){const bytes=crypto.getRandomValues(new Uint8Array(32));saved={name,retryKey:Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''),retryIssuedAt:Date.now()};localStorage.setItem(KEY,JSON.stringify(saved))}
+ const d=await api(saved);
+ if(d.ok&&d.registered){localStorage.removeItem(KEY);done(d)}
+ else throw Error('保存を確認できませんでした');
+}catch(err){set(err.message+'\n通信不明の場合は、同じ名前でもう一度送信してください。',true)}
+finally{button.disabled=false}
+});
+</script></body></html>
