@@ -2,6 +2,8 @@ name: Participant registration limited release review
 on:
   push:
     branches: [fix/registration-limited-release-20261019]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   registration-checks:
