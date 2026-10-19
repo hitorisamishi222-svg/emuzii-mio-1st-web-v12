@@ -19,4 +19,4 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
-      - run: node --test tests/registration-v2-store.test.mjs tests/registration-v2-review.test.mjs
+      - run: node --test tests/registration-v2-store.test.mjs tests/registration-v2-review.test.mjs tests/registration-v2-review.test.mjs
