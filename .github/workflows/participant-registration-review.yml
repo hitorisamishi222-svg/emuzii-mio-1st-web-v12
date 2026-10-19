@@ -16,5 +16,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check api-register.js && node --check registration-attempt.js
-      - run: node --test tests/participant-registration-recovery.test.mjs tests/participant-registration-persistence.test.mjs tests/registration-retry.test.mjs
+      - run: node --check api-register.js && node --check registration-attempt.js && node --check tools/prepare-gas-scoped-merge.mjs
+      - run: node --test tests/participant-registration-recovery.test.mjs tests/participant-registration-persistence.test.mjs tests/registration-retry.test.mjs tests/gas-scoped-merge.test.mjs
