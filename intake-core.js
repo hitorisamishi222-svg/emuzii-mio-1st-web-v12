@@ -19,7 +19,8 @@ export function intakeConfiguration(env = process.env) {
   try {
     const u = new URL(connectionString);
     if (!['postgres:', 'postgresql:'].includes(u.protocol) ||
-        !u.hostname || !u.username || !u.pathname || u.pathname === '/' ||
+        !u.hostname || !u.password || u.username !== 'mio_intake_writer' ||
+        decodeURIComponent(u.pathname) !== '/mio_intake' ||
         u.searchParams.get('sslmode') === 'disable') return null;
     return {connectionString, pepper, stage};
   } catch {return null;}
