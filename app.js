@@ -4,6 +4,31 @@ let attendanceConfirmedDays=new Set(),attendanceLockedDays=new Set(),attendanceA
 const NAME_KEY='mioColorSingName';
 const LOGIN_ID_KEY='mioLoginId';
 const ATTEMPT_KEY='mioAttendanceAttemptsV1';
+const REGISTRATION_RETRY_KEY='mioPendingRegistrationRetryV1';
+
+// Keep an identical cryptographic retry key across reloads and lost HTTP responses.
+// Never create a fresh MIO browser ID for an ambiguous earlier registration.
+function registrationRetryKey(name,loginId){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(REGISTRATION_RETRY_KEY)||'null')}catch{}
+  if(saved){
+    if(!/^[a-f0-9]{64}$/.test(saved.key||''))throw Error('登録の再送情報が壊れています。運営へお問い合わせください');
+    if(saved.name!==name||saved.loginId!==loginId)
+      throw Error('前回の登録結果を確認中です。最初に送信した名前とログインIDで再確認してください');
+    return saved.key;
+  }
+  if(!globalThis.crypto?.getRandomValues)throw Error('安全な登録番号を作成できませんでした');
+  const bytes=crypto.getRandomValues(new Uint8Array(32));
+  const key=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  try{
+    localStorage.setItem(REGISTRATION_RETRY_KEY,JSON.stringify({name,loginId,key}));
+    if(localStorage.getItem(REGISTRATION_RETRY_KEY)===null)throw Error();
+  }catch{throw Error('登録情報を安全に保存できません。端末のブラウザ保存設定をご確認ください')}
+  return key;
+}
+function clearRegistrationRetryKey(){
+  try{localStorage.removeItem(REGISTRATION_RETRY_KEY)}catch{}
+}
 let registered=false;
 
 function readLocalAttempts(){try{const v=JSON.parse(localStorage.getItem(ATTEMPT_KEY)||'{}');return v&&typeof v==='object'?v:{}}catch{return {}}}
@@ -91,7 +116,9 @@ $('register')?.addEventListener('submit',async e=>{
   const loginId=$('loginId')?$('loginId').value.trim():'';
   try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
   try{
-    const d=await post('/api/register',{name,loginId});
+    const retryKey=registrationRetryKey(name,loginId);
+    const d=await post('/api/register',{name,loginId,retryKey});
+    clearRegistrationRetryKey();
     if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{}
     const refreshed=await refresh();
     if(!refreshed){
