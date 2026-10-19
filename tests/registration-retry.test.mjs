@@ -101,3 +101,22 @@ test('release gate still blocks all registration writes before any GAS call',asy
     assert.equal(response.headers['set-cookie'],undefined);
   }finally{globalThis.fetch=fetchBefore;restore();}
 });
+
+test('read-only availability can never open a preview or a disabled release',async()=>{
+  const restore=mockProd();
+  try{
+    const query={method:'GET',headers:{host:HOST},body:{}};
+    const ready=res();await register(query,ready);
+    assert.equal(ready.statusCode,200);
+    assert.equal(ready.body.registrationOpen,true);
+    delete process.env.MIO_REGISTRATION_RELEASE;
+    const paused=res();await register(query,paused);
+    assert.equal(paused.statusCode,200);
+    assert.equal(paused.body.registrationOpen,false);
+    process.env.MIO_REGISTRATION_RELEASE='verified-gas-identity-20261016';
+    process.env.VERCEL_ENV='preview';
+    const preview=res();await register(query,preview);
+    assert.equal(preview.statusCode,200);
+    assert.equal(preview.body.registrationOpen,false);
+  }finally{restore();}
+});
