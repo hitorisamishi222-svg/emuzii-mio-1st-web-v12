@@ -266,11 +266,22 @@ function doPost(e) {
       if(found.length) {
         if(found.length!==1)return json_({ok:false,error:'登録IDの重複を確認してください'});
         if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
+        // A retry is safe only when the ORIGINAL full row was persisted.
+        // Two identity cells without a name or approval state must never become a session.
+        var originalName=String(d.name||'').trim();
+        var savedName=String(found[0][2]||'');
+        var savedStatus=String(found[0][5]||'');
+        var validPrevious=(savedName===originalName||savedName===safeText_(originalName))&&
+          !!String(found[0][4]||'').trim()&&
+          ['承認待ち','承認済み','却下'].indexOf(savedStatus)!==-1&&
+          !!String(found[0][20]||'').trim();
+        if(!validPrevious)return json_({ok:false,error:'登録の保存を確認できませんでした'});
         var foundRow=findWebRowIndexById_(web,d.participantId);
-        var existingLoginId=foundRow?ensureLoginIdForRow_(web,foundRow):'';
+        if(!foundRow)return json_({ok:false,error:'登録の保存を確認できませんでした'});
+        var existingLoginId=ensureLoginIdForRow_(web,foundRow);
         // Existing approved browsers retain their recorded MIO-ID; never infer one from a name.
         var healedId=found[0][7]||'';
-        return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||'',loginId:loginIdDisplay_(existingLoginId)});
+        return json_({ok:true,verified:true,participantId:d.participantId,status:savedStatus,integratedParticipantId:healedId,loginId:loginIdDisplay_(existingLoginId)});
       }
 
       var name=String(d.name||'').trim();
