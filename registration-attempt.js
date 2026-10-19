@@ -39,3 +39,18 @@ export function issueRegistrationAttempt({id,token,name,loginId},secret){
 export function clearRegistrationAttempt(){
   return COOKIE_NAME+'=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
 }
+
+/**
+ * Recover the same enrollment identity even when the first HTTP response
+ * (including Set-Cookie) was lost. The browser supplies a cryptographically
+ * random 256-bit retry key; only the server secret can derive the session token.
+ * The key is NEVER used as an authenticated session cookie or MIO-ID.
+ */
+export function identityFromRetryKey(retryKey,secret){
+  if(typeof retryKey!=='string'||!/^[a-f0-9]{64}$/.test(retryKey))return null;
+  const id=createHmac('sha256',secret)
+    .update('mio-registration-id-v1:'+retryKey).digest('hex').slice(0,24);
+  const token=createHmac('sha256',secret)
+    .update('mio-registration-token-v1:'+retryKey).digest('hex');
+  return {id:'MIO-W-'+id,token};
+}
