@@ -1,6 +1,6 @@
 // Lightweight public enrollment. Isolated from legacy GAS, privileges and sessions.
 import {createHmac,timingSafeEqual} from 'node:crypto';
-import {enroll,statusForBrowser} from './registration-light-store.js';
+import {registerV201,statusV201} from './registration-name-v201.js';
 import {identityFromRetryKey} from './registration-attempt.js';
 import {hash} from './bridge.js';
 const COOKIE='mio_light_session';
@@ -19,11 +19,11 @@ export default async function handler(req,res){
  const existing=session(req.headers.cookie,key);
  if(req.method==='GET'){
   if(!existing)return respond(res,200,{ok:true,registered:false,access:'public'});
-  try{const d=await statusForBrowser(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:true,access:'basic',name:d.name,participantId:d.participantId})}
+  try{const d=await statusV201(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',name:d.name,participantId:d.participantId,status:d.status})}
   catch{return respond(res,401,{ok:false,registered:false,error:'登録情報を確認できません'})}
  }
  if(req.method!=='POST'){res.setHeader('Allow','GET, POST');return respond(res,405,{ok:false})}
- if(existing){try{const d=await statusForBrowser(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:true,access:'basic',name:d.name,participantId:d.participantId})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
+ if(existing){try{const d=await statusV201(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:true,access:'basic',name:d.name,participantId:d.participantId})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
  const b=req.body||{};
  if(typeof b.name!=='string'||typeof b.retryKey!=='string'||!Number.isSafeInteger(b.retryIssuedAt))return respond(res,400,{ok:false,error:'入力内容を確認してください'});
  const name=b.name.trim();
@@ -31,9 +31,9 @@ export default async function handler(req,res){
  const identity=identityFromRetryKey(b.retryKey,key,b.retryIssuedAt);
  if(!identity)return respond(res,409,{ok:false,error:'再送期限切れです。運営へ確認してください。新規登録を重ねないでください'});
  try{
-  const d=await enroll({browserId:identity.id,tokenHash:hash(identity.token),name,loginId:''});
+  const d=await registerV201({browserId:identity.id,tokenHash:hash(identity.token),name,loginId:''});
   res.setHeader('Set-Cookie',setCookie(identity.id,identity.token,key));
-  return respond(res,d.created?201:200,{ok:true,registered:true,access:'basic',participantId:d.participantId,name:d.name});
+  return respond(res,d.created?201:200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',participantId:d.participantId,name:d.name,status:d.status});
  }catch(e){
   if(/identity mismatch|invalid/.test(String(e.message)))return respond(res,409,{ok:false,error:'以前の登録内容と一致しません。運営へ確認してください'});
   return respond(res,502,{ok:false,error:'保存の確認ができません。同じ内容で再送してください'});
