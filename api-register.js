@@ -22,9 +22,14 @@ const pending=readRegistrationAttempt(req.headers.cookie,cfg.secret);
 if(pending&&(pending.name!==name||pending.loginId!==loginId))return res.status(409).json({ok:false,error:'この端末では別の登録を確認中です。最初に送信した登録名で再試行してください'});
 // Recover a stable identity even if the earlier response (and cookie) was lost.
 const clientRetryKey=req.body?.retryKey;
-if(clientRetryKey!==undefined&&(typeof clientRetryKey!=='string'||!/^[a-f0-9]{64}$/.test(clientRetryKey)))
+const retryIssuedAt=req.body?.retryIssuedAt;
+if(clientRetryKey!==undefined&&(
+  typeof clientRetryKey!=='string'||!/^[a-f0-9]{64}$/.test(clientRetryKey)||
+  !Number.isSafeInteger(retryIssuedAt)))
  return res.status(400).json({ok:false,error:'登録要求を確認できませんでした'});
-const derived=clientRetryKey?identityFromRetryKey(clientRetryKey,cfg.secret):null;
+const derived=clientRetryKey?identityFromRetryKey(clientRetryKey,cfg.secret,retryIssuedAt):null;
+if(clientRetryKey&&!derived&&!pending)
+ return res.status(409).json({ok:false,error:'登録再送の期限が切れています。登録状態は運営へお問い合わせください'});
 // An authenticated, signed pending cookie takes priority if browser storage
 // was cleared while the original registration was in flight.
 const {id,token}=pending||derived||makeIdentity();
