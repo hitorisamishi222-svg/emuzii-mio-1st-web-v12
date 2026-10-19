@@ -15,16 +15,20 @@ function registrationRetryKey(name,loginId){
     if(!/^[a-f0-9]{64}$/.test(saved.key||''))throw Error('登録の再送情報が壊れています。運営へお問い合わせください');
     if(saved.name!==name||saved.loginId!==loginId)
       throw Error('前回の登録結果を確認中です。最初に送信した名前とログインIDで再確認してください');
-    return saved.key;
+    if(!Number.isSafeInteger(saved.issuedAt)||Date.now()-saved.issuedAt>15*60*1000||
+       saved.issuedAt>Date.now()+60000)
+      throw Error('登録確認の有効時間を過ぎています。登録済みの可能性があるため、運営へお問い合わせください');
+    return {key:saved.key,issuedAt:saved.issuedAt};
   }
   if(!globalThis.crypto?.getRandomValues)throw Error('安全な登録番号を作成できませんでした');
   const bytes=crypto.getRandomValues(new Uint8Array(32));
   const key=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  const issuedAt=Date.now();
   try{
-    localStorage.setItem(REGISTRATION_RETRY_KEY,JSON.stringify({name,loginId,key}));
+    localStorage.setItem(REGISTRATION_RETRY_KEY,JSON.stringify({name,loginId,key,issuedAt}));
     if(localStorage.getItem(REGISTRATION_RETRY_KEY)===null)throw Error();
   }catch{throw Error('登録情報を安全に保存できません。端末のブラウザ保存設定をご確認ください')}
-  return key;
+  return {key,issuedAt};
 }
 function clearRegistrationRetryKey(){
   try{localStorage.removeItem(REGISTRATION_RETRY_KEY)}catch{}
@@ -116,8 +120,8 @@ $('register')?.addEventListener('submit',async e=>{
   const loginId=$('loginId')?$('loginId').value.trim():'';
   try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
   try{
-    const retryKey=registrationRetryKey(name,loginId);
-    const d=await post('/api/register',{name,loginId,retryKey});
+    const retry=registrationRetryKey(name,loginId);
+    const d=await post('/api/register',{name,loginId,retryKey:retry.key,retryIssuedAt:retry.issuedAt});
     clearRegistrationRetryKey();
     if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{}
     const refreshed=await refresh();
