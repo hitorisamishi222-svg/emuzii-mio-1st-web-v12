@@ -12,11 +12,12 @@ const source = fs.readFileSync(
 
 function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orphan = false, existingLoginId = false} = {}) {
   let counter = 0;
+  const writes = [];
   const sheets = new Map();
   function makeSheet(name) {
     const cells = new Map();
     const value = (r, c) => cells.get(r + ':' + c) ?? '';
-    const set = (r, c, v) => cells.set(r + ':' + c, v);
+    const set = (r, c, v) => {writes.push({sheet:name,row:r,col:c});cells.set(r + ':' + c, v);};
     const sh = {
       getMaxRows: () => 1000,
       getLastColumn: () => 26,
@@ -126,9 +127,10 @@ function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orp
     name: duplicate ? '既存参加者' : '新規テスト参加者',
     loginId: ''
   };
-  const retry = () => JSON.parse(handler({postData: {contents: JSON.stringify(payload)}}).text);
+  const call = action => JSON.parse(handler({postData: {contents: JSON.stringify({...payload,action})}}).text);
+  const retry = () => call('register');
   const result = retry();
-  return {result, retry, payload, web, people, registrationRow: (duplicate ? 3 : 2) + (orphan ? 1 : 0)};
+  return {result, call, retry, writes, payload, web, people, registrationRow: (duplicate ? 3 : 2) + (orphan ? 1 : 0)};
 }
 
 test('new participant is persisted and verified', () => {
@@ -251,4 +253,47 @@ test('a legacy browser with missing login ID is not modified by retry', () => {
   assert.equal(reused.ok,false);
   assert.equal(reused.verified,undefined);
   assert.equal(JSON.stringify(Array.from({length:21},(_,i)=>f.web.value(2,i+1))),JSON.stringify(original));
+});
+
+test('pending participant status is read-only even when login header is blank', () => {
+  const f=fixture();
+  assert.equal(f.result.ok,true);
+  f.web.getRange(1,21).setValue('');
+  const before=f.writes.length;
+  const status=f.call('status');
+  assert.equal(status.ok,true);
+  assert.equal(status.status,'承認待ち');
+  assert.equal(f.writes.length,before);
+  assert.equal(f.web.value(1,21),'');
+});
+
+test('approved participant status does not issue a missing login ID or change historical cells', () => {
+  const f=fixture({duplicate:true});
+  assert.equal(f.result.ok,true);
+  f.payload.participantId='MIO-W-'+'f'.repeat(24);
+  f.payload.tokenHash='2'.repeat(64);
+  f.payload.name='既存参加者';
+  f.web.getRange(1,21).setValue('');
+  const original=Array.from({length:21},(_,i)=>f.web.value(2,i+1));
+  const before=f.writes.length;
+  const status=f.call('status');
+  assert.equal(status.ok,true);
+  assert.equal(status.status,'承認済み');
+  assert.equal(status.loginId,'');
+  assert.equal(f.writes.length,before);
+  assert.equal(f.web.value(1,21),'');
+  assert.equal(JSON.stringify(Array.from({length:21},(_,i)=>f.web.value(2,i+1))),JSON.stringify(original));
+});
+
+test('approved participant with an existing login ID can view status without edits', () => {
+  const f=fixture({duplicate:true,existingLoginId:true});
+  assert.equal(f.result.ok,true);
+  f.payload.participantId='MIO-W-'+'f'.repeat(24);
+  f.payload.tokenHash='2'.repeat(64);
+  f.payload.name='既存参加者';
+  const before=f.writes.length;
+  const status=f.call('status');
+  assert.equal(status.ok,true);
+  assert.equal(status.loginId,'MIO-1234-5678');
+  assert.equal(f.writes.length,before);
 });
