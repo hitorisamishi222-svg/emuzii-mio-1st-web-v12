@@ -1,5 +1,5 @@
 import {prepare,bridge,makeIdentity,hash,sessionCookie,readSession} from './bridge.js';
-import {readRegistrationAttempt,issueRegistrationAttempt,clearRegistrationAttempt} from './registration-attempt.js';
+import {readRegistrationAttempt,issueRegistrationAttempt,clearRegistrationAttempt,identityFromRetryKey} from './registration-attempt.js';
 export default async function handler(req,res){
 if(req.method==='GET'){
  res.setHeader('Cache-Control','no-store, max-age=0');
@@ -20,7 +20,14 @@ const loginId=String(req.body?.loginId||'').trim();if(loginId.length>32||/[\u000
 if(readSession(req.headers.cookie,cfg.secret))return res.status(409).json({ok:false,error:'この端末は登録済みです。参加状況を確認してください'});
 const pending=readRegistrationAttempt(req.headers.cookie,cfg.secret);
 if(pending&&(pending.name!==name||pending.loginId!==loginId))return res.status(409).json({ok:false,error:'この端末では別の登録を確認中です。最初に送信した登録名で再試行してください'});
-const {id,token}=pending||makeIdentity();
+// Recover a stable identity even if the earlier response (and cookie) was lost.
+const clientRetryKey=req.body?.retryKey;
+if(clientRetryKey!==undefined&&(typeof clientRetryKey!=='string'||!/^[a-f0-9]{64}$/.test(clientRetryKey)))
+ return res.status(400).json({ok:false,error:'登録要求を確認できませんでした'});
+const derived=clientRetryKey?identityFromRetryKey(clientRetryKey,cfg.secret):null;
+if(pending&&derived&&pending.id!==derived.id)
+ return res.status(409).json({ok:false,error:'前回の登録を確認中です。元の画面から再試行してください'});
+const {id,token}=pending||derived||makeIdentity();
 // Persist the signed retry identity before invoking the non-transactional GAS write.
 // An ambiguous timeout may be retried safely with the same browser identity.
 if(!pending)res.setHeader('Set-Cookie',issueRegistrationAttempt({id,token,name,loginId},cfg.secret));
