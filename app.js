@@ -134,4 +134,18 @@ if(mioBgm&&musicToggle){
   window.addEventListener('pageshow',()=>{if(!mioBgm.paused&&audioContext?.state==='suspended')void audioContext.resume().catch(()=>{})});
   mioBgm.addEventListener('play',()=>syncMusicUi());mioBgm.addEventListener('pause',()=>syncMusicUi());mioBgm.addEventListener('ended',()=>syncMusicUi());mioBgm.addEventListener('error',()=>{musicStatus.textContent='音源を読み込めませんでした。mio-awakening.mp3 がGitHubにあるか確認してください。'});syncMusicUi('ボタンを押すと再生します。');
 }
+async function refreshRegistrationNotice(){
+  const el=$('registrationNotice');
+  if(!el)return;
+  try{
+    const response=await fetch('/api/register',{method:'GET',cache:'no-store',credentials:'same-origin'});
+    if(!response.ok)return;
+    const state=await response.json();
+    if(state.registrationOpen===true){
+      el.textContent='新規登録の受付を再開しました。初めての方もこの特設サイトから登録できます。登録直後は「承認待ち」となり、既存参加者と同じ本人確認・利用ルールが適用されます。別端末登録は本人確認が必要です。';
+    }
+  }catch{/* Keep the safe paused notice when the release state cannot be verified. */}
+}
+
+void refreshRegistrationNotice();
 void refresh();
