@@ -29,11 +29,11 @@ test('legacy baseline merges to precisely the reviewed repair and never overwrit
 test('independent edits to a protected gacha handler remain byte-for-byte intact',()=>{
   const needle='function checkinAction_(';
   assert.equal(legacy.split(needle).length,2);
-  const current=legacy.replace(needle,'// Independent operator note: keep old checkin and gacha.\\n'+needle);
+  const current=legacy.replace(needle,'// Independent operator note: keep old checkin and gacha.\n'+needle);
   const result=launch(current);
   assert.equal(result.status,0,result.stderr);
   assert.ok(result.out.includes('// Independent operator note'));
-  const tail=s=>s.slice(s.indexOf('\\nfunction checkinAction_('));
+  const tail=s=>s.slice(s.indexOf('\nfunction checkinAction_('));
   assert.equal(tail(result.out),tail(current));
   assert.equal(result.original,current);
 });
