@@ -278,7 +278,8 @@ function doPost(e) {
         if(!validPrevious)return json_({ok:false,error:'登録の保存を確認できませんでした'});
         var foundRow=findWebRowIndexById_(web,d.participantId);
         if(!foundRow)return json_({ok:false,error:'登録の保存を確認できませんでした'});
-        var existingLoginId=ensureLoginIdForRow_(web,foundRow);
+        // Retry verification is strictly read-only on any existing participant row.
+        var existingLoginId=loginIdFormat_(web.getRange(foundRow,LOGIN_ID_COL).getDisplayValue());
         // Existing approved browsers retain their recorded MIO-ID; never infer one from a name.
         var healedId=found[0][7]||'';
         return json_({ok:true,verified:true,participantId:d.participantId,status:savedStatus,integratedParticipantId:healedId,loginId:loginIdDisplay_(existingLoginId)});
