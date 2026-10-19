@@ -23,7 +23,7 @@ export default async function handler(req,res){
   catch{return respond(res,401,{ok:false,registered:false,error:'登録情報を確認できません'})}
  }
  if(req.method!=='POST'){res.setHeader('Allow','GET, POST');return respond(res,405,{ok:false})}
- if(existing){try{const d=await statusV201(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:true,access:'basic',name:d.name,participantId:d.participantId})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
+ if(existing){try{const d=await statusV201(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',name:d.name,participantId:d.participantId,status:d.status})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
  const b=req.body||{};
  if(typeof b.name!=='string'||typeof b.retryKey!=='string'||!Number.isSafeInteger(b.retryIssuedAt))return respond(res,400,{ok:false,error:'入力内容を確認してください'});
  const name=b.name.trim();
