@@ -46,11 +46,17 @@ export function clearRegistrationAttempt(){
  * random 256-bit retry key; only the server secret can derive the session token.
  * The key is NEVER used as an authenticated session cookie or MIO-ID.
  */
-export function identityFromRetryKey(retryKey,secret){
-  if(typeof retryKey!=='string'||!/^[a-f0-9]{64}$/.test(retryKey))return null;
+export function identityFromRetryKey(retryKey,secret,issuedAt){
+  // The client retry key is a temporary credential. Never allow perpetual
+  // resurrection of browser sessions from browser-readable storage.
+  if(typeof retryKey!=='string'||!/^[a-f0-9]{64}$/.test(retryKey)||
+     !Number.isSafeInteger(issuedAt))return null;
+  const age=Date.now()-issuedAt;
+  if(age< -60000 || age>15*60*1000)return null;
+  const material=issuedAt+':'+retryKey;
   const id=createHmac('sha256',secret)
-    .update('mio-registration-id-v1:'+retryKey).digest('hex').slice(0,24);
+    .update('mio-registration-id-v2:'+material).digest('hex').slice(0,24);
   const token=createHmac('sha256',secret)
-    .update('mio-registration-token-v1:'+retryKey).digest('hex');
+    .update('mio-registration-token-v2:'+material).digest('hex');
   return {id:'MIO-W-'+id,token};
 }
