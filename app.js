@@ -100,13 +100,18 @@ function display(d){
 }
 
 async function refresh(){
+  const hadValidStatus=registered;
   message('参加状況を確認しています…');
   if($('counts'))$('counts').hidden=true;
   if($('gachaDetail'))$('gachaDetail').textContent='';
   if($('refresh'))$('refresh').disabled=true;
   try{display(await post('/api/status'));return true}
   catch(e){
-    registered=false;$('personal').hidden=true;$('register').hidden=false;
+    // A transient status failure must not turn a known existing session back
+    // into a new registration request. Only HTTP 401 confirms no session.
+    registered=e.status===401?false:hadValidStatus;
+    $('personal').hidden=true;$('register').hidden=false;
+    if(registered)$('registerButton').textContent='参加状況を再確認';
     if(e.status===401)message('ColorSing名を入力して参加状況を確認してください。');
     else message(e.status===503?'参加状況のWeb連携は準備中です。予想・FAは上のフォームから応募できます。':e.message,true);
     return false;
