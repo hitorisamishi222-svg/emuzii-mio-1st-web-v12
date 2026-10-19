@@ -336,6 +336,18 @@
     {
       "src": "api-announcements.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-intake.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "intake.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "intake.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -388,6 +400,10 @@
       "dest": "/api-browser-pair-create.js"
     },
     {
+      "src": "/api/intake",
+      "dest": "/api-intake.js"
+    },
+    {
       "src": "/api/register",
       "dest": "/api-register.js"
     },
@@ -432,6 +448,14 @@
       }
     },
     {
+      "src": "/intake.html",
+      "dest": "/intake.html"
+    },
+    {
+      "src": "/intake.js",
+      "dest": "/intake.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }
@@ -453,6 +477,40 @@
     {
       "source": "/gallery-items.js",
       "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/intake.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/intake.js",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
         {
           "key": "Cache-Control",
           "value": "no-store, max-age=0"
