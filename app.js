@@ -73,11 +73,12 @@ async function refresh(){
   if($('counts'))$('counts').hidden=true;
   if($('gachaDetail'))$('gachaDetail').textContent='';
   if($('refresh'))$('refresh').disabled=true;
-  try{display(await post('/api/status'))}
+  try{display(await post('/api/status'));return true}
   catch(e){
     registered=false;$('personal').hidden=true;$('register').hidden=false;
     if(e.status===401)message('ColorSing名を入力して参加状況を確認してください。');
     else message(e.status===503?'参加状況のWeb連携は準備中です。予想・FAは上のフォームから応募できます。':e.message,true);
+    return false;
   }finally{if($('refresh'))$('refresh').disabled=false}
 }
 
@@ -89,7 +90,18 @@ $('register')?.addEventListener('submit',async e=>{
   message('登録を保存しています…');
   const loginId=$('loginId')?$('loginId').value.trim():'';
   try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
-  try{const d=await post('/api/register',{name,loginId});if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{};await refresh()}catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}
+  try{
+    const d=await post('/api/register',{name,loginId});
+    if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{}
+    const refreshed=await refresh();
+    if(!refreshed){
+      // Registration succeeded even if the subsequent status request failed.
+      // Keep its signed browser session and offer a read-only refresh, not a second registration.
+      registered=true;
+      $('registerButton').textContent='参加状況を再確認';
+      message('登録の保存は完了しました。参加状況の取得に失敗したため、時間をおいて「参加状況を再確認」を押してください。');
+    }
+  }catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}
 });
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
