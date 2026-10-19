@@ -1,6 +1,14 @@
 import {prepare,bridge,makeIdentity,hash,sessionCookie,readSession} from './bridge.js';
 import {readRegistrationAttempt,issueRegistrationAttempt,clearRegistrationAttempt} from './registration-attempt.js';
-export default async function handler(req,res){const cfg=prepare(req,res);if(!cfg)return;
+export default async function handler(req,res){
+if(req.method==='GET'){
+ res.setHeader('Cache-Control','no-store, max-age=0');
+ res.setHeader('X-Content-Type-Options','nosniff');
+ return res.status(200).json({ok:true,registrationOpen:
+   process.env.VERCEL_ENV==='production'&&
+   process.env.MIO_REGISTRATION_RELEASE==='verified-gas-identity-20261016'});
+}
+const cfg=prepare(req,res);if(!cfg)return;
 // Fail closed until production GAS deployment and isolated end-to-end registration are verified.
 // A preview build or accidental merge must not enable registrations.
 if(process.env.MIO_REGISTRATION_RELEASE!=='verified-gas-identity-20261016'){
