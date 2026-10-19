@@ -263,7 +263,9 @@ function doPost(e) {
 
     var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
     if(!web)return json_({ok:false,error:'setup required'});
-    ensureLoginIdHeader_(web);
+    // Status, check-in and gacha reads must not modify historic registration
+    // headers. Header initialization is limited to the registration action.
+    if(d.action==='register')ensureLoginIdHeader_(web);
 
     var all=webActualRows_(web),found=all.filter(function(r){return r[0]===d.participantId});
 
