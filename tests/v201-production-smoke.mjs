@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {randomBytes} from 'node:crypto';
+const site='https://emuzii-mio-1st-web-v12.vercel.app';
+async function create(name){
+ const payload={name,retryKey:randomBytes(32).toString('hex'),retryIssuedAt:Date.now()};
+ const r=await fetch(site+'/api/enroll-lite',{method:'POST',headers:{'Content-Type':'application/json','Origin':site},body:JSON.stringify(payload)});
+ return {status:r.status,body:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]};
+}
+const n='V201_RELEASE_TEST_'+Date.now();
+const first=await create(n);
+assert.equal(first.status,201,JSON.stringify(first.body));
+assert.equal(first.body.registered,true);
+assert.equal(first.body.pendingReview,false);
+console.log('PASS fresh name accepted with ID');
+const conflict=await create(n);
+assert.equal(conflict.status,200,JSON.stringify(conflict.body));
+assert.equal(conflict.body.registered,false);
+assert.equal(conflict.body.pendingReview,true);
+assert.equal(conflict.body.status,'本人確認待ち');
+console.log('PASS matching name from different browser is held for identity review');
+const old=await create('River');
+assert.equal(old.status,200,JSON.stringify(old.body));
+assert.equal(old.body.registered,false);
+assert.equal(old.body.pendingReview,true);
+console.log('PASS legacy participant name blocked from new identity creation');
+const status=await fetch(site+'/api/enroll-lite',{headers:{Cookie:conflict.cookie}});
+assert.equal(status.status,200);
+const data=await status.json();
+assert.equal(data.pendingReview,true);
+console.log('PASS review cookie shows identity confirmation status');
+const gallery=await fetch(site+'/gallery.html');
+assert.equal(gallery.status,200);
+console.log('PASS public gallery remains online');
+console.log('SUCCESS v2.0.1 production duplicate-registration check');
