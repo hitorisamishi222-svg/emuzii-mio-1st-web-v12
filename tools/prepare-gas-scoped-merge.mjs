@@ -62,6 +62,22 @@ for(const name of ['doPost','checkinAction_','gachaAction_']){
   }
 }
 
+// Never auto-merge unknown modifications in the live registration handler.
+// Even non-overlapping local changes here require human review of the specific diff.
+const registrationScope=(source)=>{
+  const start=source.indexOf('\nfunction doPost(');
+  const end=source.indexOf('\nfunction checkinAction_(',start);
+  return start<0||end<=start?null:source.slice(start,end);
+};
+const originalRegistration=registrationScope(oldSource);
+const liveRegistration=registrationScope(currentSource);
+const repairedRegistration=registrationScope(newSource);
+if(!originalRegistration||!liveRegistration||!repairedRegistration||
+   (liveRegistration!==originalRegistration && liveRegistration!==repairedRegistration)){
+  console.error('Live registration handler differs from reviewed code. Manual diff required.');
+  process.exit(3);
+}
+
 // Preserve every existing function from checkinAction_ onward byte-for-byte.
 // The verified patch is limited to registration and a small number of helpers.
 const protectedTail=(source)=>{
