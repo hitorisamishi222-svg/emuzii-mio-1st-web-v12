@@ -7,6 +7,8 @@ on:
     paths:
       - registration-v2-store.js
       - tests/registration-v2-store.test.mjs
+      - registration-v2-review.js
+      - tests/registration-v2-review.test.mjs
       - .github/workflows/registration-v2-core.yml
 jobs:
   test:
@@ -17,4 +19,4 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
-      - run: node --test tests/registration-v2-store.test.mjs
+      - run: node --test tests/registration-v2-store.test.mjs tests/registration-v2-review.test.mjs
