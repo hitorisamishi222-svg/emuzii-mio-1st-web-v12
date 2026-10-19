@@ -35,8 +35,8 @@ export function validateEnrollment(payload){
  const loginId=String(payload?.loginId||'').trim();
  if(!/^MIO-W-[a-f0-9]{24}$/.test(browserId))throw Error('invalid browser identity');
  if(!/^[a-f0-9]{64}$/.test(tokenHash))throw Error('invalid token hash');
- if(name.length<1||name.length>40||/[\\x00-\\x1f]/.test(name))throw Error('invalid ColorSing name');
- if(loginId.length>32||/[\\x00-\\x1f]/.test(loginId))throw Error('invalid login id');
+ if(name.length<1||name.length>40||/[\x00-\x1f]/.test(name))throw Error('invalid ColorSing name');
+ if(loginId.length>32||/[\x00-\x1f]/.test(loginId))throw Error('invalid login id');
  return {browserId,tokenHash,name,nameNormalized:normalizeName(name),loginId};
 }
 function database(){
