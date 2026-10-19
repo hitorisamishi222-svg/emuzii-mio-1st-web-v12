@@ -25,8 +25,8 @@ const clientRetryKey=req.body?.retryKey;
 if(clientRetryKey!==undefined&&(typeof clientRetryKey!=='string'||!/^[a-f0-9]{64}$/.test(clientRetryKey)))
  return res.status(400).json({ok:false,error:'登録要求を確認できませんでした'});
 const derived=clientRetryKey?identityFromRetryKey(clientRetryKey,cfg.secret):null;
-if(pending&&derived&&pending.id!==derived.id)
- return res.status(409).json({ok:false,error:'前回の登録を確認中です。元の画面から再試行してください'});
+// An authenticated, signed pending cookie takes priority if browser storage
+// was cleared while the original registration was in flight.
 const {id,token}=pending||derived||makeIdentity();
 // Persist the signed retry identity before invoking the non-transactional GAS write.
 // An ambiguous timeout may be retried safely with the same browser identity.
