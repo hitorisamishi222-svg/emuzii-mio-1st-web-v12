@@ -6,12 +6,13 @@ import {readRegistrationAttempt} from '../registration-attempt.js';
 const SECRET='isolated-test-only-hmac-key-minimum-32-chars';
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const NAME='新規参加者テスト';
+const RETRY_ISSUED_AT=Date.now();
 
 function req(cookie='',overrides={}){
   return {
     method:'POST',
     headers:{host:HOST,origin:'https://'+HOST,cookie},
-    body:{name:NAME,loginId:'',...overrides}
+    body:{name:NAME,loginId:'',retryIssuedAt:RETRY_ISSUED_AT,...overrides}
   };
 }
 function res(){
@@ -179,4 +180,29 @@ test('a signed pending cookie remains authoritative when browser storage is clea
     assert.equal(posts[0].participantId,posts[1].participantId);
     assert.equal(posts[0].tokenHash,posts[1].tokenHash);
   }finally{globalThis.fetch=fetchBefore;restore();}
+});
+
+test('expired retry keys fail closed before GAS call and never issue credentials',async()=>{
+  const restore=mockProd(),previousFetch=globalThis.fetch;
+  let calls=0;
+  try{
+    globalThis.fetch=async()=>{calls++;throw Error('should not reach GAS')};
+    const response=res();
+    await register(req('',{retryKey:'a'.repeat(64),retryIssuedAt:Date.now()-16*60*1000}),response);
+    assert.equal(response.statusCode,409);
+    assert.equal(calls,0);
+    assert.equal(response.headers['set-cookie'],undefined);
+  }finally{globalThis.fetch=previousFetch;restore();}
+});
+
+test('retry key without issuance timestamp fails before accessing GAS',async()=>{
+  const restore=mockProd(),previousFetch=globalThis.fetch;
+  let calls=0;
+  try{
+    globalThis.fetch=async()=>{calls++;throw Error('should not reach GAS')};
+    const response=res();
+    await register(req('',{retryKey:'a'.repeat(64),retryIssuedAt:undefined}),response);
+    assert.equal(response.statusCode,400);
+    assert.equal(calls,0);
+  }finally{globalThis.fetch=previousFetch;restore();}
 });
