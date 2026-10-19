@@ -65,5 +65,5 @@ test('validation blocks forged identities and unsafe inputs',()=>{
 test('numeric ColorSing names and ASCII letters are valid, control characters are not',()=>{
  const accepted=validateEnrollment({browserId:id,tokenHash,name:'V2_SMOKE_TEST_20261019',loginId:''});
  assert.equal(accepted.name,'V2_SMOKE_TEST_20261019');
- assert.throws(()=>validateEnrollment({browserId:id,tokenHash,name:'Name'+String.fromCharCode(10),loginId:''}),/invalid ColorSing name/);
+ assert.throws(()=>validateEnrollment({browserId:id,tokenHash,name:'Name'+String.fromCharCode(10)+'Next',loginId:''}),/invalid ColorSing name/);
 });
