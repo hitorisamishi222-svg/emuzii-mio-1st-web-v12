@@ -260,10 +260,12 @@ function doPost(e) {
 
     if(d.action==='register') {
       if(found.length) {
+        if(found.length!==1)return json_({ok:false,error:'登録IDの重複を確認してください'});
         if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
         var foundRow=findWebRowIndexById_(web,d.participantId);
         var existingLoginId=foundRow?ensureLoginIdForRow_(web,foundRow):'';
-        var healedId=found[0][7]||((found[0][5]==='承認済み')?autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]):'');
+        // Existing approved browsers retain their recorded MIO-ID; never infer one from a name.
+        var healedId=found[0][7]||'';
         return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||'',loginId:loginIdDisplay_(existingLoginId)});
       }
 
@@ -290,7 +292,7 @@ function doPost(e) {
           loginIdDisplay_(newLoginId_())
         );
         if(!pending.ok)return json_(pending);
-        try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
+        // Never recalculate/overwrite existing administrative data as a registration side effect.
         return json_({ok:true,verified:true,participantId:d.participantId,
           status:'承認待ち',integratedParticipantId:'',loginId:'',
           pendingReview:true,needsIdentityProof:true,autoApproved:false});
@@ -304,20 +306,14 @@ function doPost(e) {
       SpreadsheetApp.flush();
 
       // SECURITY: Newly registered unapproved browsers must never be linked by name alone.
-      try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
-      return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||'',loginId:issuedLoginId});
+      var verified=saved.length===1&&saved[0][2]===safeText_(name)&&saved[0][5]==='承認待ち'&&saved[0][7]===''&&
+        String(saved[0][20]||'')===issuedLoginId;
+      return json_({ok:verified,verified:verified,participantId:d.participantId,status:'承認待ち',integratedParticipantId:'',loginId:verified?issuedLoginId:''});
     }
 
-    // Pending browser records are never auto-associated with an existing MIO-ID.
-    // Only an already approved, token-authenticated browser may use legacy repair.
-    if(found.length===1&&equal_(found[0][1],d.tokenHash)&&found[0][5]==='承認済み'&&!found[0][7]){
-      var repairedId=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
-      if(repairedId){
-        all=webActualRows_(web);
-        found=all.filter(function(r){return r[0]===d.participantId});
-      }
-    }
+    // An unlinked record is not repaired by name, even after a status flag changes.
+    // Administrators must link the verified MIO-ID explicitly; legacy links remain untouched.
 
     if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
 
