@@ -84,3 +84,8 @@ export async function statusForBrowser(browserId,tokenHash,{db=database()}={}){
  return {ok:true,participantId:row.browser_id,name:row.name,status:row.status,
    integratedParticipantId:row.integrated_participant_id||''};
 }
+
+export async function checkRegistrationV2Connection({db=database()}={}){
+ const r=await db.query('SELECT 1 AS healthy');
+ return r.rows?.[0]?.healthy===1;
+}
