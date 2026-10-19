@@ -1,0 +1,41 @@
+// Lightweight public enrollment. Isolated from legacy GAS, privileges and sessions.
+import {createHmac,timingSafeEqual} from 'node:crypto';
+import {enroll,statusForBrowser} from './registration-light-store.js';
+import {identityFromRetryKey} from './registration-attempt.js';
+import {hash} from './bridge.js';
+const COOKIE='mio_light_session';
+function secret(){const s=process.env.MIO_LIGHT_SESSION_SECRET;if(!s||s.length<48)throw Error('registration secret missing');return s}
+function sign(data,key){return createHmac('sha256',key).update('mio-light-v1:'+data).digest();}
+function setCookie(id,token,key){const encoded=Buffer.from(JSON.stringify({id,token})).toString('base64url');return COOKIE+'='+encoded+'.'+sign(encoded,key).toString('base64url')+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=7776000'}
+function session(cookie,key){try{const raw=String(cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);if(!raw)return null;const [data,sig,...rest]=raw.split('.');if(rest.length||!data||!sig)return null;const expected=sign(data,key),actual=Buffer.from(sig,'base64url');if(actual.length!==expected.length||!timingSafeEqual(actual,expected))return null;const s=JSON.parse(Buffer.from(data,'base64url').toString());if(!/^MIO-W-[a-f0-9]{24}$/.test(s.id)||!/^[a-f0-9]{64}$/.test(s.token))return null;return s}catch{return null}}
+const respond=(res,code,obj)=>res.status(code).json(obj);
+export default async function handler(req,res){
+ res.setHeader('Cache-Control','private, no-store');res.setHeader('X-Content-Type-Options','nosniff');
+ if(process.env.VERCEL_ENV!=='production')return respond(res,503,{ok:false,error:'本番サイトから登録してください'});
+ if(process.env.MIO_LIGHT_REGISTRATION_OPEN!=='enabled')return respond(res,503,{ok:false,error:'簡易登録受付は準備中です'});
+ let key;try{key=secret();if(!process.env.MIO_REGISTRATION_DATABASE_URL)throw Error()}catch{return respond(res,503,{ok:false,error:'登録先を準備中です'})}
+ const origin=req.headers.origin;
+ if(origin){try{if(new URL(origin).host!==req.headers.host)throw Error()}catch{return respond(res,403,{ok:false,error:'別サイトから操作できません'})}}
+ const existing=session(req.headers.cookie,key);
+ if(req.method==='GET'){
+  if(!existing)return respond(res,200,{ok:true,registered:false,access:'public'});
+  try{const d=await statusForBrowser(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:true,access:'basic',name:d.name,participantId:d.participantId})}
+  catch{return respond(res,401,{ok:false,registered:false,error:'登録情報を確認できません'})}
+ }
+ if(req.method!=='POST'){res.setHeader('Allow','GET, POST');return respond(res,405,{ok:false})}
+ if(existing){try{const d=await statusForBrowser(existing.id,hash(existing.token));return respond(res,200,{ok:true,registered:true,access:'basic',name:d.name,participantId:d.participantId})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
+ const b=req.body||{};
+ if(typeof b.name!=='string'||typeof b.retryKey!=='string'||!Number.isSafeInteger(b.retryIssuedAt))return respond(res,400,{ok:false,error:'入力内容を確認してください'});
+ const name=b.name.trim();
+ if(name.length<1||name.length>40||/[\x00-\x1f]/.test(name))return respond(res,400,{ok:false,error:'ColorSing名は1〜40文字で入力してください'});
+ const identity=identityFromRetryKey(b.retryKey,key,b.retryIssuedAt);
+ if(!identity)return respond(res,409,{ok:false,error:'再送期限切れです。運営へ確認してください。新規登録を重ねないでください'});
+ try{
+  const d=await enroll({browserId:identity.id,tokenHash:hash(identity.token),name,loginId:''});
+  res.setHeader('Set-Cookie',setCookie(identity.id,identity.token,key));
+  return respond(res,d.created?201:200,{ok:true,registered:true,access:'basic',participantId:d.participantId,name:d.name});
+ }catch(e){
+  if(/identity mismatch|invalid/.test(String(e.message)))return respond(res,409,{ok:false,error:'以前の登録内容と一致しません。運営へ確認してください'});
+  return respond(res,502,{ok:false,error:'保存の確認ができません。同じ内容で再送してください'});
+ }
+}
