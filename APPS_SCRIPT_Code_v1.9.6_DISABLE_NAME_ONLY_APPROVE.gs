@@ -105,9 +105,13 @@ function appendBrowserCandidate_(web,d,name,linked,auth,member,memo,matchState,c
   SpreadsheetApp.flush();
   // A successful setValues() does not prove that the browser candidate persisted.
   // Confirm identity on the exact row before acknowledging a new browser.
-  var saved=web.getRange(row,1,1,2).getValues()[0];
-  if(String(saved[0]||'')!==String(d.participantId)||!equal_(saved[1],d.tokenHash))
-    return {ok:false,error:'登録の保存を確認できませんでした'};
+  var saved=web.getRange(row,1,1,LOGIN_ID_COL).getValues()[0];
+  var savedName=String(saved[2]||'');
+  var complete=String(saved[0]||'')===String(d.participantId)&&equal_(saved[1],d.tokenHash)&&
+    (savedName===name||savedName===safeText_(name))&&
+    saved[5]==='承認待ち'&&String(saved[7]||'')===''&&
+    saved[11]==='確認待ち'&&String(saved[20]||'')===loginId;
+  if(!complete)return {ok:false,error:'登録の保存を確認できませんでした'};
   return {ok:true,row:row};
 }
 
@@ -307,8 +311,10 @@ function doPost(e) {
 
       // SECURITY: Newly registered unapproved browsers must never be linked by name alone.
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
-      var verified=saved.length===1&&saved[0][2]===safeText_(name)&&saved[0][5]==='承認待ち'&&saved[0][7]===''&&
-        String(saved[0][20]||'')===issuedLoginId;
+      var savedName=saved.length?String(saved[0][2]||''):'';
+      var verified=saved.length===1&&(savedName===name||savedName===safeText_(name))&&
+        saved[0][5]==='承認待ち'&&String(saved[0][7]||'')===''&&
+        saved[0][11]==='確認待ち'&&String(saved[0][20]||'')===issuedLoginId;
       return json_({ok:verified,verified:verified,participantId:d.participantId,status:'承認待ち',integratedParticipantId:'',loginId:verified?issuedLoginId:''});
     }
 
