@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>翠央1周年｜安全な仮受付</title>
+  <style>
+    :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100svh;color:#f2f7ff;background:radial-gradient(circle at 20% 0%,#23518f 0,#0c284c 45%,#071427 100%);padding:24px 16px 70px}
+    main{max-width:590px;margin:0 auto}
+    a{color:#c9e8ff}
+    h1{font-size:1.65rem;line-height:1.35;margin:18px 0 8px}
+    p{line-height:1.75}
+    .eyebrow{font-size:.84rem;font-weight:700;letter-spacing:.1em;color:#a9d5ff}
+    .panel{background:rgba(12,38,74,.92);border:1px solid #5379a2;border-radius:20px;padding:20px;box-shadow:0 16px 32px #0004;margin:20px 0}
+    .notice{background:#173653;border-left:4px solid #8fc6ff;padding:12px;border-radius:5px;font-size:.91rem}
+    .caution{color:#ffdbad}
+    label{display:block;font-size:.96rem;font-weight:700;margin-top:18px}
+    input[type=text],select{width:100%;margin-top:8px;padding:13px;border:1px solid #8eacd0;border-radius:12px;background:#fff;color:#172c46;font-size:16px}
+    button{width:100%;padding:15px;margin-top:20px;background:#dbeeff;border:0;border-radius:12px;color:#163252;font-size:1.02rem;font-weight:750;cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.6}
+    .check{display:flex;gap:10px;align-items:flex-start;font-size:.91rem;font-weight:400;line-height:1.55}
+    .check input{margin-top:5px;width:20px;height:20px;flex:none}
+    .message{margin-top:15px;min-height:1.8em;line-height:1.6}
+    .error{color:#ffb5ae}
+    .ticket{margin:16px 0;background:#fff;color:#163252;border-radius:14px;padding:15px;overflow-wrap:anywhere}
+    .ticket strong{display:block;font-size:1.25rem;letter-spacing:.02em;margin:6px 0}
+    .muted{font-size:.88rem;color:#ccdcf0}
+    [hidden]{display:none!important}
+    .trap{position:absolute;left:-10000px;opacity:0;pointer-events:none}
+    a.back{display:inline-block;margin:0 0 10px}
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/" class="back">← 翠央1周年トップへ戻る</a>
+    <div class="eyebrow">MIO ANNIVERSARY · SAFE INTAKE</div>
+    <h1>👑 参加申請の仮受付</h1>
+    <p>この窓口は<strong>「仮受付」専用</strong>です。受け付けた時点で参加者IDの発行、別端末の認証、皆勤・ガチャの利用許可は行われません。</p>
+    <section class="panel">
+      <p class="notice">以前から参加している方の記録は変更しません。別端末からの申請も、本人確認が終わるまで元の記録とは接続しません。</p>
+      <p id="availability" class="muted" role="status" aria-live="polite">受付状況を確認しています…</p>
+      <form id="intakeForm" hidden>
+        <label for="nickname">ColorSing名（40文字以内）</label>
+        <input id="nickname" name="nickname" type="text" maxlength="40" autocomplete="nickname" required placeholder="配信で使用している名前">
+        <label for="kind">お申し込みの種類</label>
+        <select id="kind" name="kind" required>
+          <option value="new">初めての参加申請</option>
+          <option value="device-change">端末変更・別ブラウザの申請</option>
+        </select>
+        <div class="trap" aria-hidden="true">
+          <label for="website">Webサイト</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <label class="check" for="consent">
+          <input id="consent" type="checkbox" required>
+          <span>ColorSing名と申請区分を、運営による仮受付・本人確認の目的で保存することに同意します。送信回数の制限には、通信元情報から生成した匿名化識別子を利用します。</span>
+        </label>
+        <button id="send" type="submit">仮受付を申し込む</button>
+      </form>
+      <div id="ticket" hidden aria-live="polite">
+        <h2>仮受付を受け付けました</h2>
+        <p>この番号は控えとして保存してください。<strong>本人確認の証明やログインには使えません。</strong></p>
+        <div class="ticket"><small>仮受付番号</small><strong id="receipt"></strong></div>
+        <button id="copy" type="button">仮受付番号をコピー</button>
+        <p class="caution">※本登録・皆勤・ガチャはまだ利用できません。運営からの案内に従って本人確認を行ってください。</p>
+      </div>
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+    </section>
+    <p class="muted">正式な登録情報やログインIDはここでは入力しないでください。受付状況に問題がある場合は、イベント運営へお問い合わせください。</p>
+  </main>
+  <script type="module" src="/intake.js"></script>
+</body>
+</html>
