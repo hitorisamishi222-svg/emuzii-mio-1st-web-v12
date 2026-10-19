@@ -17,7 +17,7 @@ export {requestIP};
 export async function auditEnrollmentIP(req,browserId,eventType){
  if(!/^MIO-W-[a-f0-9]{24}$/.test(browserId)||!['registration','status'].includes(eventType))return false;
  const ip=requestIP(req),key=process.env.MIO_IP_AUDIT_SECRET;
- if(!ip||!key||key.length<48)return false;
+ if(!ip||!key||key.length<48){console.warn('IP audit skipped:',!ip?'client_ip_unavailable':'audit_secret_unavailable');return false;}
  const ipHash=createHmac('sha256',key).update('mio-ip-v202:'+ip).digest('hex');
  await db().query(`INSERT INTO mio_ip_audit_v202(browser_id,ip_hash,ip_family,event_type)
  SELECT $1,$2,$3,$4 WHERE NOT EXISTS (
