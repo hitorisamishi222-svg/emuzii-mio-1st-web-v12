@@ -125,8 +125,9 @@ function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orp
     name: duplicate ? '既存参加者' : '新規テスト参加者',
     loginId: ''
   };
-  const result = JSON.parse(handler({postData: {contents: JSON.stringify(payload)}}).text);
-  return {result, payload, web, registrationRow: (duplicate ? 3 : 2) + (orphan ? 1 : 0)};
+  const retry = () => JSON.parse(handler({postData: {contents: JSON.stringify(payload)}}).text);
+  const result = retry();
+  return {result, retry, payload, web, people, registrationRow: (duplicate ? 3 : 2) + (orphan ? 1 : 0)};
 }
 
 test('new participant is persisted and verified', () => {
@@ -193,4 +194,31 @@ test('same-name candidate skips orphan and remains unlinked', () => {
   assert.equal(f.web.value(3, 1), '');
   assert.equal(f.web.value(4, 1), f.payload.participantId);
   assert.equal(f.web.value(4, 8), '');
+});
+
+test('a partially saved identity must not become verified on retry', () => {
+  const f = fixture({mode:'identityOnly'});
+  assert.equal(f.result.ok,false);
+  assert.equal(f.retry().ok,false);
+  assert.notEqual(f.retry().verified,true);
+});
+
+test('a fully saved registration can be retried without creating a second row', () => {
+  const f = fixture();
+  assert.equal(f.result.ok,true);
+  const second=f.retry();
+  assert.equal(second.ok,true);
+  assert.equal(second.verified,true);
+  assert.equal(second.participantId,f.payload.participantId);
+  assert.equal(f.web.value(3,1),'');
+});
+
+test('recovery never edits an existing approved participant or their Web identity', () => {
+  const f=fixture({duplicate:true});
+  assert.equal(f.result.ok,true);
+  assert.equal(f.web.value(2,1),'MIO-W-'+'f'.repeat(24));
+  assert.equal(f.web.value(2,6),'承認済み');
+  assert.equal(f.web.value(2,8),'MIO-0004');
+  assert.equal(f.people.value(2,1),'MIO-0004');
+  assert.equal(f.people.value(2,2),'既存参加者');
 });
