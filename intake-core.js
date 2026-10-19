@@ -30,7 +30,7 @@ export function validateApplication(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
   // Honeypot: never persist spam fields or distinguish spammers by error text.
   if (body.website) return null;
-  if (!INTAKE_KINDS.has(body.kind) || typeof body.nickname !== 'string' ||
+  if (body.consent !== true || !INTAKE_KINDS.has(body.kind) || typeof body.nickname !== 'string' ||
       typeof body.requestKey !== 'string' ||
       !/^[a-f0-9]{32}$/.test(body.requestKey)) return null;
   const nickname = body.nickname.trim().normalize('NFKC');
