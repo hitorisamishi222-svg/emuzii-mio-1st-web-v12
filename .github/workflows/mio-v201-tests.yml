@@ -1,0 +1,23 @@
+name: Mio v2.0.1 name collision safeguard
+on:
+  push:
+    branches:
+      - feat/mio-v2-0-1-name-collision-20261019
+  pull_request:
+    paths:
+      - registration-name-v201.js
+      - api-enroll-lite.js
+      - join.html
+      - tests/name-collision-v201.test.mjs
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock
+      - run: node --check registration-name-v201.js
+      - run: node --check api-enroll-lite.js
+      - run: node --test tests/name-collision-v201.test.mjs tests/light-enrollment.test.mjs

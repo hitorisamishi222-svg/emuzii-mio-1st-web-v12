@@ -15,15 +15,15 @@ const KEY='mioLightEnrollmentRetryV1';
 const form=document.getElementById('join'),result=document.getElementById('result'),button=document.getElementById('submit'),nickname=document.getElementById('nickname');
 const set=(s,bad=false)=>{result.textContent=s;result.classList.toggle('error',bad)};
 async function api(payload){const r=await fetch('/api/enroll-lite',{method:payload?'POST':'GET',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,credentials:'same-origin',cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'接続先を確認できませんでした');return d}
-const done=d=>{form.classList.add('hide');set('登録完了！ '+d.name+' さん\n受付ID：'+d.participantId+'\n下のフォーム・ギャラリーをすぐ利用できます。')};
-(async()=>{try{const d=await api();if(d.registered)done(d);else set('名前を入力して登録してください。フォーム・ギャラリーは登録なしでも利用できます。')}catch(e){set('登録情報の確認ができません。フォーム・ギャラリーは下からご利用ください。',true)}})();
+const done=d=>{form.classList.add('hide');set(d.pendingReview?'同じColorSing名で登録があります。本人確認・管理者承認待ちです。\n受付番号：'+d.participantId+'\nフォーム応募とギャラリー閲覧は引き続き利用できます。':'登録受付完了！ '+d.name+' さん\n受付ID：'+d.participantId+'\n皆勤賞は管理者承認後に利用できます。\nフォーム・ギャラリーはすぐ利用できます。')};
+(async()=>{try{const d=await api();if(d.registered||d.pendingReview)done(d);else set('名前を入力して登録してください。フォーム・ギャラリーは登録なしでも利用できます。')}catch(e){set('登録情報の確認ができません。フォーム・ギャラリーは下からご利用ください。',true)}})();
 form.addEventListener('submit',async e=>{e.preventDefault();const name=nickname.value.trim();if(!name)return;button.disabled=true;set('登録を保存しています…');
 try{
  let saved=JSON.parse(localStorage.getItem(KEY)||'null');
  if(saved&&saved.name!==name)throw Error('前回の登録確認が残っています。前回と同じ名前で再送してください。');
  if(!saved){const bytes=crypto.getRandomValues(new Uint8Array(32));saved={name,retryKey:Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''),retryIssuedAt:Date.now()};localStorage.setItem(KEY,JSON.stringify(saved))}
  const d=await api(saved);
- if(d.ok&&d.registered){localStorage.removeItem(KEY);done(d)}
+ if(d.ok&&(d.registered||d.pendingReview)){localStorage.removeItem(KEY);done(d)}
  else throw Error('保存を確認できませんでした');
 }catch(err){set(err.message+'\n通信不明の場合は、同じ名前でもう一度送信してください。',true)}
 finally{button.disabled=false}
