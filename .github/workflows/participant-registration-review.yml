@@ -1,14 +1,18 @@
-name: Participant registration review
+name: Participant registration limited release review
 on:
   push:
-    branches: [fix/participant-registration-recovery-review]
+    branches: [fix/registration-limited-release-20261019]
   workflow_dispatch:
 jobs:
-  static-check:
+  registration-checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/participant-registration-recovery.test.mjs
+      - run: node --check api-register.js && node --check registration-attempt.js
+      - run: node --test tests/participant-registration-recovery.test.mjs tests/participant-registration-persistence.test.mjs tests/registration-retry.test.mjs
