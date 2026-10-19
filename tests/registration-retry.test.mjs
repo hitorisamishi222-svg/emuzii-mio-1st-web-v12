@@ -160,17 +160,23 @@ test('invalid or short browser retry keys never call GAS',async()=>{
   }finally{globalThis.fetch=fetchBefore;restore();}
 });
 
-test('a client retry key must not change the identity held by a signed pending cookie',async()=>{
+test('a signed pending cookie remains authoritative when browser storage is cleared',async()=>{
   const restore=mockProd(),fetchBefore=globalThis.fetch;
-  let posts=0;
+  const posts=[];
   try{
-    globalThis.fetch=async()=>{posts++;throw Error('ambiguous write')};
-    const a=res();
-    await register(req('',{retryKey:'a'.repeat(64)}),a);
-    assert.equal(a.statusCode,502);
-    const b=res();
-    await register(req(a.headers['set-cookie'].split(';')[0],{retryKey:'b'.repeat(64)}),b);
-    assert.equal(b.statusCode,409);
-    assert.equal(posts,1);
+    globalThis.fetch=async (_url,options)=>{
+      const data=JSON.parse(options.body);posts.push(data);
+      if(posts.length===1)throw Error('ambiguous write');
+      return {ok:true,async json(){return {ok:true,verified:true,participantId:data.participantId,status:'承認待ち'};}};
+    };
+    const first=res();
+    await register(req('',{retryKey:'a'.repeat(64)}),first);
+    assert.equal(first.statusCode,502);
+    const second=res();
+    await register(req(first.headers['set-cookie'].split(';')[0],{retryKey:'b'.repeat(64)}),second);
+    assert.equal(second.statusCode,201);
+    assert.equal(posts.length,2);
+    assert.equal(posts[0].participantId,posts[1].participantId);
+    assert.equal(posts[0].tokenHash,posts[1].tokenHash);
   }finally{globalThis.fetch=fetchBefore;restore();}
 });
