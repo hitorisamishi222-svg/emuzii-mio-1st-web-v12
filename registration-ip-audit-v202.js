@@ -12,6 +12,7 @@ function requestIP(req){
  const ip=Array.isArray(raw)?raw[0]:String(raw||'').split(',')[0].trim();
  return isIP(ip)?ip:null;
 }
+export {requestIP};
 export async function auditEnrollmentIP(req,browserId,eventType){
  if(!/^MIO-W-[a-f0-9]{24}$/.test(browserId)||!['registration','status'].includes(eventType))return false;
  const ip=requestIP(req),key=process.env.MIO_IP_AUDIT_SECRET;
