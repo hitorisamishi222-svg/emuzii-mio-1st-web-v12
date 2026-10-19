@@ -1,0 +1,26 @@
+name: Lightweight signup release validation
+on:
+  push:
+    branches:
+      - feat/public-lightweight-enrollment-20261019
+  pull_request:
+    paths:
+      - api-enroll-lite.js
+      - registration-light-store.js
+      - join.html
+      - index.html
+      - tests/light-enrollment.test.mjs
+      - vercel.json
+      - .github/workflows/light-signup-tests.yml
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock
+      - run: node --check api-enroll-lite.js
+      - run: node --check registration-light-store.js
+      - run: node --test tests/light-enrollment.test.mjs
