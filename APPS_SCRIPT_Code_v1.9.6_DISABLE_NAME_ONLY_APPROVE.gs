@@ -347,8 +347,10 @@ function doPost(e) {
     if(d.action==='checkin')return json_(checkinAction_(ss,r,d));
     if(d.action!=='status')return json_(gachaAction_(ss,r,d));
 
+    // Status is a read-only operation. Existing participant rows are immutable
+    // during public status refresh; only a new registration may write its ID.
     var statusRow=findWebRowIndexById_(web,r[0]);
-    var loginId=statusRow?ensureLoginIdForRow_(web,statusRow):'';
+    var loginId=statusRow?loginIdFormat_(web.getRange(statusRow,LOGIN_ID_COL).getDisplayValue()):'';
     var out={ok:true,participantId:r[0],name:r[2],status:r[5],loginId:loginIdDisplay_(loginId)};
     if(r[5]!=='承認済み')return json_(out);
 
