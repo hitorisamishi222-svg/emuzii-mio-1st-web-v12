@@ -47,6 +47,10 @@ function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orp
                 rows.forEach((row, i) => set(r + i, c, row[0]));
                 return this;
               }
+              if (mode === 'identityOnly') {
+                rows.forEach((row, i) => row.slice(0, 2).forEach((v, j) => set(r + i, c + j, v)));
+                return this;
+              }
               if (mode === 'mismatch') {
                 rows.forEach((row, i) => row.forEach((v, j) =>
                   set(r + i, c + j, j === 1 ? '0'.repeat(64) : v)));
@@ -146,7 +150,7 @@ test('same-name browser is saved as unlinked pending review', () => {
   assert.equal(f.web.value(2, 6), '承認済み');
 });
 
-for (const mode of ['silent', 'partial', 'mismatch']) {
+for (const mode of ['silent', 'partial', 'identityOnly', 'mismatch']) {
   test('same-name browser does not acknowledge ' + mode + ' persistence', () => {
     const f = fixture({duplicate: true, mode});
     assert.equal(f.result.ok, false);
@@ -154,6 +158,12 @@ for (const mode of ['silent', 'partial', 'mismatch']) {
     assert.notEqual(f.result.verified, true);
   });
 }
+
+test('new-name partial identity-only row is not a successful registration', () => {
+  const f = fixture({mode:'identityOnly'});
+  assert.equal(f.result.ok,false);
+  assert.notEqual(f.result.verified,true);
+});
 
 test('spreadsheet write exception is not a successful registration', () => {
   const f = fixture({duplicate: true, mode: 'throw'});
