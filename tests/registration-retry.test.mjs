@@ -120,3 +120,57 @@ test('read-only availability can never open a preview or a disabled release',asy
     assert.equal(preview.body.registrationOpen,false);
   }finally{restore();}
 });
+
+test('lost HTTP response AND lost Set-Cookie still retries with identical GAS identity',async()=>{
+  const restore=mockProd(),fetchBefore=globalThis.fetch;
+  const posts=[];
+  const sameKey='b'.repeat(64);
+  try{
+    globalThis.fetch=async (_url,options)=>{
+      const d=JSON.parse(options.body);posts.push(d);
+      if(posts.length===1)throw Error('synthetic dropped response including cookie');
+      return {ok:true,async json(){return {
+        ok:true,verified:true,participantId:d.participantId,
+        status:'承認待ち',loginId:''
+      }}};
+    };
+    const first=res();
+    await register(req('',{retryKey:sameKey}),first);
+    assert.equal(first.statusCode,502);
+    // No Set-Cookie from the first request is delivered to the browser!
+    const retry=res();
+    await register(req('',{retryKey:sameKey}),retry);
+    assert.equal(retry.statusCode,201);
+    assert.equal(posts.length,2);
+    assert.equal(posts[0].participantId,posts[1].participantId);
+    assert.equal(posts[0].tokenHash,posts[1].tokenHash);
+  }finally{globalThis.fetch=fetchBefore;restore();}
+});
+
+test('invalid or short browser retry keys never call GAS',async()=>{
+  const restore=mockProd(),fetchBefore=globalThis.fetch;
+  let calls=0;
+  try{
+    globalThis.fetch=async()=>{calls++;throw Error('should not call GAS')};
+    const result=res();
+    await register(req('',{retryKey:'12345'}),result);
+    assert.equal(result.statusCode,400);
+    assert.equal(calls,0);
+    assert.equal(result.headers['set-cookie'],undefined);
+  }finally{globalThis.fetch=fetchBefore;restore();}
+});
+
+test('a client retry key must not change the identity held by a signed pending cookie',async()=>{
+  const restore=mockProd(),fetchBefore=globalThis.fetch;
+  let posts=0;
+  try{
+    globalThis.fetch=async()=>{posts++;throw Error('ambiguous write')};
+    const a=res();
+    await register(req('',{retryKey:'a'.repeat(64)}),a);
+    assert.equal(a.statusCode,502);
+    const b=res();
+    await register(req(a.headers['set-cookie'].split(';')[0],{retryKey:'b'.repeat(64)}),b);
+    assert.equal(b.statusCode,409);
+    assert.equal(posts,1);
+  }finally{globalThis.fetch=fetchBefore;restore();}
+});
