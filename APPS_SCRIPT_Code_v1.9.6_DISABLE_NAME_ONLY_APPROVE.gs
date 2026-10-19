@@ -44,7 +44,12 @@ function rows_(ss,name){var sh=ss.getSheetByName(name);return sh&&sh.getLastRow(
 function safeText_(text){return /^[=+\-@]/.test(String(text||''))?"'"+text:text}
 function jstYmd_(date){if(Utilities&&typeof Utilities.formatDate==='function')return Utilities.formatDate(date,'Asia/Tokyo','yyyy-MM-dd');var x=new Date(date.getTime()+9*60*60*1000);return x.toISOString().slice(0,10)}
 function nameKey_(x){return String(x||'').normalize('NFKC').replace(/[\s\u3000]+/g,'').trim()}
-function loginIdFormat_(x){return String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function loginIdFormat_(x){
+  var clean=String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  // Stored login IDs are displayed as MIO-ABCD-1234. Strip the display prefix
+  // before converting back to the canonical 8-character identifier.
+  return /^MIO[A-Z0-9]{8}$/.test(clean)?clean.slice(3):clean;
+}
 function loginIdDisplay_(x){x=loginIdFormat_(x);return x.length===8?'MIO-'+x.slice(0,4)+'-'+x.slice(4):String(x||'')}
 function newLoginId_(){return Utilities.getUuid().replace(/-/g,'').slice(0,8).toUpperCase()}
 function ensureLoginIdHeader_(web){
@@ -103,6 +108,15 @@ function appendBrowserCandidate_(web,d,name,linked,auth,member,memo,matchState,c
   ]]);
   ensureWebDerivedRow_(web,row);
   SpreadsheetApp.flush();
+  // A successful setValues() does not prove that the browser candidate persisted.
+  // Confirm identity on the exact row before acknowledging a new browser.
+  var saved=web.getRange(row,1,1,LOGIN_ID_COL).getValues()[0];
+  var savedName=String(saved[2]||'');
+  var complete=String(saved[0]||'')===String(d.participantId)&&equal_(saved[1],d.tokenHash)&&
+    (savedName===name||savedName===safeText_(name))&&
+    saved[5]==='承認待ち'&&String(saved[7]||'')===''&&
+    saved[11]==='確認待ち'&&String(saved[20]||'')===loginId;
+  if(!complete)return {ok:false,error:'登録の保存を確認できませんでした'};
   return {ok:true,row:row};
 }
 
@@ -156,10 +170,16 @@ function ensureWebDerivedExisting_(ss){
 }
 
 function webNextRow_(web){
-  var next=webActualLastRow_(web)+1;
-  if(next<2)next=2;
-  if(next>500)return 0;
-  return next;
+  // Column A can be blank on an incomplete/legacy row even when other cells contain data.
+  // Skip those rows rather than overwriting existing sheet content.
+  var next=Math.max(2,webActualLastRow_(web)+1);
+  var limit=Math.min(500,web.getMaxRows());
+  for(var row=next;row<=limit;row++){
+    var values=web.getRange(row,1,1,LOGIN_ID_COL).getDisplayValues()[0];
+    var occupied=values.some(function(v){return String(v||'').trim()!==''});
+    if(!occupied)return row;
+  }
+  return 0;
 }
 
 function webIntegrityOk_(row){
@@ -195,6 +215,8 @@ function autoLinkWebParticipant_(ss,web,participantId,tokenHash,name){
     if(values[i][0]===participantId&&equal_(values[i][1],tokenHash)){row=i+2;break}
   }
   if(!row)return '';
+  // Defense in depth: a pending browser must never be linked by name.
+  if(String(web.getRange(row,6).getValue()||'')!=='承認済み')return '';
 
   var matched=[];
   for(var attempt=0;attempt<6;attempt++){
@@ -241,17 +263,33 @@ function doPost(e) {
 
     var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
     if(!web)return json_({ok:false,error:'setup required'});
-    ensureLoginIdHeader_(web);
+    // Status, check-in and gacha reads must not modify historic registration
+    // headers. Header initialization is limited to the registration action.
+    if(d.action==='register')ensureLoginIdHeader_(web);
 
     var all=webActualRows_(web),found=all.filter(function(r){return r[0]===d.participantId});
 
     if(d.action==='register') {
       if(found.length) {
+        if(found.length!==1)return json_({ok:false,error:'登録IDの重複を確認してください'});
         if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
+        // A retry is safe only when the ORIGINAL full row was persisted.
+        // Two identity cells without a name or approval state must never become a session.
+        var originalName=String(d.name||'').trim();
+        var savedName=String(found[0][2]||'');
+        var savedStatus=String(found[0][5]||'');
+        var validPrevious=(savedName===originalName||savedName===safeText_(originalName))&&
+          !!String(found[0][4]||'').trim()&&
+          ['承認待ち','承認済み','却下'].indexOf(savedStatus)!==-1&&
+          !!String(found[0][20]||'').trim();
+        if(!validPrevious)return json_({ok:false,error:'登録の保存を確認できませんでした'});
         var foundRow=findWebRowIndexById_(web,d.participantId);
-        var existingLoginId=foundRow?ensureLoginIdForRow_(web,foundRow):'';
-        var healedId=found[0][7]||autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
-        return json_({ok:true,verified:true,participantId:d.participantId,status:found[0][5],integratedParticipantId:healedId||'',loginId:loginIdDisplay_(existingLoginId)});
+        if(!foundRow)return json_({ok:false,error:'登録の保存を確認できませんでした'});
+        // Retry verification is strictly read-only on any existing participant row.
+        var existingLoginId=loginIdFormat_(web.getRange(foundRow,LOGIN_ID_COL).getDisplayValue());
+        // Existing approved browsers retain their recorded MIO-ID; never infer one from a name.
+        var healedId=found[0][7]||'';
+        return json_({ok:true,verified:true,participantId:d.participantId,status:savedStatus,integratedParticipantId:healedId,loginId:loginIdDisplay_(existingLoginId)});
       }
 
       var name=String(d.name||'').trim();
@@ -277,7 +315,7 @@ function doPost(e) {
           loginIdDisplay_(newLoginId_())
         );
         if(!pending.ok)return json_(pending);
-        try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
+        // Never recalculate/overwrite existing administrative data as a registration side effect.
         return json_({ok:true,verified:true,participantId:d.participantId,
           status:'承認待ち',integratedParticipantId:'',loginId:'',
           pendingReview:true,needsIdentityProof:true,autoApproved:false});
@@ -290,21 +328,17 @@ function doPost(e) {
       ensureWebDerivedRow_(web,newRow);
       SpreadsheetApp.flush();
 
-      if(!linked)linked=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,name);
-      try{if(ss.getSheetByName('emuzii_重複整理'))refreshDuplicateReviewV189_();}catch(ignore){}
+      // SECURITY: Newly registered unapproved browsers must never be linked by name alone.
       var saved=webActualRows_(web).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
-      return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち',integratedParticipantId:linked||'',loginId:issuedLoginId});
+      var savedName=saved.length?String(saved[0][2]||''):'';
+      var verified=saved.length===1&&(savedName===name||savedName===safeText_(name))&&
+        saved[0][5]==='承認待ち'&&String(saved[0][7]||'')===''&&
+        saved[0][11]==='確認待ち'&&String(saved[0][20]||'')===issuedLoginId;
+      return json_({ok:verified,verified:verified,participantId:d.participantId,status:'承認待ち',integratedParticipantId:'',loginId:verified?issuedLoginId:''});
     }
 
-    // Pending browser records are never auto-associated with an existing MIO-ID.
-    // Only an already approved, token-authenticated browser may use legacy repair.
-    if(found.length===1&&equal_(found[0][1],d.tokenHash)&&found[0][5]==='承認済み'&&!found[0][7]){
-      var repairedId=autoLinkWebParticipant_(ss,web,d.participantId,d.tokenHash,found[0][2]);
-      if(repairedId){
-        all=webActualRows_(web);
-        found=all.filter(function(r){return r[0]===d.participantId});
-      }
-    }
+    // An unlinked record is not repaired by name, even after a status flag changes.
+    // Administrators must link the verified MIO-ID explicitly; legacy links remain untouched.
 
     if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
 
@@ -315,8 +349,10 @@ function doPost(e) {
     if(d.action==='checkin')return json_(checkinAction_(ss,r,d));
     if(d.action!=='status')return json_(gachaAction_(ss,r,d));
 
+    // Status is a read-only operation. Existing participant rows are immutable
+    // during public status refresh; only a new registration may write its ID.
     var statusRow=findWebRowIndexById_(web,r[0]);
-    var loginId=statusRow?ensureLoginIdForRow_(web,statusRow):'';
+    var loginId=statusRow?loginIdFormat_(web.getRange(statusRow,LOGIN_ID_COL).getDisplayValue()):'';
     var out={ok:true,participantId:r[0],name:r[2],status:r[5],loginId:loginIdDisplay_(loginId)};
     if(r[5]!=='承認済み')return json_(out);
 

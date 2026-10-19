@@ -1,0 +1,20 @@
+name: Participant registration limited release review
+on:
+  push:
+    branches: [fix/registration-limited-release-20261019]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  registration-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check api-register.js && node --check registration-attempt.js && node --check app.js && node --check tools/prepare-gas-scoped-merge.mjs
+      - run: node --test tests/participant-registration-recovery.test.mjs tests/participant-registration-persistence.test.mjs tests/registration-retry.test.mjs tests/gas-scoped-merge.test.mjs tests/browser-registration-status.test.mjs

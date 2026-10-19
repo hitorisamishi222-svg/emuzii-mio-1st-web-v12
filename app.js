@@ -4,6 +4,37 @@ let attendanceConfirmedDays=new Set(),attendanceLockedDays=new Set(),attendanceA
 const NAME_KEY='mioColorSingName';
 const LOGIN_ID_KEY='mioLoginId';
 const ATTEMPT_KEY='mioAttendanceAttemptsV1';
+const REGISTRATION_RETRY_KEY='mioPendingRegistrationRetryV1';
+
+// Keep an identical cryptographic retry key across reloads and lost HTTP responses.
+// Never create a fresh MIO browser ID for an ambiguous earlier registration.
+function registrationRetryKey(name,loginId){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(REGISTRATION_RETRY_KEY)||'null')}catch{}
+  if(saved){
+    if(!/^[a-f0-9]{64}$/.test(saved.key||''))throw Error('登録の再送情報が壊れています。運営へお問い合わせください');
+    if(saved.name!==name||saved.loginId!==loginId)
+      throw Error('前回の登録結果を確認中です。最初に送信した名前とログインIDで再確認してください');
+    // Keep the original key and timestamp even after expiry. The server
+    // accepts expired keys only alongside an independently signed pending cookie.
+    // Creating a fresh key on the client could create a duplicate registration.
+    if(!Number.isSafeInteger(saved.issuedAt)||saved.issuedAt>Date.now()+60000)
+      throw Error('登録の再送情報が壊れています。運営へお問い合わせください');
+    return {key:saved.key,issuedAt:saved.issuedAt};
+  }
+  if(!globalThis.crypto?.getRandomValues)throw Error('安全な登録番号を作成できませんでした');
+  const bytes=crypto.getRandomValues(new Uint8Array(32));
+  const key=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+  const issuedAt=Date.now();
+  try{
+    localStorage.setItem(REGISTRATION_RETRY_KEY,JSON.stringify({name,loginId,key,issuedAt}));
+    if(localStorage.getItem(REGISTRATION_RETRY_KEY)===null)throw Error();
+  }catch{throw Error('登録情報を安全に保存できません。端末のブラウザ保存設定をご確認ください')}
+  return {key,issuedAt};
+}
+function clearRegistrationRetryKey(){
+  try{localStorage.removeItem(REGISTRATION_RETRY_KEY)}catch{}
+}
 let registered=false;
 
 function readLocalAttempts(){try{const v=JSON.parse(localStorage.getItem(ATTEMPT_KEY)||'{}');return v&&typeof v==='object'?v:{}}catch{return {}}}
@@ -69,15 +100,21 @@ function display(d){
 }
 
 async function refresh(){
+  const hadValidStatus=registered;
   message('参加状況を確認しています…');
   if($('counts'))$('counts').hidden=true;
   if($('gachaDetail'))$('gachaDetail').textContent='';
   if($('refresh'))$('refresh').disabled=true;
-  try{display(await post('/api/status'))}
+  try{display(await post('/api/status'));return true}
   catch(e){
-    registered=false;$('personal').hidden=true;$('register').hidden=false;
+    // A transient status failure must not turn a known existing session back
+    // into a new registration request. Only HTTP 401 confirms no session.
+    registered=e.status===401?false:hadValidStatus;
+    $('personal').hidden=true;$('register').hidden=false;
+    if(registered)$('registerButton').textContent='参加状況を再確認';
     if(e.status===401)message('ColorSing名を入力して参加状況を確認してください。');
     else message(e.status===503?'参加状況のWeb連携は準備中です。予想・FAは上のフォームから応募できます。':e.message,true);
+    return false;
   }finally{if($('refresh'))$('refresh').disabled=false}
 }
 
@@ -89,7 +126,27 @@ $('register')?.addEventListener('submit',async e=>{
   message('登録を保存しています…');
   const loginId=$('loginId')?$('loginId').value.trim():'';
   try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
-  try{const d=await post('/api/register',{name,loginId});if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{};await refresh()}catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}
+  try{
+    const retry=registrationRetryKey(name,loginId);
+    const d=await post('/api/register',{name,loginId,retryKey:retry.key,retryIssuedAt:retry.issuedAt});
+    clearRegistrationRetryKey();
+    if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{}
+    const refreshed=await refresh();
+    if(!refreshed){
+      // Registration succeeded even if the subsequent status request failed.
+      // Keep its signed browser session and offer a read-only refresh, not a second registration.
+      registered=true;
+      $('registerButton').textContent='参加状況を再確認';
+      message('登録の保存は完了しました。参加状況の取得に失敗したため、時間をおいて「参加状況を再確認」を押してください。');
+    }
+  }catch(e){
+    // Only clear a retry identity when the server definitively rejected the
+    // request before writing, never on ambiguous network/502 failures.
+    if(e?.status===400||e?.status===503||
+      /ログインIDを入力してください|ログインIDが一致しません/.test(e?.message||''))
+      clearRegistrationRetryKey();
+    message(e.message,true);
+  }finally{$('registerButton').disabled=false}
 });
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
@@ -134,4 +191,18 @@ if(mioBgm&&musicToggle){
   window.addEventListener('pageshow',()=>{if(!mioBgm.paused&&audioContext?.state==='suspended')void audioContext.resume().catch(()=>{})});
   mioBgm.addEventListener('play',()=>syncMusicUi());mioBgm.addEventListener('pause',()=>syncMusicUi());mioBgm.addEventListener('ended',()=>syncMusicUi());mioBgm.addEventListener('error',()=>{musicStatus.textContent='音源を読み込めませんでした。mio-awakening.mp3 がGitHubにあるか確認してください。'});syncMusicUi('ボタンを押すと再生します。');
 }
+async function refreshRegistrationNotice(){
+  const el=$('registrationNotice');
+  if(!el)return;
+  try{
+    const response=await fetch('/api/register',{method:'GET',cache:'no-store',credentials:'same-origin'});
+    if(!response.ok)return;
+    const state=await response.json();
+    if(state.registrationOpen===true){
+      el.textContent='新規登録の受付を再開しました。初めての方もこの特設サイトから登録できます。登録直後は「承認待ち」となり、既存参加者と同じ本人確認・利用ルールが適用されます。別端末登録は本人確認が必要です。';
+    }
+  }catch{/* Keep the safe paused notice when the release state cannot be verified. */}
+}
+
+void refreshRegistrationNotice();
 void refresh();
