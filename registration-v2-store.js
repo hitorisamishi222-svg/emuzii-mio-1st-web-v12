@@ -2,7 +2,6 @@
 // This module does not touch GAS, legacy MIO-ID assignments, gacha or attendance.
 // No automatic identity linking from a ColorSing name or recovery login ID.
 import pg from 'pg';
-import {createHash} from 'node:crypto';
 const {Pool}=pg;
 let pool;
 export const schemaSQL=`
@@ -28,7 +27,7 @@ CREATE TABLE IF NOT EXISTS mio_registration_v2 (
 CREATE INDEX IF NOT EXISTS mio_registration_v2_name_idx
   ON mio_registration_v2(name_normalized);
 `;
-export const normalizeName=(name)=>String(name||'').normalize('NFKC').replace(/[\\s\\u3000]+/g,'').trim();
+export const normalizeName=(name)=>String(name||'').normalize('NFKC').replace(/[\s\u3000]+/g,'').trim();
 export function validateEnrollment(payload){
  const browserId=String(payload?.browserId||'');
  const tokenHash=String(payload?.tokenHash||'');
