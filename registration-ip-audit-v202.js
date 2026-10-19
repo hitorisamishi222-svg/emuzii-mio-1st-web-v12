@@ -1,4 +1,4 @@
-// v2.0.2: privacy-preserving network signal for light enrollment only.
+// v2.0.6: privacy-preserving network signal for light enrollment only.
 // This is an advisory signal; it never grants or merges identity.
 import {createHmac} from 'node:crypto';
 import {isIP} from 'node:net';
@@ -7,8 +7,9 @@ const {Pool}=pg;
 let pool;
 function db(){if(!pool)pool=new Pool({connectionString:process.env.MIO_REGISTRATION_DATABASE_URL,ssl:{rejectUnauthorized:true},max:2,connectionTimeoutMillis:4000});return pool}
 function requestIP(req){
- // Vercel's platform-provided header; do not trust arbitrary X-Forwarded-For.
- const raw=req.headers['x-vercel-forwarded-for'];
+ // Vercel overwrites x-forwarded-for by default on its edge (official request-header docs).
+ // This service must remain behind Vercel; do not reuse this trust rule on arbitrary hosts.
+ const raw=req.headers['x-forwarded-for'];
  const ip=Array.isArray(raw)?raw[0]:String(raw||'').split(',')[0].trim();
  return isIP(ip)?ip:null;
 }
