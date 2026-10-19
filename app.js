@@ -128,7 +128,14 @@ $('register')?.addEventListener('submit',async e=>{
       $('registerButton').textContent='参加状況を再確認';
       message('登録の保存は完了しました。参加状況の取得に失敗したため、時間をおいて「参加状況を再確認」を押してください。');
     }
-  }catch(e){message(e.message,true)}finally{$('registerButton').disabled=false}
+  }catch(e){
+    // Only clear a retry identity when the server definitively rejected the
+    // request before writing, never on ambiguous network/502 failures.
+    if(e?.status===400||e?.status===503||
+      /ログインIDを入力してください|ログインIDが一致しません/.test(e?.message||''))
+      clearRegistrationRetryKey();
+    message(e.message,true);
+  }finally{$('registerButton').disabled=false}
 });
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
