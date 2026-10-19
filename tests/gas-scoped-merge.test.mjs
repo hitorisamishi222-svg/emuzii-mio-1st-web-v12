@@ -27,9 +27,9 @@ test('legacy baseline merges to precisely the reviewed repair and never overwrit
   assert.equal(result.original,legacy);
 });
 test('independent edits to a protected gacha handler remain byte-for-byte intact',()=>{
-  const needle='function checkinAction_(';
+  const needle='function checkinAction_(ss,r,d){';
   assert.equal(legacy.split(needle).length,2);
-  const current=legacy.replace(needle,'// Independent operator note: keep old checkin and gacha.\n'+needle);
+  const current=legacy.replace(needle,needle+'\n  // Independent operator note: keep old checkin and gacha.');
   const result=launch(current);
   assert.equal(result.status,0,result.stderr);
   assert.ok(result.out.includes('// Independent operator note'));
