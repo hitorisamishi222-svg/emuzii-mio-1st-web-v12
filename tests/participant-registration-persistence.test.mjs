@@ -10,7 +10,7 @@ const source = fs.readFileSync(
   'utf8'
 );
 
-function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orphan = false} = {}) {
+function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orphan = false, existingLoginId = false} = {}) {
   let counter = 0;
   const sheets = new Map();
   function makeSheet(name) {
@@ -79,6 +79,7 @@ function fixture({mode = 'normal', duplicate = false, invalidSecret = false, orp
       '', '既存一致', 'MIO-0004', '確認済み'
     ]);
     people.seed(2, ['MIO-0004', '既存参加者']);
+    if (existingLoginId) web.getRange(2, 21).setValue('MIO-1234-5678');
   }
   // A legacy orphan with an empty participant ID must never be overwritten.
   if (orphan) web.seed(duplicate ? 3 : 2, ['', '', '', '', '', '承認待ち']);
@@ -221,4 +222,33 @@ test('recovery never edits an existing approved participant or their Web identit
   assert.equal(f.web.value(2,8),'MIO-0004');
   assert.equal(f.people.value(2,1),'MIO-0004');
   assert.equal(f.people.value(2,2),'既存参加者');
+});
+
+test('retrying an approved browser reads the original record without changing any cell', () => {
+  const f = fixture({duplicate:true,existingLoginId:true});
+  assert.equal(f.result.ok,true);
+  const original = Array.from({length:21},(_,i)=>f.web.value(2,i+1));
+  f.payload.participantId='MIO-W-'+'f'.repeat(24);
+  f.payload.tokenHash='2'.repeat(64);
+  f.payload.name='既存参加者';
+  const reused = f.retry();
+  assert.equal(reused.ok,true);
+  assert.equal(reused.verified,true);
+  assert.equal(reused.status,'承認済み');
+  assert.equal(reused.integratedParticipantId,'MIO-0004');
+  assert.equal(reused.loginId,'MIO-1234-5678');
+  assert.equal(JSON.stringify(Array.from({length:21},(_,i)=>f.web.value(2,i+1))),JSON.stringify(original));
+});
+
+test('a legacy browser with missing login ID is not modified by retry', () => {
+  const f = fixture({duplicate:true});
+  assert.equal(f.result.ok,true);
+  const original = Array.from({length:21},(_,i)=>f.web.value(2,i+1));
+  f.payload.participantId='MIO-W-'+'f'.repeat(24);
+  f.payload.tokenHash='2'.repeat(64);
+  f.payload.name='既存参加者';
+  const reused=f.retry();
+  assert.equal(reused.ok,false);
+  assert.equal(reused.verified,undefined);
+  assert.equal(JSON.stringify(Array.from({length:21},(_,i)=>f.web.value(2,i+1))),JSON.stringify(original));
 });
