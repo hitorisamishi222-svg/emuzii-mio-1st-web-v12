@@ -50,3 +50,10 @@ test('unrelated names and existing IDs remain untouched',async()=>{
  const r=await registerV201(input('f','Different listener'),{db});
  assert.equal(r.created,true);assert.equal(db.normal.size,1);assert.equal(db.reviews.size,0);
 });
+test('pre-v2.0.1 browser with legacy-matching name is review pending, even if main row exists',async()=>{
+ const db=fakeDb({reservedNames:['きーちゃん']});const a=input('9','きーちゃん');
+ db.normal.set(a.browserId,{browser_id:a.browserId,token_hash:a.tokenHash,name:a.name,status:'承認待ち'});
+ db.reviews.set(a.browserId,{browser_id:a.browserId,token_hash:a.tokenHash,name:a.name});
+ const r=await registerV201(a,{db});assert.equal(r.pendingReview,true);
+ const status=await statusV201(a.browserId,a.tokenHash,{db});assert.equal(status.pendingReview,true);assert.equal(status.status,'本人確認待ち');
+});
