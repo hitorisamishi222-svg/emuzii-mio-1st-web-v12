@@ -15,11 +15,11 @@ export async function registerV201(input,{db=database()}={}){
   await client.query('BEGIN');
   const existing=await client.query('SELECT browser_id,token_hash,name,status FROM mio_registration_v2 WHERE browser_id=$1 FOR UPDATE',[x.browserId]);
   const review=await client.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1 FOR UPDATE',[x.browserId]);
-  const prior=existing.rows[0]||review.rows[0];
+  const prior=review.rows[0]||existing.rows[0];
   if(prior){
    if(prior.token_hash!==x.tokenHash||prior.name!==x.name)throw Error('identity mismatch');
    await client.query('COMMIT');
-   return {ok:true,created:false,pendingReview:!existing.rows.length,participantId:x.browserId,name:prior.name,status:'承認待ち'};
+   return {ok:true,created:false,pendingReview:!!review.rows.length,participantId:x.browserId,name:prior.name,status:review.rows.length?'本人確認待ち':'承認待ち'};
   }
   const reserved=await client.query(`
     INSERT INTO mio_name_registry_v201(name_key,original_name,origin,browser_id)
@@ -45,8 +45,8 @@ export async function registerV201(input,{db=database()}={}){
 export async function statusV201(browserId,tokenHash,{db=database()}={}){
  validateEnrollment({browserId,tokenHash,name:'-',loginId:''});
  const normal=await db.query('SELECT browser_id,token_hash,name,status FROM mio_registration_v2 WHERE browser_id=$1',[browserId]);
- const review=normal.rows.length?{rows:[]}:await db.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
- const row=normal.rows[0]||review.rows[0];
+ const review=await db.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
+ const row=review.rows[0]||normal.rows[0];
  if(!row||row.token_hash!==tokenHash)throw Error('unauthorized');
- return {ok:true,participantId:row.browser_id,name:row.name,status:normal.rows.length?row.status:'本人確認待ち',pendingReview:!normal.rows.length};
+ return {ok:true,participantId:row.browser_id,name:row.name,status:review.rows.length?'本人確認待ち':row.status,pendingReview:!!review.rows.length};
 }
