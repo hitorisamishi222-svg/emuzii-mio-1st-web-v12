@@ -336,9 +336,25 @@
     {
       "src": "api-announcements.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-enroll-lite.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "join.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/join.html",
+      "dest": "/join.html"
+    },
+    {
+      "src": "/api/enroll-lite",
+      "dest": "/api-enroll-lite.js"
+    },
     {
       "src": "/api/gallery/announcements",
       "dest": "/api-announcements.js"
