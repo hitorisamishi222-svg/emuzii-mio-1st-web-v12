@@ -1,0 +1,20 @@
+name: Registration v2 independent core
+on:
+  push:
+    branches:
+      - feat/registration-v2-independent-core-20261019
+  pull_request:
+    paths:
+      - registration-v2-store.js
+      - tests/registration-v2-store.test.mjs
+      - .github/workflows/registration-v2-core.yml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/registration-v2-store.test.mjs
