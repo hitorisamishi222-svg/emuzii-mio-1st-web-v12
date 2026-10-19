@@ -44,7 +44,12 @@ function rows_(ss,name){var sh=ss.getSheetByName(name);return sh&&sh.getLastRow(
 function safeText_(text){return /^[=+\-@]/.test(String(text||''))?"'"+text:text}
 function jstYmd_(date){if(Utilities&&typeof Utilities.formatDate==='function')return Utilities.formatDate(date,'Asia/Tokyo','yyyy-MM-dd');var x=new Date(date.getTime()+9*60*60*1000);return x.toISOString().slice(0,10)}
 function nameKey_(x){return String(x||'').normalize('NFKC').replace(/[\s\u3000]+/g,'').trim()}
-function loginIdFormat_(x){return String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function loginIdFormat_(x){
+  var clean=String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  // Stored login IDs are displayed as MIO-ABCD-1234. Strip the display prefix
+  // before converting back to the canonical 8-character identifier.
+  return /^MIO[A-Z0-9]{8}$/.test(clean)?clean.slice(3):clean;
+}
 function loginIdDisplay_(x){x=loginIdFormat_(x);return x.length===8?'MIO-'+x.slice(0,4)+'-'+x.slice(4):String(x||'')}
 function newLoginId_(){return Utilities.getUuid().replace(/-/g,'').slice(0,8).toUpperCase()}
 function ensureLoginIdHeader_(web){
