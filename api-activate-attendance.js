@@ -30,7 +30,7 @@ export default async function handler(req,res){
  try{
   const tokenHash=hash(session.token);
   const light=await statusV201(session.id,tokenHash);
-  if(light.pendingReview||light.status==='却下')return json(res,409,{ok:false,error:'本人確認・管理者承認をお待ちください'});
+  if(light.pendingReview||light.status!=='承認済み'||light.attendanceGrantVerified!==true||!/^MIO-[0-9]{4}$/.test(light.integratedParticipantId||''))return json(res,409,{ok:false,error:'本人確認・管理者承認をお待ちください'});
   // GAS verifies its own saved browser ID/tokenHash and spreadsheet approval.
   // A Neon status or name match alone is never sufficient.
   const legacy=await bridge('status',{participantId:session.id,tokenHash});
