@@ -19,7 +19,7 @@ export async function registerV201(input,{db=database()}={}){
   if(prior){
    if(prior.token_hash!==x.tokenHash||prior.name!==x.name)throw Error('identity mismatch');
    await client.query('COMMIT');
-   return {ok:true,created:false,pendingReview:!!review.rows.length,participantId:x.browserId,name:prior.name,status:review.rows.length?'本人確認待ち':'承認待ち'};
+   return {ok:true,created:false,pendingReview:!!review.rows.length,participantId:x.browserId,name:prior.name,status:review.rows.length?'本人確認待ち':prior.status};
   }
   const reserved=await client.query(`
     INSERT INTO mio_name_registry_v201(name_key,original_name,origin,browser_id)
@@ -44,9 +44,19 @@ export async function registerV201(input,{db=database()}={}){
 }
 export async function statusV201(browserId,tokenHash,{db=database()}={}){
  validateEnrollment({browserId,tokenHash,name:'-',loginId:''});
- const normal=await db.query('SELECT browser_id,token_hash,name,status FROM mio_registration_v2 WHERE browser_id=$1',[browserId]);
+ const normal=await db.query('SELECT browser_id,token_hash,name,status,integrated_participant_id,approved_by,approved_at FROM mio_registration_v2 WHERE browser_id=$1',[browserId]);
  const review=await db.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
  const row=review.rows[0]||normal.rows[0];
  if(!row||row.token_hash!==tokenHash)throw Error('unauthorized');
- return {ok:true,participantId:row.browser_id,name:row.name,status:review.rows.length?'本人確認待ち':row.status,pendingReview:!!review.rows.length};
+ const pendingReview=!!review.rows.length;
+ const approved=normal.rows[0];
+ const grantVerified=!pendingReview&&row.status==='承認済み'&&
+  /^MIO-[0-9]{4}$/.test(String(approved?.integrated_participant_id||''))&&
+  typeof approved?.approved_by==='string'&&approved.approved_by.trim().length>0&&
+  !!approved.approved_at;
+ return {ok:true,participantId:row.browser_id,name:row.name,
+  status:pendingReview?'本人確認待ち':row.status,pendingReview,
+  // Internal server-side signals only: public light enrollment response does not expose them.
+  attendanceGrantVerified:grantVerified,
+  integratedParticipantId:grantVerified?approved.integrated_participant_id:null};
 }
