@@ -1,8 +1,9 @@
 // Lightweight public enrollment. Isolated from legacy GAS, privileges and sessions.
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {registerV201,statusV201} from './registration-name-v201.js';
-import {identityFromRetryKey,readRegistrationAttempt} from './registration-attempt.js';
-import {hash,readSession} from './bridge.js';
+import {identityFromRetryKey} from './registration-attempt.js';
+import {hash} from './bridge.js';
+import {legacyIdentityState} from './registration-legacy-guard.js';
 import {auditEnrollmentIP} from './registration-ip-audit-v202.js';
 const COOKIE='mio_light_session';
 function secret(){const s=process.env.MIO_LIGHT_SESSION_SECRET;if(!s||s.length<48)throw Error('registration secret missing');return s}
@@ -12,13 +13,6 @@ function session(cookie,key){try{const raw=String(cookie||'').split(';').map(x=>
 const respond=(res,code,obj)=>res.status(code).json(obj);
 // A valid legacy signed cookie means this device already has a MIO identity.
 // This is only a duplicate-registration guard; it never grants privileges.
-function legacyIdentityState(req){
- const key=process.env.APPS_SCRIPT_SECRET;
- if(typeof key!=='string'||key.length<32)return null;
- if(readSession(req.headers.cookie,key))return 'registered';
- if(readRegistrationAttempt(req.headers.cookie,key))return 'pending';
- return null;
-}
 // Audit is advisory and must never block enrollment or disclose IP data.
 async function audit(req,id,event){try{await auditEnrollmentIP(req,id,event)}catch(e){console.warn('IP audit unavailable:',e?.code||'error')}}
 export default async function handler(req,res){
@@ -29,7 +23,7 @@ export default async function handler(req,res){
  const origin=req.headers.origin;
  if(origin){try{if(new URL(origin).host!==req.headers.host)throw Error()}catch{return respond(res,403,{ok:false,error:'別サイトから操作できません'})}}
  const existing=session(req.headers.cookie,key);
- const legacyState=legacyIdentityState(req);
+ const legacyState=legacyIdentityState(req.headers.cookie,process.env.APPS_SCRIPT_SECRET);
  if(req.method==='GET'){
   if(legacyState)return respond(res,200,{ok:true,registered:false,legacyRegistration:true,legacyPending:legacyState==='pending',access:'legacy'});
   if(!existing)return respond(res,200,{ok:true,registered:false,access:'public'});
