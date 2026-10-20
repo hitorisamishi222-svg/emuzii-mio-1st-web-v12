@@ -17,7 +17,7 @@ test('signed pending legacy registration is recognized',()=>{
 test('pending legacy registration cannot be forged with another secret',()=>{
  const cookie=toCookie(issueRegistrationAttempt({...identity,name:'test singer',loginId:''},secret));
  assert.equal(readRegistrationAttempt(cookie,secret+'wrong'),null);
- assert.equal(readRegistrationAttempt(cookie.slice(0,-1)+(cookie.endsWith('A')?'B':'A'),secret),null);
+ assert.equal(readRegistrationAttempt(cookie.replace(/(mio_registration_attempt=[^.]+\.)(.)/,(_,prefix,c)=>prefix+(c==='A'?'B':'A')),secret),null);
 });
 test('legacy authenticated session is distinguished from pending attempt',()=>{
  const cookie=toCookie(sessionCookie(identity.id,identity.token,secret));
