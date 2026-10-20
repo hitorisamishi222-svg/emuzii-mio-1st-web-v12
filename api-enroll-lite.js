@@ -1,7 +1,7 @@
 // Lightweight public enrollment. Isolated from legacy GAS, privileges and sessions.
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {registerV201,statusV201} from './registration-name-v201.js';
-import {identityFromRetryKey} from './registration-attempt.js';
+import {identityFromRetryKey,readRegistrationAttempt} from './registration-attempt.js';
 import {hash,readSession} from './bridge.js';
 import {auditEnrollmentIP} from './registration-ip-audit-v202.js';
 const COOKIE='mio_light_session';
@@ -12,9 +12,12 @@ function session(cookie,key){try{const raw=String(cookie||'').split(';').map(x=>
 const respond=(res,code,obj)=>res.status(code).json(obj);
 // A valid legacy signed cookie means this device already has a MIO identity.
 // This is only a duplicate-registration guard; it never grants privileges.
-function hasSignedLegacyIdentity(req){
+function legacyIdentityState(req){
  const key=process.env.APPS_SCRIPT_SECRET;
- return typeof key==='string'&&key.length>=32&&!!readSession(req.headers.cookie,key);
+ if(typeof key!=='string'||key.length<32)return null;
+ if(readSession(req.headers.cookie,key))return 'registered';
+ if(readRegistrationAttempt(req.headers.cookie,key))return 'pending';
+ return null;
 }
 // Audit is advisory and must never block enrollment or disclose IP data.
 async function audit(req,id,event){try{await auditEnrollmentIP(req,id,event)}catch(e){console.warn('IP audit unavailable:',e?.code||'error')}}
@@ -26,15 +29,15 @@ export default async function handler(req,res){
  const origin=req.headers.origin;
  if(origin){try{if(new URL(origin).host!==req.headers.host)throw Error()}catch{return respond(res,403,{ok:false,error:'別サイトから操作できません'})}}
  const existing=session(req.headers.cookie,key);
- const legacyRegistered=hasSignedLegacyIdentity(req);
+ const legacyState=legacyIdentityState(req);
  if(req.method==='GET'){
-  if(legacyRegistered)return respond(res,200,{ok:true,registered:false,legacyRegistration:true,access:'legacy'});
+  if(legacyState)return respond(res,200,{ok:true,registered:false,legacyRegistration:true,legacyPending:legacyState==='pending',access:'legacy'});
   if(!existing)return respond(res,200,{ok:true,registered:false,access:'public'});
   try{const d=await statusV201(existing.id,hash(existing.token));await audit(req,existing.id,'status');return respond(res,200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',name:d.name,participantId:d.participantId,status:d.status})}
   catch{return respond(res,401,{ok:false,registered:false,error:'登録情報を確認できません'})}
  }
  if(req.method!=='POST'){res.setHeader('Allow','GET, POST');return respond(res,405,{ok:false})}
- if(legacyRegistered)return respond(res,409,{ok:false,legacyRegistration:true,error:'この端末には従来の登録情報があります。新規登録せず、トップの参加状況を確認してください。端末変更は管理者へご連絡ください'});
+ if(legacyState)return respond(res,409,{ok:false,legacyRegistration:true,legacyPending:legacyState==='pending',error:legacyState==='pending'?'この端末には従来の登録手続きが残っています。重複登録をせず、登録状況を管理者に確認してください':'この端末には従来の登録情報があります。新規登録せず、トップの参加状況を確認してください。端末変更は管理者へご連絡ください'});
  if(existing){try{const d=await statusV201(existing.id,hash(existing.token));await audit(req,existing.id,'status');return respond(res,200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',name:d.name,participantId:d.participantId,status:d.status})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
  const b=req.body||{};
  if(typeof b.name!=='string'||typeof b.retryKey!=='string'||!Number.isSafeInteger(b.retryIssuedAt))return respond(res,400,{ok:false,error:'入力内容を確認してください'});
