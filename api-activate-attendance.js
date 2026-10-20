@@ -5,6 +5,7 @@
 import {readLightSession} from './registration-light-session.js';
 import {legacyIdentityState} from './registration-legacy-guard.js';
 import {statusV201} from './registration-name-v201.js';
+import {verifyAttendanceIntegration} from './attendance-integration-proof.js';
 import {bridge,hash,sessionCookie} from './bridge.js';
 
 const json=(res,code,obj)=>res.status(code).json(obj);
@@ -34,8 +35,7 @@ export default async function handler(req,res){
   // GAS verifies its own saved browser ID/tokenHash and spreadsheet approval.
   // A Neon status or name match alone is never sufficient.
   const legacy=await bridge('status',{participantId:session.id,tokenHash});
-  if(legacy.participantId!==session.id||legacy.name!==light.name||
-     legacy.status!=='承認済み'||!legacy.progress)
+  if(!verifyAttendanceIntegration(light,legacy,session.id))
    return json(res,409,{ok:false,error:'皆勤の本人確認・登録照合がまだ完了していません。管理者へお問い合わせください'});
   const secret=process.env.APPS_SCRIPT_SECRET;
   if(!secret||secret.length<32)return json(res,503,{ok:false,error:'皆勤連携を準備中です'});
