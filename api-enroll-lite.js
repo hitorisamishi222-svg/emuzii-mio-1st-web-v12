@@ -2,7 +2,7 @@
 import {createHmac,timingSafeEqual} from 'node:crypto';
 import {registerV201,statusV201} from './registration-name-v201.js';
 import {identityFromRetryKey} from './registration-attempt.js';
-import {hash} from './bridge.js';
+import {hash,readSession} from './bridge.js';
 import {auditEnrollmentIP} from './registration-ip-audit-v202.js';
 const COOKIE='mio_light_session';
 function secret(){const s=process.env.MIO_LIGHT_SESSION_SECRET;if(!s||s.length<48)throw Error('registration secret missing');return s}
@@ -10,6 +10,12 @@ function sign(data,key){return createHmac('sha256',key).update('mio-light-v1:'+d
 function setCookie(id,token,key){const encoded=Buffer.from(JSON.stringify({id,token})).toString('base64url');return COOKIE+'='+encoded+'.'+sign(encoded,key).toString('base64url')+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=7776000'}
 function session(cookie,key){try{const raw=String(cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);if(!raw)return null;const [data,sig,...rest]=raw.split('.');if(rest.length||!data||!sig)return null;const expected=sign(data,key),actual=Buffer.from(sig,'base64url');if(actual.length!==expected.length||!timingSafeEqual(actual,expected))return null;const s=JSON.parse(Buffer.from(data,'base64url').toString());if(!/^MIO-W-[a-f0-9]{24}$/.test(s.id)||!/^[a-f0-9]{64}$/.test(s.token))return null;return s}catch{return null}}
 const respond=(res,code,obj)=>res.status(code).json(obj);
+// A valid legacy signed cookie means this device already has a MIO identity.
+// This is only a duplicate-registration guard; it never grants privileges.
+function hasSignedLegacyIdentity(req){
+ const key=process.env.APPS_SCRIPT_SECRET;
+ return typeof key==='string'&&key.length>=32&&!!readSession(req.headers.cookie,key);
+}
 // Audit is advisory and must never block enrollment or disclose IP data.
 async function audit(req,id,event){try{await auditEnrollmentIP(req,id,event)}catch(e){console.warn('IP audit unavailable:',e?.code||'error')}}
 export default async function handler(req,res){
@@ -20,12 +26,15 @@ export default async function handler(req,res){
  const origin=req.headers.origin;
  if(origin){try{if(new URL(origin).host!==req.headers.host)throw Error()}catch{return respond(res,403,{ok:false,error:'別サイトから操作できません'})}}
  const existing=session(req.headers.cookie,key);
+ const legacyRegistered=hasSignedLegacyIdentity(req);
  if(req.method==='GET'){
+  if(legacyRegistered)return respond(res,200,{ok:true,registered:false,legacyRegistration:true,access:'legacy'});
   if(!existing)return respond(res,200,{ok:true,registered:false,access:'public'});
   try{const d=await statusV201(existing.id,hash(existing.token));await audit(req,existing.id,'status');return respond(res,200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',name:d.name,participantId:d.participantId,status:d.status})}
   catch{return respond(res,401,{ok:false,registered:false,error:'登録情報を確認できません'})}
  }
  if(req.method!=='POST'){res.setHeader('Allow','GET, POST');return respond(res,405,{ok:false})}
+ if(legacyRegistered)return respond(res,409,{ok:false,legacyRegistration:true,error:'この端末には従来の登録情報があります。新規登録せず、トップの参加状況を確認してください。端末変更は管理者へご連絡ください'});
  if(existing){try{const d=await statusV201(existing.id,hash(existing.token));await audit(req,existing.id,'status');return respond(res,200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',name:d.name,participantId:d.participantId,status:d.status})}catch{return respond(res,409,{ok:false,error:'登録情報の確認が必要です'})}}
  const b=req.body||{};
  if(typeof b.name!=='string'||typeof b.retryKey!=='string'||!Number.isSafeInteger(b.retryIssuedAt))return respond(res,400,{ok:false,error:'入力内容を確認してください'});
