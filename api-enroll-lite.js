@@ -1,15 +1,11 @@
 // Lightweight public enrollment. Isolated from legacy GAS, privileges and sessions.
-import {createHmac,timingSafeEqual} from 'node:crypto';
 import {registerV201,statusV201} from './registration-name-v201.js';
 import {identityFromRetryKey} from './registration-attempt.js';
 import {hash} from './bridge.js';
 import {legacyIdentityState} from './registration-legacy-guard.js';
 import {auditEnrollmentIP} from './registration-ip-audit-v202.js';
-const COOKIE='mio_light_session';
+import {readLightSession,setLightSessionCookie} from './registration-light-session.js';
 function secret(){const s=process.env.MIO_LIGHT_SESSION_SECRET;if(!s||s.length<48)throw Error('registration secret missing');return s}
-function sign(data,key){return createHmac('sha256',key).update('mio-light-v1:'+data).digest();}
-function setCookie(id,token,key){const encoded=Buffer.from(JSON.stringify({id,token})).toString('base64url');return COOKIE+'='+encoded+'.'+sign(encoded,key).toString('base64url')+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=7776000'}
-function session(cookie,key){try{const raw=String(cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);if(!raw)return null;const [data,sig,...rest]=raw.split('.');if(rest.length||!data||!sig)return null;const expected=sign(data,key),actual=Buffer.from(sig,'base64url');if(actual.length!==expected.length||!timingSafeEqual(actual,expected))return null;const s=JSON.parse(Buffer.from(data,'base64url').toString());if(!/^MIO-W-[a-f0-9]{24}$/.test(s.id)||!/^[a-f0-9]{64}$/.test(s.token))return null;return s}catch{return null}}
 const respond=(res,code,obj)=>res.status(code).json(obj);
 // A valid legacy signed cookie means this device already has a MIO identity.
 // This is only a duplicate-registration guard; it never grants privileges.
@@ -22,7 +18,7 @@ export default async function handler(req,res){
  let key;try{key=secret();if(!process.env.MIO_REGISTRATION_DATABASE_URL)throw Error()}catch{return respond(res,503,{ok:false,error:'登録先を準備中です'})}
  const origin=req.headers.origin;
  if(origin){try{if(new URL(origin).host!==req.headers.host)throw Error()}catch{return respond(res,403,{ok:false,error:'別サイトから操作できません'})}}
- const existing=session(req.headers.cookie,key);
+ const existing=readLightSession(req.headers.cookie,key);
  const legacyState=legacyIdentityState(req.headers.cookie,process.env.APPS_SCRIPT_SECRET);
  if(req.method==='GET'){
   if(legacyState)return respond(res,200,{ok:true,registered:false,legacyRegistration:true,legacyPending:legacyState==='pending',access:'legacy'});
@@ -41,7 +37,7 @@ export default async function handler(req,res){
  if(!identity)return respond(res,409,{ok:false,error:'再送期限切れです。運営へ確認してください。新規登録を重ねないでください'});
  try{
   const d=await registerV201({browserId:identity.id,tokenHash:hash(identity.token),name,loginId:''});
-  res.setHeader('Set-Cookie',setCookie(identity.id,identity.token,key));
+  res.setHeader('Set-Cookie',setLightSessionCookie(identity.id,identity.token,key));
   await audit(req,identity.id,'registration');
   return respond(res,d.created?201:200,{ok:true,registered:!d.pendingReview,pendingReview:!!d.pendingReview,access:d.pendingReview?'review':'basic',participantId:d.participantId,name:d.name,status:d.status});
  }catch(e){
