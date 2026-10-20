@@ -344,6 +344,10 @@
     {
       "src": "join.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-activate-attendance.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -354,6 +358,10 @@
     {
       "src": "/api/enroll-lite",
       "dest": "/api-enroll-lite.js"
+    },
+    {
+      "src": "/api/activate-attendance",
+      "dest": "/api-activate-attendance.js"
     },
     {
       "src": "/api/gallery/announcements",
