@@ -9,6 +9,10 @@ on:
       - participant-passkey-core-v204.js
       - tests/participant-passkey-core-v204.test.mjs
       - registration-ip-history-v203.js
+      - tests/participant-postgres-integration-v207.test.mjs
+      - db/mio-participant-passkeys-v204.sql
+      - db/mio-browser-links-v204.sql
+      - db/mio-verified-operation-grants-v205.sql
       - participant-verified-operation-v205.js
       - participant-passkey-device-orchestrator-v206.js
       - tests/participant-passkey-device-orchestrator-v206.test.mjs
@@ -22,6 +26,10 @@ on:
       - participant-passkey-core-v204.js
       - tests/participant-passkey-core-v204.test.mjs
       - registration-ip-history-v203.js
+      - tests/participant-postgres-integration-v207.test.mjs
+      - db/mio-participant-passkeys-v204.sql
+      - db/mio-browser-links-v204.sql
+      - db/mio-verified-operation-grants-v205.sql
       - tests/ip-history-v203.test.mjs
 permissions:
   contents: read
@@ -39,3 +47,29 @@ jobs:
       - run: node --check participant-passkey-core-v204.js
       - run: node --check registration-ip-history-v203.js
       - run: node --test tests/participant-device-store-v204.test.mjs tests/participant-passkey-core-v204.test.mjs tests/participant-verified-operation-v205.test.mjs tests/participant-passkey-device-orchestrator-v206.test.mjs tests/ip-history-v203.test.mjs
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: mio_ci
+          POSTGRES_PASSWORD: ephemeral_ci_only
+          POSTGRES_DB: mio_staging_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mio_ci -d mio_staging_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGTEST_URL: postgresql://mio_ci:ephemeral_ci_only@127.0.0.1:5432/mio_staging_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock
+      - run: node --check tests/participant-postgres-integration-v207.test.mjs
+      - run: node --test tests/participant-postgres-integration-v207.test.mjs
