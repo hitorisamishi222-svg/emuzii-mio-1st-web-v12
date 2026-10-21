@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import pg from 'pg';
+import {recordRecentIP} from '../registration-ip-history-v203.js';
 import {
   beginParticipantPasskeyRegistration,finishParticipantPasskeyRegistration,
   beginParticipantPasskeyAuthentication
@@ -82,6 +83,7 @@ async function run(operation,options={}){
 async function link(n){return run('link-browser',{browserId:browser(n),tokenHash:token(n)});}
 before(async()=>{
   for(const path of [
+    'db/mio-ip-recent-v203.sql',
     'db/mio-participant-passkeys-v204.sql',
     'db/mio-browser-links-v204.sql',
     'db/mio-verified-operation-grants-v205.sql'
@@ -90,7 +92,7 @@ before(async()=>{
   }
 });
 beforeEach(async()=>{
-  await pool.query(`TRUNCATE TABLE mio_verified_operation_grants_v205,
+  await pool.query(`TRUNCATE TABLE mio_ip_recent_v203, mio_verified_operation_grants_v205,
     mio_passkey_challenges_v204,mio_passkey_credentials_v204,
     mio_passkey_accounts_v204,mio_browser_link_audit_v204,
     mio_browser_links_v204 RESTART IDENTITY CASCADE`);
@@ -248,4 +250,38 @@ test('a failed audit write rolls back new browser link; cannot reuse the consume
     await pool.query('DROP TRIGGER IF EXISTS mio_v207_fail_audit_trigger ON mio_browser_link_audit_v204');
     await pool.query('DROP FUNCTION IF EXISTS mio_v207_fail_audit()');
   }
+});
+
+test('real PostgreSQL keeps exactly five distinct hashed IPs, never plaintext',async()=>{
+  const secret='mio-isolated-ip-test-secret-'.padEnd(64,'!');
+  for(let n=1;n<=6;n++){
+    assert.equal((await recordRecentIP({
+      headers:{'x-forwarded-for':'198.51.100.'+n}
+    },actorBrowser,{db:pool,secret})).recorded,true);
+  }
+  const rows=await pool.query('SELECT ip_hash,ip_family FROM mio_ip_recent_v203 WHERE browser_id=$1',[actorBrowser]);
+  assert.equal(rows.rowCount,5);
+  assert.ok(rows.rows.every(x=>/^[a-f0-9]{64}$/.test(x.ip_hash)));
+  assert.ok(rows.rows.every(x=>x.ip_family===4));
+  const oldest=(await import('node:crypto')).createHmac('sha256',secret)
+    .update('mio-ip-v203:198.51.100.1').digest('hex');
+  assert.equal(rows.rows.some(x=>x.ip_hash===oldest),false);
+});
+
+test('concurrent IP inserts are serialized and remain at the five-IP cap',async()=>{
+  const secret='mio-isolated-ip-test-secret-'.padEnd(64,'!');
+  await Promise.all(Array.from({length:12},(_,index)=>recordRecentIP({
+    headers:{'x-forwarded-for':'203.0.113.'+(index+1)}
+  },actorBrowser,{db:pool,secret})));
+  const rows=await pool.query('SELECT count(*)::int AS n FROM mio_ip_recent_v203 WHERE browser_id=$1',[actorBrowser]);
+  assert.equal(rows.rows[0].n,5);
+});
+
+test('stale IP observations are removed on the next valid visit',async()=>{
+  const secret='mio-isolated-ip-test-secret-'.padEnd(64,'!');
+  await recordRecentIP({headers:{'x-forwarded-for':'198.51.100.25'}},actorBrowser,{db:pool,secret});
+  await pool.query("UPDATE mio_ip_recent_v203 SET last_seen=now()-interval '32 days'");
+  await recordRecentIP({headers:{'x-forwarded-for':'198.51.100.26'}},actorBrowser,{db:pool,secret});
+  const q=await pool.query('SELECT count(*)::int AS n FROM mio_ip_recent_v203 WHERE browser_id=$1',[actorBrowser]);
+  assert.equal(q.rows[0].n,1);
 });
