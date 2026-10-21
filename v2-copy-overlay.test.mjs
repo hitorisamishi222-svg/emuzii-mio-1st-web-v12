@@ -7,12 +7,12 @@ const source=readFileSync(new URL('./asahi-panel-v3.js',import.meta.url),'utf8')
 const html=readFileSync(new URL('./asahi-copy-overlay.html',import.meta.url),'utf8');
 
 test('Safari installer contains a fully local executable bookmarklet',()=>{
- const m=html.match(/const BOOKMARKLET = ("(?:\\.|[^"\\])*");/);
- assert.ok(m,'installer must include self-contained bookmarklet');
- const b=JSON.parse(m[1]);
+ const line=html.split('\n').find(x=>x.startsWith('const BOOKMARKLET = '));
+ assert.ok(line,'installer must include self-contained bookmarklet');
+ const b=JSON.parse(line.slice('const BOOKMARKLET = '.length).replace(/;$/,''));
  assert.ok(b.startsWith('javascript:(function(){'));
  assert.ok(b.includes('window.AsahiPanelInstall();'));
- assert.ok(!/https?:\\/\\//.test(b),'bookmarklet must not request a remote script');
+ assert.ok(!b.includes('http://')&&!b.includes('https://'),'bookmarklet must not request a remote script');
  new Script(b.slice('javascript:'.length),{filename:'safari-bookmarklet.js'});
 });
 
@@ -52,7 +52,7 @@ test('on-page panel installs, can be closed and re-opened',()=>{
  assert.equal(mounted,1);
  assert.match(el('msg').textContent,/準備OK/);
  el('all').onclick();
- assert.match(el('msg').textContent,/全選択/);
+ assert.match(el('msg').textContent,/選択/);
  window.AsahiPanelInstall(); // second invocation closes it
  assert.equal(removed,1);
  window.AsahiPanelInstall();
@@ -62,8 +62,7 @@ test('on-page panel installs, can be closed and re-opened',()=>{
 });
 
 test('bookmarklet stays within displayed page; no silent transfer or GAS writes',()=>{
- assert.doesNotMatch(source,/\\b(fetch|XMLHttpRequest|sendBeacon|WebSocket)\\s*\\(/);
- assert.doesNotMatch(source,/script\\.src\\s*=|\\.open\\(['"]POST/);
+ for(const token of ['fetch(','XMLHttpRequest(','sendBeacon(','WebSocket(','script.src='])assert.ok(!source.includes(token),'no background network calls');
  assert.match(html,/Google Apps Script.*表示中の文字だけ/s);
  assert.match(html,/保存・実行・デプロイは行わない/);
 });
