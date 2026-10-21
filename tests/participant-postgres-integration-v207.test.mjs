@@ -90,10 +90,10 @@ before(async()=>{
   }
 });
 beforeEach(async()=>{
-  await pool.query(§TRUNCATE TABLE mio_verified_operation_grants_v205,
+  await pool.query(`TRUNCATE TABLE mio_verified_operation_grants_v205,
     mio_passkey_challenges_v204,mio_passkey_credentials_v204,
     mio_passkey_accounts_v204,mio_browser_link_audit_v204,
-    mio_browser_links_v204 RESTART IDENTITY CASCADE§);
+    mio_browser_links_v204 RESTART IDENTITY CASCADE`);
   verifier='good';
   credentialId='cred-'+randomBytes(16).toString('hex');
   webauthn=mockWebauthn();
@@ -102,8 +102,8 @@ after(async()=>{await pool.end()});
 
 test('actual SQL migration rejects invalid owner and browser IDs',async()=>{
   await assert.rejects(pool.query(
-    §INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,status,verified_method)
-     VALUES('not-a-mio','MIO-W-000000000000000000000001',$1,'active','webauthn-uv')§,
+    `INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,status,verified_method)
+     VALUES('not-a-mio','MIO-W-000000000000000000000001',$1,'active','webauthn-uv')`,
     ['a'.repeat(64)]
   ),/check constraint/i);
 });
@@ -233,11 +233,11 @@ test('simultaneous sixth-browser attempts cannot exceed five active links',async
 
 test('a failed audit write rolls back new browser link; cannot reuse the consumed grant',async()=>{
   await registerPasskey();
-  await pool.query(§CREATE OR REPLACE FUNCTION mio_v207_fail_audit()
-    RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'audit failure injected'; END$$§);
-  await pool.query(§CREATE TRIGGER mio_v207_fail_audit_trigger
+  await pool.query(`CREATE OR REPLACE FUNCTION mio_v207_fail_audit()
+    RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'audit failure injected'; END$$`);
+  await pool.query(`CREATE TRIGGER mio_v207_fail_audit_trigger
     BEFORE INSERT ON mio_browser_link_audit_v204
-    FOR EACH ROW EXECUTE FUNCTION mio_v207_fail_audit()§);
+    FOR EACH ROW EXECUTE FUNCTION mio_v207_fail_audit()`);
   try{
     await assert.rejects(link(1),/audit failure injected/);
     const links=await pool.query('SELECT count(*)::int AS n FROM mio_browser_links_v204');
