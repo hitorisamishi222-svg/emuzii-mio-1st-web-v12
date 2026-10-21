@@ -6,7 +6,8 @@
 import test, {before,after,beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {randomBytes} from 'node:crypto';
+import {randomBytes,generateKeyPairSync,createHash,createSign} from 'node:crypto';
+import {participantWebauthnV208} from '../participant-webauthn-server-v208.js';
 import pg from 'pg';
 import {recordRecentIP} from '../registration-ip-history-v203.js';
 import {
@@ -284,4 +285,78 @@ test('stale IP observations are removed on the next valid visit',async()=>{
   await recordRecentIP({headers:{'x-forwarded-for':'198.51.100.26'}},actorBrowser,{db:pool,secret});
   const q=await pool.query('SELECT count(*)::int AS n FROM mio_ip_recent_v203 WHERE browser_id=$1',[actorBrowser]);
   assert.equal(q.rows[0].n,1);
+});
+
+/**
+ * Real @simplewebauthn/server signature verification with a software
+ * authenticator, using actual PostgreSQL credential rows and grants.
+ * Still NOT a hardware Face ID/Android device test.
+ */
+async function seedRealAuthenticator(){
+  const {privateKey,publicKey}=generateKeyPairSync('ec',{namedCurve:'prime256v1'});
+  const jwk=publicKey.export({format:'jwk'});
+  const x=Buffer.from(jwk.x,'base64url'),y=Buffer.from(jwk.y,'base64url');
+  const cose=Buffer.concat([
+    Buffer.from([0xa5,1,2,3,0x26,0x20,1,0x21,0x58,0x20]),x,
+    Buffer.from([0x22,0x58,0x20]),y
+  ]);
+  const id=randomBytes(32).toString('base64url');
+  await pool.query('INSERT INTO mio_passkey_accounts_v204(mio_id,user_handle) VALUES($1,$2)',
+    [mioId,randomBytes(32)]);
+  await pool.query(
+    `INSERT INTO mio_passkey_credentials_v204(mio_id,credential_id,public_key,sign_count,transports)
+     VALUES($1,$2,$3,0,$4)`,[mioId,id,cose,['internal']]
+  );
+  return {privateKey,id};
+}
+function virtualAssertion({privateKey,id},challenge,{brokenSignature=false}={}){
+  const data=Buffer.from(JSON.stringify({type:'webauthn.get',origin,challenge,crossOrigin:false}));
+  const auth=Buffer.alloc(37);
+  createHash('sha256').update(rpID).digest().copy(auth,0);
+  auth[32]=0x05;auth.writeUInt32BE(1,33);
+  const signed=createSign('SHA256').update(Buffer.concat([
+    auth,createHash('sha256').update(data).digest()
+  ])).sign(privateKey);
+  if(brokenSignature)signed[1]^=0x01;
+  return {id,rawId:id,type:'public-key',
+    response:{clientDataJSON:data.toString('base64url'),
+      authenticatorData:auth.toString('base64url'),
+      signature:signed.toString('base64url'),userHandle:null},
+    clientExtensionResults:{}};
+}
+test('real ECDSA assertion passes library and links browser in real Postgres',async()=>{
+  const authn=await seedRealAuthenticator();
+  const ctx={...context(),webauthn:participantWebauthnV208};
+  const start=await beginParticipantPasskeyAuthentication(
+    {mioId,browserTokenHash:actorHash},ctx
+  );
+  const result=await verifyPasskeyAndRunDeviceOperation({
+    mioId,actorBrowserId:actorBrowser,actorTokenHash:actorHash,
+    operation:'link-browser',browserId:browser(1),tokenHash:token(1),
+    response:virtualAssertion(authn,start.options.challenge)
+  },ctx);
+  assert.equal(result.created,true);
+  const row=await pool.query('SELECT sign_count FROM mio_passkey_credentials_v204');
+  assert.equal(Number(row.rows[0].sign_count),1);
+  const proof=await pool.query(
+    'SELECT consumed_at FROM mio_verified_operation_grants_v205'
+  );
+  assert.equal(proof.rowCount,1);
+  assert.ok(proof.rows[0].consumed_at);
+});
+test('invalid ECDSA assertion cannot create a device or a grant',async()=>{
+  const authn=await seedRealAuthenticator();
+  const ctx={...context(),webauthn:participantWebauthnV208};
+  const start=await beginParticipantPasskeyAuthentication(
+    {mioId,browserTokenHash:actorHash},ctx
+  );
+  await assert.rejects(verifyPasskeyAndRunDeviceOperation({
+    mioId,actorBrowserId:actorBrowser,actorTokenHash:actorHash,
+    operation:'link-browser',browserId:browser(1),tokenHash:token(1),
+    response:virtualAssertion(authn,start.options.challenge,{brokenSignature:true})
+  },ctx),/AUTHENTICATION_NOT_VERIFIED/);
+  const links=await pool.query('SELECT count(*)::int AS n FROM mio_browser_links_v204');
+  assert.equal(links.rows[0].n,0);
+  const grants=await pool.query('SELECT count(*)::int AS n FROM mio_verified_operation_grants_v205');
+  assert.equal(grants.rows[0].n,0);
 });
