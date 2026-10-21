@@ -50,7 +50,8 @@ test('real P-256 signature passes SimpleWebAuthn verifier with UV and matching R
 });
 test('altered signature fails cryptographic verification',async()=>{
   const a=createAuthenticator(),nonce=challenge();
-  await assert.rejects(verify(a,signAssertion(a,{challenge:nonce,tamperSignature:true}),nonce));
+  const outcome=await verify(a,signAssertion(a,{challenge:nonce,tamperSignature:true}),nonce);
+  assert.equal(outcome.verified,false);
 });
 test('wrong origin rejected even with a valid ECDSA signature',async()=>{
   const a=createAuthenticator(),nonce=challenge();
@@ -78,5 +79,6 @@ test('different challenge rejected even with valid signature',async()=>{
 });
 test('different stored authenticator public key rejects the signature',async()=>{
   const a=createAuthenticator(),unrelated=createAuthenticator(),nonce=challenge();
-  await assert.rejects(verify(a,signAssertion(a,{challenge:nonce}),nonce,{credential:{...unrelated.credential,id:a.id}}));
+  const outcome=await verify(a,signAssertion(a,{challenge:nonce}),nonce,{credential:{...unrelated.credential,id:a.id}});
+  assert.equal(outcome.verified,false);
 });
