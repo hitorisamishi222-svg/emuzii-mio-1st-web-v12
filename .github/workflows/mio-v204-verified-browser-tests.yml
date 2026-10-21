@@ -10,6 +10,8 @@ on:
       - tests/participant-passkey-core-v204.test.mjs
       - registration-ip-history-v203.js
       - tests/participant-postgres-integration-v207.test.mjs
+      - participant-webauthn-server-v208.js
+      - tests/participant-real-webauthn-v208.test.mjs
       - db/mio-participant-passkeys-v204.sql
       - db/mio-browser-links-v204.sql
       - db/mio-verified-operation-grants-v205.sql
@@ -27,6 +29,8 @@ on:
       - tests/participant-passkey-core-v204.test.mjs
       - registration-ip-history-v203.js
       - tests/participant-postgres-integration-v207.test.mjs
+      - participant-webauthn-server-v208.js
+      - tests/participant-real-webauthn-v208.test.mjs
       - db/mio-participant-passkeys-v204.sql
       - db/mio-browser-links-v204.sql
       - db/mio-verified-operation-grants-v205.sql
@@ -72,4 +76,6 @@ jobs:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
       - run: node --check tests/participant-postgres-integration-v207.test.mjs
+      - run: node --check tests/participant-real-webauthn-v208.test.mjs
+      - run: node --test tests/participant-real-webauthn-v208.test.mjs
       - run: node --test tests/participant-postgres-integration-v207.test.mjs
