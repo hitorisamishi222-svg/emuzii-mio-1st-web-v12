@@ -10,6 +10,8 @@ on:
       - tests/participant-passkey-core-v204.test.mjs
       - registration-ip-history-v203.js
       - participant-verified-operation-v205.js
+      - participant-passkey-device-orchestrator-v206.js
+      - tests/participant-passkey-device-orchestrator-v206.test.mjs
       - tests/participant-verified-operation-v205.test.mjs
       - tests/ip-history-v203.test.mjs
       - .github/workflows/mio-v204-verified-browser-tests.yml
@@ -32,7 +34,8 @@ jobs:
         with:
           node-version: '22'
       - run: node --check participant-device-store-v204.js
+      - run: node --check participant-passkey-device-orchestrator-v206.js
       - run: node --check participant-verified-operation-v205.js
       - run: node --check participant-passkey-core-v204.js
       - run: node --check registration-ip-history-v203.js
-      - run: node --test tests/participant-device-store-v204.test.mjs tests/participant-passkey-core-v204.test.mjs tests/participant-verified-operation-v205.test.mjs tests/ip-history-v203.test.mjs
+      - run: node --test tests/participant-device-store-v204.test.mjs tests/participant-passkey-core-v204.test.mjs tests/participant-verified-operation-v205.test.mjs tests/participant-passkey-device-orchestrator-v206.test.mjs tests/ip-history-v203.test.mjs
