@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>Clipboard overlay browser QA</title>
+<style>body{font:18px sans-serif}#source{font:20px sans-serif;line-height:42px;white-space:pre-wrap;margin:40px;width:320px;}#dest{display:block}</style>
+</head><body>
+<main><p id="source">あいうえお かきくけこ さしすせそ</p><textarea id="dest"></textarea></main>
+<pre id="test-output">PENDING</pre>
+<script src="../asahi-panel-v3.js"></script>
+<script>
+(async()=>{
+const results=[];
+function check(name,ok,detail){results.push({name,ok:!!ok,detail:detail||''});}
+let clipboard='';
+Object.defineProperty(navigator,'clipboard',{configurable:true,value:{
+ writeText:async x=>{clipboard=x;},
+ readText:async()=>clipboard
+}});
+try {
+ window.AsahiPanelInstall();
+ let host=document.querySelector('#asahi-selection-helper'),p=host?.shadowRoot;
+ check('overlay visible',!!p&&!!p.querySelector('#p'));
+ const click=id=>p.querySelector('#'+id).click();
+ click('all');
+ check('select all',window.getSelection().toString().includes('あいうえお'),window.getSelection().toString().slice(0,50));
+ await p.querySelector('#copy').onclick();
+ check('copy',clipboard.includes('あいうえお'),clipboard.slice(0,50));
+ click('start');
+ const target=document.querySelector('#source');
+ const rect=target.getBoundingClientRect();
+ target.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,composed:true,clientX:rect.left+6,clientY:rect.top+15}));
+ check('start pinpoint',p.querySelector('#msg').textContent.includes('始点'),p.querySelector('#msg').textContent);
+ click('end');
+ target.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,composed:true,clientX:rect.left+95,clientY:rect.top+15}));
+ check('end pinpoint',p.querySelector('#msg').textContent.includes('範囲選択'),p.querySelector('#msg').textContent);
+ click('pick');
+ const input=document.querySelector('#dest');
+ input.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,composed:true,clientX:10,clientY:12}));
+ check('target selected',p.querySelector('#msg').textContent.includes('貼付先を選んだ'),p.querySelector('#msg').textContent);
+ clipboard='貼り付け実験OK';
+ await p.querySelector('#paste').onclick();
+ check('paste into textarea',input.value==='貼り付け実験OK',input.value);
+ const head=p.querySelector('#head'),panelEl=p.querySelector('#p');
+ head.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:42,clientX:180,clientY:210}));
+ head.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:42,clientX:140,clientY:160}));
+ head.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:42}));
+ check('panel draggable',!!panelEl.style.left,panelEl.style.left);
+ click('close');
+ check('panel removable',!document.querySelector('#asahi-selection-helper'));
+ window.AsahiPanelInstall();
+ check('panel reinstall',!!document.querySelector('#asahi-selection-helper'));
+}catch(e){check('fatal',false,String(e.stack||e));}
+document.getElementById('test-output').textContent=JSON.stringify(results);
+})();
+</script></body></html>
