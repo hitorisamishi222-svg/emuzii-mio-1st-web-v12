@@ -1,4 +1,4 @@
-/* ASAHI on-page copy panel v3.0. No network or external data transfer. */
+/* ASAHI on-page copy panel v3.1. No network or external data transfer. */
 window.AsahiPanelInstall = function asahiPanelInstall(){
   'use strict';
   if(window.__asahiPanelClose){window.__asahiPanelClose();return;}
@@ -8,7 +8,7 @@ window.AsahiPanelInstall = function asahiPanelInstall(){
   s.innerHTML='<style>:host{all:initial;font:13px -apple-system,BlinkMacSystemFont,sans-serif;color:#f9fcff}#p{position:fixed;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(322px,96vw);z-index:2147483647;background:#10253d;color:#fff;border:1px solid #80b4d4;box-shadow:0 5px 24px #0008;border-radius:13px;padding:8px;touch-action:manipulation;box-sizing:border-box}#head{display:flex;justify-content:space-between;align-items:center;touch-action:none;cursor:move;padding:3px 3px 7px;font-weight:bold}#buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}button{font:700 13px -apple-system,sans-serif;color:#071f38;background:#d6ebfa;border:0;border-radius:8px;padding:10px 3px;min-height:41px;touch-action:manipulation}button.on{background:#ffe7a5}button.mint{background:#a9edd3}button.pink{background:#ead3ff}#close{background:#314d67;color:#fff;min-height:29px;padding:4px 10px}#msg{min-height:25px;line-height:1.5;font:12px -apple-system,sans-serif;color:#e0eafa;padding:8px 3px 2px;white-space:pre-line}#manual{display:none;width:100%;min-height:70px;background:#09182a;color:#fff;border:1px solid #6f94b5;border-radius:6px;font:12px monospace;box-sizing:border-box;margin-top:5px}</style><div id="p"><div id="head"><span>🐤 選択・コピペ　☰ 移動</span><button id="close" aria-label="閉じる">×</button></div><div id="buttons"><button id="all">全選択</button><button id="start">始点指定</button><button id="end">終点指定</button><button id="copy" class="mint">コピー</button><button id="pick">貼付先</button><button id="paste" class="pink">貼り付け</button></div><div id="msg" role="status">始点→ページ内をタップ→終点→タップ→コピー</div><textarea id="manual" readonly aria-label="手動コピー欄"></textarea></div>';
   document.documentElement.appendChild(host);
   var $=function(id){return s.getElementById(id)}, panel=$('p'), info=$('msg');
-  var mode='', anchor=null, finish=null, cached='', target=null, listeners=[], lastSelectionRange=null;
+  var mode='', anchor=null, finish=null, cached='', target=null, listeners=[], lastSelectionRange=null, lastFocused=null;
   function message(x){info.textContent=x;}
   function buttonMode(v){mode=v;['start','end','pick'].forEach(function(id){$(id).classList.toggle('on',id===v)});}
   function cleanup(){
@@ -54,11 +54,15 @@ window.AsahiPanelInstall = function asahiPanelInstall(){
     else if(mode==='end'){if(!anchor){message('先に始点を指定してね');buttonMode('');return;}finish=p;buttonMode('');selectRange();}
   }
   document.addEventListener('click',intercept,true);listeners.push(['click',intercept,true]);
+  function rememberFocus(e){if(!host.contains(e.target)&&selectableElement(e.target))lastFocused=selectableElement(e.target);}
+  function rememberSelection(){try{var v=window.getSelection().toString();if(v&&!(s.activeElement&&s.activeElement.id==='manual'))cached=v;}catch(e){}}
+  document.addEventListener('focusin',rememberFocus,true);listeners.push(['focusin',rememberFocus,true]);
+  document.addEventListener('selectionchange',rememberSelection);listeners.push(['selectionchange',rememberSelection,false]);
   $('start').onclick=function(){buttonMode('start');message('始点にしたい文字をタップしてね');};
   $('end').onclick=function(){buttonMode('end');message(anchor?'終点にしたい文字をタップしてね':'先に始点を指定してね');};
   $('pick').onclick=function(){buttonMode('pick');message('貼り付け先の入力欄をタップしてね');};
   $('all').onclick=function(){
-    buttonMode('');var focus=document.activeElement;
+    buttonMode('');var focus=lastFocused||document.activeElement;
     try{
       if(focus&&/^(TEXTAREA|INPUT)$/.test(focus.tagName)&&focus.type!=='password'){
         focus.focus();focus.select();cached=focus.value;message('入力欄 '+cached.length+'文字を全選択 ✓');return;
@@ -78,7 +82,7 @@ window.AsahiPanelInstall = function asahiPanelInstall(){
   $('copy').onclick=async function(){
     var selected='';
     try{selected=window.getSelection().toString();}catch(e){}
-    var focused=document.activeElement;
+    var focused=lastFocused||document.activeElement;
     if(focused&&/^(TEXTAREA|INPUT)$/.test(focused.tagName)&&focused!==$('manual')&&focused.type!=='password'&&focused.selectionStart<focused.selectionEnd)selected=focused.value.slice(focused.selectionStart,focused.selectionEnd);
     var text=selected||cached;
     if(!text){message('選択した文字がないよ。「全選択」か範囲指定を先にしてね');return;}
