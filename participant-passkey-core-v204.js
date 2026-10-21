@@ -160,6 +160,13 @@ export async function finishParticipantPasskeyAuthentication(input,context){
       SET sign_count=GREATEST(sign_count,$1),last_used_at=now()
       WHERE mio_id=$2 AND credential_id=$3`,[verification.authenticationInfo.newCounter,mioId,credentialId]);
     // Trusted internal proof ONLY. Never JSON serialize to a public client.
+    // Optional internal callback is invoked *after* WebAuthn verification and
+    // the challenge is consumed, in the SAME database transaction.
+    // If it fails, the authentication transaction rolls back.
+    if (typeof context.onVerified === 'function') {
+      const effect=await context.onVerified(c,{mioId,browserTokenHash,method:'webauthn-uv'});
+      if(effect?.ok!==true)fail('VERIFIED_EFFECT_FAILED');
+    }
     return {mioId,userVerified:true,challengeConsumed:true,method:'webauthn-uv'};
   });
 }
