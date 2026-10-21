@@ -26,10 +26,10 @@ function ids(payload, hasTarget = false){
   if (!hasTarget && !TOKEN_HASH.test(payload?.tokenHash || '')) throw new LinkError('INVALID_TOKEN_HASH');
 }
 
-async function validateVerifiedOwnership(mioId, operation, verifyOwnership) {
+async function validateVerifiedOwnership(mioId, operation, targetBrowserId, verifyOwnership) {
   if (typeof verifyOwnership !== 'function') throw new LinkError('VERIFIER_REQUIRED');
   // Verification happens on the trusted server, never through a caller-supplied flag.
-  const proof = await verifyOwnership({mioId, operation});
+  const proof = await verifyOwnership({mioId, operation, targetBrowserId});
   if (!proof || proof.mioId !== mioId || proof.userVerified !== true ||
       proof.challengeConsumed !== true || !METHODS.has(proof.method))
     throw new LinkError('VERIFICATION_REQUIRED');
@@ -61,7 +61,7 @@ async function lockParticipant(c,mioId){
 export async function linkVerifiedBrowser(payload,{db,verifyOwnership}={}){
   ids(payload);
   const {mioId,browserId,tokenHash}=payload;
-  const verifier = await validateVerifiedOwnership(mioId,'link-browser',verifyOwnership);
+  const verifier = await validateVerifiedOwnership(mioId,'link-browser',browserId,verifyOwnership);
   return inTransaction(db,async c=>{
     await lockParticipant(c,mioId);
     const existing = await c.query(
@@ -103,7 +103,7 @@ export async function linkVerifiedBrowser(payload,{db,verifyOwnership}={}){
 export async function revokeVerifiedBrowser(payload,{db,verifyOwnership}={}){
   ids(payload,true);
   const {mioId,targetBrowserId}=payload;
-  const verifier=await validateVerifiedOwnership(mioId,'revoke-browser',verifyOwnership);
+  const verifier=await validateVerifiedOwnership(mioId,'revoke-browser',targetBrowserId,verifyOwnership);
   return inTransaction(db,async c=>{
     await lockParticipant(c,mioId);
     const count=await c.query(
@@ -135,7 +135,7 @@ export async function revokeVerifiedBrowser(payload,{db,verifyOwnership}={}){
 
 export async function listVerifiedBrowsers(mioId,{db,verifyOwnership}={}){
   if(!MIO_ID.test(mioId || ''))throw new LinkError('INVALID_MIO_ID');
-  await validateVerifiedOwnership(mioId,'list-browsers',verifyOwnership);
+  await validateVerifiedOwnership(mioId,'list-browsers',null,verifyOwnership);
   if(!db || typeof db.query !== 'function')throw new LinkError('DATABASE_REQUIRED');
   const out=await db.query(
     `SELECT browser_id,verified_method,linked_at FROM mio_browser_links_v204
