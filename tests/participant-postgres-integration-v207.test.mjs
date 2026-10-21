@@ -317,7 +317,8 @@ function virtualAssertion({privateKey,id},challenge,{brokenSignature=false}={}){
   const signed=createSign('SHA256').update(Buffer.concat([
     auth,createHash('sha256').update(data).digest()
   ])).sign(privateKey);
-  if(brokenSignature)signed[1]^=0x01;
+  // Flip a signature data byte, not the ASN.1 DER length header.
+  if(brokenSignature)signed[signed.length-1]^=0x01;
   return {id,rawId:id,type:'public-key',
     response:{clientDataJSON:data.toString('base64url'),
       authenticatorData:auth.toString('base64url'),
