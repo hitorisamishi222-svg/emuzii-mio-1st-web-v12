@@ -28,7 +28,7 @@ test('server-verified GAS ID maps an approved browser to exactly one MIO-ID',asy
   const {resolve,calls}=fixture();
   const r=await resolve();
   assert.deepEqual(r,{mioId,browserId:webId,tokenHash:hash(token),active:true});
-  assert.deepEqual(calls,[{action:'status',payload:{participantId:webId,tokenHash:hash(token)}}]);
+  assert.deepEqual(calls,[{action:'identity_attestation',payload:{participantId:webId,tokenHash:hash(token)}}]);
 });
 test('missing signed session never reaches GAS',async()=>{
   const {resolve,calls}=fixture({cookie:''});
