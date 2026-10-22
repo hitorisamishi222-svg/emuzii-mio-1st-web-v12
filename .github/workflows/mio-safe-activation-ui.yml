@@ -1,0 +1,24 @@
+name: MIO safe attendance activation UI
+on:
+  push:
+    branches:
+      - release/mio-activation-hidden-until-gas-ready-20261022
+  pull_request:
+    paths:
+      - api-enroll-lite.js
+      - join.html
+      - tests/mio-safe-activation-ui.test.mjs
+      - .github/workflows/mio-safe-activation-ui.yml
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock
+      - run: node --check api-enroll-lite.js
+      - run: node --test tests/mio-safe-activation-ui.test.mjs tests/legacy-light-guard.test.mjs tests/name-collision-v201.test.mjs
