@@ -76,6 +76,16 @@ function rows_(ss,name){var sh=ss.getSheetByName(name);return sh&&sh.getLastRow(
 function safeText_(text){return /^[=+\-@]/.test(text)?"'"+text:text}
 function jstYmd_(date){if(Utilities&&typeof Utilities.formatDate==='function')return Utilities.formatDate(date,'Asia/Tokyo','yyyy-MM-dd');var x=new Date(date.getTime()+9*60*60*1000);return x.toISOString().slice(0,10)}
 // Reviewed alias map. Canonical records are never overwritten or deleted.
+function verifiedIds_(ss,id){
+ var people=rows_(ss,'emuzii_参加者'),base=people.filter(function(p){return p[0]===id});
+ if(base.length!==1)return [];
+ var ids=[id];
+ rows_(ss,'emuzii_本人統合').forEach(function(link){
+  if(link[0]!==id||link[3]!=='確認済み'||link[1]===id)return;
+  if(people.filter(function(p){return p[0]===link[1]&&p[1]===link[2]}).length===1&&ids.indexOf(link[1])<0)ids.push(link[1]);
+ });
+ return ids;
+}
 function verifiedNames_(ss,id){
  var people=rows_(ss,'emuzii_参加者'),p=people.filter(function(x){return x[0]===id});
  if(p.length!==1)return [];
@@ -119,6 +129,47 @@ function doPost(e) {
     var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
     if(!web)return json_({ok:false,error:'setup required'});
     var all=rows_(ss,WEB_TAB),found=all.filter(function(r){return r[0]===d.participantId});
+    if(d.action==='integrateLight'){
+      // Only Vercel's authenticated bridge can reach this action with the secret.
+      // It has independently checked the signed light cookie and Neon approval.
+      // GAS separately requires a precise admin-reviewed mapping.
+      var requestedName=String(d.name||'').trim();
+      var canonicalId=String(d.integratedParticipantId||'');
+      if(!/^MIO-[0-9]{4}$/.test(canonicalId)||!requestedName||
+         requestedName.length>40||/[^\S ]/.test(requestedName)&&/[\x00-\x1f]/.test(requestedName))
+        return json_({ok:false,error:'invalid integration'});
+      var links=rows_(ss,'emuzii_本人統合').filter(function(l){
+        return l[0]===canonicalId&&l[2]===requestedName&&
+          l[3]==='確認済み'&&l[6]===d.participantId;
+      });
+      if(links.length!==1)return json_({ok:false,error:'管理者による本人照合が必要です'});
+      var people=rows_(ss,'emuzii_参加者');
+      if(people.filter(function(p){return p[0]===canonicalId}).length!==1||
+         people.filter(function(p){return p[0]===links[0][1]&&p[1]===requestedName}).length!==1)
+        return json_({ok:false,error:'参加者履歴の照合が必要です'});
+      if(found.length){
+        if(found.length!==1||!equal_(found[0][1],d.tokenHash)||
+           found[0][2]!==requestedName||found[0][7]!==canonicalId||
+           found[0][5]!=='承認済み'||!verifiedPerson_(ss,found[0]))
+          return json_({ok:false,error:'既存の端末認証情報が一致しません'});
+        return json_({ok:true,participantId:d.participantId,
+          status:'承認済み',integratedParticipantId:canonicalId,created:false});
+      }
+      if(all.length>=499)return json_({ok:false,error:'登録上限です'});
+      // Append a new identity. Never overwrite the old registration,
+      // attendance, artwork, prediction, or gacha records.
+      web.appendRow([d.participantId,d.tokenHash,safeText_(requestedName),
+        '申告なし',new Date(),'承認済み','未確認',canonicalId,
+        '管理者本人確認済み・別名元データ保持','管理者本人確認済み',
+        canonicalId,'確認済み',new Date()]);
+      SpreadsheetApp.flush();
+      var added=rows_(ss,WEB_TAB).filter(function(r){
+        return r[0]===d.participantId&&equal_(r[1],d.tokenHash)&&
+          r[2]===requestedName&&verifiedPerson_(ss,r);
+      });
+      return json_({ok:added.length===1,participantId:d.participantId,
+        status:'承認済み',integratedParticipantId:canonicalId,created:true});
+    }
     if(d.action==='register') {
       if(found.length) {
         if(!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
@@ -219,7 +270,7 @@ function setupGacha_(){
  }
  if(!h){h=ss.insertSheet(DRAW_TAB);h.appendRow(['抽選ID（変更不可）','Web参加ID','参加者ID','ColorSing名','種類','景品ID','景品名','確率（抽選時％）','抽選日時','通算何回目','結果']);h.setFrozenRows(1);h.getRange('A1:K1').setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');h.getRange('I2:I1000').setNumberFormat('yyyy/mm/dd hh:mm:ss');}
 }
-function draws_(ss,id){return rows_(ss,DRAW_TAB).filter(function(x){return id&&x[2]===id&&x[10]==='確定'})}
+function draws_(ss,id){var ids=verifiedIds_(ss,id);return rows_(ss,DRAW_TAB).filter(function(x){return ids.indexOf(x[2])>=0&&x[10]==='確定'})}
 function catalog_(ss,mode){
  var all=rows_(ss,PRIZE_TAB),active=all.filter(function(x){return x[0]===mode&&x[5]===true}),ids={},total=0,valid=active.length>0;
  var prizes=active.map(function(x){var chance=Number(x[4]),units=Math.round(chance*100),stock=x[6]===''?null:Number(x[6]);if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(x[1]||''))||ids[x[1]]||!String(x[2]||'').trim()||!Number.isFinite(chance)||chance<=0||chance>100||Math.abs(chance*100-units)>0.00001||stock!==null&&(!Number.isSafeInteger(stock)||stock<0))valid=false;ids[x[1]]=true;total+=units;return {id:String(x[1]),name:String(x[2]),rarity:String(x[3]||''),chance:chance,units:units,stock:stock}});
