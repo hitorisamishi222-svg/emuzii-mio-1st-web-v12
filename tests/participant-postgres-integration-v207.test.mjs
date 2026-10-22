@@ -9,6 +9,7 @@ import {readFile} from 'node:fs/promises';
 import {randomBytes,generateKeyPairSync,createHash,createSign} from 'node:crypto';
 import {participantWebauthnV208} from '../participant-webauthn-server-v208.js';
 import pg from 'pg';
+import {createContinuousServerPasskeyRegistration} from '../participant-passkey-registration-continuous-v215.js';
 import {recordRecentIP} from '../registration-ip-history-v203.js';
 import {
   beginParticipantPasskeyRegistration,finishParticipantPasskeyRegistration,
@@ -87,7 +88,8 @@ before(async()=>{
     'db/mio-ip-recent-v203.sql',
     'db/mio-participant-passkeys-v204.sql',
     'db/mio-browser-links-v204.sql',
-    'db/mio-verified-operation-grants-v205.sql'
+    'db/mio-verified-operation-grants-v205.sql',
+    'db/mio-passkey-bootstrap-continuity-v215.sql'
   ]){
     await pool.query(await readFile(new URL('../'+path,import.meta.url),'utf8'));
   }
@@ -360,4 +362,76 @@ test('invalid ECDSA assertion cannot create a device or a grant',async()=>{
   assert.equal(links.rows[0].n,0);
   const grants=await pool.query('SELECT count(*)::int AS n FROM mio_verified_operation_grants_v205');
   assert.equal(grants.rows[0].n,0);
+});
+
+test('real PostgreSQL: one fresh bootstrap continues through registration completion',async()=>{
+  let proofCalls=0;
+  const session={mioId,browserId:actorBrowser,tokenHash:actorHash,active:true};
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,actorHash]);
+  const reg=createContinuousServerPasskeyRegistration({
+    db:pool,webauthn,rpID,origin,resolveSession:async()=>session,
+    verifyStepUp:async({mioId,browserId,tokenHash})=>{
+      proofCalls++;
+      return {mioId,browserId,tokenHash,consumed:true,userVerified:true,method:'approved-device-pairing'};
+    }
+  });
+  const started=await reg.begin();
+  assert.equal(proofCalls,1);
+  const response={id:credentialId,response:{
+    clientDataJSON:Buffer.from(JSON.stringify({
+      type:'webauthn.create',challenge:started.options.challenge,origin
+    })).toString('base64url')
+  }};
+  const r=await reg.finish(response);
+  assert.deepEqual(r,{registered:true,mioId});
+  assert.equal(proofCalls,1);
+  const row=await pool.query(
+    `SELECT used_at,bootstrap_verified_at,bootstrap_browser_id,bootstrap_method
+     FROM mio_passkey_challenges_v204 WHERE purpose='register'`
+  );
+  assert.equal(row.rowCount,1);
+  assert.ok(row.rows[0].used_at);
+  assert.ok(row.rows[0].bootstrap_verified_at);
+  assert.equal(row.rows[0].bootstrap_browser_id,actorBrowser);
+  assert.equal(row.rows[0].bootstrap_method,'approved-device-pairing');
+  await assert.rejects(reg.finish(response),/CONTINUITY_NOT_AUTHORIZED/);
+});
+test('real PostgreSQL: different browser cannot finish a bootstrapped registration',async()=>{
+  let currentBrowser=actorBrowser;
+  const session=()=>({mioId,browserId:currentBrowser,tokenHash:actorHash,active:true});
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,actorHash]);
+  const reg=createContinuousServerPasskeyRegistration({
+    db:pool,webauthn,rpID,origin,resolveSession:async()=>session(),
+    verifyStepUp:async({mioId,browserId,tokenHash})=>({
+      mioId,browserId,tokenHash,consumed:true,userVerified:true,method:'approved-device-pairing'
+    })
+  });
+  const begun=await reg.begin();
+  currentBrowser=browser(8);
+  const response={id:credentialId,response:{clientDataJSON:Buffer.from(JSON.stringify({
+    type:'webauthn.create',challenge:begun.options.challenge,origin
+  })).toString('base64url')}};
+  await assert.rejects(reg.finish(response),/CONTINUITY_NOT_AUTHORIZED/);
+  const count=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204');
+  assert.equal(count.rows[0].n,0);
+});
+test('real PostgreSQL: mismatched challenge cannot create credential',async()=>{
+  const session={mioId,browserId:actorBrowser,tokenHash:actorHash,active:true};
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,actorHash]);
+  const reg=createContinuousServerPasskeyRegistration({
+    db:pool,webauthn,rpID,origin,resolveSession:async()=>session,
+    verifyStepUp:async({mioId,browserId,tokenHash})=>({
+      mioId,browserId,tokenHash,consumed:true,userVerified:true,method:'approved-device-pairing'
+    })
+  });
+  await reg.begin();
+  const response={id:credentialId,response:{clientDataJSON:Buffer.from(JSON.stringify({
+    type:'webauthn.create',challenge:randomBytes(32).toString('base64url'),origin
+  })).toString('base64url')}};
+  await assert.rejects(reg.finish(response),/CONTINUITY_NOT_AUTHORIZED/);
+  const count=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204');
+  assert.equal(count.rows[0].n,0);
 });
