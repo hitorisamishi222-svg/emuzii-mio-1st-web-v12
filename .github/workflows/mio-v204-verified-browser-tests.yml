@@ -12,6 +12,8 @@ on:
       - tests/participant-postgres-integration-v207.test.mjs
       - participant-webauthn-server-v208.js
       - tests/participant-real-webauthn-v208.test.mjs
+      - tests/participant-real-registration-v217.test.mjs
+      - tests/helpers/participant-registration-fixture-v217.mjs
       - db/mio-participant-passkeys-v204.sql
       - db/mio-browser-links-v204.sql
       - db/mio-verified-operation-grants-v205.sql
@@ -43,6 +45,8 @@ on:
       - tests/participant-postgres-integration-v207.test.mjs
       - participant-webauthn-server-v208.js
       - tests/participant-real-webauthn-v208.test.mjs
+      - tests/participant-real-registration-v217.test.mjs
+      - tests/helpers/participant-registration-fixture-v217.mjs
       - db/mio-participant-passkeys-v204.sql
       - db/mio-browser-links-v204.sql
       - db/mio-verified-operation-grants-v205.sql
@@ -98,4 +102,6 @@ jobs:
       - run: node --check tests/participant-postgres-integration-v207.test.mjs
       - run: node --check tests/participant-real-webauthn-v208.test.mjs
       - run: node --test tests/participant-real-webauthn-v208.test.mjs
+      - run: node --check tests/participant-real-registration-v217.test.mjs
+      - run: node --test tests/participant-real-registration-v217.test.mjs
       - run: node --test tests/participant-postgres-integration-v207.test.mjs
