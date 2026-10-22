@@ -18,6 +18,8 @@ on:
       - participant-verified-operation-v205.js
       - participant-passkey-registration-server-v211.js
       - tests/participant-passkey-registration-server-v211.test.mjs
+      - participant-gas-passkey-entry-v213.js
+      - tests/participant-gas-passkey-entry-v213.test.mjs
       - participant-gas-identity-preflight-v212.js
       - tests/participant-gas-identity-preflight-v212.test.mjs
       - participant-bootstrap-guard-v210.js
@@ -55,11 +57,12 @@ jobs:
       - run: node --check participant-passkey-registration-server-v211.js
       - run: node --check participant-bootstrap-guard-v210.js
       - run: node --check participant-gas-identity-preflight-v212.js
+      - run: node --check participant-gas-passkey-entry-v213.js
       - run: node --check participant-passkey-device-orchestrator-v206.js
       - run: node --check participant-verified-operation-v205.js
       - run: node --check participant-passkey-core-v204.js
       - run: node --check registration-ip-history-v203.js
-      - run: node --test tests/participant-device-store-v204.test.mjs tests/participant-passkey-core-v204.test.mjs tests/participant-verified-operation-v205.test.mjs tests/participant-passkey-device-orchestrator-v206.test.mjs tests/participant-bootstrap-guard-v210.test.mjs tests/participant-passkey-registration-server-v211.test.mjs tests/participant-gas-identity-preflight-v212.test.mjs tests/ip-history-v203.test.mjs
+      - run: node --test tests/participant-device-store-v204.test.mjs tests/participant-passkey-core-v204.test.mjs tests/participant-verified-operation-v205.test.mjs tests/participant-passkey-device-orchestrator-v206.test.mjs tests/participant-bootstrap-guard-v210.test.mjs tests/participant-passkey-registration-server-v211.test.mjs tests/participant-gas-identity-preflight-v212.test.mjs tests/participant-gas-passkey-entry-v213.test.mjs tests/ip-history-v203.test.mjs
   postgres-integration:
     runs-on: ubuntu-latest
     services:
