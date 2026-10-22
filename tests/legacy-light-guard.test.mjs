@@ -39,7 +39,7 @@ test('signed legacy session blocks light enrollment on GET and POST without data
   for(const [k,v] of Object.entries(old)){if(v===undefined)delete process.env[k];else process.env[k]=v;}
  }
 });
-test('tampered legacy session does not claim existing identity',async()=>{
+test('tampered legacy session cannot claim identity and fails closed against duplicate registration',async()=>{
  const old=Object.fromEntries(['VERCEL_ENV','MIO_LIGHT_REGISTRATION_OPEN','MIO_LIGHT_SESSION_SECRET','MIO_REGISTRATION_DATABASE_URL','APPS_SCRIPT_SECRET'].map(k=>[k,process.env[k]]));
  try{
   process.env.VERCEL_ENV='production';
@@ -51,7 +51,10 @@ test('tampered legacy session does not claim existing identity',async()=>{
   const g=response();await handler(request('GET',cookie),g);
   assert.equal(g.result.statusCode,200);
   assert.equal(g.result.body.registered,false);
-  assert.equal(g.result.body.legacyRegistration,undefined);
+  assert.equal(g.result.body.legacyRegistration,true);
+  assert.equal(g.result.body.legacyPending,false);
+  const p=response();await handler(request('POST',cookie),p);
+  assert.equal(p.result.statusCode,409);
  }finally{
   for(const [k,v] of Object.entries(old)){if(v===undefined)delete process.env[k];else process.env[k]=v;}
  }

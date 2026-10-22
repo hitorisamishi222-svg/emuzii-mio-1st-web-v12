@@ -6,7 +6,9 @@
 <p class="muted">登録情報の安全確認のため、登録時・登録済み状態の確認時に接続元IPアドレスを照合用の不可逆な値に変換して記録する場合があります。重複登録や不正利用の確認に限って使用し、IP情報だけで本人認証・承認・既存記録の統合は行いません。照合記録は管理者が必要な範囲で扱います。</p>
 <section><h2>ColorSing名を登録</h2><p class="muted">歌推し名簿は不要です。名前の登録は、既存MIO-ID・皆勤・ガチャの認証には使用しません。既存参加者の方は以前の情報をそのままご利用ください。</p>
 <form id="join" class="hide"><label for="nickname">ColorSing名</label><input id="nickname" maxlength="40" autocomplete="nickname" required placeholder="現在のColorSing名"><button id="submit" type="submit">この名前で登録する</button></form>
-<div id="result" role="status" aria-live="polite" class="result">登録状態を確認しています…</div></section>
+<div id="result" role="status" aria-live="polite" class="result">登録状態を確認しています…</div>
+<button id="activate" type="button" class="hide">✅ 本人確認済み：皆勤賞の登録を有効にする</button>
+<p id="activationStatus" role="status" aria-live="polite" class="muted hide"></p></section>
 <section id="next"><h2>応募・ギャラリー</h2><p>ここは登録完了を待たず利用できます。応募フォームの受付状況は各フォーム内でご確認ください。</p>
 <a class="go" href="https://docs.google.com/forms/d/e/1FAIpQLSfXDpsgOdK9CHZpnVCqwNb_0T-YmcgUOGEhiMjNtF65ZFxEgA/viewform?usp=send_form" target="_blank" rel="noopener noreferrer">🎯 1周年予想フォームへ</a>
 <a class="go" href="https://docs.google.com/forms/d/e/1FAIpQLSd6twv0ADY9Uqc0pPWdjMixWThl_WHmWJ-oq8j2eYrIVpWZeQ/viewform?usp=dialog" target="_blank" rel="noopener noreferrer">🎨 ファンアート応募へ</a>
@@ -15,10 +17,27 @@
 <script>
 const KEY='mioLightEnrollmentRetryV1';
 const form=document.getElementById('join'),result=document.getElementById('result'),button=document.getElementById('submit'),nickname=document.getElementById('nickname');
+const activate=document.getElementById('activate'),activationStatus=document.getElementById('activationStatus');
 const set=(s,bad=false)=>{result.textContent=s;result.classList.toggle('error',bad)};
+const activateVisible=d=>{activate.classList.toggle('hide',d.attendanceActivationAvailable!==true||d.status!=='承認済み'||!!d.pendingReview)};
 async function api(payload){const r=await fetch('/api/enroll-lite',{method:payload?'POST':'GET',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,credentials:'same-origin',cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'接続先を確認できませんでした');return d}
-const done=d=>{form.classList.add('hide');set(d.pendingReview?'同じColorSing名で登録があります。本人確認・管理者承認待ちです。\n受付番号：'+d.participantId+'\nフォーム応募とギャラリー閲覧は引き続き利用できます。':'登録受付完了！ '+d.name+' さん\n受付ID：'+d.participantId+'\n皆勤賞は管理者承認後に利用できます。\nフォーム・ギャラリーはすぐ利用できます。')};
-(async()=>{try{const d=await api();if(d.legacyRegistration){form.classList.add('hide');set('このブラウザには従来のMIO登録情報、または途中の登録手続きが残っています。重複登録を避けるため新規登録はできません。登録済みの場合はトップページの参加状況を確認し、手続き途中・機種変更の場合は管理者へお問い合わせください。');}else if(d.registered||d.pendingReview)done(d);else{form.classList.remove('hide');set('名前を入力して登録してください。フォーム・ギャラリーは登録なしでも利用できます。')}}catch(e){form.classList.add('hide');set('登録情報の確認ができません。重複登録防止のため新規受付を一時的に表示していません。フォーム・ギャラリーは下からご利用ください。',true)}})();
+const done=d=>{form.classList.add('hide');activateVisible(d);set(d.pendingReview?'同じColorSing名で登録があります。本人確認・管理者承認待ちです。\n受付番号：'+d.participantId+'\nフォーム応募とギャラリー閲覧は引き続き利用できます。':'登録受付完了！ '+d.name+' さん\n受付ID：'+d.participantId+'\n皆勤賞は管理者承認後に利用できます。\nフォーム・ギャラリーはすぐ利用できます。')};
+(async()=>{try{const d=await api();if(d.legacyRegistration){activate.classList.add('hide');form.classList.add('hide');set('このブラウザには従来のMIO登録情報、または途中の登録手続きが残っています。重複登録を避けるため新規登録はできません。登録済みの場合はトップページの参加状況を確認し、手続き途中・機種変更の場合は管理者へお問い合わせください。');}else if(d.registered||d.pendingReview)done(d);else{form.classList.remove('hide');set('名前を入力して登録してください。フォーム・ギャラリーは登録なしでも利用できます。')}}catch(e){form.classList.add('hide');set('登録情報の確認ができません。重複登録防止のため新規受付を一時的に表示していません。フォーム・ギャラリーは下からご利用ください。',true)}})();
+activate.addEventListener('click',async()=>{
+  activate.disabled=true;
+  activationStatus.classList.remove('hide','error');
+  activationStatus.textContent='本人確認と皆勤賞の登録を照合しています…';
+  try{
+    const r=await fetch('/api/activate-attendance',{method:'POST',credentials:'same-origin',cache:'no-store'});
+    const d=await r.json();
+    if(!r.ok||!d.attendanceEnabled)throw Error(d.error||'管理者確認をお待ちください');
+    activate.classList.add('hide');
+    activationStatus.textContent='登録を有効化しました。トップページで皆勤賞の状態を確認できます。';
+  }catch(err){
+    activationStatus.classList.add('error');
+    activationStatus.textContent=err.message+'。新規登録を繰り返さず、管理者にご確認ください。';
+  }finally{activate.disabled=false}
+});
 form.addEventListener('submit',async e=>{e.preventDefault();const name=nickname.value.trim();if(!name)return;button.disabled=true;set('登録を保存しています…');
 try{
  let saved=JSON.parse(localStorage.getItem(KEY)||'null');

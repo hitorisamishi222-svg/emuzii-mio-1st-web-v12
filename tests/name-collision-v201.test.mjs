@@ -8,7 +8,7 @@ function fakeDb({reservedNames=[]}={}){
  const execute=async(sql,args=[])=>{
   calls.push({sql,args});
   if(sql==='BEGIN'||sql==='COMMIT'||sql==='ROLLBACK')return {rows:[]};
-  if(sql.includes('SELECT browser_id,token_hash,name,status FROM mio_registration_v2'))return {rows:normal.has(args[0])?[normal.get(args[0])]:[]};
+  if(sql.includes('FROM mio_registration_v2 WHERE browser_id=$1'))return {rows:normal.has(args[0])?[normal.get(args[0])]:[]};
   if(sql.includes('SELECT browser_id,token_hash,name FROM mio_name_review_v201'))return {rows:reviews.has(args[0])?[reviews.get(args[0])]:[]};
   if(sql.includes('INSERT INTO mio_name_registry_v201')){
    if(names.has(args[0]))return {rows:[],rowCount:0};
