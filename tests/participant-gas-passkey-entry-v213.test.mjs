@@ -63,7 +63,7 @@ function fixture(overrides={}){
     },
     statusRequest:async(action,payload)=>{
       state.gasCalls++;
-      assert.equal(action,'status');
+      assert.equal(action,'identity_attestation');
       assert.deepEqual(payload,{participantId:webId,tokenHash:hash(token)});
       return status;
     },
