@@ -60,7 +60,7 @@ test('attendance days from two rows are a union; original days never overwritten
 test('two failed attempts across two IDs cannot be reset by switching browsers',()=>{
  const f=fixture();f.attempts.set(f.canonical+':5',1);f.attempts.set(f.legacy+':5',1);
  assert.equal(f.context.mioMergedAttemptsV213_(f.data,f.canonical,5),2);
- assert.ok(Array.from(f.context.mioMergedLockedDaysV213_(f.data)).includes(5));
+ assert.ok(Array.from(f.context.mioMergedLockedDaysV213_(f.data,f.canonical)).includes(5));
 });
 test('manual gacha and prize history are counted once; no new entitlements',()=>{
  const f=fixture();
