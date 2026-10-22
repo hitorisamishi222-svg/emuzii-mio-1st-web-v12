@@ -96,6 +96,45 @@ function verifiedNames_(ss,id){
  });
  return names;
 }
+
+function mergedAttendance_(ss,canonicalId){
+ var people=rows_(ss,'emuzii_参加者'),attendance=rows_(ss,'emuzii_皆勤31日');
+ var base=people.filter(function(x){return x[0]===canonicalId});
+ if(base.length!==1||attendance.filter(function(x){return x[0]===canonicalId&&x[1]===base[0][1]}).length!==1)
+  return {linked:false,confirmedDays:[]};
+ var days=[];
+ verifiedIds_(ss,canonicalId).forEach(function(id){
+  var person=people.filter(function(x){return x[0]===id});
+  if(person.length!==1)return;
+  var matches=attendance.filter(function(x){return x[0]===id&&x[1]===person[0][1]});
+  if(matches.length!==1)return;
+  for(var day=1;day<=31;day++){
+   if(matches[0][day+1]==='○'&&days.indexOf(day)<0)days.push(day);
+  }
+ });
+ days.sort(function(a,b){return a-b});
+ return {linked:true,confirmedDays:days};
+}
+// Count previously consumed manual gacha rights from all approved alias IDs.
+// Do not copy entitlements, and fail closed on ambiguous/invalid source rows.
+function mergedManualGacha_(ss,canonicalId){
+ var people=rows_(ss,'emuzii_参加者'),all=rows_(ss,'emuzii_ガチャ');
+ var ids=verifiedIds_(ss,canonicalId),total=0;
+ if(ids.indexOf(canonicalId)<0)return null;
+ for(var i=0;i<ids.length;i++){
+  var person=people.filter(function(x){return x[0]===ids[i]});
+  if(person.length!==1)return null;
+  var match=all.filter(function(x){return x[0]===ids[i]&&x[1]===person[0][1]});
+  if(match.length>1||ids[i]===canonicalId&&match.length!==1)return null;
+  if(!match.length)continue;
+  if(match[0][12]!=='OK'||match[0][13]!=='OK')return null;
+  var normal=Number(match[0][6]),fest=Number(match[0][9]);
+  if(!isFinite(normal)||!isFinite(fest)||normal<0||fest<0||
+     Math.floor(normal)!==normal||Math.floor(fest)!==fest)return null;
+  total+=normal+fest;
+ }
+ return Number.isSafeInteger(total)?total:null;
+}
 function verifiedPerson_(ss,r){
  var id=String(r[7]||''),name=String(r[2]||'');
  if(!/^MIO-[0-9]{4}$/.test(id))return null;
@@ -203,18 +242,19 @@ function doPost(e) {
     if(g&&(g[12]!=='OK'||g[13]!=='OK'))return json_({ok:false,error:'ガチャ回数に要確認の項目があります'});
     var approvedNames=id?verifiedNames_(ss,id):[r[2]];
     var fa=rows_(ss,'emuzii_FA').filter(function(p){return approvedNames.indexOf(p[1])>=0&&p[10]==='受付'});
-    var used= g?(Number(g[6])||0)+(Number(g[9])||0)+draws_(ss,id).length:0;
+    var manualUsed=g?mergedManualGacha_(ss,id):0;
+    if(g&&manualUsed===null)return json_({ok:false,error:'統合後のガチャ消費回数を運営が確認中です'});
+    var used=g?manualUsed+draws_(ss,id).length:0;
     if(g&&used>Number(g[5]))return json_({ok:false,error:'使用回数を運営が確認中です'});
-    var attendanceDays=att.length===1?Number(att[0][33])||0:0;
-    var attendanceConfirmedDays=[];
-    if(att.length===1)for(var di=1;di<=31;di++)if(att[0][di+1]==='○')attendanceConfirmedDays.push(di);
+    var merged=mergedAttendance_(ss,id),attendanceConfirmedDays=merged.confirmedDays;
+    var attendanceDays=attendanceConfirmedDays.length;
     out.integratedParticipantId=id||null;
-    out.attendanceLinked=!!id&&att.length===1;
+    out.attendanceLinked=merged.linked;
     var today=jstYmd_(new Date());
-    var day=Number(today.slice(8,10)),todayDone=att.length===1&&today.slice(0,7)==='2026-10'&&att[0][day+1]==='○';
+    var day=Number(today.slice(8,10)),todayDone=today.slice(0,7)==='2026-10'&&attendanceConfirmedDays.indexOf(day)>=0;
     out.progress={prediction:!!(person&&person[2]),attendanceAchieved:attendanceDays>=31,attendanceTodayDone:todayDone,
       attendanceConfirmedDays:attendanceConfirmedDays,attendanceLockedDays:attendanceConfirmedDays.slice(),fa:fa.length,
-      gacha:{confirmed:confirmed,total:confirmed&&g?Number(g[5])||0:0,used:confirmed&&g?(Number(g[6])||0)+(Number(g[9])||0)+draws_(ss,id).length:0,remaining:confirmed&&g?Number(g[5])-used:0}};
+      gacha:{confirmed:confirmed,total:confirmed&&g?Number(g[5])||0:0,used:confirmed&&g?used:0,remaining:confirmed&&g?Number(g[5])-used:0}};
     return json_(out);
   } catch(err) {return json_({ok:false,error:'連携処理を完了できませんでした'})}
   finally {lock.releaseLock()}
@@ -240,7 +280,8 @@ function checkinAction_(ss,r,d){
   for(var i=0;i<values.length;i++)if(values[i][0]===person[0]&&values[i][1]===person[1]){row=i+2;break}
   if(!row)return {ok:false,error:'皆勤賞の参加者照合を確認してください'};
   var cell=sh.getRange(row,day+2);
-  if(cell.getValue()==='○')return {ok:true,participantId:r[0],todayDone:true,message:'10/'+day+' は確認済みです'};
+  if(mergedAttendance_(ss,person[0]).confirmedDays.indexOf(day)>=0)
+   return {ok:true,participantId:r[0],todayDone:true,message:'10/'+day+' は確認済みです'};
   cell.setValue('○');SpreadsheetApp.flush();
   return {ok:true,participantId:r[0],todayDone:true,message:'10/'+day+' の確認を受け付けました'};
 }
@@ -288,7 +329,7 @@ function gachaAction_(ss,r,d){
  if(d.action==='history')return {ok:true,participantId:r[0],history:publicHistory.slice(-50).reverse()};
  var gs=rows_(ss,'emuzii_ガチャ').filter(function(x){return x[0]===id&&x[1]===person[1]}),g=gs.length===1?gs[0]:null;
  if(!g||g[12]!=='OK'||g[13]!=='OK')return {ok:false,error:'運営によるガチャ回数の確認が必要です'};
- var manual=Number(g[6])+Number(g[9]),total=Number(g[5]),used=manual+history.length,remaining=total-used,confirmed=r[6]==='確認済み';
+ var manual=mergedManualGacha_(ss,id),total=Number(g[5]),used=manual===null?NaN:manual+history.length,remaining=total-used,confirmed=r[6]==='確認済み';
  if(!Number.isSafeInteger(manual)||!Number.isSafeInteger(total)||manual<0||total<0||remaining<0)return {ok:false,error:'ガチャ回数を運営が確認中です'};
  var gate=gachaOpenState_(ss);
  var normal=gate.normalOpen?catalog_(ss,'通常'):{ready:false,message:'メンシプガチャは現在停止中です',prizes:[]};
