@@ -136,7 +136,7 @@ function doPost(e) {
       var requestedName=String(d.name||'').trim();
       var canonicalId=String(d.integratedParticipantId||'');
       if(!/^MIO-[0-9]{4}$/.test(canonicalId)||!requestedName||
-         requestedName.length>40||/[^\S ]/.test(requestedName)&&/[\x00-\x1f]/.test(requestedName))
+         requestedName.length>40||/[\x00-\x1f]/.test(requestedName))
         return json_({ok:false,error:'invalid integration'});
       var links=rows_(ss,'emuzii_本人統合').filter(function(l){
         return l[0]===canonicalId&&l[2]===requestedName&&
