@@ -32,8 +32,17 @@ export default async function handler(req,res){
   const tokenHash=hash(session.token);
   const light=await statusV201(session.id,tokenHash);
   if(light.pendingReview||light.status!=='承認済み'||light.attendanceGrantVerified!==true||!/^MIO-[0-9]{4}$/.test(light.integratedParticipantId||''))return json(res,409,{ok:false,error:'本人確認・管理者承認をお待ちください'});
-  // GAS verifies its own saved browser ID/tokenHash and spreadsheet approval.
-  // A Neon status or name match alone is never sufficient.
+  // GAS must independently confirm this exact browser ID, name, and
+  // administrator-approved alias mapping before creating a legacy identity.
+  // Idempotent: never overwrites an existing browser or historical participant.
+  const integrated=await bridge('integrateLight',{
+    participantId:session.id,tokenHash,name:light.name,
+    integratedParticipantId:light.integratedParticipantId
+  });
+  if(integrated.participantId!==session.id||
+     integrated.integratedParticipantId!==light.integratedParticipantId||
+     integrated.status!=='承認済み')
+    return json(res,409,{ok:false,error:'管理者承認の照合に失敗しました'});
   const legacy=await bridge('status',{participantId:session.id,tokenHash});
   if(!verifyAttendanceIntegration(light,legacy,session.id))
    return json(res,409,{ok:false,error:'皆勤の本人確認・登録照合がまだ完了していません。管理者へお問い合わせください'});
