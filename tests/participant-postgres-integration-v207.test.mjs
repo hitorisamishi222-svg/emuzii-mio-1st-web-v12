@@ -456,7 +456,7 @@ test('real PostgreSQL: GAS-attested account passes one-step-up enrollment',async
     getCookieHeader:async()=>currentSessionCookie,
     statusRequest:async(action,payload)=>{
       gasCalls++;
-      assert.equal(action,'status');
+      assert.equal(action,'identity_attestation');
       assert.deepEqual(payload,{participantId:actorBrowser,tokenHash:hash(webToken)});
       return gasStatus;
     },
