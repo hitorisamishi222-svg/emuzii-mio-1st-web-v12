@@ -18,6 +18,10 @@ on:
       - participant-verified-operation-v205.js
       - participant-passkey-registration-server-v211.js
       - tests/participant-passkey-registration-server-v211.test.mjs
+      - participant-registration-continuity-v214.js
+      - participant-passkey-registration-continuous-v215.js
+      - participant-gas-passkey-continuous-v216.js
+      - db/mio-passkey-bootstrap-continuity-v215.sql
       - participant-gas-passkey-entry-v213.js
       - tests/participant-gas-passkey-entry-v213.test.mjs
       - participant-gas-identity-preflight-v212.js
@@ -58,6 +62,9 @@ jobs:
       - run: node --check participant-passkey-registration-server-v211.js
       - run: node --check participant-bootstrap-guard-v210.js
       - run: node --check participant-gas-identity-preflight-v212.js
+      - run: node --check participant-registration-continuity-v214.js
+      - run: node --check participant-passkey-registration-continuous-v215.js
+      - run: node --check participant-gas-passkey-continuous-v216.js
       - run: node --check participant-gas-passkey-entry-v213.js
       - run: node --check participant-passkey-device-orchestrator-v206.js
       - run: node --check participant-verified-operation-v205.js
