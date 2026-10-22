@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {randomBytes,generateKeyPairSync,createHash,createSign} from 'node:crypto';
 import {participantWebauthnV208} from '../participant-webauthn-server-v208.js';
+import {syntheticRegistration} from './helpers/participant-registration-fixture-v217.mjs';
 import pg from 'pg';
 import {createContinuousServerPasskeyRegistration} from '../participant-passkey-registration-continuous-v215.js';
 import {createContinuousGasPasskeyRegistration} from '../participant-gas-passkey-continuous-v216.js';
@@ -487,4 +488,74 @@ test('real PostgreSQL: legacy GAS response lacking link proof cannot bootstrap',
   await assert.rejects(facade.begin(),/GAS_MIO_LINK_NOT_VERIFIED/);
   const q=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_challenges_v204');
   assert.equal(q.rows[0].n,0);
+});
+
+test('PostgreSQL with real library registers a valid packed self-attested ES256 key once',async()=>{
+  const session={mioId,browserId:actorBrowser,tokenHash:actorHash,active:true};
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,actorHash]);
+  let stepUps=0;
+  const reg=createContinuousServerPasskeyRegistration({
+    db:pool,webauthn:participantWebauthnV208,rpID,origin,
+    resolveSession:async()=>session,
+    verifyStepUp:async({mioId,browserId,tokenHash})=>{
+      stepUps++;return {mioId,browserId,tokenHash,consumed:true,
+        userVerified:true,method:'approved-device-pairing'};
+    }
+  });
+  const {options}=await reg.begin();
+  const registration=syntheticRegistration({challenge:options.challenge,origin,rpID});
+  const result=await reg.finish(registration);
+  assert.deepEqual(result,{registered:true,mioId});
+  assert.equal(stepUps,1);
+  const stored=await pool.query(`SELECT mio_id,credential_id,public_key,sign_count
+    FROM mio_passkey_credentials_v204 WHERE mio_id=$1`,[mioId]);
+  assert.equal(stored.rowCount,1);
+  assert.equal(stored.rows[0].credential_id,registration.id);
+  assert.ok(stored.rows[0].public_key.length>60);
+  assert.equal(Number(stored.rows[0].sign_count),0);
+  await assert.rejects(reg.finish(registration),/CONTINUITY_NOT_AUTHORIZED/);
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204')).rows[0].n,1);
+});
+test('PostgreSQL refuses an invalid signed first-passkey attestation',async()=>{
+  const session={mioId,browserId:actorBrowser,tokenHash:actorHash,active:true};
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,actorHash]);
+  const reg=createContinuousServerPasskeyRegistration({
+    db:pool,webauthn:participantWebauthnV208,rpID,origin,
+    resolveSession:async()=>session,
+    verifyStepUp:async({mioId,browserId,tokenHash})=>({
+      mioId,browserId,tokenHash,userVerified:true,consumed:true,
+      method:'approved-device-pairing'
+    })
+  });
+  const {options}=await reg.begin();
+  const forged=syntheticRegistration({challenge:options.challenge,origin,rpID,
+    differentSigningKey:true});
+  await assert.rejects(reg.finish(forged),/REGISTRATION_NOT_VERIFIED/);
+  const data=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204');
+  assert.equal(data.rows[0].n,0);
+  const unused=await pool.query(`SELECT used_at FROM mio_passkey_challenges_v204
+    WHERE purpose='register'`);
+  assert.equal(unused.rowCount,1);
+  assert.equal(unused.rows[0].used_at,null);
+});
+test('PostgreSQL rejects mismatched WebAuthn credential ID without credential writes',async()=>{
+  const session={mioId,browserId:actorBrowser,tokenHash:actorHash,active:true};
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,actorHash]);
+  const reg=createContinuousServerPasskeyRegistration({
+    db:pool,webauthn:participantWebauthnV208,rpID,origin,
+    resolveSession:async()=>session,
+    verifyStepUp:async({mioId,browserId,tokenHash})=>({
+      mioId,browserId,tokenHash,userVerified:true,consumed:true,
+      method:'approved-device-pairing'
+    })
+  });
+  const {options}=await reg.begin();
+  const mismatched=syntheticRegistration({challenge:options.challenge,origin,rpID,
+    rawIdMismatch:true});
+  await assert.rejects(reg.finish(mismatched),/REGISTRATION_NOT_VERIFIED/);
+  const result=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204');
+  assert.equal(result.rows[0].n,0);
 });
