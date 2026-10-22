@@ -26,4 +26,4 @@ jobs:
       - name: Syntax check GAS source without modifying it
         run: cp Code.gs /tmp/mio-gas-syntax.js && node --check /tmp/mio-gas-syntax.js
       - name: Regression test aliases, attendance, artwork, and gacha
-        run: node --test tests/mio-verified-alias-recovery.test.mjs tests/attendance-integration-proof.test.mjs
+        run: node --test tests/mio-verified-alias-recovery.test.mjs tests/mio-gas-v196-alias-helpers.test.mjs tests/attendance-integration-proof.test.mjs
