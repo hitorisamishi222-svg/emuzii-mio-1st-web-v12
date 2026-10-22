@@ -5,6 +5,8 @@ on:
       - feature/mio-ip-five-history-20261021
     paths:
       - gas/mio-identity-attestation-v218.gs
+      - APPS_SCRIPT_Code_v1.9.9_READONLY_IDENTITY_ATTESTATION_CANDIDATE.gs
+      - tests/mio-gas-readonly-doPost-v219.test.mjs
       - tests/mio-gas-identity-attestation-v218.test.mjs
       - participant-device-store-v204.js
       - tests/participant-device-store-v204.test.mjs
@@ -65,6 +67,7 @@ jobs:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
       - run: node --test tests/mio-gas-identity-attestation-v218.test.mjs
+      - run: node --test tests/mio-gas-readonly-doPost-v219.test.mjs
       - run: node --check participant-device-store-v204.js
       - run: node --check participant-passkey-registration-server-v211.js
       - run: node --check participant-bootstrap-guard-v210.js
