@@ -91,7 +91,15 @@ function verifiedPerson_(ss,r){
  if(!/^MIO-[0-9]{4}$/.test(id))return null;
  var people=rows_(ss,'emuzii_参加者'),dest=people.filter(function(x){return x[0]===id});
  if(dest.length!==1)return null;
- if(name===dest[0][1])return dest[0];
+ if(name===dest[0][1]){
+  var merged=rows_(ss,'emuzii_本人統合').filter(function(link){
+    return link[1]===id&&link[2]===name&&link[3]==='確認済み';
+  });
+  if(merged.length>1)return null;
+  if(!merged.length)return dest[0];
+  var canonical=people.filter(function(p){return p[0]===merged[0][0]});
+  return canonical.length===1?canonical[0]:null;
+ }
  if(r[9]!=='管理者本人確認済み'||r[10]!==id||r[11]!=='確認済み')return null;
  var links=rows_(ss,'emuzii_本人統合').filter(function(l){
   return l[0]===id&&l[2]===name&&l[3]==='確認済み'&&l[6]===r[0];
