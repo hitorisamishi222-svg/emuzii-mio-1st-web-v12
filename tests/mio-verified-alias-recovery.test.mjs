@@ -144,3 +144,45 @@ test('non-admin alias, wrong token, or wrong canonical ID cannot gain access',()
  assert.equal(f.send('status',{tokenHash:'d'.repeat(64)}).ok,false);
  assert.equal(f.send('status',{participantId:OLD_BROWSER,tokenHash:'c'.repeat(64)}).integratedParticipantId,ID);
 });
+
+test('attendance days from original and alias are combined once with no original row changes',()=>{
+ const f=fixture();
+ const original=f.sheets.emuzii_皆勤31日[1],alias=f.sheets.emuzii_皆勤31日[2];
+ original[2]='○'; original[4]='○';
+ alias[4]='○'; alias[8]='○';
+ const before=JSON.stringify(f.sheets.emuzii_皆勤31日);
+ assert.equal(f.send('integrateLight',{name:ALIAS,integratedParticipantId:ID}).ok,true);
+ for(const [participantId,tokenHash] of [
+  [LIGHT_BROWSER,HASH],[OLD_BROWSER,'c'.repeat(64)],[ORIGINAL_BROWSER,'b'.repeat(64)]
+ ]){
+  const result=f.send('status',{participantId,tokenHash});
+  assert.equal(result.ok,true);
+  assert.deepEqual(Array.from(result.progress.attendanceConfirmedDays),[1,3,7]);
+ }
+ assert.equal(JSON.stringify(f.sheets.emuzii_皆勤31日),before);
+});
+
+test('manually consumed rights on the old ID reduce canonical gacha balance',()=>{
+ const f=fixture();
+ const source=f.sheets.emuzii_ガチャ[2];
+ const canonical=f.sheets.emuzii_ガチャ[1];
+ canonical[5]=6; canonical[6]=1; // one manual consumption, 6 total canonical rights
+ source[5]=2; source[9]=2; // two old consumption, no new rights added
+ f.sheets.emuzii_Web登録[1][6]='確認済み';
+ assert.equal(f.send('integrateLight',{name:ALIAS,integratedParticipantId:ID}).ok,true);
+ const result=f.send('status',{participantId:ORIGINAL_BROWSER,tokenHash:'b'.repeat(64)});
+ assert.equal(result.ok,true);
+ // 1 canonical manual + 2 old manual + 1 old draw = 4 used.
+ assert.equal(result.progress.gacha.total,6);
+ assert.equal(result.progress.gacha.used,4);
+ assert.equal(result.progress.gacha.remaining,2);
+});
+
+test('unclear historical gacha consumption blocks progress rather than granting rights',()=>{
+ const f=fixture();
+ f.sheets.emuzii_ガチャ[2][12]='要確認';
+ assert.equal(f.send('integrateLight',{name:ALIAS,integratedParticipantId:ID}).ok,true);
+ const status=f.send('status');
+ assert.equal(status.ok,false);
+ assert.match(status.error,/ガチャ/);
+});
