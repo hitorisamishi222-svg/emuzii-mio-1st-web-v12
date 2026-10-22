@@ -10,6 +10,8 @@ import {randomBytes,generateKeyPairSync,createHash,createSign} from 'node:crypto
 import {participantWebauthnV208} from '../participant-webauthn-server-v208.js';
 import pg from 'pg';
 import {createContinuousServerPasskeyRegistration} from '../participant-passkey-registration-continuous-v215.js';
+import {createContinuousGasPasskeyRegistration} from '../participant-gas-passkey-continuous-v216.js';
+import {sessionCookie,hash} from '../bridge.js';
 import {recordRecentIP} from '../registration-ip-history-v203.js';
 import {
   beginParticipantPasskeyRegistration,finishParticipantPasskeyRegistration,
@@ -434,4 +436,55 @@ test('real PostgreSQL: mismatched challenge cannot create credential',async()=>{
   await assert.rejects(reg.finish(response),/CONTINUITY_NOT_AUTHORIZED/);
   const count=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204');
   assert.equal(count.rows[0].n,0);
+});
+
+test('real PostgreSQL: GAS-attested account passes one-step-up enrollment',async()=>{
+  const webToken='b'.repeat(64);
+  const secret='s'.repeat(64);
+  const currentSessionCookie=sessionCookie(actorBrowser,webToken,secret);
+  const gasStatus={
+    ok:true,participantId:actorBrowser,status:'承認済み',
+    integratedParticipantId:mioId,identityLinked:true,
+    attendanceLinked:true,deviceActive:true
+  };
+  let stepUps=0,gasCalls=0;
+  await pool.query(`INSERT INTO mio_browser_links_v204(mio_id,browser_id,token_hash,verified_method)
+    VALUES($1,$2,$3,'approved-device-pairing')`,[mioId,actorBrowser,hash(webToken)]);
+  const facade=createContinuousGasPasskeyRegistration({
+    db:pool,webauthn,rpID,origin,sessionSecret:secret,
+    getCookieHeader:async()=>currentSessionCookie,
+    statusRequest:async(action,payload)=>{
+      gasCalls++;
+      assert.equal(action,'status');
+      assert.deepEqual(payload,{participantId:actorBrowser,tokenHash:hash(webToken)});
+      return gasStatus;
+    },
+    verifyStepUp:async({mioId,browserId,tokenHash})=>{
+      stepUps++;
+      return {mioId,browserId,tokenHash,consumed:true,userVerified:true,
+        method:'approved-device-pairing'};
+    }
+  });
+  const started=await facade.begin();
+  const response={id:credentialId,response:{clientDataJSON:Buffer.from(JSON.stringify({
+    type:'webauthn.create',challenge:started.options.challenge,origin
+  })).toString('base64url')}};
+  const result=await facade.finish(response);
+  assert.equal(result.registered,true);
+  assert.equal(result.mioId,mioId);
+  assert.equal(stepUps,1);
+  assert.equal(gasCalls,2);
+  assert.equal((await pool.query('SELECT count(*)::int AS n FROM mio_passkey_credentials_v204')).rows[0].n,1);
+});
+test('real PostgreSQL: legacy GAS response lacking link proof cannot bootstrap',async()=>{
+  const webToken='b'.repeat(64),secret='s'.repeat(64);
+  const facade=createContinuousGasPasskeyRegistration({
+    db:pool,webauthn,rpID,origin,sessionSecret:secret,
+    getCookieHeader:async()=>sessionCookie(actorBrowser,webToken,secret),
+    statusRequest:async()=>({ok:true,participantId:actorBrowser,status:'承認済み',name:'test'}),
+    verifyStepUp:async()=>{throw Error('SHOULD_NOT_RUN_STEP_UP')}
+  });
+  await assert.rejects(facade.begin(),/GAS_MIO_LINK_NOT_VERIFIED/);
+  const q=await pool.query('SELECT count(*)::int AS n FROM mio_passkey_challenges_v204');
+  assert.equal(q.rows[0].n,0);
 });
