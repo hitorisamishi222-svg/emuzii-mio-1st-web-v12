@@ -46,8 +46,9 @@ export function createGasIdentitySessionResolver({
     if(!signed||!WEB_ID.test(signed.id))deny('SESSION_NOT_VERIFIED');
     const tokenHash=hash(signed.token);
     if(!TOKEN_HASH.test(tokenHash))deny('SESSION_NOT_VERIFIED');
-    // Only the trusted GAS bridge supplies this state, after its own approval check.
-    const status=await statusRequest('status',{
+    // Only a dedicated read-only GAS identity_attestation response can supply this state.
+    // Legacy 'status' may modify registration fields and is NOT identity evidence.
+    const status=await statusRequest('identity_attestation',{
       participantId:signed.id,tokenHash
     });
     const mioId=requireGasIdentityAttestation(status,signed.id);
