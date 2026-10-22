@@ -1,0 +1,29 @@
+name: Verified MIO alias recovery safeguards
+on:
+  push:
+    branches:
+      - feature/mio-verified-alias-recovery-20261022
+  pull_request:
+    paths:
+      - Code.gs
+      - api-activate-attendance.js
+      - attendance-integration-proof.js
+      - join.html
+      - tests/mio-verified-alias-recovery.test.mjs
+      - .github/workflows/mio-verified-alias-recovery.yml
+permissions:
+  contents: read
+jobs:
+  alias-identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check public activation code
+        run: node --check api-activate-attendance.js
+      - name: Syntax check GAS source without modifying it
+        run: cp Code.gs /tmp/mio-gas-syntax.js && node --check /tmp/mio-gas-syntax.js
+      - name: Regression test aliases, attendance, artwork, and gacha
+        run: node --test tests/mio-verified-alias-recovery.test.mjs tests/attendance-integration-proof.test.mjs
