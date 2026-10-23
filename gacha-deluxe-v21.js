@@ -59,8 +59,9 @@
   const actionRow=document.createElement('div');actionRow.className='mio-deluxe-demo-actions';
   const normal=document.createElement('button');normal.type='button';normal.textContent='💎 通常を体験';
   const fest=document.createElement('button');fest.type='button';fest.textContent='👑 ラキフェス体験';
+  const skipDemo=document.createElement('button');skipDemo.type='button';skipDemo.className='mio-deluxe-demo-skip';skipDemo.textContent='演出をスキップ';skipDemo.hidden=true;skipDemo.disabled=true;
   const status=document.createElement('p');status.className='mio-deluxe-demo-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='どちらも実抽選しません。';
-  actionRow.append(normal,fest);demo.append(heading,description,label,select,actionRow,status);
+  actionRow.append(normal,fest);demo.append(heading,description,label,select,actionRow,skipDemo,status);
   foot.insertAdjacentElement('afterend',demo);
   let active=false;const timers=[];
   const queue=(fn,ms)=>timers.push(setTimeout(fn,ms));
@@ -70,9 +71,22 @@
     const result=document.getElementById('drawResultCard');if(result)result.hidden=true;
     clearStage();phase(0,false);
   };
+  function finishDemo(rarity){
+    while(timers.length)clearTimeout(timers.pop());
+    stage.classList.remove('draw-active','royal-charge','royal-release','royal-climax');stage.classList.add('royal-sequence-complete','rarity-'+rarity.toLowerCase());
+    clearStage();phase(3,false);
+    const card=document.getElementById('drawResultCard');
+    if(card){card.hidden=false;card.classList.remove('result-pop');void card.offsetWidth;card.classList.add('result-pop');
+      const image=document.getElementById('drawResultImage');if(image){image.hidden=true;image.removeAttribute('src')}
+      const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
+      if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent='豪華演出の見本';if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
+    }
+    status.textContent='デモ完了。抽選回数・履歴は変わっていません。';
+    active=false;normal.disabled=false;fest.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
+  }
   function run(mode){
     if(active)return;
-    active=true;normal.disabled=true;fest.disabled=true;
+    active=true;normal.disabled=true;fest.disabled=true;skipDemo.hidden=false;skipDemo.disabled=false;
     reset();const rarity=select.value;
     stage.classList.toggle('is-fest',mode==='ラキフェス');
     stage.classList.add('draw-active');
@@ -85,25 +99,9 @@
     queue(()=>{stage.classList.add('royal-charge');status.textContent='魔法が集まっています…（演出デモ）'},900*k);
     queue(()=>{stage.classList.remove('royal-charge');stage.classList.add('royal-release');status.textContent='クジラが宝物を運んでいます…（演出デモ）'},1900*k);
     queue(()=>{stage.classList.add('royal-climax');status.textContent='結果の演出が現れます…（演出デモ）'},3650*k);
-    queue(()=>{
-      stage.classList.remove('draw-active','royal-release','royal-climax');stage.classList.add('royal-sequence-complete');
-      stage.classList.add('rarity-'+rarity.toLowerCase());
-      clearStage();phase(3,true);
-      const card=document.getElementById('drawResultCard');
-      if(card){
-        card.hidden=false;
-        card.classList.remove('result-pop');void card.offsetWidth;card.classList.add('result-pop');
-        const image=document.getElementById('drawResultImage');if(image){image.hidden=true;image.removeAttribute('src')}
-        const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
-        if(r)r.textContent=rarity+' · DEMO';
-        if(name)name.textContent='豪華演出の見本';
-        if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
-      }
-      phase(3,false);
-      status.textContent='デモ完了。抽選回数・履歴は変わっていません。';
-      active=false;normal.disabled=false;fest.disabled=false;
-    },5000*k);
+    queue(()=>finishDemo(rarity),5000*k);
   }
+  skipDemo.addEventListener('click',()=>{if(active)finishDemo(select.value)});
   normal.addEventListener('click',()=>run('通常'));
   fest.addEventListener('click',()=>run('ラキフェス'));
   window.addEventListener('pagehide',()=>{while(timers.length)clearTimeout(timers.pop())},{once:true});
