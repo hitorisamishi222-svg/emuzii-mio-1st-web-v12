@@ -126,7 +126,9 @@ $('register')?.addEventListener('submit',async e=>{
   try{localStorage.setItem(NAME_KEY,name)}catch{}
   $('registerButton').disabled=true;
   if(registered){message('最新情報を読み込んでいます…');try{await refresh()}finally{$('registerButton').disabled=false};return}
-  message('登録を保存しています…');
+  message('既存の登録情報を保護するため、この画面では再登録できません。登録済みの方は運営に端末認証の復旧をご依頼ください。新規参加の方は新規登録ページをご利用ください。',true);
+  $('registerButton').disabled=false;
+  return;
   const loginId=$('loginId')?$('loginId').value.trim():'';
   try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
   try{
