@@ -52,3 +52,8 @@
 .mio-deluxe-demo .mio-deluxe-demo-skip:not([hidden]){display:block;width:100%;min-height:44px;margin-top:9px;padding:9px 12px;border-radius:12px;border:1px solid #cce2ff;background:#143865;color:#fff7d8;font-size:14px;font-weight:800;cursor:pointer}
 .mio-deluxe-demo .mio-deluxe-demo-skip[hidden]{display:none!important}
 .mio-deluxe-demo button:focus-visible,.mio-deluxe-demo select:focus-visible{outline:3px solid #ffe08b;outline-offset:3px}
+
+/* Preview result is intentionally isolated from the v19 live result-pop observer. */
+.gacha-page #drawResultCard.mio-deluxe-demo-result:not([hidden]){animation:mio-deluxe-demo-reveal .5s ease-out both}
+@keyframes mio-deluxe-demo-reveal{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.gacha-page #drawResultCard.mio-deluxe-demo-result:not([hidden]){animation:none}}
