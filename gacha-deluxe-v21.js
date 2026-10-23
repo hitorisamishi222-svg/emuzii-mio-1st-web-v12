@@ -33,7 +33,8 @@
   function clearStage(){stage.classList.remove('mio-deluxe-running');}
   const observer=new MutationObserver(()=>{
     if(!stage.classList.contains('draw-active'))return;
-    if(stage.classList.contains('royal-climax')||stage.classList.contains('royal-release'))phase(2,true);
+    if(stage.classList.contains('royal-climax'))phase(3,true);
+    else if(stage.classList.contains('royal-release'))phase(2,true);
     else if(stage.classList.contains('royal-charge'))phase(1,true);
   });
   observer.observe(stage,{attributes:true,attributeFilter:['class']});
@@ -53,7 +54,7 @@
   const heading=document.createElement('h3');heading.textContent='✨ 豪華演出を体験（プレビュー限定）';
   const description=document.createElement('p');description.textContent='これは映像だけのダミー体験です。抽選APIには接続せず、残回数・当選記録・本番データを変更しません。';
   const label=document.createElement('label');label.textContent='演出するレア度';
-  const select=document.createElement('select');select.setAttribute('aria-label','演出するレア度');
+  const select=document.createElement('select');select.id='mio-deluxe-demo-rarity';label.htmlFor=select.id;select.setAttribute('aria-label','演出するレア度');
   for(const rarity of ['N','R','SR','UR']){const option=document.createElement('option');option.value=rarity;option.textContent=rarity;select.append(option)}
   const actionRow=document.createElement('div');actionRow.className='mio-deluxe-demo-actions';
   const normal=document.createElement('button');normal.type='button';normal.textContent='💎 通常を体験';
@@ -75,7 +76,9 @@
     reset();const rarity=select.value;
     stage.classList.toggle('is-fest',mode==='ラキフェス');
     stage.classList.add('draw-active');
-    window.dispatchEvent(new CustomEvent('mio:gacha-animation-start',{detail:{mode,previewOnly:true}}));
+    // Keep preview animation self-contained: the existing live FX listeners
+    // also react to mio:gacha-* and would spawn unrelated timers/sounds.
+    stage.classList.add('mio-deluxe-running');phase(1,true);
     status.textContent='王宮の光が集まっています…（演出デモ）';
     const fast=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;
     const k=fast ? 0.14 : 1;
@@ -85,7 +88,7 @@
     queue(()=>{
       stage.classList.remove('draw-active','royal-release','royal-climax');stage.classList.add('royal-sequence-complete');
       stage.classList.add('rarity-'+rarity.toLowerCase());
-      window.dispatchEvent(new CustomEvent('mio:gacha-result-ready',{detail:{rarity,mode,previewOnly:true}}));
+      clearStage();phase(3,true);
       const card=document.getElementById('drawResultCard');
       if(card){
         card.hidden=false;
@@ -96,7 +99,7 @@
         if(name)name.textContent='豪華演出の見本';
         if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
       }
-      window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{rarity,mode,previewOnly:true}}));
+      phase(3,false);
       status.textContent='デモ完了。抽選回数・履歴は変わっていません。';
       active=false;normal.disabled=false;fest.disabled=false;
     },5000*k);
