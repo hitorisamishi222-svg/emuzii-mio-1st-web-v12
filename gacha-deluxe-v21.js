@@ -45,7 +45,8 @@
 
   // Preview-only interaction. Hard block on the real public hostname.
   // The visual rehearsal must be explicitly requested. Never display it in the normal gacha flow.
-  if(location.hostname==='emuzii-mio-1st-web-v12.vercel.app'||new URLSearchParams(location.search).get('deluxeDemo')!=='1')return;
+  const previewHost=/^emuzii-mio-1st-web-v12-[a-z0-9-]+\.vercel\.app$/i.test(location.hostname)||location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  if(!previewHost||new URLSearchParams(location.search).get('deluxeDemo')!=='1')return;
   // Block real draw controls during the rehearsal to prevent accidental paid/limited draws.
   if(controls){controls.querySelectorAll('button').forEach(button=>{button.disabled=true;button.setAttribute('aria-disabled','true');button.title='演出デモ中は実抽選を利用できません'})}
   const demo=document.createElement('section');demo.className='mio-deluxe-demo';demo.setAttribute('aria-label','演出専用体験デモ');
