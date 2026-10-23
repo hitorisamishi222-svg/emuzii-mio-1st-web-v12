@@ -7,6 +7,8 @@ on:
       - gas/mio-identity-attestation-v218.gs
       - gas/mio-identity-diagnostic-v220.gs
       - gas/mio-identity-attestation-v221.gs
+      - gas/mio-identity-diagnostic-v222.gs
+      - tests/mio-gas-identity-diagnostic-v222.test.mjs
       - tests/mio-gas-identity-attestation-v221.test.mjs
       - APPS_SCRIPT_Code_v1.9.10_READONLY_IDENTITY_NAME_TRIM_CANDIDATE.gs
       - tests/mio-gas-readonly-doPost-v221.test.mjs
@@ -75,6 +77,7 @@ jobs:
       - run: node --test tests/mio-gas-identity-attestation-v218.test.mjs
       - run: node --test tests/mio-gas-identity-diagnostic-v220.test.mjs
       - run: node --test tests/mio-gas-identity-attestation-v221.test.mjs
+      - run: node --test tests/mio-gas-identity-diagnostic-v222.test.mjs
       - run: node --test tests/mio-gas-readonly-doPost-v221.test.mjs
       - run: node --test tests/mio-gas-readonly-doPost-v219.test.mjs
       - run: node --check participant-device-store-v204.js
