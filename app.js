@@ -115,8 +115,8 @@ async function refresh(){
     if(e.status===401){
       // A missing browser cookie is not proof that the participant has no registration.
       // Do not direct an existing user into creating a duplicate MIO identity.
-      const knownName=String(localStorage.getItem(NAME_KEY)||'').trim();
-      const knownLogin=String(localStorage.getItem(LOGIN_ID_KEY)||'').trim();
+      let knownName='',knownLogin='';
+      try{knownName=String(localStorage.getItem(NAME_KEY)||'').trim();knownLogin=String(localStorage.getItem(LOGIN_ID_KEY)||'').trim()}catch{}
       message(knownName||knownLogin
         ? 'このブラウザの認証情報を確認できません。登録済みの情報が消えたわけではありません。再登録せず、運営に「端末認証の復旧」をご連絡ください。'
         : 'このブラウザの認証情報を確認できません。登録済みの方は再登録せず、運営に「端末認証の復旧」をご連絡ください。新規の方は新規登録ページをご利用ください。',true);
@@ -137,30 +137,7 @@ $('register')?.addEventListener('submit',async e=>{
   message('この画面からの再登録は行いません。登録済みの方は運営に「端末認証の復旧」をご連絡ください。新規の方は新規登録ページをご利用ください。',true);
   $('registerButton').disabled=false;
   return;
-  message('登録を保存しています…');
-  const loginId=$('loginId')?$('loginId').value.trim():'';
-  try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
-  try{
-    const retry=registrationRetryKey(name,loginId);
-    const d=await post('/api/register',{name,loginId,retryKey:retry.key,retryIssuedAt:retry.issuedAt});
-    clearRegistrationRetryKey();
-    if(d.loginId)try{localStorage.setItem(LOGIN_ID_KEY,d.loginId)}catch{}
-    const refreshed=await refresh();
-    if(!refreshed){
-      // Registration succeeded even if the subsequent status request failed.
-      // Keep its signed browser session and offer a read-only refresh, not a second registration.
-      registered=true;
-      $('registerButton').textContent='参加状況を再確認';
-      message('登録の保存は完了しました。参加状況の取得に失敗したため、時間をおいて「参加状況を再確認」を押してください。');
-    }
-  }catch(e){
-    // Only clear a retry identity when the server definitively rejected the
-    // request before writing, never on ambiguous network/502 failures.
-    if(e?.status===400||e?.status===503||
-      /ログインIDを入力してください|ログインIDが一致しません/.test(e?.message||''))
-      clearRegistrationRetryKey();
-    message(e.message,true);
-  }finally{$('registerButton').disabled=false}
+
 });
 $('refresh')?.addEventListener('click',refresh);
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
