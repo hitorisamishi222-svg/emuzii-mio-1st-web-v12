@@ -234,6 +234,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "gacha-deluxe-v21.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-deluxe-v21.css",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gacha-v191-whale-blue.svg",
       "use": "@vercel/static"
     },
