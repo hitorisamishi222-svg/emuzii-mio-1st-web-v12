@@ -112,7 +112,16 @@ async function refresh(){
     registered=e.status===401?false:hadValidStatus;
     $('personal').hidden=true;$('register').hidden=false;
     if(registered)$('registerButton').textContent='参加状況を再確認';
-    if(e.status===401)message('ColorSing名を入力して参加状況を確認してください。');
+    if(e.status===401){
+      // A missing browser cookie is not proof that the participant has no registration.
+      // Do not direct an existing user into creating a duplicate MIO identity.
+      const knownName=String(localStorage.getItem(NAME_KEY)||'').trim();
+      const knownLogin=String(localStorage.getItem(LOGIN_ID_KEY)||'').trim();
+      message(knownName||knownLogin
+        ? 'このブラウザの認証情報を確認できません。登録済みの情報が消えたわけではありません。再登録せず、運営に「端末認証の復旧」をご連絡ください。'
+        : 'このブラウザの認証情報を確認できません。登録済みの方は再登録せず、運営に「端末認証の復旧」をご連絡ください。新規の方は新規登録ページをご利用ください。',true);
+      if($('registerButton'))$('registerButton').textContent='認証状態を再確認';
+    }
     else message(e.status===503?'参加状況のWeb連携は準備中です。予想・FAは上のフォームから応募できます。':e.message,true);
     return false;
   }finally{if($('refresh'))$('refresh').disabled=false}
@@ -123,6 +132,11 @@ $('register')?.addEventListener('submit',async e=>{
   try{localStorage.setItem(NAME_KEY,name)}catch{}
   $('registerButton').disabled=true;
   if(registered){message('最新情報を読み込んでいます…');try{await refresh()}finally{$('registerButton').disabled=false};return}
+  // On a lost session, the legacy form must not silently issue a new MIO-W ID.
+  // New participants use /join.html; existing participants require verified recovery.
+  message('この画面からの再登録は行いません。登録済みの方は運営に「端末認証の復旧」をご連絡ください。新規の方は新規登録ページをご利用ください。',true);
+  $('registerButton').disabled=false;
+  return;
   message('登録を保存しています…');
   const loginId=$('loginId')?$('loginId').value.trim():'';
   try{if(loginId)localStorage.setItem(LOGIN_ID_KEY,loginId)}catch{}
