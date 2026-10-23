@@ -112,7 +112,10 @@ async function refresh(){
     registered=e.status===401?false:hadValidStatus;
     $('personal').hidden=true;$('register').hidden=false;
     if(registered)$('registerButton').textContent='参加状況を再確認';
-    if(e.status===401)message('ColorSing名を入力して参加状況を確認してください。');
+    if(e.status===401){
+      message('このブラウザの認証情報を確認できません。登録済みの方は再登録せず、運営に端末認証の復旧をご依頼ください。',true);
+      if($('registerButton'))$('registerButton').textContent='認証状態を再確認';
+    }
     else message(e.status===503?'参加状況のWeb連携は準備中です。予想・FAは上のフォームから応募できます。':e.message,true);
     return false;
   }finally{if($('refresh'))$('refresh').disabled=false}
