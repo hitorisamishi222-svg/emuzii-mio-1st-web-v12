@@ -63,7 +63,7 @@
   const status=document.createElement('p');status.className='mio-deluxe-demo-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='どちらも実抽選しません。';
   actionRow.append(normal,fest);demo.append(heading,description,label,select,actionRow,skipDemo,status);
   foot.insertAdjacentElement('afterend',demo);
-  let active=false;const timers=[];
+  let active=false;let activeRarity='N';const timers=[];
   const queue=(fn,ms)=>timers.push(setTimeout(fn,ms));
   const reset=()=>{
     while(timers.length)clearTimeout(timers.pop());
@@ -82,12 +82,12 @@
       if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent='豪華演出の見本';if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
     }
     status.textContent='デモ完了。抽選回数・履歴は変わっていません。';
-    active=false;normal.disabled=false;fest.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
+    active=false;normal.disabled=false;fest.disabled=false;select.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
   }
   function run(mode){
     if(active)return;
-    active=true;normal.disabled=true;fest.disabled=true;skipDemo.hidden=false;skipDemo.disabled=false;
-    reset();const rarity=select.value;
+    active=true;normal.disabled=true;fest.disabled=true;select.disabled=true;skipDemo.hidden=false;skipDemo.disabled=false;
+    reset();const rarity=activeRarity=select.value;
     stage.classList.toggle('is-fest',mode==='ラキフェス');
     stage.classList.add('draw-active');
     // Keep preview animation self-contained: the existing live FX listeners
@@ -101,7 +101,7 @@
     queue(()=>{stage.classList.add('royal-climax');status.textContent='結果の演出が現れます…（演出デモ）'},3650*k);
     queue(()=>finishDemo(rarity),5000*k);
   }
-  skipDemo.addEventListener('click',()=>{if(active)finishDemo(select.value)});
+  skipDemo.addEventListener('click',()=>{if(active)finishDemo(activeRarity)});
   normal.addEventListener('click',()=>run('通常'));
   fest.addEventListener('click',()=>run('ラキフェス'));
   window.addEventListener('pagehide',()=>{while(timers.length)clearTimeout(timers.pop())},{once:true});
