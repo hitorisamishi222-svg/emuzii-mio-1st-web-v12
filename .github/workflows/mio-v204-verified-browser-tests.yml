@@ -5,6 +5,8 @@ on:
       - feature/mio-ip-five-history-20261021
     paths:
       - mio-release-readiness-v223.js
+      - mio-release-check-v223.mjs
+      - tests/mio-release-check-cli-v223.test.mjs
       - tests/mio-release-readiness-v223.test.mjs
       - gas/mio-identity-attestation-v218.gs
       - gas/mio-identity-diagnostic-v220.gs
@@ -77,6 +79,8 @@ jobs:
           node-version: '22'
       - run: npm install --ignore-scripts --no-package-lock
       - run: node --test tests/mio-release-readiness-v223.test.mjs
+      - run: node --test tests/mio-release-check-cli-v223.test.mjs
+      - run: node mio-release-check-v223.mjs --audit
       - run: node --test tests/mio-gas-identity-attestation-v218.test.mjs
       - run: node --test tests/mio-gas-identity-diagnostic-v220.test.mjs
       - run: node --test tests/mio-gas-identity-attestation-v221.test.mjs
