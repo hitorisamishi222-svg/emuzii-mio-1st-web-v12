@@ -68,7 +68,7 @@
   const reset=()=>{
     while(timers.length)clearTimeout(timers.pop());
     stage.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur','is-fest','is-normal','v20-prize-visible','v19-reveal-running','v19-reveal-finished','v191-rarity-n','v191-rarity-r','v191-rarity-sr','v191-rarity-ur');
-    const result=document.getElementById('drawResultCard');if(result)result.hidden=true;
+    const result=document.getElementById('drawResultCard');if(result){result.hidden=true;result.classList.remove('mio-deluxe-demo-result','result-pop')}
     clearStage();phase(0,false);
   };
   function finishDemo(rarity){
@@ -76,7 +76,7 @@
     stage.classList.remove('draw-active','royal-charge','royal-release','royal-climax');stage.classList.add('royal-sequence-complete','rarity-'+rarity.toLowerCase());
     clearStage();phase(3,false);
     const card=document.getElementById('drawResultCard');
-    if(card){card.hidden=false;card.classList.remove('result-pop');void card.offsetWidth;card.classList.add('result-pop');
+    if(card){card.hidden=false;card.classList.remove('result-pop');card.classList.add('mio-deluxe-demo-result');
       const image=document.getElementById('drawResultImage');if(image){image.hidden=true;image.removeAttribute('src')}
       const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
       if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent='豪華演出の見本';if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
