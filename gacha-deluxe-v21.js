@@ -44,7 +44,10 @@
   window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
 
   // Preview-only interaction. Hard block on the real public hostname.
-  if(location.hostname==='emuzii-mio-1st-web-v12.vercel.app')return;
+  // The visual rehearsal must be explicitly requested. Never display it in the normal gacha flow.
+  if(location.hostname==='emuzii-mio-1st-web-v12.vercel.app'||new URLSearchParams(location.search).get('deluxeDemo')!=='1')return;
+  // Block real draw controls during the rehearsal to prevent accidental paid/limited draws.
+  if(controls){controls.querySelectorAll('button').forEach(button=>{button.disabled=true;button.setAttribute('aria-disabled','true');button.title='演出デモ中は実抽選を利用できません'})}
   const demo=document.createElement('section');demo.className='mio-deluxe-demo';demo.setAttribute('aria-label','演出専用体験デモ');
   const heading=document.createElement('h3');heading.textContent='✨ 豪華演出を体験（プレビュー限定）';
   const description=document.createElement('p');description.textContent='これは映像だけのダミー体験です。抽選APIには接続せず、残回数・当選記録・本番データを変更しません。';
