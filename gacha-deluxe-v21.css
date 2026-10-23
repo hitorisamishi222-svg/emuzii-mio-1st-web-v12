@@ -47,3 +47,8 @@
 @keyframes mio-deluxe-stage-gold{to{filter:brightness(1.15);box-shadow:0 0 0 3px #53330e,0 0 0 5px #edc46e,0 12px 39px #000a,0 0 28px #ffd46666,inset 0 0 40px #ffd16e7c}}
 @media(max-width:430px){.mio-deluxe-masthead{padding:16px 9px 14px}.gacha-page .royal-gacha-controls .button{min-height:54px}.gacha-page #gachaStage{outline-offset:-7px}.gacha-page #gachaStage .draw-result-card:not([hidden]){width:90%;padding:12px 10px}}
 @media(prefers-reduced-motion:reduce){.gacha-page #gachaStage.mio-deluxe-running,.gacha-page #gachaStage.mio-deluxe-running.is-fest{animation:none!important;filter:none!important}.mio-deluxe-steps li{transition:none!important}}
+
+/* Demo-only skip: reachable and easy to tap on slow phones. Never shown in live drawing. */
+.mio-deluxe-demo .mio-deluxe-demo-skip:not([hidden]){display:block;width:100%;min-height:44px;margin-top:9px;padding:9px 12px;border-radius:12px;border:1px solid #cce2ff;background:#143865;color:#fff7d8;font-size:14px;font-weight:800;cursor:pointer}
+.mio-deluxe-demo .mio-deluxe-demo-skip[hidden]{display:none!important}
+.mio-deluxe-demo button:focus-visible,.mio-deluxe-demo select:focus-visible{outline:3px solid #ffe08b;outline-offset:3px}
