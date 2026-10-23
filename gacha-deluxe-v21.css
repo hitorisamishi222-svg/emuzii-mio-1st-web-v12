@@ -1,0 +1,49 @@
+/* MIO Royal Whale Gacha v2.1 — presentation only. The deployed machine art remains the visual source of truth. */
+.gacha-page{--mio-royal-gold:#f9dfa1;--mio-royal-blue:#a5e3ff;--mio-royal-ink:#061633}
+.gacha-page #drawPanel{position:relative;isolation:isolate;border:1px solid #d9b9768c!important;box-shadow:0 18px 48px #020a2499,inset 0 0 0 1px #e7f1ff24}
+.gacha-page #drawPanel:before{content:"";position:absolute;top:0;left:15%;right:15%;height:2px;pointer-events:none;background:linear-gradient(90deg,transparent,#fff6d4,#7edcff,#fff6d4,transparent)}
+.mio-deluxe-masthead{text-align:center;margin:2px auto 18px;padding:19px 12px 17px;border:1px solid #c3a26d70;border-radius:20px;background:radial-gradient(ellipse at 50% 0%,#5b81b22e,transparent 64%),linear-gradient(180deg,#091e45ee,#0a1a3acc);box-shadow:inset 0 0 0 1px #fff6cc12,0 10px 25px #0004;overflow:hidden}
+.mio-deluxe-masthead .royal-eyebrow{display:block;color:var(--mio-royal-gold);font-size:clamp(10px,2.8vw,12px);font-weight:800;letter-spacing:.21em}
+.mio-deluxe-masthead .royal-title{display:block;font-size:clamp(19px,5.6vw,27px);font-weight:900;letter-spacing:.06em;line-height:1.42;color:#fffaf0;text-shadow:0 0 20px #91c9ff88,0 2px 2px #000a}
+.mio-deluxe-masthead .royal-sub{display:block;color:#c9e8ff;font-size:12px;margin-top:4px;letter-spacing:.08em}
+.mio-deluxe-crest{display:flex;align-items:center;justify-content:center;gap:10px;color:#ffe7a2;margin-bottom:7px;font-size:23px}
+.mio-deluxe-crest:before,.mio-deluxe-crest:after{content:"";height:1px;flex:0 1 90px;background:linear-gradient(90deg,transparent,#efd69a)}
+.mio-deluxe-crest:after{transform:scaleX(-1)}
+.gacha-page #drawRemaining{margin:13px 0 11px!important;padding:11px 12px;border:1px solid #a7d9f47d;border-radius:13px;background:linear-gradient(90deg,#092653,#1b4166,#092653);box-shadow:inset 0 1px 0 #fff6cf2d;font-size:clamp(14px,3.7vw,18px)}
+.gacha-page .royal-gacha-controls .button{min-width:0;position:relative;overflow:hidden;min-height:57px;border-radius:15px!important;border:1px solid #fff5b599;box-shadow:inset 0 1px 0 #fffcdf93,0 5px 18px #020d287d;font-weight:900;text-shadow:none;touch-action:manipulation}
+.gacha-page .royal-gacha-controls .button:not(:disabled):active{transform:scale(.98)}
+.gacha-page .royal-gacha-controls .button:focus-visible,.mio-deluxe-demo button:focus-visible,.mio-deluxe-demo select:focus-visible{outline:3px solid #ffe6a3;outline-offset:3px}
+.gacha-page .royal-gacha-controls .button:disabled{opacity:.64;filter:saturate(.72);cursor:not-allowed}
+.gacha-page .royal-gacha-controls .fest-button:not(:disabled){background:linear-gradient(145deg,#fff4c3 0%,#d99c30 46%,#ffeb9e 100%);color:#402700}
+.mio-deluxe-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px 0 13px;padding:0;list-style:none}
+.mio-deluxe-steps li{text-align:center;position:relative;min-width:0;padding:10px 5px 9px;border:1px solid #91b0cf6b;border-radius:12px;background:linear-gradient(180deg,#112c51ad,#091832eb);color:#d3dfec;font-weight:750;font-size:clamp(10px,2.5vw,12px);line-height:1.25;transition:border-color .22s,box-shadow .22s,background .22s}
+.mio-deluxe-steps li .step-icon{display:block;font-size:20px;line-height:1.2;margin-bottom:3px}
+.mio-deluxe-steps li[data-state="active"]{color:#ffedba;border-color:#ffdfa0;background:linear-gradient(180deg,#344c65,#0e294a);box-shadow:0 0 17px #ffdd8e38,inset 0 0 0 1px #ffebbd25}
+.mio-deluxe-steps li[data-state="done"]{border-color:#92e8fa8c;color:#bff5fc}
+.mio-deluxe-steps[data-running="false"] li{transition:none}
+.gacha-page #gachaStage{width:100%;max-width:100%;min-height:0!important;isolation:isolate;position:relative;border-width:3px!important;border-color:#f9dc96!important;border-radius:24px!important;outline:1px solid #f5d99a88;outline-offset:-8px;box-shadow:0 0 0 3px #173663,0 0 0 5px #bca06b88,0 12px 38px #000a,inset 0 0 35px #9dc7ff44!important}
+.gacha-page #gachaStage:after{content:"";position:absolute;z-index:9;inset:10px;border:1px solid #f9e7b37f;border-radius:15px;pointer-events:none;background:linear-gradient(135deg,#fff3c84b 0%,transparent 9%,transparent 89%,#fff3c83b 100%)}
+.gacha-page #gachaStage.is-fest{border-color:#ffdb79!important;box-shadow:0 0 0 3px #51330e,0 0 0 5px #e5b54b99,0 13px 38px #000a,inset 0 0 38px #ffd16e40!important}
+.gacha-page #gachaStage.mio-deluxe-running{animation:mio-deluxe-stage-breathe 1.6s ease-in-out infinite alternate}
+.gacha-page #gachaStage.mio-deluxe-running.is-fest{animation:mio-deluxe-stage-gold 1.5s ease-in-out infinite alternate}
+.gacha-page #gachaStage .draw-result-card:not([hidden]){z-index:19!important;border:2px solid #ffedb2!important;border-radius:22px;padding:17px 14px;background:radial-gradient(ellipse at 50% 0%,#315c8be5,#071834f5 72%)!important;box-shadow:0 0 0 4px #0d244bc7,0 0 40px #9bd9ff77,0 16px 35px #000b!important;max-height:88%;overflow:auto;overscroll-behavior:contain}
+.gacha-page #gachaStage .draw-result-card:not([hidden]) .draw-prize-name{font-size:clamp(18px,5.2vw,28px);overflow-wrap:anywhere;color:#fffef4!important}
+.gacha-page #gachaStage.rarity-r .draw-result-card:not([hidden]){border-color:#9ee8ff!important;box-shadow:0 0 29px #9ee8ff88,0 15px 31px #000b!important}
+.gacha-page #gachaStage.rarity-sr .draw-result-card:not([hidden]){border-color:#ffe084!important;box-shadow:0 0 37px #f5c864ad,0 16px 33px #000b!important}
+.gacha-page #gachaStage.rarity-ur .draw-result-card:not([hidden]){border-color:#fff6d1!important;box-shadow:0 0 0 4px #422e62ba,0 0 40px #ffcb62b8,0 0 63px #92c8ff88,0 18px 41px #000d!important}
+.gacha-page #gachaStage.rarity-ur .draw-result-card:not([hidden]) .draw-rarity{color:#fff1b5!important;text-shadow:0 0 16px #ffe08a!important}
+.mio-deluxe-footnote{margin:8px auto 10px;text-align:center;font-size:11px;color:#d4e8ff;line-height:1.5}
+.mio-deluxe-demo{margin:13px 0 18px;padding:15px 13px;border-radius:17px;border:1px solid #b6eff7aa;background:linear-gradient(145deg,#15385d,#081d3d);box-shadow:0 10px 24px #0004}
+.mio-deluxe-demo h3{margin:0 0 4px;font-size:16px;color:#f4e3ae}
+.mio-deluxe-demo p{margin:0 0 10px;color:#e2f3ff;font-size:12px}
+.mio-deluxe-demo label{font-size:13px;font-weight:750;color:#fff8df}
+.mio-deluxe-demo select{max-width:100%;margin:0 0 11px 8px;padding:8px 9px;border-radius:10px;background:#0b284f;color:#fff;border:1px solid #c3e2ee}
+.mio-deluxe-demo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mio-deluxe-demo-actions button{min-height:47px;padding:9px 6px;border-radius:12px;border:1px solid #edda9c;color:#102043;background:linear-gradient(135deg,#c9f5ff,#78ccff);font-weight:900;font-size:13px}
+.mio-deluxe-demo-actions button:last-child{background:linear-gradient(130deg,#fff3bf,#dfae47)}
+.mio-deluxe-demo-actions button:disabled{opacity:.5}
+.mio-deluxe-demo-status{min-height:1.6em;color:#d1faff!important;margin:10px 0 0!important}
+@keyframes mio-deluxe-stage-breathe{to{filter:brightness(1.17);box-shadow:0 0 0 3px #173663,0 0 0 5px #bca06b,0 13px 40px #000a,0 0 27px #8bdfff66,inset 0 0 37px #9dc7ff7a}}
+@keyframes mio-deluxe-stage-gold{to{filter:brightness(1.15);box-shadow:0 0 0 3px #53330e,0 0 0 5px #edc46e,0 12px 39px #000a,0 0 28px #ffd46666,inset 0 0 40px #ffd16e7c}}
+@media(max-width:430px){.mio-deluxe-masthead{padding:16px 9px 14px}.gacha-page .royal-gacha-controls .button{min-height:54px}.gacha-page #gachaStage{outline-offset:-7px}.gacha-page #gachaStage .draw-result-card:not([hidden]){width:90%;padding:12px 10px}}
+@media(prefers-reduced-motion:reduce){.gacha-page #gachaStage.mio-deluxe-running,.gacha-page #gachaStage.mio-deluxe-running.is-fest{animation:none!important;filter:none!important}.mio-deluxe-steps li{transition:none!important}}
