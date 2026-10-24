@@ -1,38 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {recoveryIdentity} from '../recovery-identity.js';
+import {recoveryToken} from '../recovery-token.js';
 import {verifiedRecoveryResult} from '../recovery-result-gate.js';
 
-const key='a'.repeat(64);
-const secret='a-long-independent-test-only-secret-32';
-const now=Date.now();
+const key='a'.repeat(64),secret='test-secret-which-is-longer-than-32-characters';
+const now=1760000000000;
+const target={webId:'MIO-W-'+'a'.repeat(24),masterId:'MIO-0010'};
+const approved={ok:true,verified:true,recoveryApproved:true,recoveryConsumed:true,
+ recoveryTokenBound:true,status:'承認済み',participantId:target.webId,
+ integratedParticipantId:target.masterId};
 
-test('same retry key and timestamp yield same identity',()=>{
- const a=recoveryIdentity(key,now,secret),b=recoveryIdentity(key,now,secret);
- assert.deepEqual(a,b);
- assert.match(a.id,/^MIO-W-[a-f0-9]{24}$/);
- assert.match(a.token,/^[a-f0-9]{64}$/);
- assert.notEqual(a.token,key);
+test('retries yield the same token without generating a Web-ID',()=>{
+ const a=recoveryToken(key,now,secret,now);
+ assert.match(a,/^[a-f0-9]{64}$/);
+ assert.equal(recoveryToken(key,now,secret,now),a);
+ assert.equal(recoveryToken('b'.repeat(64),now,secret,now)===a,false);
+ assert.equal(recoveryToken(key,now-1000,secret,now)===a,false);
 });
-test('changed retry key or timestamp changes identity',()=>{
- const a=recoveryIdentity(key,now,secret);
- assert.notDeepEqual(a,recoveryIdentity('b'.repeat(64),now,secret));
- assert.notDeepEqual(a,recoveryIdentity(key,now-1000,secret));
+test('invalid, stale, future and weak-secret inputs fail closed',()=>{
+ for(const [k,t,s,n] of [
+  ['x',now,secret,now],[key,now-16*60000,secret,now],
+  [key,now+61000,secret,now],[key,1.5,secret,now],
+  [null,now,secret,now],[key,now,'short',now]
+ ])assert.equal(recoveryToken(k,t,s,n),null);
 });
-test('reject invalid, expired and future retry keys',()=>{
- for(const [k,t] of [['x',now],[key,now-16*60000],[key,now+61000],[key,1.5],[null,now]]){
-  assert.equal(recoveryIdentity(k,t,secret),null);
- }
-});
-test('require explicit approval, consumed grant and exact approved IDs',()=>{
- const expected={webId:'MIO-W-'+'a'.repeat(24),masterId:'MIO-0010'};
- const approved={ok:true,verified:true,recoveryApproved:true,recoveryConsumed:true,recoveryTokenBound:true,status:'承認済み',participantId:expected.webId,integratedParticipantId:expected.masterId};
- assert.equal(verifiedRecoveryResult(approved,expected),true);
- for(const field of ['ok','verified','recoveryApproved','recoveryConsumed','recoveryTokenBound']){
-  assert.equal(verifiedRecoveryResult({...approved,[field]:false},expected),false);
- }
- assert.equal(verifiedRecoveryResult({...approved,participantId:'MIO-W-'+'b'.repeat(24)},expected),false);
- assert.equal(verifiedRecoveryResult({...approved,integratedParticipantId:'MIO-9999'},expected),false);
- assert.equal(verifiedRecoveryResult({...approved,status:'承認待ち'},expected),false);
+test('GAS response must prove approval, one-time consumption and bound token',()=>{
+ assert.equal(verifiedRecoveryResult(approved,target),true);
+ for(const field of ['ok','verified','recoveryApproved','recoveryConsumed','recoveryTokenBound'])
+  assert.equal(verifiedRecoveryResult({...approved,[field]:false},target),false);
+ assert.equal(verifiedRecoveryResult({...approved,participantId:'MIO-W-'+'b'.repeat(24)},target),false);
+ assert.equal(verifiedRecoveryResult({...approved,integratedParticipantId:'MIO-9999'},target),false);
+ assert.equal(verifiedRecoveryResult({...approved,status:'承認待ち'},target),false);
  assert.equal(verifiedRecoveryResult(approved,{webId:'not-id',masterId:'MIO-0010'}),false);
 });
