@@ -15,7 +15,7 @@ export function verifiedRecoveryResult(result,expected,requestedTokenHash){
   if(typeof expected.webId!=='string' ||
      !/^MIO-W-[a-f0-9]{24}$/.test(expected.webId) ||
      typeof expected.masterId!=='string' ||
-     !/^MIO-\\d{4,}$/.test(expected.masterId)) return false;
+     !/^MIO-\d{4,}$/.test(expected.masterId)) return false;
   return result.participantId===expected.webId &&
     result.approvedWebId===expected.webId &&
     result.integratedParticipantId===expected.masterId &&
