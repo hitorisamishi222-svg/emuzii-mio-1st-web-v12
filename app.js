@@ -154,6 +154,7 @@ $('register')?.addEventListener('submit',async e=>{
   }finally{$('registerButton').disabled=false}
 });
 $('refresh')?.addEventListener('click',refresh);
+$('sessionRetry')?.addEventListener('click',async()=>{const button=$('sessionRetry');button.disabled=true;try{await refresh()}finally{button.disabled=false}});
 for(const el of document.querySelectorAll('[data-deadline]'))if(Date.now()>Date.parse(el.dataset.deadline))el.textContent='受付終了';
 
 $('attendanceSubmit')?.addEventListener('click',async()=>{
