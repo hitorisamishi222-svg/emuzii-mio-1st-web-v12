@@ -1,37 +1,34 @@
-import {prepare, bridge, readSession, hash, sessionCookie} from './bridge.js';
-import {recoveryIdentity} from './recovery-identity.js';
+import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
+import {recoveryToken} from './recovery-token.js';
 import {verifiedRecoveryResult} from './recovery-result-gate.js';
 
 /**
- * Staged only. This file is NOT routed by the production vercel.json.
- * Requires a verified matching GAS implementation and explicit release.
+ * STAGED: not routed by production vercel.json.
+ * The live GAS source/deployment MUST be audited before enabling.
+ * Only GAS can select the pre-approved EXISTING Web-ID and MIO-ID.
  */
-export default async function handler(req,res) {
+export default async function handler(req,res){
   const cfg=prepare(req,res);
   if(!cfg)return;
-  if(process.env.MIO_RECOVERY_RELEASE!=='verified-gas-recovery-v1')
+  if(process.env.MIO_RECOVERY_RELEASE!=='verified-gas-recovery-v2')
     return res.status(503).json({ok:false,error:'端末認証の復旧は準備中です'});
-  if(readSession(req.headers.cookie,cfg.secret))
-    return res.status(409).json({ok:false,error:'このブラウザは認証済みです。参加状況を確認してください'});
+  // Do not use a valid legacy cookie to choose the target account.
+  // A stale cookie may belong to another person; the grant is authoritative.
   const {grant,retryKey,retryIssuedAt}=req.body||{};
   if(typeof grant!=='string'||!/^MIO-R1-[a-f0-9]{64}$/.test(grant))
     return res.status(400).json({ok:false,error:'復旧コードが正しくありません'});
-  const identity=recoveryIdentity(retryKey,retryIssuedAt,cfg.secret);
-  if(!identity)
-    return res.status(409).json({ok:false,error:'復旧操作の有効期限が切れています。管理者に確認してください'});
-  try {
-    // GAS must prove manual approval and atomically consume this grant.
-    // Never accept a target Web-ID, MIO-ID or nickname from the browser.
-    const result=await bridge('recover',{
-      participantId:identity.id, tokenHash:hash(identity.token),
-      grantHash:hash(grant)
-    });
+  const token=recoveryToken(retryKey,retryIssuedAt,cfg.secret);
+  if(!token)return res.status(409).json({ok:false,error:'復旧操作の有効期限が切れています。管理者に確認してください'});
+  try{
+    // GAS atomically validates and consumes the grant, binds tokenHash to the
+    // approved EXISTING Web-ID and verifies the linked MIO-ID.
+    // No user-supplied name, Web-ID or MIO-ID is accepted.
+    const result=await bridge('recover',{grantHash:hash(grant),tokenHash:hash(token)});
     const expected={webId:result.approvedWebId,masterId:result.approvedMasterId};
-    if(!verifiedRecoveryResult(result,expected))
-      throw Error('承認済みの参加者IDと照合できません');
-    res.setHeader('Set-Cookie',sessionCookie(result.participantId,identity.token,cfg.secret));
+    if(!verifiedRecoveryResult(result,expected))throw Error('承認済みの参加者IDと照合できません');
+    res.setHeader('Set-Cookie',sessionCookie(result.participantId,token,cfg.secret));
     return res.status(200).json({ok:true,recovered:true});
-  }catch {
+  }catch{
     return res.status(409).json({ok:false,error:'復旧コードを確認できませんでした。管理者にお問い合わせください'});
   }
 }
