@@ -23,9 +23,10 @@ export default async function handler(req,res){
     // GAS atomically validates and consumes the grant, binds tokenHash to the
     // approved EXISTING Web-ID and verifies the linked MIO-ID.
     // No user-supplied name, Web-ID or MIO-ID is accepted.
-    const result=await bridge('recover',{grantHash:hash(grant),tokenHash:hash(token)});
+    const tokenHash=hash(token);
+    const result=await bridge('recover',{grantHash:hash(grant),tokenHash});
     const expected={webId:result.approvedWebId,masterId:result.approvedMasterId};
-    if(!verifiedRecoveryResult(result,expected))throw Error('承認済みの参加者IDと照合できません');
+    if(!verifiedRecoveryResult(result,expected,tokenHash))throw Error('承認済みの参加者IDと照合できません');
     res.setHeader('Set-Cookie',sessionCookie(result.participantId,token,cfg.secret));
     return res.status(200).json({ok:true,recovered:true});
   }catch{
