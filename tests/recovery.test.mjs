@@ -26,9 +26,9 @@ test('reject invalid, expired and future retry keys',()=>{
 });
 test('require explicit approval, consumed grant and exact approved IDs',()=>{
  const expected={webId:'MIO-W-'+'a'.repeat(24),masterId:'MIO-0010'};
- const approved={ok:true,verified:true,recoveryApproved:true,recoveryConsumed:true,status:'承認済み',participantId:expected.webId,integratedParticipantId:expected.masterId};
+ const approved={ok:true,verified:true,recoveryApproved:true,recoveryConsumed:true,recoveryTokenBound:true,status:'承認済み',participantId:expected.webId,integratedParticipantId:expected.masterId};
  assert.equal(verifiedRecoveryResult(approved,expected),true);
- for(const field of ['ok','verified','recoveryApproved','recoveryConsumed']){
+ for(const field of ['ok','verified','recoveryApproved','recoveryConsumed','recoveryTokenBound']){
   assert.equal(verifiedRecoveryResult({...approved,[field]:false},expected),false);
  }
  assert.equal(verifiedRecoveryResult({...approved,participantId:'MIO-W-'+'b'.repeat(24)},expected),false);
