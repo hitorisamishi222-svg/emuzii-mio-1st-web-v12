@@ -6,7 +6,8 @@
 export function verifiedRecoveryResult(result, expected) {
   if(!result || !expected || result.ok !== true ||
      result.verified !== true || result.recoveryApproved !== true ||
-     result.recoveryConsumed !== true || result.status !== '承認済み') return false;
+     result.recoveryConsumed !== true || result.recoveryTokenBound !== true ||
+     result.status !== '承認済み') return false;
   if(typeof expected.webId !== 'string' ||
      !/^MIO-W-[a-f0-9]{24}$/.test(expected.webId) ||
      typeof expected.masterId !== 'string' ||
