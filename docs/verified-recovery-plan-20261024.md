@@ -34,3 +34,12 @@
 - ローカル Node.js v22.16.0 で、GitHub開発版と同じ復旧トークン・応答検証ロジックを再現した `node --test` **4件PASS、失敗0件**。
 - 検証範囲は単体テストのみ。GitHub Actions、API全体、GAS連携、実機テストは未実施。
 - 本番GASの現行ソース取得・復旧アクション実装・管理者承認・本番反映は未完了。公開中のWeb登録、皆勤、ガチャ、FAを変更していない。
+
+## 2026-10-24 API統合・GAS状態モデル検証（本番未接続）
+- `api-recovery.js` に依存性注入用の `makeRecoveryHandler` を追加。運用用の既定エクスポートは既存 `bridge.js` を使うが、`vercel.json` の本番ルートには未登録。
+- `tests/recovery-api.integration.test.mjs`: GASをモックしたAPI入口、認証コード、再送、Cookie発行、別トークンの再利用拒否、ID不一致、内部エラー非漏洩など**13件**。
+- `tests/support/gas-recovery-model.mjs` は本番GASではない**オフライン模擬状態機械**。管理者承認レコードと既存Web登録行の一部分だけを模擬し、操作ロック、認証トークン更新、永続再試行intentを再現。
+- `tests/recovery-gas-state.test.mjs`: 登録ID・皆勤・ガチャ・FAの不変、同時操作による競合、途中障害からの再送、期限切れ／失効／重複登録の拒否など**8件**。
+- Node.js v22.16.0 で上記**21件PASS（0失敗）**。モック依存の検証であり、**本番GAS接続、実シート書き込み、実機認証、本番復旧は未検証**。
+- 復旧許可の実装では、GAS `LockService` だけでなく、許可を同じtokenHashに束縛する**永続intent → 既存行tokenHash更新 → 消費完了**の順序と再送時の整合性が必要。GAS側での実際のSheet列・書込方法・複数旧Web-IDの無効化範囲は現行ソースの読取後に決める。
+- いずれのテストも本番・第二保存にアクセスせず、公開URL・production環境変数・本番参加者データは変更しない。
