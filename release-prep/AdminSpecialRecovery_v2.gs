@@ -11,10 +11,9 @@ function asr2Digest_(value) {
     .map(function(b){return ('0'+(b<0?b+256:b).toString(16)).slice(-2)}).join('');
 }
 function asr2Hex_(n) {
-  var bytes=[]; for(var i=0;i<n;i++)bytes.push(Math.floor(Math.random()*256));
-  // Apps Script has no cryptographically secure byte RNG. Refuse to issue grants
-  // until a secure random generator is provided by the server-side bridge.
-  throw new Error('Secure grant generator not configured: no codes issued');
+  // Grants must be minted using node:crypto randomBytes(32) in a trusted server,
+  // never Math.random() inside Apps Script.
+  throw new Error('Generate grants with cryptographic randomness on trusted server');
 }
 function asr2Tab_(ss) {
   var sh=ss.getSheetByName(ASR2_TAB);
