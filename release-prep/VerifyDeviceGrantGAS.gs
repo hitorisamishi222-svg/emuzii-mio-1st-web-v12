@@ -10,7 +10,7 @@ function mioVerifyDeviceGrantGAS_(grant, signature, secret) {
       tokenHash=grant.deviceProofHash, nonce=grant.nonce,
       expiresAt=grant.expiresAt;
   if (!/^MIO-W-[a-f0-9]{24}$/.test(String(webId||'')) ||
-      !/^MIO-\\d{4,}$/.test(String(masterId||'')) ||
+      !/^MIO-\d{4,}$/.test(String(masterId||'')) ||
       !/^[a-f0-9]{64}$/.test(String(tokenHash||'')) ||
       !/^[a-f0-9]{32,64}$/.test(String(nonce||'')) ||
       grant.scope !== 'device-enroll' ||
