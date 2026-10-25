@@ -37,6 +37,12 @@ function mioDeviceAddApproved_(ss, verified) {
       String(r[15]) === verified.masterId;
   });
   if (matches.length !== 1) throw new Error('approved identity mismatch');
+  // The original credential must remain intact; additional-device registration
+  // must never repair or overwrite an invalid existing credential.
+  if (!/^[a-f0-9]{64}$/.test(String(matches[0][1]||'')))
+    throw new Error('original credential integrity check failed');
+  if (matches[0][1] === verified.tokenHash)
+    throw new Error('additional credential must differ from original');
   var sh = mioDeviceSheet_(ss);
   var count = sh.getLastRow();
   var records = count>1 ? sh.getRange(2,1,count-1,7).getValues() : [];
