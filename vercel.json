@@ -348,9 +348,29 @@
     {
       "src": "api-activate-attendance.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-device-enroll.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "device-recovery.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/device-recovery.html",
+      "dest": "/device-recovery.html",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/api/device-enroll",
+      "dest": "/api-device-enroll.js"
+    },
     {
       "src": "/join.html",
       "dest": "/join.html"
