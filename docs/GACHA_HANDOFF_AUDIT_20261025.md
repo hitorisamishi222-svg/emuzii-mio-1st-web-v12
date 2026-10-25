@@ -61,3 +61,10 @@
 - **確認済み49件＋新規ブラウザ操作1シナリオ＋追加2幅の表示テスト**。ブラウザテストはGAS稼働接続でも実端末確認でもない。本番API/本番ガチャ権利は使用していない。
 - **実機未完了**：ユーザー本人のiPhone/Androidによる通常・ラキフェス・スキップ3確認は引き続き報告待ち（今は重ねて操作を要求しない）。実機合格扱いにしない。
 - **公開中GASの現行ソース取得未完了**、本番反映なし。上記のテストはソース・ローカルブラウザ上の開発ブランチ版に限定。
+
+## 追記：2026-10-25 ブラウザ通信断／再読み込み・保存失敗検証
+- **新規実ブラウザ仮想APIテスト 1シナリオPASS**：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40166575888)。抽選確定直後に応答を破棄、ブラウザが保持した同一 `drawId` で再確認、バックエンドの仮確定は一度だけ、復旧後は保留キー削除。テスト：`tests/gacha-browser-recovery.mjs`。
+- **その後に追加した別シナリオ2件PASS**：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40166696115)。①抽選応答欠落後に**ページを再読み込み**しても同一 `drawId` で結果復旧（重複消費ゼロ）、②ブラウザの `localStorage.setItem` が拒否された場合は**抽選APIへ一切アクセスせず**安全に停止。テスト：`tests/gacha-browser-reload-storage.mjs`。
+- **全ネットワークをPlaywright内で横取り**する方式で、実本番URLと同じホスト名を模した画面を起動しただけ。本番Vercel・GAS・SheetsへのHTTPアクセスなし、実抽選なし。
+- 前回合格の49件の論理/静的テスト、390px表示テスト、375px/430px表示テストは**今回再実行していない**。
+- **重要**：実際の通信網・iOS/Androidブラウザ・GAS正本に接続した結合試験ではない。実機・本番GAS現物の検証は依然未合格/未取得。
