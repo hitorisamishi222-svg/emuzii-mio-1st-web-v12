@@ -83,6 +83,12 @@ function doPost(e) {
     var d=JSON.parse(e.postData.contents||'{}');
     var secret=PropertiesService.getScriptProperties().getProperty('BRIDGE_SECRET');
     if(!secret||!equal_(d.secret,secret))return json_({ok:false,error:'unauthorized'});
+    // Additive enrollment: signed admin grant, no original token overwrite.
+    // Executed inside the same script lock as all other actions.
+    if (d.action==='enrollSignedDevice') {
+      var recoverySS=SpreadsheetApp.openById(SHEET_ID);
+      return json_(mioEnrollSignedDevice_(recoverySS,d.grant,d.signature,secret));
+    }
     if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')||! /^[a-f0-9]{64}$/.test(d.tokenHash||''))return json_({ok:false,error:'invalid identity'});
     var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
     if(!web)return json_({ok:false,error:'setup required'});
@@ -104,7 +110,7 @@ function doPost(e) {
       var saved=rows_(ss,WEB_TAB).filter(function(r){return r[0]===d.participantId&&equal_(r[1],d.tokenHash)});
       return json_({ok:saved.length===1,verified:saved.length===1,participantId:d.participantId,status:'承認待ち'});
     }
-    if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!equal_(found[0][1],d.tokenHash))return json_({ok:false,error:'unauthorized'});
+    if(['status','catalog','draw','history','checkin'].indexOf(d.action)<0||found.length!==1||!mioExistingOrAddedDevice_(ss,found[0],d.tokenHash))return json_({ok:false,error:'unauthorized'});
     var r=found[0];
     if(d.action==='checkin')return json_(checkinAction_(ss,r,d));
     if(d.action!=='status')return json_(gachaAction_(ss,r,d));
