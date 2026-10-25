@@ -30,11 +30,15 @@ function mioDeviceAddApproved_(ss, verified) {
   var web = ss.getSheetByName(WEB_TAB);
   if (!web) throw new Error('missing web registration table');
   var rows = rows_(ss,WEB_TAB);
+  // H is the canonical MIO-ID. K/P may be blank in older approved rows.
+  // Reject any conflicting populated mirror value.
   var matches = rows.filter(function(r) {
     return String(r[0]) === verified.webId &&
-      String(r[7]) === verified.masterId && r[5] === '承認済み' &&
-      String(r[10]) === verified.masterId &&
-      String(r[15]) === verified.masterId;
+      String(r[7]) === verified.masterId &&
+      r[5] === '承認済み' &&
+      [r[10], r[15]].every(function(v) {
+        return !String(v || '').trim() || String(v).trim() === verified.masterId;
+      });
   });
   if (matches.length !== 1) throw new Error('approved identity mismatch');
   // The original credential must remain intact; additional-device registration
