@@ -97,7 +97,7 @@ test('server rejects festival before fourth Web draw even when switch is ON',()=
   assert.equal(s.history.length,3);
 });
 test('server rejects festival when total grants under five',()=>{
-  const s=state({total:4,draws:4});
+  const s=state({total:4,draws:3});
   const r=draw(s,'ラキフェス');
   assert.equal(r.ok,false);
   assert.match(r.error,/総ガチャ権利5回以上/);
