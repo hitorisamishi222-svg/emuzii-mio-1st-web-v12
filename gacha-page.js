@@ -3,7 +3,7 @@ let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null,
 const pendingKey=()=>`mio_pending_draw_${participant||'unknown'}`;
 const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';
 function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'応答を確認できませんでした'}}}
-async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});const d=parse(await r.text());if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}return d}
+async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});const d=parse(await r.text());if(!r.ok||!d||d.ok!==true){const e=Error(d?.error||'抽選結果を確認できませんでした。同じ抽選IDで再確認してください');e.status=r.status;throw e}return d}
 function note(t){$('drawMessage').textContent=t||''}
 function remember(){try{return JSON.parse(localStorage.getItem(pendingKey())||'null')}catch{return null}}
 function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
@@ -85,6 +85,7 @@ async function execute(pending){
   
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});
+    if(d.drawId!==pending.drawId||d.mode!==pending.mode||typeof d.prize!=='string'||!d.prize.trim()||!Number.isSafeInteger(Number(d.ordinal))||Number(d.ordinal)<1){throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください')}
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
     renderResult(d);forget();
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
