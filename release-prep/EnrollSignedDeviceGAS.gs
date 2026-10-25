@@ -1,5 +1,5 @@
 /**
- * Atomic, signed additive-device enrollment. Invoke ONLY from the existing
+ * Script-lock-protected, signed additive-device enrollment. Invoke ONLY from the existing
  * authenticated GAS doPost, inside its script lock, after bridge-secret check.
  * The caller passes the server-side bridge secret; it MUST NOT be read from
  * untrusted request data. This function is not a public endpoint.
@@ -12,6 +12,9 @@ function mioEnrollSignedDevice_(ss, grant, signature, serverSecret) {
   // Scope recovery to the two administrator-verified participants only.
   if (v.masterId!=='MIO-0010' && v.masterId!=='MIO-0018')
     return {ok:false,error:'NOT_RECOVERY_TARGET'};
+  // Fail closed if caller bypasses the existing GAS script lock.
+  if (!LockService.getScriptLock().hasLock())
+    return {ok:false,error:'LOCK_REQUIRED'};
   var web=ss.getSheetByName(WEB_TAB);
   if (!web) return {ok:false,error:'MISSING_WEB_TABLE'};
   var rows=web.getDataRange().getValues().slice(1);
