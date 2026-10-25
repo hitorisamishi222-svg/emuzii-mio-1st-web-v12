@@ -1,0 +1,30 @@
+name: Gacha browser draw recovery check
+
+on:
+  push:
+    branches: [feature/mio-royal-gacha-deluxe-20261023]
+    paths:
+      - 'tests/gacha-browser-recovery.mjs'
+      - '.github/workflows/gacha-browser-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-recovery-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare isolated browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test only browser lost-response recovery with virtual API
+        run: node tests/gacha-browser-recovery.mjs
