@@ -13,12 +13,12 @@ function mioExistingOrAddedDevice_(ss, webRow, submittedHash) {
       !/^MIO-\d{4,}$/.test(masterId) ||
       webRow[5]!=='承認済み' ||
       !/^[a-f0-9]{64}$/.test(original)) return false;
-  // Original-device authorization remains unchanged. Added credentials
-  // are accepted only for the same approved, non-conflicting identity.
+  // Preserve existing original-device authorization unchanged.
+  if (original===submittedHash) return true;
+  // Additional devices require a non-conflicting approved MIO identity.
   if ([webRow[10], webRow[15]].some(function(v) {
     return String(v || '').trim() && String(v).trim() !== masterId;
   })) return false;
-  if (original===submittedHash) return true;
   var sh=ss.getSheetByName(MIO_DEVICE_TAB);
   if (!sh || sh.getLastRow()<2) return false;
   var rows=sh.getRange(2,1,sh.getLastRow()-1,7).getValues();
