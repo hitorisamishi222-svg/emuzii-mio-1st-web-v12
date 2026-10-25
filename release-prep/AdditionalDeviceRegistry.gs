@@ -23,7 +23,7 @@ function mioDeviceAddApproved_(ss, verified) {
       verified.adminAuthenticated !== true ||
       verified.grantVerified !== true ||
       !/^MIO-W-[a-f0-9]{24}$/.test(String(verified.webId||'')) ||
-      !/^MIO-\\d{4,}$/.test(String(verified.masterId||'')) ||
+      !/^MIO-\d{4,}$/.test(String(verified.masterId||'')) ||
       !/^[a-f0-9]{64}$/.test(String(verified.tokenHash||''))) {
     throw new Error('trusted device approval required');
   }
