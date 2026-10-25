@@ -79,7 +79,7 @@ async function execute(pending){
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
   const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:5000;
   skipRequested=false;$('skipDraw').hidden=reduceMotion;$('skipDraw').disabled=reduceMotion;
-  let refreshAfter=false;
+  let refreshAfter=false, failureMessage='';
   startEffect(pending.mode);
   note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
@@ -91,10 +91,11 @@ async function execute(pending){
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
   }catch(e){
-    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
+    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));failureMessage=`${e.message}。「前回の抽選結果を確認」から同じ抽選IDで再確認してください。`;note(failureMessage);$('retryDraw').hidden=false;refreshAfter=true
   }finally{
     clearAnimationTimers();$('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active','royal-charge','royal-release','royal-climax');busy=false;$('skipDraw').hidden=true;$('skipDraw').disabled=true;$('retryDraw').disabled=false;
-    if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
+    if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog);
+    if(failureMessage&&remember())note(failureMessage)
   }
 }
 function confirmDraw(mode){
