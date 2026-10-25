@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<title>翠央1周年・管理者承認済み端末復旧</title>
+<style>body{font-family:system-ui,sans-serif;background:#f5f7fa;color:#172f4d;margin:0;padding:22px}main{margin:6vh auto;max-width:520px;border-radius:18px;background:white;padding:24px}h1{font-size:1.35rem}p{line-height:1.7}button{font:inherit;border:0;border-radius:9px;background:#144c9a;color:white;padding:13px 20px}#retry{display:none}</style>
+</head><body><main><h1>管理者承認済みの端末復旧</h1>
+<p id="status" role="status" aria-live="polite">このブラウザの復旧認証を確認しています…</p>
+<button type="button" id="retry">もう一度試す</button></main>
+<script>
+'use strict';
+const status=document.getElementById('status'),button=document.getElementById('retry');
+const params=new URLSearchParams(location.hash.slice(1));
+const ticket=params.get('ticket')||'';
+history.replaceState(null,'',location.pathname);
+function randomHex(n){return [...crypto.getRandomValues(new Uint8Array(n))].map(x=>x.toString(16).padStart(2,'0')).join('');}
+let credentials=null, storageKey='';
+if(/^MIO-R1-[a-f0-9]{64}$/.test(ticket)){
+  storageKey='mio_recovery_'+ticket.slice(-24);
+  try{credentials=JSON.parse(sessionStorage.getItem(storageKey)||'null')}catch(e){}
+  if(!credentials||!/^MIO-W-[a-f0-9]{24}$/.test(credentials.participantId)||
+     !/^[a-f0-9]{64}$/.test(credentials.deviceToken)){
+    credentials={participantId:'MIO-W-'+randomHex(12),deviceToken:randomHex(32)};
+    sessionStorage.setItem(storageKey,JSON.stringify(credentials));
+  }
+}
+let working=false;
+async function recover(){
+ if(working)return;
+ if(!credentials){status.textContent='復旧リンクが無効です。管理者にご連絡ください。';return;}
+ working=true;button.style.display='none';status.textContent='認証を確認しています…';
+ try{
+   const r=await fetch('/api/special-recovery',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify({ticket,...credentials})});
+   const data=await r.json();
+   if(!r.ok||data.ok!==true)throw Error(data.error||'復旧できませんでした');
+   sessionStorage.removeItem(storageKey);
+   status.textContent='このブラウザの復旧が完了しました。通常の参加ページへ移動します。';
+   location.replace('/');
+ }catch(e){status.textContent=e.message+' 同じ画面で再試行できます。';button.style.display='inline-block';}
+ finally{working=false;}
+}
+button.addEventListener('click',recover);recover();
+</script></body></html>
