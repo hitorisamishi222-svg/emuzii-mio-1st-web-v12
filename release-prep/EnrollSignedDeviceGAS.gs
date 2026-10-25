@@ -39,6 +39,9 @@ function mioEnrollSignedDevice_(ss, grant, signature, serverSecret) {
     if (nonces.some(function(r){return r[0]===v.nonce;}))
       return {ok:false,error:'GRANT_ALREADY_USED'};
   }
+  // Ensure the destination sheet exists BEFORE consuming a one-time grant.
+  // Otherwise a sheet-creation failure could permanently burn a valid grant.
+  mioDeviceSheet_(ss);
   // Record grant use before adding credentials (fail closed on partial error).
   var used=mioConsumeVerifiedGrant_(ss,{
     signatureVerified:true,nonce:v.nonce,webId:v.webId,
