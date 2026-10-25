@@ -35,7 +35,7 @@ function adminSpecialRecoverV2_(d) {
   if(!(r[2] instanceof Date)||r[2].getTime()<=Date.now())
     return {ok:false,error:'expired'};
   if(r[4]==='使用済み') {
-    // A retry is accepted only for the exact same bound token.
+    // Retry must match the committed token and the existing registration.
     if(r[6]!==d.tokenHash)return {ok:false,error:'already consumed'};
   } else if(r[4]!=='未使用')return {ok:false,error:'invalid grant state'};
   var web=ss.getSheetByName(WEB_TAB);
@@ -48,9 +48,21 @@ function adminSpecialRecoverV2_(d) {
   var record=matching[0];
   if(record[5]!=='承認済み'||String(record[7])!==master)
     return {ok:false,error:'registration not approved'};
+  if(r[4]==='使用済み' && record[1]!==d.tokenHash)
+    return {ok:false,error:'committed token mismatch'};
   if(r[4]==='未使用'){
-    if(record[1]!==d.tokenHash)return {ok:false,error:'token not pre-bound'};
-    sh.getRange(m.index,5,1,3).setValues([['使用済み',webId,d.tokenHash]]);
+    // Existing Web-ID remains stable; token replacement invalidates its old cookie.
+    // Preserve the previous hash in the protected recovery record for audit.
+    var previousHash=String(record[1]||'');
+    if(!/^[a-f0-9]{64}$/.test(previousHash))return {ok:false,error:'invalid prior token'};
+    var webRow=all.findIndex(function(x){return x[0]===webId})+2;
+    sh.getRange(m.index,7).setValue(d.tokenHash); // durable retry intent
+    sh.getRange(m.index,8).setValue(previousHash); // audit, no raw token
+    web.getRange(webRow,2).setValue(d.tokenHash);
+    SpreadsheetApp.flush();
+    if(String(web.getRange(webRow,2).getValue())!==d.tokenHash)
+      return {ok:false,error:'token write not confirmed'};
+    sh.getRange(m.index,5).setValue('使用済み');
     SpreadsheetApp.flush();
   }
   return {ok:true,verified:true,recoveryApproved:true,recoveryConsumed:true,
