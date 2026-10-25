@@ -1,0 +1,41 @@
+name: Gacha isolated safety verification
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-core-simulation.test.mjs'
+      - 'tests/gacha-deluxe-safety.test.mjs'
+      - '.github/workflows/gacha-isolated-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-gacha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out isolated gacha UI branch
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+
+      - name: Check out staged GAS logic (not deployed live GAS)
+        uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+
+      - name: Verify gacha frontend, gate rules and mocked draw behavior
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: |
+          node --version
+          node --test \
+            gacha-ui/tests/gacha-deluxe-safety.test.mjs \
+            gacha-ui/tests/gacha-core-simulation.test.mjs
