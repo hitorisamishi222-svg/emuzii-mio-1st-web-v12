@@ -25,6 +25,10 @@
   if(controls)controls.insertAdjacentElement('afterend',steps);else stage.insertAdjacentElement('beforebegin',steps);
   const foot=document.createElement('p');foot.className='mio-deluxe-footnote';foot.textContent='光・宝石の表現は演出です。当選内容と残り回数はシステムの確定結果を表示します。';
   stage.insertAdjacentElement('afterend',foot);
+  // Keep the artwork/spotlights unobstructed: the result is a separate dock
+  // immediately below the stage, in both rehearsal and actual draw UI.
+  const resultDock=document.getElementById('drawResultCard');
+  if(resultDock){stage.insertAdjacentElement('afterend',resultDock);resultDock.classList.add('mio-result-dock');}
   function phase(n,active){
     steps.dataset.running=active?'true':'false';
     [...steps.children].forEach((li,i)=>{li.dataset.state=i<n-1?'done':i===n-1?'active':'idle'});
@@ -81,6 +85,7 @@
       const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
       if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent='豪華演出の見本';if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
     }
+    if(card){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;card.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});}
     status.textContent='デモ完了。抽選回数・履歴は変わっていません。';
     active=false;normal.disabled=false;fest.disabled=false;select.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
   }
