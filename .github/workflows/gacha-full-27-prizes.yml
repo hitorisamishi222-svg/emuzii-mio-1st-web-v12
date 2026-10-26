@@ -1,0 +1,36 @@
+name: Gacha 27-prize full exhaustion (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-full-27-prizes.test.mjs'
+      - '.github/workflows/gacha-full-27-prizes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulated-exhaustion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out gacha-only tests
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - name: Check out staged GAS and preview prize settings (NOT live)
+        uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+      - name: Run only the three new 27-prize regressions
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: |
+          node --version
+          node --test gacha-ui/tests/gacha-full-27-prizes.test.mjs
