@@ -1,13 +1,15 @@
 {
   "schemaVersion": 1,
   "kind": "GACHA_DUPLICATE_KEY_PROPOSED_BACKFILL",
-  "status": "REVIEW_ONLY_NOT_APPLIED",
-  "source": "27-entry preview cross-checked against live prize settings read-only on 2026-10-26",
+  "status": "REVIEW_ONLY_NOT_APPLIED_HISTORY_COMPATIBLE",
+  "source": "27 live prize IDs/names/modes/chances/enable states matched exactly with preview (read-only), and 25 confirmed awards held nonblank historical keys equal to their current prize names at 2026-10-26 inspection.",
   "safetyNotes": [
-    "Do not apply automatically or before currently deployed GAS is inspected.",
-    "Require exact unchanged live prize ID, name, mode, probability, enable status and empty J key on each row; abort on any difference.",
-    "Stable key is bound to the same physical prize even across normal and Lucky Festival modes.",
-    "Do not change or delete already committed winning history."
+    "Historical confirmed draw keys are currently saved as the corresponding prize names for all 25 audited draws. NEVER replace those with unrelated newly-minted key IDs or previously-won prizes could become eligible again under pre-existing GAS.",
+    "The proposed fixed key must be the EXACT current prize name, including original typography, and the same across both reward modes. It remains frozen even if the display name changes in future.",
+    "This is REVIEW ONLY. No real Sheets or GAS edits have been authorized or executed here.",
+    "Before any future change, verify deployed GAS code, all 27 exact catalog rows, all confirmed historical keys, and the absence of new wins or edits since this inspection; abort on mismatch.",
+    "Do not change, delete or rewrite confirmed draw history. Never treat the historical test-invalid state as a real win.",
+    "Run code compatibility review first. Leave J column unchanged until approved migration step."
   ],
   "totalSlots": 27,
   "uniqueRewards": 20,
@@ -17,244 +19,274 @@
       "mode": "通常",
       "prizeId": "MEM-01",
       "prizeName": "お試し配信アイコン",
-      "proposedImmutableKey": "MIO-GIFT-MEM-01",
+      "proposedImmutableKey": "お試し配信アイコン",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-02",
       "prizeName": "2次審査中アイコン",
-      "proposedImmutableKey": "MIO-GIFT-MEM-02",
+      "proposedImmutableKey": "2次審査中アイコン",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-03",
       "prizeName": "ギフリア① ごきげんおてねこ",
-      "proposedImmutableKey": "MIO-GIFT-MEM-03",
+      "proposedImmutableKey": "ギフリア① ごきげんおてねこ",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-04",
       "prizeName": "ギフリア② グルグルグルグル",
-      "proposedImmutableKey": "MIO-GIFT-MEM-04",
+      "proposedImmutableKey": "ギフリア② グルグルグルグル",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-05",
       "prizeName": "ギフリア③ 誰よりも楽しむユニコーン",
-      "proposedImmutableKey": "MIO-GIFT-MEM-05",
+      "proposedImmutableKey": "ギフリア③ 誰よりも楽しむユニコーン",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-06",
       "prizeName": "ギフリア④ 崇めよ",
-      "proposedImmutableKey": "MIO-GIFT-MEM-06",
+      "proposedImmutableKey": "ギフリア④ 崇めよ",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-07",
       "prizeName": "衣装コレクション 5月ノーマルver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-07",
+      "proposedImmutableKey": "衣装コレクション 5月ノーマルver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-08",
       "prizeName": "衣装コレクション 6月ノーマルver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-08",
+      "proposedImmutableKey": "衣装コレクション 6月ノーマルver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7.5
+      "expectedProbability": 7.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-09",
       "prizeName": "初配信アイコン",
-      "proposedImmutableKey": "MIO-GIFT-MEM-09",
+      "proposedImmutableKey": "初配信アイコン",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 6
+      "expectedProbability": 6,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-10",
       "prizeName": "衣装コレクション 6月記念日ver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-10",
+      "proposedImmutableKey": "衣装コレクション 6月記念日ver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 6
+      "expectedProbability": 6,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-11",
       "prizeName": "待ち受け ラキフェスver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-11",
+      "proposedImmutableKey": "待ち受け ラキフェスver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 6
+      "expectedProbability": 6,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-12",
       "prizeName": "待ち受け リアライver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-12",
+      "proposedImmutableKey": "待ち受け リアライver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 6
+      "expectedProbability": 6,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-13",
       "prizeName": "スーパーいいね 35回ボイス",
-      "proposedImmutableKey": "MIO-GIFT-MEM-13",
+      "proposedImmutableKey": "スーパーいいね 35回ボイス",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 6
+      "expectedProbability": 6,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-14",
       "prizeName": "Rから1つ＋Nから2つ選べる",
-      "proposedImmutableKey": "MIO-GIFT-MEM-14",
+      "proposedImmutableKey": "Rから1つ＋Nから2つ選べる",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 7
+      "expectedProbability": 7,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-15",
       "prizeName": "初配信の画像",
-      "proposedImmutableKey": "MIO-GIFT-MEM-15",
+      "proposedImmutableKey": "初配信の画像",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 1.5
+      "expectedProbability": 1.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "通常",
       "prizeId": "MEM-16",
       "prizeName": "ドラムしてる翠央",
-      "proposedImmutableKey": "MIO-GIFT-MEM-16",
+      "proposedImmutableKey": "ドラムしてる翠央",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 1.5
+      "expectedProbability": 1.5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-09",
       "prizeName": "初配信アイコン",
-      "proposedImmutableKey": "MIO-GIFT-MEM-09",
+      "proposedImmutableKey": "初配信アイコン",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 8
+      "expectedProbability": 8,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-10",
       "prizeName": "衣装コレクション 6月記念日ver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-10",
+      "proposedImmutableKey": "衣装コレクション 6月記念日ver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 8
+      "expectedProbability": 8,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-11",
       "prizeName": "待ち受け ラキフェスver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-11",
+      "proposedImmutableKey": "待ち受け ラキフェスver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 8
+      "expectedProbability": 8,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-12",
       "prizeName": "待ち受け リアライver.",
-      "proposedImmutableKey": "MIO-GIFT-MEM-12",
+      "proposedImmutableKey": "待ち受け リアライver.",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 8
+      "expectedProbability": 8,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-13",
       "prizeName": "スーパーいいね 35回ボイス",
-      "proposedImmutableKey": "MIO-GIFT-MEM-13",
+      "proposedImmutableKey": "スーパーいいね 35回ボイス",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 8
+      "expectedProbability": 8,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-14",
       "prizeName": "通常ガチャNから1つ＋Nから2つ選べる",
-      "proposedImmutableKey": "MIO-GIFT-LF-14",
+      "proposedImmutableKey": "通常ガチャNから1つ＋Nから2つ選べる",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 20
+      "expectedProbability": 20,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-15",
       "prizeName": "スーパーいいね 40回ボイス",
-      "proposedImmutableKey": "MIO-GIFT-LF-15",
+      "proposedImmutableKey": "スーパーいいね 40回ボイス",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 10
+      "expectedProbability": 10,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-16",
       "prizeName": "初配信の画像",
-      "proposedImmutableKey": "MIO-GIFT-MEM-15",
+      "proposedImmutableKey": "初配信の画像",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 10
+      "expectedProbability": 10,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-17",
       "prizeName": "ドラムしてる翠央",
-      "proposedImmutableKey": "MIO-GIFT-MEM-16",
+      "proposedImmutableKey": "ドラムしてる翠央",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 10
+      "expectedProbability": 10,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-18",
       "prizeName": "「ヒカリへ」審査提出動画",
-      "proposedImmutableKey": "MIO-GIFT-LF-18",
+      "proposedImmutableKey": "「ヒカリへ」審査提出動画",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 5
+      "expectedProbability": 5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     },
     {
       "mode": "ラキフェス",
       "prizeId": "LF-19",
       "prizeName": "「Rising Hope」審査提出動画",
-      "proposedImmutableKey": "MIO-GIFT-LF-19",
+      "proposedImmutableKey": "「Rising Hope」審査提出動画",
       "expectedCurrentKey": "",
       "expectedEnabled": true,
-      "expectedProbability": 5
+      "expectedProbability": 5,
+      "compatibility": "EXACT_EXISTING_HISTORICAL_NAME_KEY"
     }
-  ]
+  ],
+  "historicalWinningRowsAudited": 25,
+  "historicalKeysMatchingCurrentCatalogNames": 25,
+  "migrationRisk": "Previous review-only proposal used MIO-GIFT-* synthetic IDs. Those are SUPERSEDED and MUST NOT be applied. Original names are safer for current historical key compatibility."
 }
