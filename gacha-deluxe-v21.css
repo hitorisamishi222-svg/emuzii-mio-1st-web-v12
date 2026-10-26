@@ -255,3 +255,98 @@
   .gacha-page .mio-deluxe-steps{margin:2px 0 4px!important;}
   .gacha-page #gachaStage{margin:1px auto 7px!important;}
 }
+
+
+/* v2.1.5 — seamless royal whale stage. Presentation only.
+   Keep the entire approved JPG uncropped; soften only its exterior edges.
+   The original stage image remains a fallback if the deluxe JS never loads.
+   No patterned/mesh texture, no change to draw, gates or prize result dock. */
+.gacha-page #drawPanel{
+  background:
+    radial-gradient(ellipse 80% 48% at 50% 51%,#3875a033 0%,transparent 91%),
+    linear-gradient(180deg,#133560e9 0%,#0e2c56eb 52%,#0b254ce9 100%)!important;
+  border-color:#9ccdf43a!important;
+  box-shadow:inset 0 1px 0 #ebf8ff18,0 16px 36px #020c2638!important;
+}
+.gacha-page #gachaStage.mio-art-integrated{
+  isolation:isolate;
+  overflow:hidden;
+  border:0!important;
+  border-radius:22px!important;
+  outline:0!important;
+  background-color:transparent!important;
+  background-image:
+    radial-gradient(ellipse 66% 73% at 50% 49%,#326eac78 0%,#23578960 45%,transparent 100%),
+    radial-gradient(ellipse 22% 66% at 8% 43%,#a8e1ff27 0%,transparent 88%),
+    radial-gradient(ellipse 23% 66% at 92% 43%,#fbe1a828 0%,transparent 89%),
+    radial-gradient(ellipse 58% 19% at 50% 88%,#a4e5ff27 0%,transparent 100%)!important;
+  background-position:center!important;
+  background-size:auto!important;
+  background-repeat:no-repeat!important;
+  box-shadow:inset 0 0 38px #b6eaff0a!important;
+}
+.gacha-page #gachaStage.mio-art-integrated.is-fest{
+  background-image:
+    radial-gradient(ellipse 66% 73% at 50% 49%,#a8762778 0%,#53457b50 47%,transparent 100%),
+    radial-gradient(ellipse 22% 66% at 8% 43%,#ffeaa82b 0%,transparent 88%),
+    radial-gradient(ellipse 23% 66% at 92% 43%,#fff4cd26 0%,transparent 89%),
+    radial-gradient(ellipse 58% 19% at 50% 88%,#ffe5a82b 0%,transparent 100%)!important;
+  box-shadow:inset 0 0 38px #ffe2b00b!important;
+}
+.gacha-page #gachaStage.mio-art-integrated .mio-stage-art{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:url('/assets/mio-royal-whale-machine.jpg') center center / contain no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse 72% 69% at 50% 51%,#000 0%,#000 60%,#000e 73%,transparent 100%);
+  mask-image:radial-gradient(ellipse 72% 69% at 50% 51%,#000 0%,#000 60%,#000e 73%,transparent 100%);
+  filter:drop-shadow(0 0 16px #92deff38);
+}
+.gacha-page #gachaStage.mio-art-integrated.is-fest .mio-stage-art{
+  filter:drop-shadow(0 0 18px #ffe19b55);
+}
+/* The earlier inner gold border caused the framed-poster appearance.
+   Leave the actual climax burst intact. */
+.gacha-page #gachaStage.mio-art-integrated:not(.royal-climax)::before{
+  border:0!important;
+  background:none!important;
+}
+.gacha-page #gachaStage.mio-art-integrated::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  border:0!important;
+  border-radius:0!important;
+  background:
+    radial-gradient(circle at 18% 29%,#f1fdffb5 0 1px,transparent 5px),
+    radial-gradient(circle at 82% 24%,#ffe9beab 0 1px,transparent 5px),
+    radial-gradient(circle at 87% 63%,#c7f2ff98 0 1px,transparent 4px),
+    radial-gradient(circle at 14% 69%,#fff2cd7f 0 1px,transparent 4px),
+    radial-gradient(ellipse 51% 11% at 50% 91%,#bde6ff32,transparent 100%);
+  box-shadow:none!important;
+}
+.gacha-page #gachaStage.mio-art-integrated.is-fest::after{
+  background:
+    radial-gradient(circle at 18% 29%,#ffedc4bc 0 1px,transparent 5px),
+    radial-gradient(circle at 82% 24%,#fff9ddb5 0 1px,transparent 5px),
+    radial-gradient(circle at 87% 63%,#ffe5ac98 0 1px,transparent 4px),
+    radial-gradient(circle at 14% 69%,#ffedc47f 0 1px,transparent 4px),
+    radial-gradient(ellipse 51% 11% at 50% 91%,#ffeab737,transparent 100%);
+}
+/* The stage keeps the previously approved compact 5:6 aspect ratio.
+   In small viewports, avoid hard visual edges without cropping the JPG. */
+@media(max-width:430px){
+  .gacha-page #gachaStage.mio-art-integrated{border-radius:15px!important}
+  .gacha-page #gachaStage.mio-art-integrated .mio-stage-art{
+    -webkit-mask-image:radial-gradient(ellipse 75% 70% at 50% 51%,#000 0%,#000 61%,#000d 76%,transparent 100%);
+    mask-image:radial-gradient(ellipse 75% 70% at 50% 51%,#000 0%,#000 61%,#000d 76%,transparent 100%);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .gacha-page #gachaStage.mio-art-integrated,
+  .gacha-page #gachaStage.mio-art-integrated.is-fest{filter:none!important}
+  .gacha-page #gachaStage.mio-art-integrated .mio-stage-art{filter:none}
+}
