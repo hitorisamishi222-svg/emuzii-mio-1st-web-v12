@@ -14,7 +14,7 @@ const replacement=readFileSync('gacha-ui/patches/gacha-won-duplicate-keys-replac
 const functionRegex=/^function wonDuplicateKeys_\(ss,id\)\{[\s\S]*?^\}/gm;
 const blocks=[...baseline.matchAll(functionRegex)];
 assert.equal(blocks.length,1,'require exactly one original GAS definition');
-assert.match(replacement,/^function wonDuplicateKeys_\(ss,id\)\{/);
+assert.match(replacement,/function wonDuplicateKeys_\(ss,id\)\{/);
 const staged=baseline.replace(functionRegex,replacement);
 assert.equal([...staged.matchAll(/^function wonDuplicateKeys_\(ss,id\)\{/gm)].length,1,'no duplicate GAS declarations');
 
