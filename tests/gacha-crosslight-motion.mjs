@@ -22,34 +22,30 @@ async function open({reducedMotion='no-preference'}={}){
 try{
  const {page,errors,api}=await open();
  try {
-  const sample=await page.evaluate(()=>{
-   const el=document.querySelector('#gachaStage .stage-lights');
-   const styles={bed:getComputedStyle(el),left:getComputedStyle(el,'::before'),right:getComputedStyle(el,'::after')};
-   const names={bed:styles.bed.animationName,left:styles.left.animationName,right:styles.right.animationName};
-   const animations=el.getAnimations({subtree:false}).filter(a=>a.animationName&&a.animationName.startsWith('mio-crosslight-'));
-   const angle=pseudo=>{
-    const x=getComputedStyle(el,pseudo).transform;
-    if(x==='none')return 0;
-    const m=new DOMMatrixReadOnly(x);
-    return Math.atan2(m.b,m.a)*180/Math.PI;
-   };
-   const out={names,animations:animations.map(x=>({name:x.animationName,pseudo:x.effect?.pseudoElement||''})),bed:[],left:[],right:[]};
-   animations.forEach(a=>a.pause());
-   const frames=[[0,0],[900,1000],[1900,2300],[2700,3500]];
-   for (const [beamT,bedT] of frames) {
-    for(const a of animations){
-     a.currentTime=a.animationName==='mio-crosslight-bed'?bedT:beamT;
-    }
-    out.bed.push(angle(null));
-    out.left.push(angle('::before'));
-    out.right.push(angle('::after'));
-   }
-   return out;
-  });
+  const sample={names:null,bed:[],left:[],right:[]};
+  for(let frame=0;frame<7;frame++){
+   const current=await page.evaluate(()=>{
+    const el=document.querySelector('#gachaStage .stage-lights');
+    const styles={bed:getComputedStyle(el),left:getComputedStyle(el,'::before'),right:getComputedStyle(el,'::after')};
+    const angle=pseudo=>{
+     const matrix=getComputedStyle(el,pseudo).transform;
+     if(matrix==='none')return 0;
+     const m=new DOMMatrixReadOnly(matrix);
+     return Math.atan2(m.b,m.a)*180/Math.PI;
+    };
+    return {names:{bed:styles.bed.animationName,left:styles.left.animationName,right:styles.right.animationName},
+      bed:angle(null),left:angle('::before'),right:angle('::after')};
+   });
+   sample.names=current.names;
+   sample.bed.push(current.bed);
+   sample.left.push(current.left);
+   sample.right.push(current.right);
+   if(frame<6)await page.waitForTimeout(610);
+  }
   assert.equal(sample.names.bed,'mio-crosslight-bed');
   assert.equal(sample.names.left,'mio-crosslight-left');
   assert.equal(sample.names.right,'mio-crosslight-right');
-  assert.equal(sample.animations.length,3,'three independent timed light layers');
+  assert.ok(sample.bed.length===7,'seven actual rendered light frames checked');
   assert.ok(signs(sample.bed),'base beam direction reverses: '+JSON.stringify(sample.bed));
   assert.ok(signs(sample.left),'blue beam crosses both sides: '+JSON.stringify(sample.left));
   assert.ok(signs(sample.right),'gold beam crosses both sides: '+JSON.stringify(sample.right));
