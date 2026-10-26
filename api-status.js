@@ -1,2 +1,30 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
-export default async function handler(req,res){const cfg=prepare(req,res);if(!cfg)return;const s=readSession(req.headers.cookie,cfg.secret);if(!s)return res.status(401).json({ok:false,error:'このブラウザの認証情報を確認できません。登録済みの方は再登録せず、管理者に端末認証の復旧をご依頼ください。',code:'BROWSER_SESSION_MISSING'});try{const d=await bridge('status',{participantId:s.id,tokenHash:hash(s.token)});if(d.participantId!==s.id)throw Error();if(d.status==='承認済み')res.setHeader('Set-Cookie',sessionCookie(s.id,s.token,cfg.secret));res.status(200).json(d)}catch{res.status(502).json({ok:false,error:'参加状況を取得できませんでした。以前の情報は現在値として表示しません。'})}}
+import {recoverFromAdminApprovedLightCookie} from './mio-admin-approved-light-recovery.js';
+
+export default async function handler(req,res){
+  const cfg=prepare(req,res);
+  if(!cfg)return;
+  const session=readSession(req.headers.cookie,cfg.secret);
+  if(!session){
+    let recovery;
+    try{
+      recovery=await recoverFromAdminApprovedLightCookie({req,res,config:process.env});
+    }catch{
+      recovery={status:'failed'};
+    }
+    if(recovery.status==='recovered')return res.status(200).json(recovery.data);
+    return res.status(401).json({
+      ok:false,
+      error:'このブラウザの認証情報を確認できません。登録済みの方は再登録せず、管理者に端末認証の復旧をご依頼ください。',
+      code:'BROWSER_SESSION_MISSING'
+    });
+  }
+  try{
+    const data=await bridge('status',{participantId:session.id,tokenHash:hash(session.token)});
+    if(data.participantId!==session.id)throw Error('identity mismatch');
+    if(data.status==='承認済み')res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
+    return res.status(200).json(data);
+  }catch{
+    return res.status(502).json({ok:false,error:'参加状況を取得できませんでした。以前の情報は現在値として表示しません。'});
+  }
+}
