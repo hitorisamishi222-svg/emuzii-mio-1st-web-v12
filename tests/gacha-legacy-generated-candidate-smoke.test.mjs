@@ -17,9 +17,11 @@ const staged=resolve(process.env.MIO_GACHA_CORE_PATH);
 const patch=resolve('gacha-ui/patches/gacha-won-duplicate-keys-replacement-v216.gs');
 const dir=mkdtempSync(join(tmpdir(),'mio-gacha-smoke-'));
 const out=join(dir,'candidate.gs'),report=join(dir,'report.json');
+const input=join(dir,'source.gs');
+writeFileSync(input,readFileSync(main,'utf8')); // distinct input path: preserve pinned baseline untouched
 process.on('exit',()=>rmSync(dir,{recursive:true,force:true}));
 const result=spawnSync(process.execPath,[tool,
- '--source',main,'--baseline',main,'--stage',staged,'--patch',patch,
+ '--source',input,'--baseline',main,'--stage',staged,'--patch',patch,
  '--out',out,'--report',report],{encoding:'utf8',timeout:10000});
 assert.equal(result.status,0,result.stderr+' '+result.stdout);
 const metadata=JSON.parse(readFileSync(report,'utf8'));
