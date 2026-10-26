@@ -84,3 +84,13 @@
 - テストが更新直後に不合格となった原因は、非同期カタログ再読込中に中間メッセージを検査したタイミング競合。テスト側を最終状態待ちに変更し、**関連10ケース全件PASS／失敗0件**：[GitHub Actions実行](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40253378572)。過去の独立テスト群は手動で再実行していない。
 - 変更コミット：`gacha-page.js` は `921c05b9e5e418b8ab6abfe1239421b3eeb3578b`、テスト調整後は `e4f473781f6f22fb1198140cc863a58413c38510`。
 - **未完了・守るべき境界**：GAS本番ソースは直接取得できていない。スマホ実機での豪華演出も未合格。公開用main、固定Vercel本番URL、本番Apps Script、本番スプレッドシート、抽選権利には変更を加えていない。ブランチの丸ごとマージは禁止。
+
+## 追記：2026-10-26 ライト単調回転のユーザーフィードバック対応
+- **ユーザーからの実機指摘**：「ライトがクルクル回るのが一方方向で演出効果を下げている」。
+- 原因：`style.css` の `.gacha-stage.draw-active .stage-lights` が `beam-spin 1.15s linear infinite`（360度の一方向回転）。基本の抽選処理ではなく演出CSSの問題。
+- **ガチャ専用ブランチのみ修正**：`gacha-deluxe-v21.css` に v2.1.1 の差分を追加。元の一方向回転を優先度の高いCSSで置き換え、青と金の2本の疑似要素ライトを逆方向に振り、前後に往復・交差・明暗変化。チャージ中とラキフェス時の輝きも段階変化。光線はガチャ画面内に収め、当選表示は覆わない設計。低モーション設定では停止。
+- 新規テスト：`tests/gacha-crosslight-motion.mjs`、自動実行は `.github/workflows/gacha-crosslight-motion.yml`。**過去の合格済みテストは手動再実行していない**。
+- 最初の新規テストはCSS疑似要素が `Element.getAnimations()` に列挙されないというテスト側の問題で失敗。テストを**ブラウザで実際にレンダリングされた7時点の回転角を検査する方式**に修正。
+- **修正後PASS**：青・金・ベース光線が正逆両方向に振れ、青／金が開始時逆向き、デモスキップ正常、抽選APIへの送信なし、ブラウザ例外なし。低モーション設定でもアニメーション停止を確認。[GitHub Actions 40254202943](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40254202943)
+- Vercelの新プレビュー `https://emuzii-mio-1st-web-v12-c0d143yns-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1` は当該テスト修正コミットで READY を確認。**本番固定URLは変更していない**。
+- **実機確認未完了**：ユーザーのiPhone/Androidによるライトの印象・演出スキップ・視認性は現時点で未合格。抽選権利・GAS・本番Sheet・景品は一切変更しない。
