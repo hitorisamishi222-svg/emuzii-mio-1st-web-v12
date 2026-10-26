@@ -1,0 +1,39 @@
+name: Gacha palace scenery only
+
+on:
+  push:
+    branches: [feature/mio-royal-gacha-deluxe-20261023]
+    paths:
+      - 'assets/mio-undersea-palace-stage.svg'
+      - 'tests/gacha-palace-scenery.mjs'
+      - '.github/workflows/gacha-palace-scenery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  palace-scene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test only the new palace scene
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/palace-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/gacha.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/gacha-palace-scenery.mjs
