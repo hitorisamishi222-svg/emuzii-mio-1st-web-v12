@@ -85,10 +85,10 @@ async function execute(pending){
   
   try{
     const d=await post('/api/gacha',{action:'draw',...pending});
-    if(d.drawId!==pending.drawId||d.mode!==pending.mode||typeof d.prize!=='string'||!d.prize.trim()||!Number.isSafeInteger(Number(d.ordinal))||Number(d.ordinal)<1){throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください')}
+    if(d.participantId!==participant||d.drawId!==pending.drawId||d.mode!==pending.mode||typeof d.prize!=='string'||!d.prize.trim()||!Number.isSafeInteger(d.ordinal)||d.ordinal<1||(d.remaining!=null&&(!Number.isSafeInteger(d.remaining)||d.remaining<0))){throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください')}
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
     renderResult(d);forget();
-    note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
+    note(Number.isSafeInteger(d.remaining)?`${d.ordinal}回目の結果を保存しました。残り ${d.remaining}回。`:`${d.ordinal}回目の結果を確認しました。残り回数は最新のガチャ情報でご確認ください。`);
     refreshAfter=true
   }catch(e){
     clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));failureMessage=`${e.message}。「前回の抽選結果を確認」から同じ抽選IDで再確認してください。`;note(failureMessage);$('retryDraw').hidden=false;refreshAfter=true
