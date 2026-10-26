@@ -350,3 +350,111 @@
   .gacha-page #gachaStage.mio-art-integrated.is-fest{filter:none!important}
   .gacha-page #gachaStage.mio-art-integrated .mio-stage-art{filter:none}
 }
+
+
+/* v2.1.5 — seamless palace ambience, fade photo edges into stage. */
+/* The approved JPG is not modified: one clean, contain-scaled copy with a
+   broad feathered edge. No repeated textures, tiling or scaled copies. */
+.gacha-page #gachaStage.mio-scene-blended{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:0!important;
+  outline:0!important;
+  border-radius:20px!important;
+  background-color:#102f59!important;
+  background-image:radial-gradient(ellipse at 50% 42%,#376996 0%,#214d7c 34%,#12355e 68%,#102e59 100%)!important;
+  background-size:cover!important;
+  box-shadow:inset 0 15px 32px #9bcffa14,inset 0 -16px 34px #04142d8c,0 6px 24px #020b1b26!important;
+}
+.gacha-page #gachaStage.mio-scene-blended.is-fest{
+  background-color:#23355c!important;
+  background-image:radial-gradient(ellipse at 50% 43%,#776a70 0%,#625478 34%,#27385f 66%,#162d52 100%)!important;
+  background-size:cover!important;
+  box-shadow:inset 0 15px 32px #ffe09a1f,inset 0 -16px 34px #100e298c,0 6px 24px #120c1c26!important;
+}
+/* A floor reflection and palace-like side lighting are independent of the
+   photo, giving the machine a place to sit instead of an inner picture frame. */
+.gacha-page #gachaStage.mio-scene-blended .mio-stage-scenery{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 48% 22% at 50% 89%,#c2e9ff65 0%,#85cfff34 42%,transparent 90%),
+    radial-gradient(circle at 14% 19%,#f5ecb06b 0 1px,transparent 5px),
+    radial-gradient(circle at 84% 25%,#eafaff88 0 1px,transparent 6px),
+    radial-gradient(circle at 20% 71%,#c0ebff70 0 1px,transparent 6px),
+    radial-gradient(circle at 75% 77%,#ffe2a56e 0 1px,transparent 6px),
+    radial-gradient(ellipse 85% 60% at 50% 40%,#a2dfff2b,transparent 78%);
+}
+.gacha-page #gachaStage.mio-scene-blended .mio-stage-scenery::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 0%,#a8d8ff25 5%,#ebf9ff0d 8%,transparent 15%),
+    linear-gradient(270deg,transparent 0%,#a8d8ff25 5%,#fff1d70d 8%,transparent 15%),
+    radial-gradient(ellipse 75% 45% at 50% 8%,#d8f7ff40,transparent 78%);
+  opacity:.87;
+}
+.gacha-page #gachaStage.mio-scene-blended .mio-stage-scenery::after{
+  content:"";
+  position:absolute;
+  z-index:0;
+  left:10%;
+  right:10%;
+  bottom:2%;
+  height:20%;
+  border-radius:50%;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center,#d3ebff62 0%,#76bfff35 37%,transparent 77%);
+  transform:scaleY(.4);
+  filter:blur(7px);
+}
+.gacha-page #gachaStage.mio-scene-blended .mio-stage-art{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:url('/assets/mio-royal-whale-machine.jpg') center center / contain no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse 65% 66% at 50% 51%,#000 0%,#000 43%,#000e 56%,#0009 69%,#0002 83%,transparent 97%);
+  mask-image:radial-gradient(ellipse 65% 66% at 50% 51%,#000 0%,#000 43%,#000e 56%,#0009 69%,#0002 83%,transparent 97%);
+}
+/* Keep spotlight effects on top and leave the original artwork unblurred.
+   The old inset stroke/second rectangular border is intentionally disabled. */
+.gacha-page #gachaStage.mio-scene-blended::after{
+  inset:0!important;
+  border:0!important;
+  border-radius:inherit!important;
+  background:linear-gradient(180deg,#d9f4ff0a,transparent 24%,transparent 80%,#07183138)!important;
+}
+.gacha-page #gachaStage.mio-scene-blended:not(.royal-climax)::before{
+  border-color:transparent!important;
+}
+.gacha-page #gachaStage.mio-scene-blended .stage-lights{
+  z-index:2;
+}
+.gacha-page #gachaStage.mio-scene-blended.is-fest .mio-stage-scenery{
+  background:
+    radial-gradient(ellipse 50% 22% at 50% 89%,#ffe4a15a,transparent 91%),
+    radial-gradient(circle at 14% 19%,#fff5cd77 0 1px,transparent 6px),
+    radial-gradient(circle at 84% 25%,#fff5cd77 0 1px,transparent 6px),
+    radial-gradient(circle at 20% 71%,#fbe7c468 0 1px,transparent 6px),
+    radial-gradient(circle at 75% 77%,#ffe6b56f 0 1px,transparent 6px),
+    radial-gradient(ellipse 85% 60% at 50% 40%,#fce0ab28,transparent 78%);
+}
+/* Smartphones: preserve the compact five-by-six layout and all art via contain. */
+@media(max-width:430px){
+  .gacha-page #gachaStage.mio-scene-blended{border-radius:15px!important;margin:1px auto 7px!important;}
+  .gacha-page #gachaStage.mio-scene-blended .mio-stage-art{
+    -webkit-mask-image:radial-gradient(ellipse 67% 67% at 50% 51%,#000 0%,#000 43%,#000d 59%,#0008 70%,#0002 85%,transparent 98%);
+    mask-image:radial-gradient(ellipse 67% 67% at 50% 51%,#000 0%,#000 43%,#000d 59%,#0008 70%,#0002 85%,transparent 98%);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .gacha-page #gachaStage.mio-scene-blended .mio-stage-scenery,
+  .gacha-page #gachaStage.mio-scene-blended .mio-stage-art{animation:none!important;transition:none!important;}
+}
