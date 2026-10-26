@@ -169,3 +169,15 @@
 - 新規9ケース `tests/gacha-gas-preflight.test.mjs` とCI `.github/workflows/gacha-gas-preflight.yml` を追加。**9/9 PASS・0 FAIL**：[GitHub Actions 40289824822](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40289824822)。既に合格した重複防止・2ブラウザ・同時ロック・景品27枠のテストは再実行せず。
 - 使用上の制約：現行GASの**全体の動作互換性や管理者の端末復旧機能の動作**を本事前検査だけで証明できるわけではない。最終公開に進むには現行稼働GASソース取得・影響箇所レビュー・ステージング接続試験・管理者承認が必要。候補をGASへ自動適用しない。
 - 本番main・GAS・Vercel URL・シート・景品・当選履歴・抽選権利を変更していない。変更対象は専用featureブランチ内の新規ツール、テスト、CIと本文のみ。
+
+ 
+## 追記：2026-10-26 旧GitHub `main` のガチャ差分・本番Sheet確認・固定キー案（READ ONLY）
+- GitHub `main:Code.gs` を開発版 `release/v2-next-integrated-replica:Code.gs` と比較。GitHub側の旧 `gachaAction_` は当選済み景品の恒久除外なし、ラキフェスも権利5以上だけでWeb4回確定条件なし。ただし**稼働中Apps Scriptの現行実コードとは限らない**。元の`main`を本番GASへ直接適用してはならない。
+- ガチャ専用featureへ `tools/gacha-legacy-main-candidate.mjs` を作成。**旧 main の `catalog_` と `gachaAction_` の2関数だけ**を開発版に由来する新ロジックに変更、重複判定に必要な4関数だけ追加した**ローカル候補**を別名で出力。現在の元ソースに未知の差分があれば停止。`setupGacha_`、`doPost`、`gachaOpenState_`、端末/登録/皆勤の認証は一切置換しない。レビュー用ファイルであり公開を行わない。
+- 専用テスト `tests/gacha-legacy-main-candidate.test.mjs` とCI `.github/workflows/gacha-legacy-main-candidate.yml` を追加。GitHub main `a701935c...` とrelease `390f167...` を固定して、候補生成・別チャットの無関係な認証変更の保全・ガチャ関数に予期しない差分があれば停止・ヘルパー重複防止・既存候補の上書き禁止・本体を丸ごと置き換えないことを新規7項目で検証。**7/7 PASS**：[GitHub Actions 40291690144](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40291690144)。
+- **重要な進展**：既存の本番スプレッドシートへの**読み取り専用接続に成功**（接続中の一方のGoogleアカウント）。実在シート `emuzii_景品設定`、`emuzii_当選履歴`、`emuzii_ガチャ`、`emuzii_管理画面` の見出し確認。
+  - 景品設定J列「被り判定キー」、当選履歴N列「被り判定キー（抽選時）」、権利の特別付与O列・Web確定抽選数P列・ラキフェス状態Q列が存在。管理画面B23はラキフェス5回目設定。
+  - 景品設定のA2:J101のみ読み取り：有効景品27、通常16＋ラキフェス11、種類ごとに設定確率100%、固有景品20、共通7組。景品ID・景品名・種類・確率・有効状態は開発版プレビューJSONの27件と**完全一致**。
+  - **被り判定キーJ列は27件すべて空欄。** 現在の開発ロジックは景品名からの代用で重複防止可能だが、後日の名前変更に弱いため、安定したキーの採用が望ましい。参加者・個人当選履歴・権利の明細は読み取りも更新もしていない。
+- **未反映の固定キー入力案**：`data/gacha-immutable-key-backfill-REVIEW-ONLY.json` をガチャ専用ブランチに保存。27景品を固有20組へ正規化、通常とラキフェスに共通する7組に**同一の不変キー**を提案。元のキー欄が空白でありID/名前/種類/確率/有効状態が一致するときのみ将来適用できる設計。**本番SheetのJ列は無変更**。公開中GASとの完全な整合性が未検証なので、まだキーの入力作業は行わない。
+- 残る重大な未完了：**現行Apps Script実ソースの取得**、本番コードの`catalog_`/`gachaAction_`と実際のヘルパー確認、競合変更を含むレビューとステージング試験。Vercel・GAS・本番Sheetには書き込み禁止を継続。
