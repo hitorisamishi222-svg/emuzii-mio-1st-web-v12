@@ -94,3 +94,11 @@
 - **修正後PASS**：青・金・ベース光線が正逆両方向に振れ、青／金が開始時逆向き、デモスキップ正常、抽選APIへの送信なし、ブラウザ例外なし。低モーション設定でもアニメーション停止を確認。[GitHub Actions 40254202943](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40254202943)
 - Vercelの新プレビュー `https://emuzii-mio-1st-web-v12-c0d143yns-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1` は当該テスト修正コミットで READY を確認。**本番固定URLは変更していない**。
 - **実機確認未完了**：ユーザーのiPhone/Androidによるライトの印象・演出スキップ・視認性は現時点で未合格。抽選権利・GAS・本番Sheet・景品は一切変更しない。
+
+## 追記：2026-10-26 スマホ実機スクリーンショットの結果カード位置修正
+- ユーザー提供のiPhone画像を目視確認：`UR・DEMO` の大きな当選結果カードが王宮クジラ筐体（表紙）中央を隠している。ユーザーコメント「表紙位置」に対応。
+- **開発ブランチのみ**、`gacha-deluxe-v21.js` で `drawResultCard` を `gachaStage` の内部から直後の独立結果表示領域へ移動。**通常／ラキフェスの実結果とデモ結果の両方が同じ配置**。デモ完了時に結果領域をスクロール表示。
+- `gacha-deluxe-v21.css` に独立カード `.mio-result-dock` のネイビーブルー＋ゴールド枠、スマホサイズ、画像・文字の自動収まりを追加。`[hidden]`は非表示維持。絵そのもの・抽選確率・残権利・GAS・本番データを変更していない。
+- **対象の新規ブラウザテストのみ実行**：`tests/gacha-cover-result-position.mjs` で 375/390/430px の3幅、URデモ、元のクジラ画像保持、結果カードが舞台より下・舞台画像を覆わない、横はみ出しなし、抽選API 0件、JS例外0件を検証。3/3 PASS：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40254868075)。過去に合格した他のケースは不要な再実行をしていない。
+- Vercelプレビュー `https://emuzii-mio-1st-web-v12-leo1b9juy-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1` はREADY。固定本番URLは`main`で変更していない。
+- **実機表示結果は修正後未確認**。ユーザーから再度のiPhone/AndroidスクリーンショットまたはOK報告を受けるまで合格扱いにしない。
