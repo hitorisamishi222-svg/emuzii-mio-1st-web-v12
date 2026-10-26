@@ -214,25 +214,44 @@
 }
 
 
-/* v2.1.3 — uncropped portrait machine artwork.
-   The approved JPG is taller than the old square gacha stage.
-   Keep all approved art inside the frame; do not enlarge/crop it.
-   Specificity and !important intentionally supersede the earlier
-   gacha-royal-integration.css square/cover rules. */
+/* v2.1.4 — compact, uncropped royal whale gacha layout.
+   The old 9:16 stage made the approved cover feel excessively tall on phones.
+   Use a shorter frame while keeping the WHOLE artwork via contain.
+   Do not move the dock: the prize result stays below the artwork. */
+.gacha-page .royal-gacha-controls{
+  margin:6px auto 1px!important;
+}
+.gacha-page .mio-deluxe-steps{
+  margin:3px 0 5px!important;
+  gap:5px;
+}
+.gacha-page .mio-deluxe-steps li{
+  padding:6px 4px;
+}
+.gacha-page .mio-deluxe-steps li .step-icon{
+  font-size:17px;
+  margin-bottom:1px;
+}
+.gacha-page #skipDraw[hidden]{display:none!important;}
+.gacha-page #skipDraw:not([hidden]){display:block;margin:4px auto 6px;}
 .gacha-page #gachaStage{
   box-sizing:border-box;
   width:100%;
   height:auto!important;
-  aspect-ratio:9 / 16!important;
+  aspect-ratio:5 / 6!important;
   min-height:0!important;
   padding:0!important;
+  margin:2px auto 8px!important;
   background-color:#102e5b!important;
   background-position:center center!important;
   background-size:contain!important;
   background-repeat:no-repeat!important;
 }
-/* The Lucky Festival has two backgrounds: gold tint + the same JPG.
-   Stretch only the tint; NEVER stretch or crop the photograph. */
+/* Lucky Festival: the golden tint fills the frame while the JPG is never cropped. */
 .gacha-page #gachaStage.is-fest{
   background-size:100% 100%,contain!important;
+}
+@media(max-width:430px){
+  .gacha-page .mio-deluxe-steps{margin:2px 0 4px!important;}
+  .gacha-page #gachaStage{margin:1px auto 7px!important;}
 }
