@@ -16,7 +16,12 @@ const variants=[
  {label:'HTTP 200 with mismatched drawId cannot clear pending',response:({id})=>({ok:true,drawId:'e'.repeat(32),mode:'通常',prize:'SYNTHETIC',ordinal:1,remaining:4}),error:/整合性/,keepPending:true},
  {label:'HTTP 200 with missing prize cannot clear pending',response:({id})=>({ok:true,drawId:id,mode:'通常',ordinal:1,remaining:4}),error:/整合性/,keepPending:true},
  {label:'HTTP 200 with mismatched mode cannot clear pending',response:({id})=>({ok:true,drawId:id,mode:'ラキフェス',prize:'SYNTHETIC',ordinal:1,remaining:4}),error:/整合性/,keepPending:true},
- {label:'HTTP 200 with a complete matching result succeeds',response:({id})=>({ok:true,drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:1,remaining:4,rarity:'N',image:''}),error:null,keepPending:false}
+ {label:'HTTP 200 with a complete matching result succeeds',response:({id})=>({ok:true,drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:1,remaining:4,rarity:'N',image:''}),error:null,keepPending:false},
+ {label:'mismatched participantId fails closed',response:({id})=>({ok:true,participantId:'MIO-W-'+ 'b'.repeat(24),drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:1,remaining:4}),error:/整合性/,keepPending:true},
+ {label:'missing participant identity fails closed',response:({id})=>({ok:true,participantId:null,drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:1,remaining:4}),error:/整合性/,keepPending:true},
+ {label:'negative remaining count fails closed',response:({id})=>({ok:true,drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:1,remaining:-1}),error:/整合性/,keepPending:true},
+ {label:'string ordinal fails closed',response:({id})=>({ok:true,drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:'1',remaining:4}),error:/整合性/,keepPending:true},
+ {label:'missing optional remaining count does not invent 0',response:({id})=>({ok:true,drawId:id,mode:'通常',prize:'SYNTHETIC',ordinal:1}),error:null,keepPending:false},
 ];
 
 try {
@@ -35,7 +40,7 @@ try {
     if(u.pathname==='/api/status')body={ok:true,participantId,status:'承認済み',name:'SYNTHETIC'};
     else if(data.action==='catalog')body={ok:true,participantId,confirmed:true,remaining:5,used:0,normalOpen:true,festOpen:false,gateConfigured:true,festAvailableFrom:5,festEntitled:true,festUnlocked:false,normal:{ready:true,prizes:[{name:'SYNTHETIC',chance:100}]},fest:{ready:false,prizes:[]}};
     else if(data.action==='history')body={ok:true,participantId,history:[]};
-    else if(data.action==='draw')body=scenario.response({id:data.drawId});
+    else if(data.action==='draw'){body=scenario.response({id:data.drawId});if(body.ok===true&&!Object.hasOwn(body,'participantId'))body.participantId=participantId;}
     else throw Error('unexpected API action '+data.action);
     await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
     return;
