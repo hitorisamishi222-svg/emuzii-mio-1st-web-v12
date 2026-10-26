@@ -1,0 +1,36 @@
+name: Gacha two-browser interleaved locking (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-interleaved-draw-lock.test.mjs'
+      - '.github/workflows/gacha-interleaved-draw-lock.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interleaved-lock-injection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out new isolated gacha tests only
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - name: Load development GAS logic (not current deployed script)
+        uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+      - name: Execute only new nested two-browser lock test cases
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: |
+          node --version
+          node --test gacha-ui/tests/gacha-interleaved-draw-lock.test.mjs
