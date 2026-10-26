@@ -191,3 +191,13 @@
 - 固定キー案専用の新規 `tests/gacha-history-compatible-key-plan.test.mjs` と `.github/workflows/gacha-history-compatible-key-plan.yml` の**5/5 PASS・0 FAIL**：[GitHub Actions 40300870280](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40300870280)。検証内容：無断公開防止・過去履歴との互換・27件設定一致・7組のキー共有・表示名変更後のキー固定。合格済み旧テストは再実行していない。
 - ソース探索：接続Google Driveで**2026-10-11付「みお本番Code.gs バックアップ」**と**同日付のGitHub v1.9.1参照原本（明示的に本番HEAD未照合）**の2文書を発見、読み取り専用で構造を確認。いずれも`wonDuplicateKeys_`、履歴のN列参照、`ScriptLock`、ラキフェスのWeb4回条件を含むが、**2026-10-26現在稼働中GASだとは証明できない**。公開中へコピー・適用禁止。
 - プライバシー：監査は集計値のみ記録し、本人情報・当選の個別行をガチャGitHubへ保存しない。最新の稼働中ソース取得・同時実行の本番挙動照合は依然未完了。
+
+ 
+## 追記：2026-10-26 10/11 GASバックアップと開発版の関数一致・移行候補の実行検証
+- 接続Google Driveの**「みお本番Code.gs バックアップ 10月11日」**（読取専用）と、開発版 `release/v2-next-integrated-replica:Code.gs` のガチャ主要7関数 `draws_`、`normalizeDuplicateKey_`、`prizeDuplicateKeyFromRow_`、`wonDuplicateKeys_`、`participantCatalog_`、`catalog_`、`gachaAction_` を照合。空白・改行・インデントを正規化した比較では**7/7一致**。**2026-10-26稼働中のGASとは未照合であり公開承認ではない**。
+- 本番スプレッドシートからは確定履歴25件、無効テスト履歴36件、同一MIO-ID・同一キーの重複確定0を確認済み。この25件の旧キーと現行景品名は一致。景品設定J列は空のままで運用中のため、**固定キー案の即適用はしない**。履歴N列・参加者情報は一切編集しない。
+- 前回のレガシーGAS関数選択移行候補ツール `tools/gacha-legacy-main-candidate.mjs` が**別名で作った候補自体**をNodeのVM上で実行する、新規 `tests/gacha-legacy-generated-candidate-smoke.test.mjs` とGitHub Actions `.github/workflows/gacha-legacy-generated-candidate-smoke.yml` を追加。
+- 初回はテストハーネスで `--source` と `--baseline` に同じパスを渡し、安全上の「6個の異なる入力・出力パス必須」で正しく停止。元本を守るため**作業用コピーを入力**するように修正。
+- 修正後 **新規4/4 PASS、0 FAIL**：[GitHub Actions 40308236545](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40308236545)。検査内容：①生成候補が構文的に実行可能、②Web確定抽選3回時はラキフェス拒否、③Web4回後の5回目のラキフェスで通常景品重複除外と確定記録、④残り1権利の2回目の要求を拒否。テストは架空シート・架空参加者のみ。合格済みの別テストは再実行なし。
+- **区別**：この実行検証の対象は**GitHub旧mainから作ったレビュー用候補**であり、上記10/11バックアップの全体動作や現在稼働中GASの保証ではない。端末復旧・新規受付などの関数は置換していない。
+- `main`、Vercel、本番Apps Script、Googleシートへの書き込みは行わず、ガチャ専用featureのテスト・CI・ドキュメントだけ更新。
