@@ -151,3 +151,12 @@
 - チェック内容：①WebブラウザA当選品のブラウザB側除外、②B側の次回抽選番号・残権利・非重複、③AのdrawIdをBで再送しても拒否、④A自身の再送はリプレイ扱いで消費なし、⑤Aが承認取消でもBは履歴維持して正常継続、⑥同名でも別MIO-IDの別人は独立、⑦旧形式の当選履歴（N列被りキー空欄）を両ブラウザで共有、⑧Aで残権利0のときBでも抽選拒否。
 - **限界**：これは `gachaAction_` 単体の模擬テスト。ブラウザのCookieの実物、公開中GASの `doPost` による認証、現行端末復旧コード、および**実際の同時リクエストの原子性**までは本テストで証明していない。開発GASの `doPost` には ScriptLock があるが、公開中GAS現物は未取得のため公開中の安全性を断定しない。
 - 本番 `main`、GAS、Vercel、景品設定、参加者・当選・権利データへの変更なし。このチャットの変更はガチャ専用ブランチの新規テスト2ファイルとこの記録だけ。
+
+ 
+## 追記：2026-10-26 承認済み複数ブラウザの抽選重なり・ScriptLock割込テスト
+- ガチャ専用開発ブランチに `tests/gacha-interleaved-draw-lock.test.mjs` と専用GitHub Actions `.github/workflows/gacha-interleaved-draw-lock.yml` を新規追加。
+- `release/v2-next-integrated-replica:Code.gs` の実際の `doPost` を、偽のWeb登録2ブラウザ（同一MIO-ID）と別MIO-ID、偽シートで動作させ、過去当選を保護する未公開の `wonDuplicateKeys_` 置換案をメモリ上だけで適用。実GAS・実スプレッドシートとの接続なし。
+- **新規6/6 PASS、0 FAIL**：[GitHub Actions 40287385009](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40287385009)。既存合格済みテストは再実行せず。
+- 対象ケース：①残り1権利でA書込直前にBが入る→B処理中で拒否、確定後も残権利0で拒否、②残り2権利→B再試行で2回目・別景品、③AのdrawIdをBが横取りしても拒否、④Aが書込失敗→ロック解除後Bが1回目を確定、⑤4回目の確定前にラキフェス要求は割込拒否・確定後の5回目で解放、⑥別MIO-IDも共有ScriptLockによって順序制御され、当選自体はMIO-IDごとに独立。
+- テスト方式は `appendRow` の中から別 `doPost` を呼び出す**決定的な割込注入**。ScriptLock取得中の別リクエスト拒否と解除後の履歴再読込を検証したもの。**実ネットワークでの並列実行、実Google LockService、GASの本番ソースおよび運用環境そのものは未検証**。
+- `main`、本番Vercel、稼働中GAS、運営の景品・当選履歴・参加者権利は今回変更していない。ほかチャットの端末復旧作業の変更を上書きしない。
