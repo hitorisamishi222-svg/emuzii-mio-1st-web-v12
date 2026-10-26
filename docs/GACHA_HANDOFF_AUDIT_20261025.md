@@ -143,3 +143,11 @@
 - **新規3/3 PASS、0 FAIL**。全20景品獲得後は、通常／ラキフェス両方の候補リストが空になり追加抽選が拒否され、残りの権利は維持。[GitHub Actions 40285572659](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40285572659)。
 - 今回の新規テストのみ実行。**合格済みの歴史的重複対策10ケース、背景2幅等は再実行せず。**
 - 大切な未完了：実稼働GASは依然未取得。Google Driveの接続2アカウントから既存Apps ScriptプロジェクトIDをメタデータ照会しても404（Driveファイル取得機能ではGAS現物の取得を保証しない）。**公開中GASの無断修正は禁止**。独立パッチを本番に直接追加してもいけない。
+
+ 
+## 追記：2026-10-26 承認済み2ブラウザ／同一MIO-IDの重複防止テスト
+- **新規8件だけ実行**：[GitHub Actions 40286224242](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40286224242)、**8/8 PASS・0 FAIL**。既合格の27枠全抽選3件、履歴互換10件、画面のテストは再実行していない。
+- 新規テストファイル：`tests/gacha-two-approved-browsers.test.mjs`、専用 `.github/workflows/gacha-two-approved-browsers.yml`。開発側 `release/v2-next-integrated-replica:Code.gs` の抽選関数へ**未反映の履歴強化1関数パッチ**だけ仮に置換し、架空参加者・架空シートで実行。
+- チェック内容：①WebブラウザA当選品のブラウザB側除外、②B側の次回抽選番号・残権利・非重複、③AのdrawIdをBで再送しても拒否、④A自身の再送はリプレイ扱いで消費なし、⑤Aが承認取消でもBは履歴維持して正常継続、⑥同名でも別MIO-IDの別人は独立、⑦旧形式の当選履歴（N列被りキー空欄）を両ブラウザで共有、⑧Aで残権利0のときBでも抽選拒否。
+- **限界**：これは `gachaAction_` 単体の模擬テスト。ブラウザのCookieの実物、公開中GASの `doPost` による認証、現行端末復旧コード、および**実際の同時リクエストの原子性**までは本テストで証明していない。開発GASの `doPost` には ScriptLock があるが、公開中GAS現物は未取得のため公開中の安全性を断定しない。
+- 本番 `main`、GAS、Vercel、景品設定、参加者・当選・権利データへの変更なし。このチャットの変更はガチャ専用ブランチの新規テスト2ファイルとこの記録だけ。
