@@ -102,3 +102,14 @@
 - **対象の新規ブラウザテストのみ実行**：`tests/gacha-cover-result-position.mjs` で 375/390/430px の3幅、URデモ、元のクジラ画像保持、結果カードが舞台より下・舞台画像を覆わない、横はみ出しなし、抽選API 0件、JS例外0件を検証。3/3 PASS：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40254868075)。過去に合格した他のケースは不要な再実行をしていない。
 - Vercelプレビュー `https://emuzii-mio-1st-web-v12-leo1b9juy-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1` はREADY。固定本番URLは`main`で変更していない。
 - **実機表示結果は修正後未確認**。ユーザーから再度のiPhone/AndroidスクリーンショットまたはOK報告を受けるまで合格扱いにしない。
+
+
+## 追記：2026-10-26 海中王宮の背景強化 v2.1.6（ガチャ専用）
+- ユーザーの「背景が質素・王宮感や奥行きが弱い」という指摘に対応。**明るさ調整ではなく建築的な背景を実装**。
+- 既存ブランチ `feature/mio-royal-gacha-deluxe-20261023` だけに `assets/mio-undersea-palace-stage.svg` を新規作成：大きな海中アーチ、左右の柱、宝石、光芒、段差のある反射床。SVGは単体作品でタイル・網目・反復模様なし。
+- `gacha-deluxe-v21.css` の末尾へ **v2.1.6 差分のみ**を追記し、`.mio-stage-scenery` に宮殿画像を設定。既存 `.mio-stage-art` の王宮クジラ実画像は無変更かつ手前表示。ラキフェスは金色の薄い光層を追加。抽選権利・参加者情報・景品確率・GAS・API処理は変更なし。
+- 明示ビルド式の `vercel.json` に上記SVG 1ファイルだけを追加。本番固定URLと `main` には変更なし。
+- **今回新規のみに限定した独立ブラウザテスト** `tests/gacha-palace-scenery.mjs` を追加し、`.github/workflows/gacha-palace-scenery.yml` で実行（他の合格済みテストを手動再実行しない）。
+- **375px/430px、通常＋ラキフェス全てPASS**。宮殿SVGのHTTP 200読込、元のクジラJPG保持、重なり順、結果カードが舞台下、横スクロールなし、実API要求0件、JS例外0件を確認。[GitHub Actions 40264475224](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40264475224)（成功ログで両幅PASSを確認）。
+- 最新のプレビューは `https://emuzii-mio-1st-web-v12-b0gb63obt-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1`（Vercel READY、`6521691b3ce93c8e334532e10bdc61e1f9479647`、本番ターゲットではない）。
+- **未合格として維持**：利用者のiPhone/Android実機での背景の見え方・デザイン評価、公開中GAS現物比較、本番ガチャ動作検証。本番公開は未実施。デモページは実際の抽選を行わない。
