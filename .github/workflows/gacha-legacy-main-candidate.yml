@@ -1,0 +1,44 @@
+name: Gacha legacy main migration candidate only
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tools/gacha-legacy-main-candidate.mjs'
+      - 'tests/gacha-legacy-main-candidate.test.mjs'
+      - '.github/workflows/gacha-legacy-main-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-candidate-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout gacha-specific candidate tool
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - name: Checkout known legacy main Code.gs without executing production
+        uses: actions/checkout@v4
+        with:
+          ref: a701935c72c8f2fd37dd798c269c28376081494e
+          path: legacy-main
+          persist-credentials: false
+      - name: Checkout staged gacha Code.gs reference
+        uses: actions/checkout@v4
+        with:
+          ref: 390f167655616fc6e8331bc4a16b40f007fe96f7
+          path: gacha-core
+          persist-credentials: false
+      - name: Run only seven new offline candidate checks
+        env:
+          MIO_MAIN_CODE_PATH: ${{ github.workspace }}/legacy-main/Code.gs
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: |
+          node --version
+          node --test gacha-ui/tests/gacha-legacy-main-candidate.test.mjs
