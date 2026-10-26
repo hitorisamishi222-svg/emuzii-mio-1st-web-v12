@@ -1,0 +1,35 @@
+name: Gacha history-compatible immutable keys (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'data/gacha-immutable-key-backfill-REVIEW-ONLY.json'
+      - 'tests/gacha-history-compatible-key-plan.test.mjs'
+      - '.github/workflows/gacha-history-compatible-key-plan.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-read-only-plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout gacha-only key plan
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - name: Read only the staged 27-prize preview data
+        uses: actions/checkout@v4
+        with:
+          ref: 390f167655616fc6e8331bc4a16b40f007fe96f7
+          path: gacha-core
+          persist-credentials: false
+      - name: Run only five new key compatibility tests
+        run: |
+          node --version
+          node --test gacha-ui/tests/gacha-history-compatible-key-plan.test.mjs
