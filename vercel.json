@@ -22,6 +22,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "admin-hub.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gallery.html",
       "use": "@vercel/static"
     },
@@ -426,6 +430,11 @@
     {
       "src": "/api/gacha",
       "dest": "/api-gacha.js"
+    },
+    {
+      "src": "/admin-hub.html",
+      "dest": "/admin-hub.html",
+      "headers": {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
     },
     {
       "src": "/announcements.html",
