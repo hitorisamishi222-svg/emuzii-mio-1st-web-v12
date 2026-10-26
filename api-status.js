@@ -25,6 +25,15 @@ export default async function handler(req,res){
     if(data.status==='承認済み')res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
     return res.status(200).json(data);
   }catch{
+    // Retired legacy browser sessions can retain a valid signature.
+    // Only the independently verified, allowlisted light session can recover.
+    let recovery;
+    try{
+      recovery=await recoverFromAdminApprovedLightCookie({req,res,config:process.env});
+    }catch{
+      recovery={status:'failed'};
+    }
+    if(recovery.status==='recovered')return res.status(200).json(recovery.data);
     return res.status(502).json({ok:false,error:'参加状況を取得できませんでした。以前の情報は現在値として表示しません。'});
   }
 }
