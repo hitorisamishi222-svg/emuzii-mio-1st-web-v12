@@ -5,6 +5,17 @@
   const panel=document.getElementById('drawPanel');
   if(!stage||!panel||panel.dataset.mioDeluxeReady==='1')return;
   panel.dataset.mioDeluxeReady='1';
+  // Presentation-only: keep the original whale artwork sharp in the middle,
+  // soften the photograph's outer edge into an independent palace ambience.
+  // This never touches draw identifiers, inventory, identity or draw requests.
+  const scenery=document.createElement('div');
+  scenery.className='mio-stage-scenery';
+  scenery.setAttribute('aria-hidden','true');
+  const art=document.createElement('div');
+  art.className='mio-stage-art';
+  scenery.append(art);
+  stage.prepend(scenery);
+  stage.classList.add('mio-scene-blended');
   const remaining=document.getElementById('drawRemaining');
   const controls=panel.querySelector('.royal-gacha-controls');
   const mast=document.createElement('div');
