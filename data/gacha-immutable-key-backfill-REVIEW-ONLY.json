@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "kind": "GACHA_DUPLICATE_KEY_PROPOSED_BACKFILL",
+  "status": "REVIEW_ONLY_NOT_APPLIED",
+  "source": "27-entry preview cross-checked against live prize settings read-only on 2026-10-26",
+  "safetyNotes": [
+    "Do not apply automatically or before currently deployed GAS is inspected.",
+    "Require exact unchanged live prize ID, name, mode, probability, enable status and empty J key on each row; abort on any difference.",
+    "Stable key is bound to the same physical prize even across normal and Lucky Festival modes.",
+    "Do not change or delete already committed winning history."
+  ],
+  "totalSlots": 27,
+  "uniqueRewards": 20,
+  "crossModeSharedRewardPairs": 7,
+  "proposedEntries": [
+    {
+      "mode": "通常",
+      "prizeId": "MEM-01",
+      "prizeName": "お試し配信アイコン",
+      "proposedImmutableKey": "MIO-GIFT-MEM-01",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-02",
+      "prizeName": "2次審査中アイコン",
+      "proposedImmutableKey": "MIO-GIFT-MEM-02",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-03",
+      "prizeName": "ギフリア① ごきげんおてねこ",
+      "proposedImmutableKey": "MIO-GIFT-MEM-03",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-04",
+      "prizeName": "ギフリア② グルグルグルグル",
+      "proposedImmutableKey": "MIO-GIFT-MEM-04",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-05",
+      "prizeName": "ギフリア③ 誰よりも楽しむユニコーン",
+      "proposedImmutableKey": "MIO-GIFT-MEM-05",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-06",
+      "prizeName": "ギフリア④ 崇めよ",
+      "proposedImmutableKey": "MIO-GIFT-MEM-06",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-07",
+      "prizeName": "衣装コレクション 5月ノーマルver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-07",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-08",
+      "prizeName": "衣装コレクション 6月ノーマルver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-08",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-09",
+      "prizeName": "初配信アイコン",
+      "proposedImmutableKey": "MIO-GIFT-MEM-09",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 6
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-10",
+      "prizeName": "衣装コレクション 6月記念日ver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-10",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 6
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-11",
+      "prizeName": "待ち受け ラキフェスver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-11",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 6
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-12",
+      "prizeName": "待ち受け リアライver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-12",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 6
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-13",
+      "prizeName": "スーパーいいね 35回ボイス",
+      "proposedImmutableKey": "MIO-GIFT-MEM-13",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 6
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-14",
+      "prizeName": "Rから1つ＋Nから2つ選べる",
+      "proposedImmutableKey": "MIO-GIFT-MEM-14",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 7
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-15",
+      "prizeName": "初配信の画像",
+      "proposedImmutableKey": "MIO-GIFT-MEM-15",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 1.5
+    },
+    {
+      "mode": "通常",
+      "prizeId": "MEM-16",
+      "prizeName": "ドラムしてる翠央",
+      "proposedImmutableKey": "MIO-GIFT-MEM-16",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 1.5
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-09",
+      "prizeName": "初配信アイコン",
+      "proposedImmutableKey": "MIO-GIFT-MEM-09",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 8
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-10",
+      "prizeName": "衣装コレクション 6月記念日ver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-10",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 8
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-11",
+      "prizeName": "待ち受け ラキフェスver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-11",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 8
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-12",
+      "prizeName": "待ち受け リアライver.",
+      "proposedImmutableKey": "MIO-GIFT-MEM-12",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 8
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-13",
+      "prizeName": "スーパーいいね 35回ボイス",
+      "proposedImmutableKey": "MIO-GIFT-MEM-13",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 8
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-14",
+      "prizeName": "通常ガチャNから1つ＋Nから2つ選べる",
+      "proposedImmutableKey": "MIO-GIFT-LF-14",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 20
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-15",
+      "prizeName": "スーパーいいね 40回ボイス",
+      "proposedImmutableKey": "MIO-GIFT-LF-15",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 10
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-16",
+      "prizeName": "初配信の画像",
+      "proposedImmutableKey": "MIO-GIFT-MEM-15",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 10
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-17",
+      "prizeName": "ドラムしてる翠央",
+      "proposedImmutableKey": "MIO-GIFT-MEM-16",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 10
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-18",
+      "prizeName": "「ヒカリへ」審査提出動画",
+      "proposedImmutableKey": "MIO-GIFT-LF-18",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 5
+    },
+    {
+      "mode": "ラキフェス",
+      "prizeId": "LF-19",
+      "prizeName": "「Rising Hope」審査提出動画",
+      "proposedImmutableKey": "MIO-GIFT-LF-19",
+      "expectedCurrentKey": "",
+      "expectedEnabled": true,
+      "expectedProbability": 5
+    }
+  ]
+}
