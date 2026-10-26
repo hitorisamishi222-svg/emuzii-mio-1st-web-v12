@@ -141,3 +141,74 @@
     will-change:auto;
   }
 }
+
+
+/* v2.1.2 — result dock BELOW the artwork.
+   Keep the complete approved royal whale cover visible after the draw;
+   no overlays on the center of the machine image. */
+.gacha-page #drawResultCard.mio-result-dock[hidden]{display:none!important}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]){
+  position:relative;
+  z-index:3!important;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  isolation:isolate;
+  width:min(100%,560px);
+  max-width:560px;
+  min-height:0;
+  max-height:none;
+  margin:14px auto 18px;
+  padding:20px clamp(12px,4vw,24px);
+  overflow:visible;
+  border:2px solid #f1d99c!important;
+  border-radius:22px;
+  background:radial-gradient(ellipse at 50% 0%,#274c78f2,#081b3af9 75%)!important;
+  box-shadow:0 0 0 3px #0b2854,0 0 24px #8bcfff66,0 14px 28px #020d24ba!important;
+  color:#fff;
+  text-align:center;
+  scroll-margin-top:24px;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]) .draw-prize-name{
+  max-width:100%;
+  font-size:clamp(18px,5vw,26px);
+  overflow-wrap:anywhere;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]) #drawResultImage:not([hidden]){
+  display:block;
+  width:min(50vw,176px);
+  max-width:100%;
+  height:auto;
+  max-height:176px;
+  object-fit:contain;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]) .draw-ordinal{
+  color:#d8e9ff;
+  line-height:1.5;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]) .draw-rarity{
+  color:#ffe6a4;
+  font-weight:900;
+}
+.gacha-page #drawResultCard.mio-result-dock.mio-deluxe-demo-result:not([hidden]){
+  box-shadow:0 0 0 3px #0b2854,0 0 26px #ffd57c68,0 14px 28px #020d24ba!important;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]):has(.draw-rarity){
+  border-color:#f1d99c!important;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]) .draw-rarity{letter-spacing:.09em}
+@media(max-width:430px){
+  .gacha-page #drawResultCard.mio-result-dock:not([hidden]){
+    width:100%;
+    margin:12px auto 16px;
+    padding:16px 12px;
+    border-radius:18px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .gacha-page #drawResultCard.mio-result-dock.mio-deluxe-demo-result:not([hidden]){
+    animation:none!important;
+  }
+}
