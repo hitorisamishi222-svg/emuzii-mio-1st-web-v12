@@ -102,7 +102,7 @@ test('normal mode also excludes previously won names with changed explicit keys'
  assert.deepEqual(s.catalog().normal.prizes.map(x=>x.id),['MEM-B']);
 });
 test('when all festival gifts are owned, catalog disables festival; draw does not charge a right',()=>{
- const s=fixture({catalog:prizes(),history:with4History(historyRow({name:'Crystal Gift'})).concat(historyRow({serial:8,id:'LF-B',name:'Festival Bonus',key:'fest-other'}))});
+ const s=fixture({catalog:prizes(),history:with4History(historyRow({name:'Crystal Gift'})).concat([historyRow({serial:8,id:'LF-B',name:'Festival Bonus',key:'fest-other'})])});
  const before=s.data['emuzii_当選履歴'].length;
  assert.equal(s.catalog().fest.ready,false);
  assert.equal(s.draw('ラキフェス').ok,false);
