@@ -60,6 +60,7 @@ try {
    const pkey='mio_pending_draw_'+participantId;
    if(scenario.keepPending){
     await page.locator('#retryDraw').waitFor({state:'visible',timeout:12000});
+    await page.waitForFunction(source=>new RegExp(source).test(document.querySelector('#drawMessage')?.textContent||''),scenario.error.source,{timeout:12000});
     const note=await page.locator('#drawMessage').innerText();
     assert.match(note,scenario.error);
     assert.equal(await page.locator('#drawResultCard').isHidden(),true,'must not show a fake winner');
