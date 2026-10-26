@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1080" role="img" aria-label="光る海底王宮の背景">
+<defs>
+ <linearGradient id="sea" x2="0" y2="1"><stop stop-color="#1c638f"/><stop offset=".30" stop-color="#164c79"/><stop offset=".68" stop-color="#123864"/><stop offset="1" stop-color="#071b3d"/></linearGradient>
+ <radialGradient id="sanctuary"><stop stop-color="#a0e8f2" stop-opacity=".55"/><stop offset=".46" stop-color="#55b2d8" stop-opacity=".26"/><stop offset="1" stop-color="#153c72" stop-opacity="0"/></radialGradient>
+ <linearGradient id="marble" x2="1" y2="0"><stop stop-color="#17345b"/><stop offset=".2" stop-color="#9ddef1"/><stop offset=".38" stop-color="#3b749a"/><stop offset=".73" stop-color="#1c456e"/><stop offset=".9" stop-color="#e2dbb0"/><stop offset="1" stop-color="#1c3c64"/></linearGradient>
+ <linearGradient id="gold" x2="1" y2="1"><stop stop-color="#fff3c3"/><stop offset=".32" stop-color="#e6be6e"/><stop offset=".71" stop-color="#916b3e"/><stop offset="1" stop-color="#eddbac"/></linearGradient>
+ <linearGradient id="portal" x2="0" y2="1"><stop stop-color="#d1faff" stop-opacity=".62"/><stop offset=".27" stop-color="#6bc9e8" stop-opacity=".29"/><stop offset=".85" stop-color="#244d86" stop-opacity=".02"/></linearGradient>
+ <linearGradient id="floor" x2="0" y2="1"><stop stop-color="#68c4e2" stop-opacity=".55"/><stop offset=".18" stop-color="#23548b" stop-opacity=".3"/><stop offset="1" stop-color="#09213f"/></linearGradient>
+ <radialGradient id="gem"><stop stop-color="#e9ffff"/><stop offset=".36" stop-color="#95f1ff"/><stop offset=".9" stop-color="#1f92b7"/></radialGradient>
+ <filter id="haze"><feGaussianBlur stdDeviation="35"/></filter>
+ <filter id="shine"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<rect width="900" height="1080" fill="url(#sea)"/>
+<path d="M100 0 303 0 544 912 458 912Z" fill="#b9faff" opacity=".08"/>
+<path d="M650 0 813 0 425 943 351 943Z" fill="#a5ddff" opacity=".07"/>
+<ellipse cx="455" cy="424" rx="470" ry="568" fill="url(#sanctuary)"/>
+<!-- A vaulted sanctuary reaching up above the whale; open center retains breathing space. -->
+<path d="M-18 0H918V152Q789 155 712 220Q594 112 450 59Q302 110 185 219Q106 156-18 152Z" fill="#0d355b" stroke="url(#gold)" stroke-width="8"/>
+<path d="M26 13H874V101Q681 109 450 18Q216 112 26 101Z" fill="#28567e" stroke="#9adce4" stroke-opacity=".47" stroke-width="3"/>
+<path d="M132 220Q273 77 450 48Q626 77 768 220" fill="none" stroke="url(#gold)" stroke-width="15" stroke-linecap="round"/>
+<path d="M151 240Q303 111 450 85Q597 111 749 240" fill="none" stroke="#b2eff3" stroke-opacity=".55" stroke-width="3"/>
+<!-- Side alcoves: separately placed, not a repeating pattern. -->
+<path d="M0 225Q63 152 128 222V756H0Z" fill="#12375f" stroke="#79b9c7" stroke-width="3"/>
+<path d="M772 222Q835 153 900 225V756H772Z" fill="#12375f" stroke="#79b9c7" stroke-width="3"/>
+<path d="M16 325Q64 237 111 325V720H16Z" fill="url(#portal)" stroke="#e0c78c" stroke-width="4"/>
+<path d="M789 325Q836 237 884 325V720H789Z" fill="url(#portal)" stroke="#e0c78c" stroke-width="4"/>
+<path d="M31 350Q65 293 95 350V686H31Z" fill="#1e567b" opacity=".55"/>
+<path d="M805 350Q839 293 870 350V686H805Z" fill="#1e567b" opacity=".55"/>
+<!-- Sculptural royal columns, each shaded independently for depth. -->
+<path d="M84 190H171L159 860H95Z" fill="url(#marble)" stroke="#efd69b" stroke-width="4"/>
+<path d="M729 190H816L805 860H740Z" fill="url(#marble)" stroke="#efd69b" stroke-width="4"/>
+<path d="M67 203Q125 157 187 203L190 236H63Z" fill="url(#gold)" stroke="#f9e9b5" stroke-width="3"/>
+<path d="M713 203Q774 157 834 203L839 236H709Z" fill="url(#gold)" stroke="#f9e9b5" stroke-width="3"/>
+<path d="M91 230V804M755 230V804" fill="none" stroke="#d7ecdf" stroke-opacity=".32" stroke-width="6"/>
+<path d="M66 836H183L195 873H56Z" fill="url(#gold)"/>
+<path d="M717 836H834L846 873H705Z" fill="url(#gold)"/>
+<path d="M48 873H207L214 894H41ZM693 873H852L859 894H686Z" fill="#1a3d68" stroke="#bdcfa9" stroke-width="3"/>
+<!-- Crown pediment and individual jewels -->
+<path d="M397 68 417 87 449 42 482 87 502 68 496 112H403Z" fill="url(#gold)" stroke="#ffe9ad" stroke-width="3"/>
+<path d="M449 64 463 82 449 101 435 82Z" fill="url(#gem)" stroke="#f5ffff" stroke-width="2"/>
+<path d="M118 192 130 211 118 230 106 211Z" fill="url(#gem)" stroke="#e2ffff" stroke-width="2"/>
+<path d="M782 192 794 211 782 230 770 211Z" fill="url(#gem)" stroke="#e2ffff" stroke-width="2"/>
+<!-- Reflective ceremonial steps and distant glow; no grid, repeat, or mesh -->
+<path d="M0 835Q450 787 900 835V1080H0Z" fill="url(#floor)"/>
+<ellipse cx="450" cy="850" rx="302" ry="57" fill="#b1edfa" opacity=".35" filter="url(#haze)"/>
+<path d="M195 876Q450 845 705 876L775 938Q450 910 125 938Z" fill="#194875" stroke="#c6e8d7" stroke-opacity=".7" stroke-width="3"/>
+<path d="M119 938Q450 899 781 938L867 1008Q450 964 33 1008Z" fill="#16416e" stroke="#d9deb2" stroke-opacity=".44" stroke-width="3"/>
+<path d="M0 1008Q450 969 900 1008V1080H0Z" fill="#0a284c"/>
+<path d="M181 880Q450 916 719 880" fill="none" stroke="#c0f6ff" stroke-opacity=".5" stroke-width="6" filter="url(#shine)"/>
+<!-- Floating treasure glints, individually composed rather than tiled -->
+<g fill="#dbfaff">
+ <circle cx="48" cy="117" r="3"/><circle cx="851" cy="154" r="2.8"/><circle cx="244" cy="196" r="2"/><circle cx="665" cy="175" r="3"/>
+ <circle cx="36" cy="587" r="2.3"/><circle cx="853" cy="654" r="3"/><circle cx="235" cy="750" r="2.5"/><circle cx="704" cy="811" r="2.3"/>
+</g>
+<g fill="none" stroke="#eaffff" stroke-opacity=".8" stroke-width="2">
+ <path d="M244 184V208M232 196H256"/><path d="M665 160V190M650 175H680"/><path d="M704 800V822M693 811H715"/>
+</g>
+</svg>
