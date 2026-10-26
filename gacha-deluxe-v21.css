@@ -458,3 +458,20 @@
   .gacha-page #gachaStage.mio-scene-blended .mio-stage-scenery,
   .gacha-page #gachaStage.mio-scene-blended .mio-stage-art{animation:none!important;transition:none!important;}
 }
+
+
+/* v2.1.5 compatibility: keep UR climax bloom from the original FX.
+   The normal ::after is intentionally softened, but UR must still shine. */
+.gacha-page #gachaStage.mio-scene-blended.v191-rarity-ur::after{
+  inset:-18%!important;
+  border:0!important;
+  border-radius:0!important;
+  background:radial-gradient(circle at 50% 42%,#fff9 0 5%,#7fefff55 18%,#ff6aca30 38%,transparent 67%)!important;
+  mix-blend-mode:screen;
+  animation:v191-ur-pulse .46s ease-in-out infinite alternate;
+}
+@media(prefers-reduced-motion:reduce){
+  .gacha-page #gachaStage.mio-scene-blended.v191-rarity-ur::after{
+    animation:none!important;
+  }
+}
