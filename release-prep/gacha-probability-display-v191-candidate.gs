@@ -502,6 +502,9 @@ function participantCatalog_(catalog,wonKeys){
     ready:catalog.ready&&available.length>0,
     message:!catalog.ready?catalog.message:available.length?'抽選できます（取得済み景品は除外済み）':'対象景品をすべて獲得済みです',
     total:available.length?100:0,
+    // Only the staged cross-mode deduplication backend advertises this.
+    // Legacy GAS MUST NOT silently qualify for a fresh draw.
+    safetyRevision:'mio-crossmode-nodup-v1',
     prizes:prizes
   };
 }
