@@ -212,3 +212,13 @@
 - 専用GitHub Actions `.github/workflows/gacha-safe-catalog-contract.yml` と `tests/gacha-safe-catalog-contract.test.mjs` を実行。**今回の変更に限定した新規13/13 PASS、0 FAIL**：[GitHub Actions 40439299143](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40439299143)。`gacha-page.js`、`api-gacha.js`、`gacha-contract.js` の構文検証も成功。元の合格済み機能テストは再実行していない。
 - 同コミット `f886c3aafb3c657d70184f27473ab93af0586a1f` のプレビューVercelは READY と確認。**本番環境へは昇格していない**。
 - 重要：2026-10-26現在本番シート受付スイッチは通常・ラキフェス両方OFF。**勝手にONへ変更禁止**。本番GASの現行HEADの取得と最終互換確認、既存端末復旧との影響確認は残存。全体の本番公開は未実施。
+
+ 
+## 追記：2026-10-27 ガチャ画面の実ブラウザ安全契約テスト（新規12件）
+- 前回の新規 `gacha-contract.js`、`gacha-page.js`、`api-gacha.js` による**旧GAS応答での新規抽選停止**を、静的コード検査だけでなく、ローカルHTTP上で実際のChromeを使って画面操作可能状態まで確認した。
+- 新規ファイル `tests/gacha-safe-catalog-browser-e2e.mjs` と `.github/workflows/gacha-safe-catalog-browser-e2e.yml` をガチャ専用featureに保存。`gacha-page.js` の `isPreview` は**テストサーバーが返す一時的なJS文字列だけ**でオフにして認証済み画面フローを模擬。本番GitHubファイルをプレビュー解除に改変していない。
+- Playwrightのブラウザ画面から、**ローカル127.0.0.1のすべての /api/status、/api/gacha を架空の固定応答でモック**。運用中Vercel / GAS / Sheetsへの通信、実当選、残権利消費は一切なし。
+- **375px・430pxの各6ケース（計12件）すべてPASS、実抽選API要求0件**：[GitHub Actions 40440700532](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40440700532)。ケースは旧GAS項目不足で両ボタン停止、正しい現行応答で4回未満は通常のみ、管理者の両受付OFF、4回確定後の5回目ラキフェス解放、矛盾したラキフェス解放状態を拒否、残0で停止。画面例外・横スクロールなし。
+- 最初の試行で9ケース通過後、`focus/visibilitychange` による**仕様どおりのカタログ自動再取得**が1件の「ちょうど1回だけ読み取り」の厳格すぎるテスト判定に引っかかった。判定を「1〜3回の読取は許容、抽選要求は絶対0」に修正した。
+- 次の試行のChromiumインストールがGitHub側で遅延したため、Chrome搭載runnerを使用するようテスト用ワークフローとtestの起動オプションだけ変更。アプリ側の抽選本体・権利・景品・デモ演出は修正していない。成功した実行IDは `40440700532`。
+- **この合格はモックによる新しい安全契約テストのみ**。稼働中GAS現行ソース照合・実ブラウザでのライブ連携（権利消費なし）・デプロイ公開可否はまだ未確認。本番でのガチャ受付スイッチを勝手に変更しない。ほかチャットの端末復旧変更をマージ・上書きしない。
