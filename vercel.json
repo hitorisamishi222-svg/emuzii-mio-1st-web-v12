@@ -70,6 +70,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "gacha-contract.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gacha-mem-01.jpg",
       "use": "@vercel/static"
     },
@@ -231,6 +235,18 @@
     },
     {
       "src": "gacha-royal-integration.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-deluxe-v21.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-deluxe-v21.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
     },
     {

@@ -1,0 +1,287 @@
+# みおシステム｜ガチャ優先・安全確認と引き継ぎ（2026-10-25）
+
+> 対象：通常ガチャ・ラキフェス・王宮クジラ豪華演出。**本番未変更。静的検査と読み取り専用監査のみ。** 本記録は他チャットで同じ作業を繰り返さないための引き継ぎ資料。
+
+## 変更してはいけないもの
+- 正本は**稼働中のGAS・スプレッドシート・公開Vercel**。GitHubの`Code.gs`は現行GASの正本と断定しない。
+- 現行本番URL、MIO-ID、Web登録、参加者承認、皆勤、ガチャ権利、当選履歴、FAを保護。勝手な本番変更・本番抽選・リセットは禁止。
+- 他チャットの端末復旧・新規登録開発と作業を重複させない。新リポジトリ／新Vercelプロジェクト／新Apps Scriptプロジェクトを作らない。
+
+## 2026-10-25確認済み
+- GitHub: `hitorisamishi222-svg/emuzii-mio-1st-web-v12`
+- ガチャ演出専用ブランチ：`feature/mio-royal-gacha-deluxe-20261023`。`main`に対して**ahead 12 / behind 5、diverged**。まるごとマージせずガチャ関連差分だけ検討。
+- 豪華演出の追加は `gacha-deluxe-v21.js` と `gacha-deluxe-v21.css`、`gacha.html`の読み込み設定、`vercel.json`の静的ファイル登録。本ブランチの`gacha-page.js`は`main`と同一。抽選APIは今回変更対象外。
+- 開発側 `data/gacha-prizes-v2-preview.json` を静的検査：**計27景品／通常16・ラキフェス11／確率100%ずつ／景品ID重複なし／画像パス27点**。これはプレビュー用データであり、稼働中の`emuzii_景品設定`が同じとは未検証。
+- 開発側 `release/v2-next-integrated-replica:Code.gs`（SHA `732371bce7a008b8e3606f866625f91b1df1aaf8`）について静的検証**16/16項目PASS**：権利・登録承認・ガチャ公開ゲート・5回条件・Web4回の実抽選後解放・drawId照合とリプレイ・ScriptLockの処理区間・重複景品除外・当選履歴の画像とレア度・景品設定の基本整合。
+- **注意**：`main:Code.gs`（SHA `6828891b3c52e59566cfab59e416e5d2a3363084`）では`festUnlocked:total>=5`でありWeb4回抽選条件はない。対して上記統合開発版は`history.length>=festAvailableFrom-1`を表示とサーバ側の抽選拒否で使用。公開GASがどちらの仕様かは未確認。**旧`Code.gs`をGASへ上書きしない**。
+- GAS本番接続・権利消費の実機試験・並列抽選・ガチャ管理公開スイッチ反映・実際の27景品は**未検証**。静的検査合格は本番運用可を意味しない。
+
+## 次に進める工程（安全順）
+1. **本番GASの現行ソースを読み取り専用で取得し比較**（Code.gsほか全ファイル、バージョン・公開状態を確認。編集／実行／デプロイなし）。
+2. **本番スプレッドシートの読み取り専用照合**：`emuzii_景品設定`、`emuzii_管理画面`の公開スイッチ、`emuzii_ガチャ`、`emuzii_当選履歴`。本番データの上書きやダミー参加者の混入は禁止。
+3. GASソースとのAPI契約差分を解消した**ガチャ限定パッチ**を作成。特に`festEntitled`/`festUnlocked`/`nextOrdinal`/`festAvailableFrom`/`webDrawsUsed`、`remaining`、`rarity`、`image`、重複防止、ScriptLock。
+4. **分離テスト環境**で「権利0/4/5以上」「Web抽選0〜5」「公開ON/OFF」「同一drawIdの再実行」「異なるdrawIdの同時実行」「景品重複と在庫切れ」「通信切断復旧」「Android/iPhoneスマホ画面」「演出スキップ」の重点検証。
+5. 本番変更は検証結果と差分を提示して、**ユーザー承認後にのみ**実施。データのバックアップとロールバック導線を確保。
+
+## 作業境界
+このチャットは**ガチャ限定**。他チャットは端末認証復旧・皆勤・登録・FA等を継続。ガチャ側から個人IDや端末復旧の処理を独断で修正しない。
+
+## 検証の区分
+- 設計・静的チェック：済
+- 模擬テスト／分離環境の実行：未実施
+- 本番GAS現物確認：未実施
+- スマホ実機テスト：未実施
+- 本番反映：未実施
+
+## 追記：2026-10-25 新規検証（他チャットとの重複防止）
+- GitHub Actions で既存の静的／仮想抽選テストは **32/32 PASS**（[実行記録](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40158460174)）。**合格済みは再実行しない**。
+- 実際の Google Sheets は、GitHub `Code.gs` の `SHEET_ID` とファイルIDが一致。Google Drive上に複数の類似ファイルがあるため、**名前だけで正本を選ばない**。
+- 実際のシート（**読み取りのみ**）には、`emuzii_景品設定` 10列・`emuzii_当選履歴` 14列・`emuzii_ガチャ` 17列あり、統合開発版の列構成に一致。
+- 管理画面の **B23 = 5**、受付スイッチ **B141 = FALSE、B142 = FALSE**（観測時点。今後変更される場合があるので実行直前に再読込）。
+- **27件すべて有効、通常16種とラキフェス11種が各100%、画像URLが全件HTTPS、正規の `gacha-mem-*.jpg`・`gacha-lf-*.jpg` パスと一致**。景品ID・名前・確率は開発側プレビュー設定と27/27一致。数量上限は全件未設定（無制限指定）。
+- **通常とラキフェスで同名景品が7件**。統合開発版では被り判定キー空欄時に正規化景品名が使われる。空欄はエラーではない。
+- 追加で GAS の `doPost` を模擬した **認証・ロック境界テスト12/12 PASS**、失敗0（[実行記録](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40165021645)）。テストコード：`tests/gacha-lock-boundary.test.mjs`。旧32ケースの再実行は行っていない。
+- この新規テストでは偽Web ID／偽トークン、管理者OFF、端末無効化、秘密鍵不一致、二重送信、異なる抽選ID、残回数不足、書込失敗時のロック解放を検証。**本番GAS実行も実データ書込もなし**。
+- Vercel固定URLの現在の本番デプロイは `main` のコミット `fba04e96fb149503611872cf0c48980db69d0e3c` と確認。ガチャブランチ変更はプレビューにのみ反映されており、固定の本番URLを変更していない。
+- **重要な未完了作業**：稼働中の Google Apps Script プロジェクト現物のソース取得。現在利用可能な Drive/GitHub/Vercel の読み取り機能は GAS 本体の直接取得に対応せず、GAS現物と統合開発版を同一だと断定できない。**代わりに本番GASへ推測パッチを書き込まないこと**。
+- 実機操作：ここまで不要。公開前に管理者認証・公開スイッチ・プレビュー画面の確認が必要になった場合だけ、明示して依頼。
+
+## 追記：2026-10-25 通信切断後の結果復旧・新規検証
+- **新規5ケースすべてPASS**：抽選結果レスポンス喪失時に同じ `drawId` で当選結果を再取得、受付OFFになった後も過去結果の読み直し可能、新たな別ID抽選は受付OFFで拒否、別Web参加IDおよび別MIO-IDからのリプレイ拒否。
+- GitHub Actions：[gacha retry recovery checks（5 PASS / 0 FAIL）](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40165658370)
+- 実行したのは `tests/gacha-retry-recovery.test.mjs` の**新しい5項目のみ**。既に合格している32＋12項目は再実行していない。現在の確認済みケース数は **累計49件**。
+- **検証範囲に注意**：GAS **開発版** `release/v2-next-integrated-replica:Code.gs` をメモリ上の疑似シートで実行したサーバ側ロジックの結果。ネットワーク断やブラウザのストレージ消失を再現した実機・E2Eテストではない。公開中GAS正本の取得・比較はまだ未実施。
+- **実機操作の依頼中**：王宮クジラ豪華ガチャ v2.1プレビューで通常・ラキフェス・スキップの3動作。ユーザーから実機結果が届くまでは未合格に保持。現時点で追加の実機操作依頼は不要。
+- **安全状態**：固定本番URL、本番GAS、本番シート、ガチャ受付スイッチに書込なし。変更はガチャ専用ブランチのテスト2ファイルとこの引き継ぎ記録のみ。
+
+## 追記：2026-10-25 ブラウザによる豪華演出プレビューテスト
+- 未実施だった**実ブラウザ操作**の検証をガチャ専用ブランチで実施（Chromium headless、ローカル静的プレビュー、実データなし）。
+- **390pxスマホ模擬ビュー 1シナリオPASS**：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40166049446)。両モードの体験・スキップ・ダミー結果表示・抽選APIリクエスト0件・JavaScript例外0件を検証。テストファイル：`tests/gacha-browser-demo.mjs`。
+- 390px合格済みテストは再実行せず、**375px／430pxの2幅だけ追加テスト PASS**：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40166175487)。横スクロール・筐体と操作領域の画面内収まり・動きを抑える設定での演出完走・抽選API通信0件を検証。テストファイル：`tests/gacha-mobile-layout.mjs`。
+- **確認済み49件＋新規ブラウザ操作1シナリオ＋追加2幅の表示テスト**。ブラウザテストはGAS稼働接続でも実端末確認でもない。本番API/本番ガチャ権利は使用していない。
+- **実機未完了**：ユーザー本人のiPhone/Androidによる通常・ラキフェス・スキップ3確認は引き続き報告待ち（今は重ねて操作を要求しない）。実機合格扱いにしない。
+- **公開中GASの現行ソース取得未完了**、本番反映なし。上記のテストはソース・ローカルブラウザ上の開発ブランチ版に限定。
+
+## 追記：2026-10-25 ブラウザ通信断／再読み込み・保存失敗検証
+- **新規実ブラウザ仮想APIテスト 1シナリオPASS**：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40166575888)。抽選確定直後に応答を破棄、ブラウザが保持した同一 `drawId` で再確認、バックエンドの仮確定は一度だけ、復旧後は保留キー削除。テスト：`tests/gacha-browser-recovery.mjs`。
+- **その後に追加した別シナリオ2件PASS**：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40166696115)。①抽選応答欠落後に**ページを再読み込み**しても同一 `drawId` で結果復旧（重複消費ゼロ）、②ブラウザの `localStorage.setItem` が拒否された場合は**抽選APIへ一切アクセスせず**安全に停止。テスト：`tests/gacha-browser-reload-storage.mjs`。
+- **全ネットワークをPlaywright内で横取り**する方式で、実本番URLと同じホスト名を模した画面を起動しただけ。本番Vercel・GAS・SheetsへのHTTPアクセスなし、実抽選なし。
+- 前回合格の49件の論理/静的テスト、390px表示テスト、375px/430px表示テストは**今回再実行していない**。
+- **重要**：実際の通信網・iOS/Androidブラウザ・GAS正本に接続した結合試験ではない。実機・本番GAS現物の検証は依然未合格/未取得。
+
+## 追記：2026-10-25 HTTP 200エラー・不完全当選結果の実装修正
+- `gacha-page.js`（**ガチャ専用featureブランチのみ**）の通信応答判定を修正。HTTPステータスに加え、`d.ok===true`を必須にした。
+- GASから`draw`応答を受けた後は、元の`drawId`と`mode`が厳密一致し、景品名が空でなく、通算回数が正の安全な整数として解釈できる場合**だけ**、当選カード表示・未確認抽選ID削除を行う。
+- 抽選確定に失敗した場合の案内は、`loadCatalog()`の再読み込み後も復帰・保持するよう修正。「前回の抽選結果を確認」から**同じdrawId**で安全に照合できる。
+- 新規テスト`tests/gacha-browser-ack-contract.mjs`は実ブラウザの5ケース：①HTTP200で`ok:false`、②`drawId`不一致、③景品名欠落、④mode不一致、⑤整合した正常結果。すべて外部リクエスト完全モックで、実抽選・実参加者情報は不使用。
+- **最初のテストは失敗**：エラー理由がカタログ再取得メッセージで上書きされる不具合を検出。該当UI部分を局所修正し、対象の新規5ケースを再試験。**修正後は5/5 PASS**。確認先：[GitHub Actions 40167510778](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40167510778)。過去合格済みテストは再実行せず。
+- **未完了**：稼働中GAS現物との比較、実機でのガチャプレビュー操作、実際の本番APIとの連携試験。**本番main・固定URL・GAS・スプレッドシートは変更しない**。
+
+## 追記：2026-10-26 当選レスポンス参加者照合・残回数検証（ガチャ専用）
+- `gacha-page.js` の `execute()` に **participantIdと現在セッション参加者IDの一致チェック** を追加。`drawId`・種類・景品・通算回数に加え、`remaining` があれば非負の安全な整数であることを要求。不正・欠損した識別情報の結果を当選確定扱いにしない。
+- 稼働中GASの旧形式との後方互換のため、`remaining` が省略されているときは誤った「残り0回」を表示せず、最新ガチャ情報の確認を案内。参加者ID自体は必須。
+- 関連ブラウザ確認の内容を **10ケース** に更新（旧5ケース＋新5ケース）。追加は「別参加者」「参加者ID欠損」「残回数負値」「文字列通算回数」「残回数省略の旧形式正常応答」。
+- テストが更新直後に不合格となった原因は、非同期カタログ再読込中に中間メッセージを検査したタイミング競合。テスト側を最終状態待ちに変更し、**関連10ケース全件PASS／失敗0件**：[GitHub Actions実行](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40253378572)。過去の独立テスト群は手動で再実行していない。
+- 変更コミット：`gacha-page.js` は `921c05b9e5e418b8ab6abfe1239421b3eeb3578b`、テスト調整後は `e4f473781f6f22fb1198140cc863a58413c38510`。
+- **未完了・守るべき境界**：GAS本番ソースは直接取得できていない。スマホ実機での豪華演出も未合格。公開用main、固定Vercel本番URL、本番Apps Script、本番スプレッドシート、抽選権利には変更を加えていない。ブランチの丸ごとマージは禁止。
+
+## 追記：2026-10-26 ライト単調回転のユーザーフィードバック対応
+- **ユーザーからの実機指摘**：「ライトがクルクル回るのが一方方向で演出効果を下げている」。
+- 原因：`style.css` の `.gacha-stage.draw-active .stage-lights` が `beam-spin 1.15s linear infinite`（360度の一方向回転）。基本の抽選処理ではなく演出CSSの問題。
+- **ガチャ専用ブランチのみ修正**：`gacha-deluxe-v21.css` に v2.1.1 の差分を追加。元の一方向回転を優先度の高いCSSで置き換え、青と金の2本の疑似要素ライトを逆方向に振り、前後に往復・交差・明暗変化。チャージ中とラキフェス時の輝きも段階変化。光線はガチャ画面内に収め、当選表示は覆わない設計。低モーション設定では停止。
+- 新規テスト：`tests/gacha-crosslight-motion.mjs`、自動実行は `.github/workflows/gacha-crosslight-motion.yml`。**過去の合格済みテストは手動再実行していない**。
+- 最初の新規テストはCSS疑似要素が `Element.getAnimations()` に列挙されないというテスト側の問題で失敗。テストを**ブラウザで実際にレンダリングされた7時点の回転角を検査する方式**に修正。
+- **修正後PASS**：青・金・ベース光線が正逆両方向に振れ、青／金が開始時逆向き、デモスキップ正常、抽選APIへの送信なし、ブラウザ例外なし。低モーション設定でもアニメーション停止を確認。[GitHub Actions 40254202943](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40254202943)
+- Vercelの新プレビュー `https://emuzii-mio-1st-web-v12-c0d143yns-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1` は当該テスト修正コミットで READY を確認。**本番固定URLは変更していない**。
+- **実機確認未完了**：ユーザーのiPhone/Androidによるライトの印象・演出スキップ・視認性は現時点で未合格。抽選権利・GAS・本番Sheet・景品は一切変更しない。
+
+## 追記：2026-10-26 スマホ実機スクリーンショットの結果カード位置修正
+- ユーザー提供のiPhone画像を目視確認：`UR・DEMO` の大きな当選結果カードが王宮クジラ筐体（表紙）中央を隠している。ユーザーコメント「表紙位置」に対応。
+- **開発ブランチのみ**、`gacha-deluxe-v21.js` で `drawResultCard` を `gachaStage` の内部から直後の独立結果表示領域へ移動。**通常／ラキフェスの実結果とデモ結果の両方が同じ配置**。デモ完了時に結果領域をスクロール表示。
+- `gacha-deluxe-v21.css` に独立カード `.mio-result-dock` のネイビーブルー＋ゴールド枠、スマホサイズ、画像・文字の自動収まりを追加。`[hidden]`は非表示維持。絵そのもの・抽選確率・残権利・GAS・本番データを変更していない。
+- **対象の新規ブラウザテストのみ実行**：`tests/gacha-cover-result-position.mjs` で 375/390/430px の3幅、URデモ、元のクジラ画像保持、結果カードが舞台より下・舞台画像を覆わない、横はみ出しなし、抽選API 0件、JS例外0件を検証。3/3 PASS：[GitHub Actions](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40254868075)。過去に合格した他のケースは不要な再実行をしていない。
+- Vercelプレビュー `https://emuzii-mio-1st-web-v12-leo1b9juy-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1` はREADY。固定本番URLは`main`で変更していない。
+- **実機表示結果は修正後未確認**。ユーザーから再度のiPhone/AndroidスクリーンショットまたはOK報告を受けるまで合格扱いにしない。
+
+
+## 追記：2026-10-26 海中王宮の背景強化 v2.1.6（ガチャ専用）
+- ユーザーの「背景が質素・王宮感や奥行きが弱い」という指摘に対応。**明るさ調整ではなく建築的な背景を実装**。
+- 既存ブランチ `feature/mio-royal-gacha-deluxe-20261023` だけに `assets/mio-undersea-palace-stage.svg` を新規作成：大きな海中アーチ、左右の柱、宝石、光芒、段差のある反射床。SVGは単体作品でタイル・網目・反復模様なし。
+- `gacha-deluxe-v21.css` の末尾へ **v2.1.6 差分のみ**を追記し、`.mio-stage-scenery` に宮殿画像を設定。既存 `.mio-stage-art` の王宮クジラ実画像は無変更かつ手前表示。ラキフェスは金色の薄い光層を追加。抽選権利・参加者情報・景品確率・GAS・API処理は変更なし。
+- 明示ビルド式の `vercel.json` に上記SVG 1ファイルだけを追加。本番固定URLと `main` には変更なし。
+- **今回新規のみに限定した独立ブラウザテスト** `tests/gacha-palace-scenery.mjs` を追加し、`.github/workflows/gacha-palace-scenery.yml` で実行（他の合格済みテストを手動再実行しない）。
+- **375px/430px、通常＋ラキフェス全てPASS**。宮殿SVGのHTTP 200読込、元のクジラJPG保持、重なり順、結果カードが舞台下、横スクロールなし、実API要求0件、JS例外0件を確認。[GitHub Actions 40264475224](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40264475224)（成功ログで両幅PASSを確認）。
+- 最新のプレビューは `https://emuzii-mio-1st-web-v12-b0gb63obt-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1`（Vercel READY、`6521691b3ce93c8e334532e10bdc61e1f9479647`、本番ターゲットではない）。
+- **未合格として維持**：利用者のiPhone/Android実機での背景の見え方・デザイン評価、公開中GAS現物比較、本番ガチャ動作検証。本番公開は未実施。デモページは実際の抽選を行わない。
+
+
+## 追記：2026-10-26 ユーザー確認「ＯＫ」
+- 海中王宮背景 v2.1.6 の新プレビュー提示に対して、ユーザーから「ＯＫ」の応答あり。**背景デザインの確認・承認**として記録。
+- これはプレビュー背景・見た目への返答であり、**通常ガチャ／ラキフェスの実抽選、デモのスキップ操作、景品付与、GAS連携などの機能実機試験の合格報告ではない**。それらの未確認状態は維持する。
+- GitHub Actionsの新規背景テスト 375px/430px は既に2/2 PASS。**変更がない限り再実行不要**。
+- 本番公開・本番GAS・参加者データ・景品設定・ガチャ回数への操作承認とは解釈しない。稼働中GAS正本との比較後にリリースを判断する。
+
+ 
+## 追記：2026-10-26 重複当選防止・履歴互換強化（未適用パッチと重点試験）
+- **運用ルール再確認**：同一参加者に同じ景品が2回出ない（通常＋ラキフェスの共通判定）。景品履歴はMIO-IDに紐づく確定履歴を永続保存。管理者が過去の当選履歴を削除・上書きしない。
+- 開発版 `release/v2-next-integrated-replica:Code.gs` の従来 `wonDuplicateKeys_` は **1つの文字列キーに優先順位をつけて単独照合**する仕組み。過去の被り判定キーと現在の景品名が変更されたケース、および通常／ラキフェスで同名なのに別の明示キーを使用するケースを完全には網羅しないことを確認。
+- **本番を一切触らず**、ガチャ専用ブランチに局所差分 `patches/gacha-won-duplicate-keys-replacement-v216.gs` を作成。履歴の「旧景品ID・旧景品名・旧被り判定キー」と最新カタログの「景品ID・名称・判定キー」を連結して参照し、同じ景品を重複抽選対象から除外。別参加者の履歴や「取消」履歴は除外対象にしない。
+- **重要**：このパッチは現在の `Code.gs` の**1関数だけを将来置換する独立ファイル**。単独で本番Apps Scriptに追加してはならない（同名関数重複の危険）。現行GASが未取得なので本番への移植・反映は禁止。
+- 新規テスト `tests/gacha-dedup-historical.test.mjs` および専用ワークフロー `.github/workflows/gacha-dedup-historical.yml` は、元の開発側 `Code.gs` をメモリ上で置換し、偽の参加者と偽のSheetsだけで動作確認。他の過去合格済みテストを手動再実行していない。
+- 試験内容：通常/ラキフェスで同名・キー不一致、当選後の名前変更＋キー変更、過去ID欠落・旧キー欠落、正規化（大文字・空白）、取消履歴無視、他参加者履歴の分離、通常側重複防止、全獲得時の抽選停止、通常→ラキフェスの連続抽選。
+- 初回失敗はテストのコメント行が関数一致検査に含まれたためで修正。次の失敗は模擬履歴の1行を配列ではなく各セルへ展開していたテストデータ作成ミスを修正。**修正後10/10 PASS、失敗0**： [GitHub Actions 40283100315](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40283100315)。
+- **保証範囲の限界**：当選履歴とカタログの景品ID・名称・判定キーの**3つすべて**を無関係な値に変更した場合は自動推定できない。運営は最初から安定した `被り判定キー` を割り当て、景品名や画像を更新してもキーを変えず、過去当選履歴を消さない方針とする。
+- **未完了**：公開中のApps Script現物との互換確認、本番反映、実際の権利消費を伴う試験。プレビュー背景とガチャ本番のデータ・権利・抽選口は変更なし。
+
+- **並行変更を発見（2026-10-26）**：`main` は別作業によるPR #42（管理者承認済み2ブラウザ復旧）をマージして `a701935c72c8f2fd37dd798c269c28376081494e` に進んだ。`api-status.js` と新規 `mio-admin-approved-light-recovery.js` の変更を今回のガチャ作業で上書きしてはならない。こちらが今回書き込んだのは**ガチャ専用featureブランチだけ**。`main` のGASやガチャ重複防止パッチは更新していない。今後ガチャのみの選択的統合と影響確認が必要。
+
+ 
+## 追記：2026-10-26 景品27枠・固有20種の全獲得シミュレーション（未公開・新規3件のみ）
+- ユーザーの「ダブりはなし／当たった景品は二度と出さない」を、開発版 `release/v2-next-integrated-replica:Code.gs` のガチャ実関数と未反映の `patches/gacha-won-duplicate-keys-replacement-v216.gs` の組合せで検証。
+- 開発版 `data/gacha-prizes-v2-preview.json` の全27枠（通常16・ラキフェス11・共通7、景品名で固有20）を**読み込み、メモリ上の架空参加者と架空シートだけ**で抽選。実際の本番抽選API/GAS/Sheetsにはアクセスせず、権利消費はなし。
+- 新規テスト `tests/gacha-full-27-prizes.test.mjs`：①通常16→残るラキフェス4（20/20異なる当選）、②通常4→ラキフェス11→通常5（20/20異なる当選）、③当選済みを両モードの候補から除外し残った候補へ確率を再配分。
+- **新規3/3 PASS、0 FAIL**。全20景品獲得後は、通常／ラキフェス両方の候補リストが空になり追加抽選が拒否され、残りの権利は維持。[GitHub Actions 40285572659](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40285572659)。
+- 今回の新規テストのみ実行。**合格済みの歴史的重複対策10ケース、背景2幅等は再実行せず。**
+- 大切な未完了：実稼働GASは依然未取得。Google Driveの接続2アカウントから既存Apps ScriptプロジェクトIDをメタデータ照会しても404（Driveファイル取得機能ではGAS現物の取得を保証しない）。**公開中GASの無断修正は禁止**。独立パッチを本番に直接追加してもいけない。
+
+ 
+## 追記：2026-10-26 承認済み2ブラウザ／同一MIO-IDの重複防止テスト
+- **新規8件だけ実行**：[GitHub Actions 40286224242](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40286224242)、**8/8 PASS・0 FAIL**。既合格の27枠全抽選3件、履歴互換10件、画面のテストは再実行していない。
+- 新規テストファイル：`tests/gacha-two-approved-browsers.test.mjs`、専用 `.github/workflows/gacha-two-approved-browsers.yml`。開発側 `release/v2-next-integrated-replica:Code.gs` の抽選関数へ**未反映の履歴強化1関数パッチ**だけ仮に置換し、架空参加者・架空シートで実行。
+- チェック内容：①WebブラウザA当選品のブラウザB側除外、②B側の次回抽選番号・残権利・非重複、③AのdrawIdをBで再送しても拒否、④A自身の再送はリプレイ扱いで消費なし、⑤Aが承認取消でもBは履歴維持して正常継続、⑥同名でも別MIO-IDの別人は独立、⑦旧形式の当選履歴（N列被りキー空欄）を両ブラウザで共有、⑧Aで残権利0のときBでも抽選拒否。
+- **限界**：これは `gachaAction_` 単体の模擬テスト。ブラウザのCookieの実物、公開中GASの `doPost` による認証、現行端末復旧コード、および**実際の同時リクエストの原子性**までは本テストで証明していない。開発GASの `doPost` には ScriptLock があるが、公開中GAS現物は未取得のため公開中の安全性を断定しない。
+- 本番 `main`、GAS、Vercel、景品設定、参加者・当選・権利データへの変更なし。このチャットの変更はガチャ専用ブランチの新規テスト2ファイルとこの記録だけ。
+
+ 
+## 追記：2026-10-26 承認済み複数ブラウザの抽選重なり・ScriptLock割込テスト
+- ガチャ専用開発ブランチに `tests/gacha-interleaved-draw-lock.test.mjs` と専用GitHub Actions `.github/workflows/gacha-interleaved-draw-lock.yml` を新規追加。
+- `release/v2-next-integrated-replica:Code.gs` の実際の `doPost` を、偽のWeb登録2ブラウザ（同一MIO-ID）と別MIO-ID、偽シートで動作させ、過去当選を保護する未公開の `wonDuplicateKeys_` 置換案をメモリ上だけで適用。実GAS・実スプレッドシートとの接続なし。
+- **新規6/6 PASS、0 FAIL**：[GitHub Actions 40287385009](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40287385009)。既存合格済みテストは再実行せず。
+- 対象ケース：①残り1権利でA書込直前にBが入る→B処理中で拒否、確定後も残権利0で拒否、②残り2権利→B再試行で2回目・別景品、③AのdrawIdをBが横取りしても拒否、④Aが書込失敗→ロック解除後Bが1回目を確定、⑤4回目の確定前にラキフェス要求は割込拒否・確定後の5回目で解放、⑥別MIO-IDも共有ScriptLockによって順序制御され、当選自体はMIO-IDごとに独立。
+- テスト方式は `appendRow` の中から別 `doPost` を呼び出す**決定的な割込注入**。ScriptLock取得中の別リクエスト拒否と解除後の履歴再読込を検証したもの。**実ネットワークでの並列実行、実Google LockService、GASの本番ソースおよび運用環境そのものは未検証**。
+- `main`、本番Vercel、稼働中GAS、運営の景品・当選履歴・参加者権利は今回変更していない。ほかチャットの端末復旧作業の変更を上書きしない。
+
+ 
+## 追記：2026-10-26 本番GASソース照合／一関数だけの安全な差分候補生成（未公開）
+- 既存の本番Apps Scriptプロジェクト `11cJZBh9YzbFTd9ciqMbfgOWdfUEtfAbLAhdvkYipxT0B0_cMhes_xmJe` は、接続中Google Driveの2アカウントのメタデータ照合では404、DriveのScript MIMEタイプ検索は両アカウントで0件。Apps Scriptプロジェクトの稼働中全ソースを取得するアクションは接続中ツールに存在せず、関連プラグインも見つからなかった。**GASと本番データは依然未取得・未変更**。
+- 新規 `tools/gacha-gas-dedup-preflight.mjs`：**別途読み取り専用で取得した本番Code.gs**、既知の開発側参照Code.gs、履歴重複防止パッチ1関数を3つの入力として受け取る。既存関数の数・完全一致・LockService/主要依存関数の存在を確認。安全な場合だけ**出力先の別パスに候補ファイルとJSON結果**を書き出し、入力ファイルや運用中GASへは決して書かない。
+- 照合対象の関数が想定外に編集されている場合、関数が欠落・重複している場合、ロックや主要依存関数が認識できない場合、出力先ファイルが存在する場合は**fail-closed**で停止。すでに適用済みの場合も候補ファイルを二重作成しない。別チャットの無関係なソース変更はバイト単位で保持。
+- 新規9ケース `tests/gacha-gas-preflight.test.mjs` とCI `.github/workflows/gacha-gas-preflight.yml` を追加。**9/9 PASS・0 FAIL**：[GitHub Actions 40289824822](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40289824822)。既に合格した重複防止・2ブラウザ・同時ロック・景品27枠のテストは再実行せず。
+- 使用上の制約：現行GASの**全体の動作互換性や管理者の端末復旧機能の動作**を本事前検査だけで証明できるわけではない。最終公開に進むには現行稼働GASソース取得・影響箇所レビュー・ステージング接続試験・管理者承認が必要。候補をGASへ自動適用しない。
+- 本番main・GAS・Vercel URL・シート・景品・当選履歴・抽選権利を変更していない。変更対象は専用featureブランチ内の新規ツール、テスト、CIと本文のみ。
+
+ 
+## 追記：2026-10-26 旧GitHub `main` のガチャ差分・本番Sheet確認・固定キー案（READ ONLY）
+- GitHub `main:Code.gs` を開発版 `release/v2-next-integrated-replica:Code.gs` と比較。GitHub側の旧 `gachaAction_` は当選済み景品の恒久除外なし、ラキフェスも権利5以上だけでWeb4回確定条件なし。ただし**稼働中Apps Scriptの現行実コードとは限らない**。元の`main`を本番GASへ直接適用してはならない。
+- ガチャ専用featureへ `tools/gacha-legacy-main-candidate.mjs` を作成。**旧 main の `catalog_` と `gachaAction_` の2関数だけ**を開発版に由来する新ロジックに変更、重複判定に必要な4関数だけ追加した**ローカル候補**を別名で出力。現在の元ソースに未知の差分があれば停止。`setupGacha_`、`doPost`、`gachaOpenState_`、端末/登録/皆勤の認証は一切置換しない。レビュー用ファイルであり公開を行わない。
+- 専用テスト `tests/gacha-legacy-main-candidate.test.mjs` とCI `.github/workflows/gacha-legacy-main-candidate.yml` を追加。GitHub main `a701935c...` とrelease `390f167...` を固定して、候補生成・別チャットの無関係な認証変更の保全・ガチャ関数に予期しない差分があれば停止・ヘルパー重複防止・既存候補の上書き禁止・本体を丸ごと置き換えないことを新規7項目で検証。**7/7 PASS**：[GitHub Actions 40291690144](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40291690144)。
+- **重要な進展**：既存の本番スプレッドシートへの**読み取り専用接続に成功**（接続中の一方のGoogleアカウント）。実在シート `emuzii_景品設定`、`emuzii_当選履歴`、`emuzii_ガチャ`、`emuzii_管理画面` の見出し確認。
+  - 景品設定J列「被り判定キー」、当選履歴N列「被り判定キー（抽選時）」、権利の特別付与O列・Web確定抽選数P列・ラキフェス状態Q列が存在。管理画面B23はラキフェス5回目設定。
+  - 景品設定のA2:J101のみ読み取り：有効景品27、通常16＋ラキフェス11、種類ごとに設定確率100%、固有景品20、共通7組。景品ID・景品名・種類・確率・有効状態は開発版プレビューJSONの27件と**完全一致**。
+  - **被り判定キーJ列は27件すべて空欄。** 現在の開発ロジックは景品名からの代用で重複防止可能だが、後日の名前変更に弱いため、安定したキーの採用が望ましい。参加者・個人当選履歴・権利の明細は読み取りも更新もしていない。
+- **未反映の固定キー入力案**：`data/gacha-immutable-key-backfill-REVIEW-ONLY.json` をガチャ専用ブランチに保存。27景品を固有20組へ正規化、通常とラキフェスに共通する7組に**同一の不変キー**を提案。元のキー欄が空白でありID/名前/種類/確率/有効状態が一致するときのみ将来適用できる設計。**本番SheetのJ列は無変更**。公開中GASとの完全な整合性が未検証なので、まだキーの入力作業は行わない。
+- 残る重大な未完了：**現行Apps Script実ソースの取得**、本番コードの`catalog_`/`gachaAction_`と実際のヘルパー確認、競合変更を含むレビューとステージング試験。Vercel・GAS・本番Sheetには書き込み禁止を継続。
+
+ 
+## 追記：2026-10-26 本番当選履歴の匿名監査・固定キー案の互換修正
+- 接続済みGoogle Sheetsの現行本番表を**読み取り専用**で監査。`emuzii_当選履歴` の対象範囲2〜1000行から、**61レコード（確定25／テスト無効36）**。確定25はMIO-ID・景品情報・当選時の被り判定キーすべて記載。**同一MIO-ID＋確定済みの被りキーを使った二重当選は0件**（個人名・MIO-IDは保存/表示しない）。
+- 追加照合：確定履歴25件すべての景品IDが現行カタログに存在し、25件の被り判定キーは**現在の景品名と一致**。各景品IDごとの被りキー不整合0件。したがって履歴は旧形式の「景品名」キーで整合している。
+- **先に作った `MIO-GIFT-...` キー案は互換性を崩す危険があるため撤回**。開発ブランチの `data/gacha-immutable-key-backfill-REVIEW-ONLY.json` を修正し、各景品の**現在の正式名をそのまま固定キー**とする27枠・固有20種類・通常/ラキフェス共通7組の案に変更した。将来の景品表示名変更後も、このキー値は固定する。
+- この新案は**本番Sheetへ入力していない**。J列は全27件空欄のままであり、現行GASの真正ソースが未取得なので編集は保留。既存履歴N列は絶対に上書き・削除しない。
+- 固定キー案専用の新規 `tests/gacha-history-compatible-key-plan.test.mjs` と `.github/workflows/gacha-history-compatible-key-plan.yml` の**5/5 PASS・0 FAIL**：[GitHub Actions 40300870280](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40300870280)。検証内容：無断公開防止・過去履歴との互換・27件設定一致・7組のキー共有・表示名変更後のキー固定。合格済み旧テストは再実行していない。
+- ソース探索：接続Google Driveで**2026-10-11付「みお本番Code.gs バックアップ」**と**同日付のGitHub v1.9.1参照原本（明示的に本番HEAD未照合）**の2文書を発見、読み取り専用で構造を確認。いずれも`wonDuplicateKeys_`、履歴のN列参照、`ScriptLock`、ラキフェスのWeb4回条件を含むが、**2026-10-26現在稼働中GASだとは証明できない**。公開中へコピー・適用禁止。
+- プライバシー：監査は集計値のみ記録し、本人情報・当選の個別行をガチャGitHubへ保存しない。最新の稼働中ソース取得・同時実行の本番挙動照合は依然未完了。
+
+ 
+## 追記：2026-10-26 10/11 GASバックアップと開発版の関数一致・移行候補の実行検証
+- 接続Google Driveの**「みお本番Code.gs バックアップ 10月11日」**（読取専用）と、開発版 `release/v2-next-integrated-replica:Code.gs` のガチャ主要7関数 `draws_`、`normalizeDuplicateKey_`、`prizeDuplicateKeyFromRow_`、`wonDuplicateKeys_`、`participantCatalog_`、`catalog_`、`gachaAction_` を照合。空白・改行・インデントを正規化した比較では**7/7一致**。**2026-10-26稼働中のGASとは未照合であり公開承認ではない**。
+- 本番スプレッドシートからは確定履歴25件、無効テスト履歴36件、同一MIO-ID・同一キーの重複確定0を確認済み。この25件の旧キーと現行景品名は一致。景品設定J列は空のままで運用中のため、**固定キー案の即適用はしない**。履歴N列・参加者情報は一切編集しない。
+- 前回のレガシーGAS関数選択移行候補ツール `tools/gacha-legacy-main-candidate.mjs` が**別名で作った候補自体**をNodeのVM上で実行する、新規 `tests/gacha-legacy-generated-candidate-smoke.test.mjs` とGitHub Actions `.github/workflows/gacha-legacy-generated-candidate-smoke.yml` を追加。
+- 初回はテストハーネスで `--source` と `--baseline` に同じパスを渡し、安全上の「6個の異なる入力・出力パス必須」で正しく停止。元本を守るため**作業用コピーを入力**するように修正。
+- 修正後 **新規4/4 PASS、0 FAIL**：[GitHub Actions 40308236545](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40308236545)。検査内容：①生成候補が構文的に実行可能、②Web確定抽選3回時はラキフェス拒否、③Web4回後の5回目のラキフェスで通常景品重複除外と確定記録、④残り1権利の2回目の要求を拒否。テストは架空シート・架空参加者のみ。合格済みの別テストは再実行なし。
+- **区別**：この実行検証の対象は**GitHub旧mainから作ったレビュー用候補**であり、上記10/11バックアップの全体動作や現在稼働中GASの保証ではない。端末復旧・新規受付などの関数は置換していない。
+- `main`、Vercel、本番Apps Script、Googleシートへの書き込みは行わず、ガチャ専用featureのテスト・CI・ドキュメントだけ更新。
+
+ 
+## 追記：2026-10-27 開発版ガチャAPIと画面の旧GAS応答フェイルクローズ保護
+- 直前の作業結果と前後の指示を再確認。前回の `gacha-page.js` へのガード更新は**前ターン末の書込が完了しておらず**、今回の事前確認ではガード未保存と判明。今回の修正は未保存分をやり直し、**新たにVercelのサーバー側でも検査**する方式とした。
+- 共通の純関数 `gacha-contract.js` 新設。`ok`、承認有無、カタログ2種の状態、通常／ラキフェス受付、総使用数・残回数・Web確定数・次回抽選番号・ラキフェス開始回数・解放状態を確認。未知または矛盾した旧GASカタログは拒否。ラキフェスの条件は**Web確定抽選4回以降、5回目から**（B23は5）。これは現行GASの互換性を保証するものではない。
+- `gacha-page.js` では読込時・操作ボタン有効化時・抽選直前の3箇所で検査し、旧形式なら新規抽選を停止。抽選演出・過去結果表示・抽選ID等の既存ロジックは変更しない。
+- `api-gacha.js` の `draw` リクエストは、**既存のログイン済み同一Web ID**でまず読み取り専用 `bridge('catalog',identity)` を検査。欠落・矛盾・ID不一致なら GAS `draw` を呼ばずに409応答。同じ抽選IDの再送は、カタログ契約が整合している限り元の `drawId` で既存GASへそのまま通して冪等再確認を維持する。履歴やカタログ表示への新しい副作用は追加しない。**抽選ごとにGAS読取呼出が1回増える**点は負荷監視事項。
+- 明示列挙の `vercel.json` に新規 `gacha-contract.js` を静的ビルド登録。ガチャ専用featureブランチのみ変更。
+- 専用GitHub Actions `.github/workflows/gacha-safe-catalog-contract.yml` と `tests/gacha-safe-catalog-contract.test.mjs` を実行。**今回の変更に限定した新規13/13 PASS、0 FAIL**：[GitHub Actions 40439299143](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40439299143)。`gacha-page.js`、`api-gacha.js`、`gacha-contract.js` の構文検証も成功。元の合格済み機能テストは再実行していない。
+- 同コミット `f886c3aafb3c657d70184f27473ab93af0586a1f` のプレビューVercelは READY と確認。**本番環境へは昇格していない**。
+- 重要：2026-10-26現在本番シート受付スイッチは通常・ラキフェス両方OFF。**勝手にONへ変更禁止**。本番GASの現行HEADの取得と最終互換確認、既存端末復旧との影響確認は残存。全体の本番公開は未実施。
+
+ 
+## 追記：2026-10-27 ガチャ画面の実ブラウザ安全契約テスト（新規12件）
+- 前回の新規 `gacha-contract.js`、`gacha-page.js`、`api-gacha.js` による**旧GAS応答での新規抽選停止**を、静的コード検査だけでなく、ローカルHTTP上で実際のChromeを使って画面操作可能状態まで確認した。
+- 新規ファイル `tests/gacha-safe-catalog-browser-e2e.mjs` と `.github/workflows/gacha-safe-catalog-browser-e2e.yml` をガチャ専用featureに保存。`gacha-page.js` の `isPreview` は**テストサーバーが返す一時的なJS文字列だけ**でオフにして認証済み画面フローを模擬。本番GitHubファイルをプレビュー解除に改変していない。
+- Playwrightのブラウザ画面から、**ローカル127.0.0.1のすべての /api/status、/api/gacha を架空の固定応答でモック**。運用中Vercel / GAS / Sheetsへの通信、実当選、残権利消費は一切なし。
+- **375px・430pxの各6ケース（計12件）すべてPASS、実抽選API要求0件**：[GitHub Actions 40440700532](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40440700532)。ケースは旧GAS項目不足で両ボタン停止、正しい現行応答で4回未満は通常のみ、管理者の両受付OFF、4回確定後の5回目ラキフェス解放、矛盾したラキフェス解放状態を拒否、残0で停止。画面例外・横スクロールなし。
+- 最初の試行で9ケース通過後、`focus/visibilitychange` による**仕様どおりのカタログ自動再取得**が1件の「ちょうど1回だけ読み取り」の厳格すぎるテスト判定に引っかかった。判定を「1〜3回の読取は許容、抽選要求は絶対0」に修正した。
+- 次の試行のChromiumインストールがGitHub側で遅延したため、Chrome搭載runnerを使用するようテスト用ワークフローとtestの起動オプションだけ変更。アプリ側の抽選本体・権利・景品・デモ演出は修正していない。成功した実行IDは `40440700532`。
+- **この合格はモックによる新しい安全契約テストのみ**。稼働中GAS現行ソース照合・実ブラウザでのライブ連携（権利消費なし）・デプロイ公開可否はまだ未確認。本番でのガチャ受付スイッチを勝手に変更しない。ほかチャットの端末復旧変更をマージ・上書きしない。
+
+ 
+## 追記：2026-10-27 選択的8ファイル統合候補と Draft PR #44
+- 既存稼働中のVercel Productionは `main:a701935c72c8f2fd37dd798c269c28376081494e` で READY、ガチャ開発featureは別 Preview で READY であることをVercelに照会確認。**本番の配信先は変更なし**。
+- `main` の認証/端末復旧/登録を保持するため、開発featureを丸ごとマージせず、公開候補8ファイルだけを比較する `tools/gacha-release-boundary-check.mjs` を新設。別の `.github/workflows/gacha-release-boundary-check.yml` で検証し、**PASS**：[GitHub Actions 40446282074](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40446282074)。既存静的ビルド87件とroute25本の完全保護、ガチャの追加ビルド4件のみ、既存ガチャAPIへ無関係な認証差分がないことを確認。mainが期待SHAでない場合は検査を停止。
+- **本番mainから専用のレビュー用ブランチ `release/mio-gacha-deluxe-candidate-20261027` を分岐**して、開発featureのガチャ専用8ファイルのみを個別にコピー。比較結果は `main` に対し **ahead 8 / behind 0、変更ファイルちょうど8件**。取り込み対象：更新 `api-gacha.js`, `gacha-page.js`, `gacha.html`, `vercel.json`; 新規 `gacha-contract.js`, `gacha-deluxe-v21.js`, `gacha-deluxe-v21.css`, `assets/mio-undersea-palace-stage.svg`。
+- このブランチのVercel Previewは `e8e875b7433c86fe250fafc090c77892c4432ed1` で **READY、target=null（本番ではない）**。
+- **Draft PR #44（レビュー専用／DO NOT MERGE）**：https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44。Merge/releaseは未実施。PR本文に4項目のブロッカー（現行GASソース未取得、実データ保護・端末復旧影響、ライブ読取連携、管理者最終承認）を明示。
+- 2026-10-26に確認した本番Sheetの受付スイッチ2つはOFF、今回も変更なし。確定履歴25件・景品27枠・各種バックアップは保護。**実際の抽選と権利消費を伴う動作は本番で行っていない**。
+- **次**：稼働中Apps Scriptの全ファイルを読み取り専用で取得し、10/11バックアップ・開発版・現行本番の実差分を確認する。現行ソースを確認するまでDraft PRをReadyにせず、マージ/昇格せず、管理画面スイッチを触らない。
+
+ 
+## 追記：2026-10-27 PR #44 8ファイル統合候補の独立ソース完全性監査
+- 対象PR：**[Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44)**、候補HEAD `e8e875b7433c86fe250fafc090c77892c4432ed1`、元の本番保護 `main:a701935c72c8f2fd37dd798c269c28376081494e`。PRは `draft=true`、`merged=false`、現在未公開。
+- **候補に入れた8ファイルのGitHub blob SHAを、ガチャfeature元の8ファイルと1件ずつ読み取り専用比較。8/8完全一致**：`api-gacha.js`, `gacha-page.js`, `gacha.html`, `vercel.json`, `gacha-contract.js`, `gacha-deluxe-v21.js`, `gacha-deluxe-v21.css`, `assets/mio-undersea-palace-stage.svg`。
+- 専用 `tests/gacha-pr44-candidate-integrity.mjs` とGitHub Actions `.github/workflows/gacha-pr44-candidate-integrity.yml` をガチャ**featureブランチにのみ**追加。main・PR #44候補のソースにはテスト用ファイルを混入させない。
+- **新規監査 PASS**：[GitHub Actions 40447214293](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40447214293)。mainの保護済みSHA・候補HEADの固定、候補の祖先がmainであること、候補の変更が8コミット・8ファイルに限定されること、元featureとのバイト単位一致、Vercel既存87ビルド/25ルート保全・新規4静的ファイルのみを検証。合格済みガチャ抽選テストは再実行していない。
+- 現在稼働中のApps Scriptの全ファイルHEADは依然未取得。Google Drive検索では「10/11本番Code.gsバックアップ」と「GitHub v1.9.1参照原本（本番HEAD未照合）」のみが関連するCode.gs文書。**日付の古いバックアップを現行GASとみなしてマージ/本番公開しないこと**。
+- ブロッカー：稼働中GASソース現物・参加者の権利データ保持・認証/端末復旧/新規受付の現行動作・管理者最終判断。DraftをReadyにせず、main/Vercel Production/GAS/Sheet/景品キー/受付スイッチを変更しない。
+
+- **監査設定の是正（同日）**：初回のPR #44 8ファイル監査CIはmainの**過去固定SHA**を直接checkoutしていたため、将来mainが更新されても検知できない欠点があった。`.github/workflows/gacha-pr44-candidate-integrity.yml` のmain checkoutを **`ref: main`（実際の最新HEAD）**に変更し、監査scriptの `expectedBase=a701935c...` との比較で**変更後は失敗停止する**構成へ修正。**変更後PASS**：[GitHub Actions 40447386863](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40447386863)。この再実行は**CI設定の変更箇所の確認のみ**であり、ガチャ抽選等の合格済みテストは再実行していない。
+
+ 
+## 追記：2026-10-27 本番GASの「編集HEAD／実公開バージョン」二段照合・公開保留
+- **重要な安全条件を追加**：Apps Scriptの編集HEADとWebアプリの実デプロイ版は異なり得る。GAS側の編集ファイルだけ確認して「本番ソース確認完了」とするのは禁止。**Vercel本番のAPPS_SCRIPT_URLが指す既存/execデプロイID**、その`deploymentConfig.versionNumber`、当該versionNumberで取得した**公開中の全ソース**、編集HEAD全ソースの3組で照合する。
+- Vercel本番プロジェクトの環境変数メタデータを読み取り専用照会。**APPS_SCRIPT_URLはproductionのencrypted、APPS_SCRIPT_SECRETはproductionのsensitive設定として存在**。値や秘密情報は復号・表示・コピーしていない。GitHub `bridge.js` のURL既定値が本番の実接続先とは断定しない。
+- 公式Apps Script APIにread-only GETが存在：`GET /v1/projects/{scriptId}/deployments/{deploymentId}` と `GET /v1/projects/{scriptId}/content?versionNumber=N`、編集HEAD用の `GET /v1/projects/{scriptId}/content`。OAuth読み取り専用スコープが必要。現在接続可能なGoogle DriveからはこのApps Scriptソース／公開デプロイのAPI取得アクションがない。**稼働中GAS全ソース・versionNumberは未取得**。
+- ガチャ専用featureに、**本番非接続のオフライン照合ツール**`tools/gacha-deployed-gas-witness.mjs` を追加。本人が私有領域でGETした3種類のJSONに対し、デプロイID・scriptId一致、appsscript.json・全ソースの存在、重複関数・ScriptLock・ラキフェス4回条件・獲得済み除外等の静的条件を照合。ソース本文や機密IDは表示せず、結果は必ずレビュー用。GitHubへの個別GASソースのアップロードはしない。
+- 専用 `tests/gacha-deployed-gas-witness.test.mjs` と `.github/workflows/gacha-deployed-gas-witness.yml` の**架空コード・架空デプロイの新規8/8 PASS・0 FAIL**：[GitHub Actions 40448616977](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40448616977)。既合格の旧テストは再実行していない。
+- 実際の取得とチェックの手順は `docs/GACHA_PRODUCTION_GAS_WITNESS_RUNBOOK_20261027.md` に記録。**Apps Scriptの本番コード・シート・ガチャ権利・受付スイッチの変更なし**。
+- [Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44) の最重要ブロッカーを、HEADだけでなく**実公開バージョンの全ファイル照合**へ更新した。Draft状態は維持。変更はガチャfeatureブランチのツール・テスト・ワークフロー・文書とPRの説明文だけ。
+
+ 
+## 追記：2026-10-27 既存Vercel本番GAS接続先の一致確認（URL等は非公開）
+- Vercel既存プロジェクト `emuzii-mio-1st-web-v12` の**production限定**環境変数 `APPS_SCRIPT_URL` を、権限あるVercel読み取り操作で内部照合。現行値はHTTPSのGoogle Apps Script `/exec` の形式で、**本番GitHub `main:bridge.js` 内の既存フォールバック `/exec` とデプロイ識別子まで完全一致**。確認結果は真偽値だけ記録し、URL本文・デプロイID・認証情報・secret値はGitHub・PR・チャットへ転記していない。
+- **改善された状況**：これで「照合すべき稼働先 `/exec` が曖昧」というブロッカーは軽減。ただし、そのデプロイの**公開 versionNumber および公開版の全ソースは依然未取得**。GAS編集HEADや10/11バックアップが実行中のコードと同じだと断定してはならない。
+- [Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44) は引き続き未マージ・公開禁止。既存プロダクションのVercel環境変数自体は編集せず、受付スイッチ・参加者/当選/権利データ・本番GASにも一切変更なし。
+
+ 
+## 追記：2026-10-27 本番GAS URL確認後のリリース監査見直し
+- Vercel本番 `APPS_SCRIPT_URL`（production、encrypted）の値を読み取り専用で取得し、**既存本番 `main:bridge.js` のデフォルトApps Script `/exec` URLとデプロイ識別子まで完全一致**を確認。接続URL・デプロイID・secretの具体値は本ドキュメントにもPRにも出さない。**デプロイされたGASのversionNumber・全ソース取得は引き続き未完了**。
+- Draft PR #44から自動生成されたVercel preview（`e8e875b...`）のビルドログを読み取り専用で確認。**Deployment completed**。重大なビルドエラーは見つからず。既存 `builds` 設定に伴うVercel注意とnpm `cache-dir` 警告の2件あり、これは成功ビルドに影響しなかった。実抽選・本番GASの呼出は行わない。
+- **監査自動化の過大評価を訂正**：`.github/workflows/gacha-pr44-candidate-integrity.yml` は featureブランチの当該テスト／ワークフローファイルpushまたは手動workflow_dispatchで起動する。**本番mainが更新された瞬間に自動起動するわけではない**。ただし実行された場合は最新 `ref: main` を取得し、保護SHAと異なれば停止する。PR #44本文に **公開・マージ直前の手動再監査を必須**と追記済み。古い合格実行結果を最終判定に使わない。
+- 重要：`main` の変更・PR #44のReady化・マージ・Vercel本番昇格・GAS・Sheet変更なし。新規の抽選機能検証なし、従来合格済みテストも再実行しない。残りブロッカーは **実際の公開GASの全ソース＋バージョン確認**と最後の本番連携確認。
+
+ 
+## 追記：2026-10-27 ガチャ再読込失敗で古いカタログが残る問題・安全修正
+- 前後のコード監査で `gacha-page.js` の `loadCatalog` が通信/履歴エラーをcatchしてボタンを無効化する一方、`finally` が残っている `lastCatalog` から `setButtons(lastCatalog)` を再実行し、**直前の古い権利・受付情報で抽選ボタンを再有効化する危険**を確認。サーバー側にはdraw直前read-only preflightがあるものの、UI上の安全性として修正対象。
+- ガチャ専用featureで失敗catch時の `lastCatalog=null`・両ボタン停止、未確認drawIdがある場合は再確認ボタンを維持する局所修正を実施。**再読込が成功するまでは新規抽選を有効化しない**。認証・端末復旧・景品選択・当選履歴・抽選確定処理は変更なし。
+- 新規 `tests/gacha-stale-refresh-failclosed-browser.mjs` と専用workflow `.github/workflows/gacha-stale-refresh-failclosed-browser.yml` を追加。ローカルChromeの375px/430px画面で**カタログ更新失敗／履歴更新失敗／回復後の再有効化**を確認。初回実行はブラウザのfocus/pageshow自動リフレッシュと手動更新が競合し、テストのリクエスト数断定で失敗したため、テスト用の配信メモリ上だけで自動更新を停止（本体コードはその点を変更していない）。
+- **修正後4/4 PASS**：[GitHub Actions 40451486511](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40451486511)。実GAS通信・当選・権利消費0。合格済み旧テストの再実行なし。
+- **Draft PR #44**の1ファイル `gacha-page.js` だけ安全修正済みコードを反映。候補HEAD `589f96dd1c7a0257b306adcc5477031cf081c2d8`、`main` から **ahead 9 commits / behind 0、差分は依然8ファイルのみ**。Vercel新プレビューは **READY**、Production targetではない。
+- PRの8ファイル監査は古い候補SHAを固定checkoutしていたため**期待どおり変更検知で停止**。workflowを `release/mio-gacha-deluxe-candidate-20261027` 最新HEAD checkoutへ変更し、script内の候補SHAと9コミットを明示して監査。**修正後PASS**：[GitHub Actions 40451753726](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40451753726)。
+- 本番 `main`・Vercel Production・GAS・Google Sheet・抽選の権利／履歴・管理者受付スイッチは**無変更**。[Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44)は未マージ。実稼働Apps Scriptの公開versionNumber・全ソースの現物照合が未完了であるため、公開は禁止。
+
+ 
+## 追記：2026-10-27 応答消失後の「当選履歴による確認済み復元」＋PR #44の安全同期
+- 最新Review-only PR #44（Draft）の`gacha-page.js`に、失敗した抽選要求の**元drawId・モード・同一参加者**で`history`を読み取り専用照合する復元処理`recoverConfirmedResultFromHistory`を追加。履歴の同じID＋モードが**ちょうど1件**で、当選品・回数が有効な場合だけ、その**確定済み結果**を表示しpendingを解除。**新規抽選を行わない**。
+- 履歴なし／ID不一致／モード不一致／複数一致／履歴API不通の場合は当選を捏造せず元pending IDを保持し、既存の「前回の抽選結果を確認」を残す。権利・当選履歴の更新なし。履歴APIはセッションで本人認証される既存`/api/gacha`の`history`のみ。
+- 新規の`tests/gacha-confirmed-history-fallback-browser.mjs`と`.github/workflows/gacha-confirmed-history-fallback-browser.yml`で、架空API/架空ユーザー、375px/430px、4ケース×2幅の**8/8 PASS**：[GitHub Actions 40474086267](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40474086267)。実API／実抽選は0件。過去合格済みの通常リトライ・二重抽選対策は再実行していない。
+- **Draft統合候補の1ファイルだけを同期**：`release/mio-gacha-deluxe-candidate-20261027`の`gacha-page.js`を、新規テスト合格のfeatureとバイト同一に更新。候補HEAD `703720294ad7588c2f5fe887e2dd2bab7e0fcfee`、`main`から**ahead 10 / 変更ファイル8件のみ**。PR #44はDraft・未マージ。
+- 既存`tests/gacha-pr44-candidate-integrity.mjs`の固定期待HEADとcommit数のみ更新し、**変更された監査境界のみ実行**：[GitHub Actions 40474279458](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40474279458) PASS。保護`main:a701935c...`、旧ファイル全保全、対象8ファイルとfeatureの完全一致、87の既存build・25のroute維持、GAS・端末復旧の変更なしを確認。
+- PR #44本文にも上記の結果と**公開禁止条件**を追記。Draft維持。公開中Apps Scriptの**実公開versionNumber＋全ソース**は依然未取得、実データでの復元は未実施。本番`main`／Vercel Production／GAS／Sheet／管理者受付スイッチ／景品／履歴／ガチャ権利への変更なし。

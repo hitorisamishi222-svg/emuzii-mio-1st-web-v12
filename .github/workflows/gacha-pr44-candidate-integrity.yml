@@ -1,0 +1,44 @@
+name: PR44 gacha eight-file candidate integrity (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-pr44-candidate-integrity.mjs'
+      - '.github/workflows/gacha-pr44-candidate-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-deployment-source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout approved gacha feature (new test only)
+        uses: actions/checkout@v4
+        with:
+          path: gacha-feature
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Checkout CURRENT production main (abort if main HEAD changed)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: protected-main
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Checkout isolated PR44 draft candidate
+        uses: actions/checkout@v4
+        with:
+          ref: release/mio-gacha-deluxe-candidate-20261027
+          path: pr44-candidate
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Audit only new 8-file source-integrity boundary
+        run: |
+          node --version
+          node --check gacha-feature/tests/gacha-pr44-candidate-integrity.mjs
+          node gacha-feature/tests/gacha-pr44-candidate-integrity.mjs protected-main pr44-candidate gacha-feature

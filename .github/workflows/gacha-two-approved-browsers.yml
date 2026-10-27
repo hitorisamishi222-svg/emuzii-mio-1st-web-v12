@@ -1,0 +1,36 @@
+name: Gacha two approved browsers (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-two-approved-browsers.test.mjs'
+      - '.github/workflows/gacha-two-approved-browsers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulated-shared-mio-id:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read gacha feature tests
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - name: Read staged GAS code only (never production)
+        uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+      - name: Execute only two-browser MIO-ID regressions
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: |
+          node --version
+          node --test gacha-ui/tests/gacha-two-approved-browsers.test.mjs

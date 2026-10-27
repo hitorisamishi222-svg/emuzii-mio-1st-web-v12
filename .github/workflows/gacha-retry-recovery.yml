@@ -1,0 +1,31 @@
+name: Gacha retry recovery checks
+
+on:
+  push:
+    branches: [feature/mio-royal-gacha-deluxe-20261023]
+    paths:
+      - 'tests/gacha-retry-recovery.test.mjs'
+      - '.github/workflows/gacha-retry-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+      - name: Test only new recovery cases with mock storage
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: node --test gacha-ui/tests/gacha-retry-recovery.test.mjs

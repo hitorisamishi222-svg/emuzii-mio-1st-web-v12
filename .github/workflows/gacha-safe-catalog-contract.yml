@@ -1,0 +1,36 @@
+name: Gacha safe catalog contract guard (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'gacha-contract.js'
+      - 'gacha-page.js'
+      - 'api-gacha.js'
+      - 'vercel.json'
+      - 'tests/gacha-safe-catalog-contract.test.mjs'
+      - '.github/workflows/gacha-safe-catalog-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read gacha-only files
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Syntax-check only changed modules
+        run: |
+          node --version
+          node --check gacha-contract.js
+          node --check gacha-page.js
+          node --check api-gacha.js
+      - name: Run only new catalog-contract cases
+        run: |
+          node --test tests/gacha-safe-catalog-contract.test.mjs

@@ -1,0 +1,36 @@
+name: Gacha lock and auth boundary tests
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-lock-boundary.test.mjs'
+      - '.github/workflows/gacha-lock-boundary-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gas-lock-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out only gacha tests
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+
+      - name: Read staged logic only
+        uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+
+      - name: Test new auth and draw-lock boundary only
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: node --test gacha-ui/tests/gacha-lock-boundary.test.mjs

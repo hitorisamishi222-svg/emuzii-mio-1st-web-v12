@@ -1,0 +1,30 @@
+name: Gacha reload and storage protection tests
+
+on:
+  push:
+    branches: [feature/mio-royal-gacha-deluxe-20261023]
+    paths:
+      - 'tests/gacha-browser-reload-storage.mjs'
+      - '.github/workflows/gacha-browser-reload-storage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  two-new-edge-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare isolated browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Exercise reload recovery and storage failure without external requests
+        run: node tests/gacha-browser-reload-storage.mjs

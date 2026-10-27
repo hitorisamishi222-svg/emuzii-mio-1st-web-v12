@@ -1,0 +1,37 @@
+name: Gacha historical no-duplicate cases (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'patches/gacha-won-duplicate-keys-replacement-v216.gs'
+      - 'tests/gacha-dedup-historical.test.mjs'
+      - '.github/workflows/gacha-dedup-historical.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-duplicate-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out gacha-only patch and new tests
+        uses: actions/checkout@v4
+        with:
+          path: gacha-ui
+          persist-credentials: false
+      - name: Read staged backend source (never production GAS)
+        uses: actions/checkout@v4
+        with:
+          ref: release/v2-next-integrated-replica
+          path: gacha-core
+          persist-credentials: false
+      - name: Run only new historical duplicate cases
+        env:
+          MIO_GACHA_CORE_PATH: ${{ github.workspace }}/gacha-core/Code.gs
+        run: |
+          node --version
+          node --test gacha-ui/tests/gacha-dedup-historical.test.mjs

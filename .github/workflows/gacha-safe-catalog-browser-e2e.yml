@@ -1,0 +1,41 @@
+name: Gacha local browser contract check (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tests/gacha-safe-catalog-browser-e2e.mjs'
+      - '.github/workflows/gacha-safe-catalog-browser-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-browser-catalog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Use system Chrome on GitHub runner
+        run: |
+          google-chrome --version
+          npm install --no-save --no-package-lock playwright@1.56.1
+      - name: Run 12 new LOCAL browser contract checks (no production APIs)
+        env:
+          MIO_SYSTEM_CHROME: '1'
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/gacha-browser-contract-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/gacha.html >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/gacha-safe-catalog-browser-e2e.mjs

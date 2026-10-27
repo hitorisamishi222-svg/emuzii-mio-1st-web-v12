@@ -1,0 +1,30 @@
+name: Gacha deployed GAS version evidence (synthetic only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tools/gacha-deployed-gas-witness.mjs'
+      - 'tests/gacha-deployed-gas-witness.test.mjs'
+      - '.github/workflows/gacha-deployed-gas-witness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-export-witness-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check just the new read-only witness and synthetic cases
+        run: |
+          node --check tools/gacha-deployed-gas-witness.mjs
+          node --test tests/gacha-deployed-gas-witness.test.mjs
