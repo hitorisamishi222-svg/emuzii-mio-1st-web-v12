@@ -70,6 +70,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "gacha-contract.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gacha-mem-01.jpg",
       "use": "@vercel/static"
     },
