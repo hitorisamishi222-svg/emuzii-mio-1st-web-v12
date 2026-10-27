@@ -21,7 +21,7 @@ export default async function handler(req,res){
     return res.status(200).json(decision.data);
    }
    if(decision.kind!=='fresh')
-    return res.status(409).json({ok:false,error:'ガチャの安全確認が完了していません。新規抽選を停止しています。未確認の抽選は同じIDで再確認してください。'});
+    return res.status(409).json({ok:false,error:decision.reason==='gate'?'現在のガチャ受付・利用条件を確認できませんでした。新しい抽選は行っていません。同じ抽選IDで結果を再確認してください。':'ガチャの安全確認が完了していません。新規抽選を停止しています。未確認の抽選は同じIDで再確認してください。'});
   }
   const data=await bridge(body.action,{...identity,...(body.action==='draw'?{drawId:body.drawId,mode:body.mode}:{})});
   if(data.participantId!==session.id)throw Error('登録を確認できません');
