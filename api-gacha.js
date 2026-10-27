@@ -1,5 +1,6 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 import {preflightGachaDraw} from './gacha-draw-preflight.js';
+import {isVerifiedGachaDrawResult} from './gacha-draw-response.js';
 
 export default async function handler(req,res){
  const cfg=prepare(req,res);
@@ -25,6 +26,8 @@ export default async function handler(req,res){
   }
   const data=await bridge(body.action,{...identity,...(body.action==='draw'?{drawId:body.drawId,mode:body.mode}:{})});
   if(data.participantId!==session.id)throw Error('登録を確認できません');
+  if(body.action==='draw'&&!isVerifiedGachaDrawResult(data,{drawId:body.drawId,mode:body.mode},session.id))
+   throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください');
   res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
   return res.status(200).json(data);
  }catch(error){
