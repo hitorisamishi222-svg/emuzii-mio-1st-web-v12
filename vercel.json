@@ -352,9 +352,33 @@
     {
       "src": "api-activate-attendance.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-background.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "background-theme.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "background-theme.css",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/api/background",
+      "dest": "/api-background.js"
+    },
+    {
+      "src": "/background-theme.js",
+      "dest": "/background-theme.js"
+    },
+    {
+      "src": "/background-theme.css",
+      "dest": "/background-theme.css"
+    },
     {
       "src": "/join.html",
       "dest": "/join.html"
@@ -434,7 +458,10 @@
     {
       "src": "/admin-hub.html",
       "dest": "/admin-hub.html",
-      "headers": {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
     },
     {
       "src": "/announcements.html",
