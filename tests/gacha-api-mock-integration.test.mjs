@@ -212,3 +212,61 @@ test('API allows explicitly marked GAS replay for the same drawId without a fres
   // GAS is the authority for whether the same id has already been committed.
   // The API relays the idempotent draw request once and NEVER issues two draws.
 });
+
+test('recovery on previously committed ID calls history only even when catalog would permit a new draw',async()=>{
+  const {res,calls}=await invoke({action:'recover',drawId,mode:'通常'},
+    action=>action==='history'?previouslyWon():{ok:false,error:'NO-DRAW-ALLOWED'});
+  assert.deepEqual(calls,['history']);
+  assert.equal(res.statusCode,200);
+  assert.equal(res.payload.replayed,true);
+  assert.equal(res.payload.drawId,drawId);
+});
+
+test('recovery of an uncommitted ID refuses to make a new draw under open gates',async()=>{
+  const {res,calls}=await invoke({action:'recover',drawId,mode:'通常'},
+    action=>action==='history'?{ok:true,participantId:id,history:[]}:
+      {ok:false,error:'unexpected write'});
+  assert.deepEqual(calls,['history']);
+  assert.equal(res.statusCode,409);
+  assert.match(res.payload.error,/新しい抽選は行っていません/);
+});
+
+test('recovery respects mode and participant ID, never draws on mismatch',async()=>{
+  for(const history of [
+    {...previouslyWon(),history:[{...previouslyWon().history[0],mode:'ラキフェス'}]},
+    {...previouslyWon(),participantId:'MIO-W-'+'d'.repeat(24)},
+    {...previouslyWon(),history:[...previouslyWon().history,...previouslyWon().history]}
+  ]){
+    const {res,calls}=await invoke({action:'recover',drawId,mode:'通常'},
+      action=>action==='history'?history:{ok:false,error:'unexpected'});
+    assert.deepEqual(calls,['history']);
+    assert.equal(res.statusCode,409);
+  }
+});
+
+test('invalid or unauthenticated recover request never contacts backend',async()=>{
+  const invalid=await invoke({action:'recover',drawId:'not-an-id',mode:'通常'},
+    ()=>{throw Error('Recovery did network read')});
+  assert.equal(invalid.res.statusCode,400);
+  assert.deepEqual(invalid.calls,[]);
+  const unsigned=await invoke({action:'recover',drawId,mode:'通常'},
+    ()=>{throw Error('Unsigned recovery did network read')},
+    {headers:{host:'example.vercel.app',origin:'https://example.vercel.app'}});
+  assert.equal(unsigned.res.statusCode,401);
+  assert.deepEqual(unsigned.calls,[]);
+});
+
+test('preview cannot recover or draw, and no GAS request is issued',async()=>{
+  const {res,calls}=await invoke({action:'recover',drawId,mode:'通常'},
+    ()=>{throw Error('Preview may not contact GAS')},{},'preview');
+  assert.equal(res.statusCode,503);
+  assert.deepEqual(calls,[]);
+});
+
+test('recovery failure from GAS does not fall back to a draw',async()=>{
+  const {res,calls}=await invoke({action:'recover',drawId,mode:'通常'},
+    action=>action==='history'?{ok:false,error:'history not available'}:
+      {ok:false,error:'unexpected write'});
+  assert.equal(res.statusCode,409);
+  assert.deepEqual(calls,['history']);
+});
