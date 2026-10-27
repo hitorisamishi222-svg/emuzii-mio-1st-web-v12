@@ -610,7 +610,14 @@ function gachaAction_(ss,r,d){
   }
   if(!winner)return {ok:false,error:'抽選設定を確認してください'};
 
-  ss.getSheetByName(DRAW_TAB).appendRow([d.drawId,r[0],id,safeText_(r[2]),d.mode,winner.id,safeText_(winner.name),winner.chance,new Date(),used+1,'確定',safeText_(winner.rarity),winner.image,winner.duplicateKey]);
+  // The history column is the probability AT THE TIME OF THIS DRAW,
+  // not the original prize setting before previous winnings are removed.
+  // Reuse the participant-specific, exactly-100%-apportioned catalog computed
+  // above, while keeping the weighted winner selection completely unchanged.
+  var adjusted=(d.mode==='通常'?participantNormal:participantFest).prizes.filter(function(p){return p.id===winner.id});
+  if(adjusted.length!==1||!Number.isFinite(adjusted[0].chance))return {ok:false,error:'当選確率の記録を確認できません'};
+
+  ss.getSheetByName(DRAW_TAB).appendRow([d.drawId,r[0],id,safeText_(r[2]),d.mode,winner.id,safeText_(winner.name),adjusted[0].chance,new Date(),used+1,'確定',safeText_(winner.rarity),winner.image,winner.duplicateKey]);
   SpreadsheetApp.flush();
   return {ok:true,participantId:r[0],drawId:d.drawId,prize:winner.name,mode:d.mode,ordinal:used+1,rarity:winner.rarity,image:winner.image,remaining:remaining-1,replayed:false};
 }
