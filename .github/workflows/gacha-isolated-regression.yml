@@ -1,0 +1,19 @@
+name: Gacha isolated regression
+on:
+  push:
+    branches:
+      - fix/gacha-recorded-replay-safety-20261027
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gacha-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify gacha source and regression tests
+        run: node --test tests/gacha-recorded-replay.test.mjs tests/gacha-draw-preflight.test.mjs tests/gacha-gas-mock-regression.test.mjs
