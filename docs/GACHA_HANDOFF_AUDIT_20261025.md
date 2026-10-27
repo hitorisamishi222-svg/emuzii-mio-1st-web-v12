@@ -253,3 +253,9 @@
 - 専用 `tests/gacha-deployed-gas-witness.test.mjs` と `.github/workflows/gacha-deployed-gas-witness.yml` の**架空コード・架空デプロイの新規8/8 PASS・0 FAIL**：[GitHub Actions 40448616977](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40448616977)。既合格の旧テストは再実行していない。
 - 実際の取得とチェックの手順は `docs/GACHA_PRODUCTION_GAS_WITNESS_RUNBOOK_20261027.md` に記録。**Apps Scriptの本番コード・シート・ガチャ権利・受付スイッチの変更なし**。
 - [Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44) の最重要ブロッカーを、HEADだけでなく**実公開バージョンの全ファイル照合**へ更新した。Draft状態は維持。変更はガチャfeatureブランチのツール・テスト・ワークフロー・文書とPRの説明文だけ。
+
+ 
+## 追記：2026-10-27 既存Vercel本番GAS接続先の一致確認（URL等は非公開）
+- Vercel既存プロジェクト `emuzii-mio-1st-web-v12` の**production限定**環境変数 `APPS_SCRIPT_URL` を、権限あるVercel読み取り操作で内部照合。現行値はHTTPSのGoogle Apps Script `/exec` の形式で、**本番GitHub `main:bridge.js` 内の既存フォールバック `/exec` とデプロイ識別子まで完全一致**。確認結果は真偽値だけ記録し、URL本文・デプロイID・認証情報・secret値はGitHub・PR・チャットへ転記していない。
+- **改善された状況**：これで「照合すべき稼働先 `/exec` が曖昧」というブロッカーは軽減。ただし、そのデプロイの**公開 versionNumber および公開版の全ソースは依然未取得**。GAS編集HEADや10/11バックアップが実行中のコードと同じだと断定してはならない。
+- [Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44) は引き続き未マージ・公開禁止。既存プロダクションのVercel環境変数自体は編集せず、受付スイッチ・参加者/当選/権利データ・本番GASにも一切変更なし。
