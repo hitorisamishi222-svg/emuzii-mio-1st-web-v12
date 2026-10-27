@@ -1,0 +1,5 @@
+/* vNext public presentation only; does not touch gacha. */
+[data-mio-background="devil"] .hero-picture img,
+[data-mio-background="devil"] .hero-picture source{visibility:hidden}
+[data-mio-background="devil"] .hero-picture{background:url('/assets/mio-bg-devil.jpg') center top/cover no-repeat}
+[data-mio-background="devil"] .mio-art-banner{background-image:linear-gradient(180deg,transparent 57%,#071d42 100%),url('/assets/mio-bg-devil.jpg')}
