@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 // Model of a Google spreadsheet, isolated from every real participant and GAS.
-function harness() {
+function harness(sourcePath='../APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs') {
   const names={web:'MIO-W-'+ 'a'.repeat(24),id:'MIO-0003',name:'テスト参加者'};
   const sheetData={
     'emuzii_参加者':[[names.id,names.name]],
@@ -45,7 +45,7 @@ function harness() {
     SpreadsheetApp:{flush(){}},
     gachaOpenState_:()=>({normalOpen,festOpen})
   });
-  const code=readFileSync(new URL('../APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs',import.meta.url),'utf8');
+  const code=readFileSync(new URL(sourcePath,import.meta.url),'utf8');
   vm.runInContext(code,ctx,{filename:'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs'});
   const r=Array(8).fill('');
   r[0]=names.web;r[2]=names.name;r[5]='承認済み';r[6]='確認済み';r[7]=names.id;
@@ -143,7 +143,7 @@ test('a different winning prize key never reappears in same mode',()=>{
 });
 
 test('every eligible subset of the real 16 + 11 prize-weight pattern totals exactly 100.00 percent',()=>{
-  const {participantCatalog}=harness();
+  const {participantCatalog}=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
   // Public probability settings only. No participant data or live draw history.
   const cases=[
     ['通常',[750,750,750,750,750,750,750,750,600,600,600,600,600,700,150,150]],
@@ -172,7 +172,7 @@ test('every eligible subset of the real 16 + 11 prize-weight pattern totals exac
 });
 
 test('display rounding never mutates source weights, draw identities or prize order',()=>{
-  const {participantCatalog}=harness();
+  const {participantCatalog}=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
   const prizes=[
     {id:'A',name:'景品A',units:750,duplicateKey:'a',rarity:'N',image:''},
     {id:'B',name:'景品B',units:750,duplicateKey:'b',rarity:'N',image:''},
@@ -186,7 +186,7 @@ test('display rounding never mutates source weights, draw identities or prize or
 });
 
 test('all prizes already won displays no available prize and no draw-ready state',()=>{
-  const {participantCatalog}=harness();
+  const {participantCatalog}=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
   const res=participantCatalog({ready:true,prizes:[
     {id:'A',name:'A',units:10000,duplicateKey:'a'}
   ]},{a:true});
