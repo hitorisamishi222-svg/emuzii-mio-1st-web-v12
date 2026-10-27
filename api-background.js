@@ -68,9 +68,7 @@ export default async function handler(req,res){
     const {theme,revision}=req.body;
     await c.query('BEGIN');
     try{
-      await c.query(
-        "CREATE TABLE IF NOT EXISTS anniversary_background_settings (id SMALLINT PRIMARY KEY CHECK (id=1),theme TEXT NOT NULL CHECK (theme IN ('princess','devil')),revision INTEGER NOT NULL DEFAULT 1,updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),updated_by TEXT)"
-      );
+      // Schema must be provisioned separately; requests never create tables.
       let updated;
       if(revision===0){
         updated=await c.query(
