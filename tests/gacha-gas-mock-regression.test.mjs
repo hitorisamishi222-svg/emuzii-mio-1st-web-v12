@@ -194,3 +194,19 @@ test('all prizes already won displays no available prize and no draw-ready state
   assert.equal(res.total,0);
   assert.equal(res.prizes.length,0);
 });
+
+test('candidate backend advertises revision only with cross-mode nonduplication in its actual catalog',()=>{
+  const legacy=harness().catalog();
+  assert.equal(legacy.normal.safetyRevision,undefined);
+  assert.equal(legacy.fest.safetyRevision,undefined);
+  const staged=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
+  const c=staged.catalog();
+  assert.equal(c.normal.safetyRevision,'mio-crossmode-nodup-v1');
+  assert.equal(c.fest.safetyRevision,'mio-crossmode-nodup-v1');
+  staged.grant('shared-a','通常','N-A');
+  const after=staged.catalog();
+  assert.equal(after.normal.prizes.some(p=>p.id==='N-A'),false);
+  assert.equal(after.fest.prizes.some(p=>p.id==='F-A'),false);
+  assert.equal(after.normal.safetyRevision,'mio-crossmode-nodup-v1');
+  assert.equal(after.fest.safetyRevision,'mio-crossmode-nodup-v1');
+});
