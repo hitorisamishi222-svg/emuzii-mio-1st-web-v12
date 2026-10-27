@@ -276,3 +276,12 @@
 - **Draft PR #44**の1ファイル `gacha-page.js` だけ安全修正済みコードを反映。候補HEAD `589f96dd1c7a0257b306adcc5477031cf081c2d8`、`main` から **ahead 9 commits / behind 0、差分は依然8ファイルのみ**。Vercel新プレビューは **READY**、Production targetではない。
 - PRの8ファイル監査は古い候補SHAを固定checkoutしていたため**期待どおり変更検知で停止**。workflowを `release/mio-gacha-deluxe-candidate-20261027` 最新HEAD checkoutへ変更し、script内の候補SHAと9コミットを明示して監査。**修正後PASS**：[GitHub Actions 40451753726](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40451753726)。
 - 本番 `main`・Vercel Production・GAS・Google Sheet・抽選の権利／履歴・管理者受付スイッチは**無変更**。[Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44)は未マージ。実稼働Apps Scriptの公開versionNumber・全ソースの現物照合が未完了であるため、公開は禁止。
+
+ 
+## 追記：2026-10-27 応答消失後の「当選履歴による確認済み復元」＋PR #44の安全同期
+- 最新Review-only PR #44（Draft）の`gacha-page.js`に、失敗した抽選要求の**元drawId・モード・同一参加者**で`history`を読み取り専用照合する復元処理`recoverConfirmedResultFromHistory`を追加。履歴の同じID＋モードが**ちょうど1件**で、当選品・回数が有効な場合だけ、その**確定済み結果**を表示しpendingを解除。**新規抽選を行わない**。
+- 履歴なし／ID不一致／モード不一致／複数一致／履歴API不通の場合は当選を捏造せず元pending IDを保持し、既存の「前回の抽選結果を確認」を残す。権利・当選履歴の更新なし。履歴APIはセッションで本人認証される既存`/api/gacha`の`history`のみ。
+- 新規の`tests/gacha-confirmed-history-fallback-browser.mjs`と`.github/workflows/gacha-confirmed-history-fallback-browser.yml`で、架空API/架空ユーザー、375px/430px、4ケース×2幅の**8/8 PASS**：[GitHub Actions 40474086267](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40474086267)。実API／実抽選は0件。過去合格済みの通常リトライ・二重抽選対策は再実行していない。
+- **Draft統合候補の1ファイルだけを同期**：`release/mio-gacha-deluxe-candidate-20261027`の`gacha-page.js`を、新規テスト合格のfeatureとバイト同一に更新。候補HEAD `703720294ad7588c2f5fe887e2dd2bab7e0fcfee`、`main`から**ahead 10 / 変更ファイル8件のみ**。PR #44はDraft・未マージ。
+- 既存`tests/gacha-pr44-candidate-integrity.mjs`の固定期待HEADとcommit数のみ更新し、**変更された監査境界のみ実行**：[GitHub Actions 40474279458](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40474279458) PASS。保護`main:a701935c...`、旧ファイル全保全、対象8ファイルとfeatureの完全一致、87の既存build・25のroute維持、GAS・端末復旧の変更なしを確認。
+- PR #44本文にも上記の結果と**公開禁止条件**を追記。Draft維持。公開中Apps Scriptの**実公開versionNumber＋全ソース**は依然未取得、実データでの復元は未実施。本番`main`／Vercel Production／GAS／Sheet／管理者受付スイッチ／景品／履歴／ガチャ権利への変更なし。
