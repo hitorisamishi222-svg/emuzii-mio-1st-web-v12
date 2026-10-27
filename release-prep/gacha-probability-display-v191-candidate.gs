@@ -1,7 +1,7 @@
 /**
  * DEVELOPMENT CANDIDATE ONLY — DO NOT REPLACE THE PROTECTED PRODUCTION GAS FILE.
- * This snapshot differs from APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs only in
- * participantCatalog_ display-percentage apportionment. Merge only after
+ * This isolated snapshot changes ONLY participantCatalog_ display percentages,
+ * catalog_ stock-exhaustion filtering, and the draw history probability field. Merge only after
  * full deployed Apps Script source verification and scoped registration checks.
  */
 /**
@@ -532,9 +532,23 @@ function catalog_(ss,mode){
   if(total!==10000)valid=false;
 
   var history=rows_(ss,DRAW_TAB);
-  var exhausted=prizes.some(function(p){return p.stock!==null&&history.filter(function(x){return x[5]===p.id&&x[10]==='確定'}).length>=p.stock});
+  // Global quantity limits are per prize ID, not a switch for the entire
+  // mode. Keep valid 100% source odds, exclude depleted IDs, then allow
+  // participantCatalog_ to normalize remaining draw weights accurately.
+  var wonStock={};
+  history.forEach(function(row){
+    if(row[10]!=='確定')return;
+    var prizeId=String(row[5]||'');
+    wonStock[prizeId]=(wonStock[prizeId]||0)+1;
+  });
+  var inStock=prizes.filter(function(p){
+    return p.stock===null||wonStock[p.id]<p.stock;
+  });
 
-  return {ready:valid&&!exhausted,message:!valid?'景品と確率を設定中です（有効な景品の確率合計は100％）':exhausted?'数量上限に達した景品があります。運営の設定更新をお待ちください':'抽選できます',total:total/100,prizes:prizes};
+  return {ready:valid&&inStock.length>0,
+    message:!valid?'景品と確率を設定中です（有効な景品の確率合計は100％）':
+      !inStock.length?'対象景品はすべて在庫上限です。運営の設定更新をお待ちください':'抽選できます',
+    total:inStock.length?100:0,prizes:inStock};
 }
 
 function gachaAction_(ss,r,d){
