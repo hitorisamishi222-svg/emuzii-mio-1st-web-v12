@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-test('candidate changes only per-user catalog, odds display, and historical win odds',()=>{
+test('candidate limits changes to unused G column, per-user catalog, odds and historical records',()=>{
   const baseline=readFileSync(new URL('../APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs',import.meta.url),'utf8');
   const staged=readFileSync(new URL('../release-prep/gacha-probability-display-v191-candidate.gs',import.meta.url),'utf8');
   assert.match(staged,/DEVELOPMENT CANDIDATE ONLY/);
@@ -18,8 +18,14 @@ test('candidate changes only per-user catalog, odds display, and historical win 
   const b2=baseline.indexOf(catalog,b1),c2=candidate.indexOf(catalog,c1);
   const b3=baseline.indexOf(draw,b2),c3=candidate.indexOf(draw,c2);
   assert.ok([b1,b2,b3,c1,c2,c3].every(x=>x>=0));
-  assert.equal(candidate.slice(0,c1),baseline.slice(0,b1),
-    'registration, attendance and all other GAS features are unchanged');
+  const expectedPrefix=baseline.slice(0,b1)
+    .replaceAll('数量上限（空欄は制限なし）','未使用（入力不要）')
+    .replace(/^  p\.getRange\('G2:G101'\)\.setDataValidation\(.*$/m,
+      "  // Retain column G for backwards-compatible sheet layout; do not read or use its values.\n  p.getRange('G2:G101').clearDataValidations();")
+    .replace(/^  p\.getRange\('H1'\)\.setNote\(.*$/m,
+      "  p.getRange('G1').setNote('未使用の予備列です。景品は参加者ごとに1回のみ当選できます。既存データは保持します。');\n  p.getRange('H1').setNote('各景品の画像URLを設定します。HTTPSを使用してください。');");
+  assert.equal(candidate.slice(0,c1),expectedPrefix,
+    'only the unused G-column label, validation and note may change before gacha code');
 
   const pct=candidate.slice(c1,c2);
   assert.match(pct,/available=.*filter\(function\(p\)\{return !wonKeys\[p\.duplicateKey\]/);
