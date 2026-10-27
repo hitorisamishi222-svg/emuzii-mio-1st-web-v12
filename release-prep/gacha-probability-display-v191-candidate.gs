@@ -1,7 +1,8 @@
 /**
  * DEVELOPMENT CANDIDATE ONLY — DO NOT REPLACE THE PROTECTED PRODUCTION GAS FILE.
- * This isolated snapshot changes ONLY participantCatalog_ display percentages,
- * catalog_ stock-exhaustion filtering, and the draw history probability field. Merge only after
+ * Per-participant once-only wins (including both gacha modes). No global stock
+ * depletion or shared quantity limits. Changes scoped to probability display,
+ * catalog_ removal of legacy global stock rules, and draw history odds. Merge only after
  * full deployed Apps Script source verification and scoped registration checks.
  */
 /**
@@ -496,7 +497,7 @@ function participantCatalog_(catalog,wonKeys){
 
   var prizes=available.map(function(p,index){
     return {id:p.id,name:p.name,rarity:p.rarity,
-      chance:shares[index].base/100,stock:p.stock,image:p.image};
+      chance:shares[index].base/100,image:p.image};
   });
   return {
     ready:catalog.ready&&available.length>0,
@@ -514,41 +515,28 @@ function catalog_(ss,mode){
   var active=all.filter(function(x){return x[0]===mode&&x[5]===true});
   var ids={},total=0,valid=active.length>0;
 
+  // Each prize may be won once PER PARTICIPANT, not once globally.
+  // Never use other participants' draw histories to remove prizes here.
+  // The user's confirmed wins are excluded later by participantCatalog_.
   var prizes=active.map(function(x){
     var chance=Number(x[4]);
     var units=Math.round(chance*100);
-    var stock=x[6]===''?null:Number(x[6]);
     var image=String(x[7]||'').trim();
     var duplicateKey=prizeDuplicateKeyFromRow_(x);
 
-    if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(x[1]||''))||ids[x[1]]||!String(x[2]||'').trim()||!duplicateKey||!Number.isFinite(chance)||chance<=0||chance>100||Math.abs(chance*100-units)>0.00001||stock!==null&&(!Number.isSafeInteger(stock)||stock<0)||image&&!/^https:\/\//i.test(image))valid=false;
+    if(!/^[A-Za-z0-9_-]{1,40}$/.test(String(x[1]||''))||ids[x[1]]||!String(x[2]||'').trim()||!duplicateKey||!Number.isFinite(chance)||chance<=0||chance>100||Math.abs(chance*100-units)>0.00001||image&&!/^https:\/\//i.test(image))valid=false;
 
     ids[x[1]]=true;
     total+=units;
-    return {id:String(x[1]),name:String(x[2]),rarity:String(x[3]||''),chance:chance,units:units,stock:stock,image:image,duplicateKey:duplicateKey};
+    return {id:String(x[1]),name:String(x[2]),rarity:String(x[3]||''),
+      chance:chance,units:units,image:image,duplicateKey:duplicateKey};
   });
 
   prizes.forEach(function(p){if(all.filter(function(x){return String(x[1])===p.id}).length!==1)valid=false});
   if(total!==10000)valid=false;
-
-  var history=rows_(ss,DRAW_TAB);
-  // Global quantity limits are per prize ID, not a switch for the entire
-  // mode. Keep valid 100% source odds, exclude depleted IDs, then allow
-  // participantCatalog_ to normalize remaining draw weights accurately.
-  var wonStock={};
-  history.forEach(function(row){
-    if(row[10]!=='確定')return;
-    var prizeId=String(row[5]||'');
-    wonStock[prizeId]=(wonStock[prizeId]||0)+1;
-  });
-  var inStock=prizes.filter(function(p){
-    return p.stock===null||wonStock[p.id]<p.stock;
-  });
-
-  return {ready:valid&&inStock.length>0,
-    message:!valid?'景品と確率を設定中です（有効な景品の確率合計は100％）':
-      !inStock.length?'対象景品はすべて在庫上限です。運営の設定更新をお待ちください':'抽選できます',
-    total:inStock.length?100:0,prizes:inStock};
+  return {ready:valid,
+    message:!valid?'景品と確率を設定中です（有効な景品の確率合計は100％）':'抽選できます',
+    total:total/100,prizes:prizes};
 }
 
 function gachaAction_(ss,r,d){
