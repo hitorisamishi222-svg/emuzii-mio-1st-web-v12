@@ -13,7 +13,11 @@ export function hasSafeGachaContract(c){
   const unlocked=c.festEntitled&&c.webDrawsUsed>=c.festAvailableFrom-1&&c.remaining>0;
   if(c.festUnlocked!==unlocked)return false;
   if(!c.normal||!c.fest)return false;
+  // A structurally compatible legacy backend is NOT proof that it enforces
+  // cross-mode, once-per-prize guarantees. Require the reviewed GAS capability
+  // marker in both mode catalogs before authorizing a fresh draw.
   for(const item of [c.normal,c.fest])
-    if(typeof item.ready!=='boolean'||!Array.isArray(item.prizes))return false;
+    if(typeof item.ready!=='boolean'||!Array.isArray(item.prizes)||
+       item.safetyRevision!=='mio-crossmode-nodup-v1')return false;
   return true;
 }
