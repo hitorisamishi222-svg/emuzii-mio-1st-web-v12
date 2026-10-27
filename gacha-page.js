@@ -82,13 +82,30 @@ async function loadCatalog(includeHistory=true){
     note(e.message);return false
   }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
 }
+async function recoverConfirmedResultFromHistory(pending){
+  // A draw request might have committed even when its HTTP response was lost.
+  // Read-only lookup: never retry with a NEW ID, never assume a win from a
+  // network error, and never trust a row from another browser/participant.
+  try{
+    const h=await post('/api/gacha',{action:'history'});
+    if(!h||h.participantId!==participant||!Array.isArray(h.history))return null;
+    const matches=h.history.filter(x=>x&&x.drawId===pending.drawId&&x.mode===pending.mode);
+    if(matches.length!==1)return null;
+    const x=matches[0];
+    if(typeof x.prize!=='string'||!x.prize.trim()||!Number.isSafeInteger(x.ordinal)||x.ordinal<1)return null;
+    return {ok:true,participantId:participant,drawId:pending.drawId,
+      mode:pending.mode,prize:x.prize,ordinal:x.ordinal,
+      rarity:typeof x.rarity==='string'?x.rarity:'',
+      image:safeImage(x.image),replayed:true};
+  }catch{return null}
+}
 async function execute(pending){
   if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
   if(busy)return;
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
   const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:5000;
   skipRequested=false;$('skipDraw').hidden=reduceMotion;$('skipDraw').disabled=reduceMotion;
-  let refreshAfter=false, failureMessage='';
+  let refreshAfter=false, failureMessage='', recoveredMessage='';
   startEffect(pending.mode);
   note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
@@ -100,10 +117,22 @@ async function execute(pending){
     note(Number.isSafeInteger(d.remaining)?`${d.ordinal}回目の結果を保存しました。残り ${d.remaining}回。`:`${d.ordinal}回目の結果を確認しました。残り回数は最新のガチャ情報でご確認ください。`);
     refreshAfter=true
   }catch(e){
-    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));failureMessage=`${e.message}。「前回の抽選結果を確認」から同じ抽選IDで再確認してください。`;note(failureMessage);$('retryDraw').hidden=false;refreshAfter=true
+    const recovered=await recoverConfirmedResultFromHistory(pending);
+    if(recovered){
+      // Only a single EXACT confirmed history result releases the pending ID.
+      // Rendering this saved result does not spend a new gacha right.
+      renderResult(recovered);forget();
+      recoveredMessage='通信が途切れた抽選の確定結果を、当選履歴から復元しました。残り回数は最新のガチャ情報でご確認ください。';
+      note(recoveredMessage);refreshAfter=true
+    }else{
+      clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));
+      failureMessage=`${e.message}。「前回の抽選結果を確認」から同じ抽選IDで再確認してください。`;
+      note(failureMessage);$('retryDraw').hidden=false;refreshAfter=true
+    }
   }finally{
     clearAnimationTimers();$('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active','royal-charge','royal-release','royal-climax');busy=false;$('skipDraw').hidden=true;$('skipDraw').disabled=true;$('retryDraw').disabled=false;
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog);
+    if(recoveredMessage)note(recoveredMessage);
     if(failureMessage&&remember())note(failureMessage)
   }
 }
