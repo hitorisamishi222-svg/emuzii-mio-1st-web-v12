@@ -243,3 +243,13 @@
 - ブロッカー：稼働中GASソース現物・参加者の権利データ保持・認証/端末復旧/新規受付の現行動作・管理者最終判断。DraftをReadyにせず、main/Vercel Production/GAS/Sheet/景品キー/受付スイッチを変更しない。
 
 - **監査設定の是正（同日）**：初回のPR #44 8ファイル監査CIはmainの**過去固定SHA**を直接checkoutしていたため、将来mainが更新されても検知できない欠点があった。`.github/workflows/gacha-pr44-candidate-integrity.yml` のmain checkoutを **`ref: main`（実際の最新HEAD）**に変更し、監査scriptの `expectedBase=a701935c...` との比較で**変更後は失敗停止する**構成へ修正。**変更後PASS**：[GitHub Actions 40447386863](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40447386863)。この再実行は**CI設定の変更箇所の確認のみ**であり、ガチャ抽選等の合格済みテストは再実行していない。
+
+ 
+## 追記：2026-10-27 本番GASの「編集HEAD／実公開バージョン」二段照合・公開保留
+- **重要な安全条件を追加**：Apps Scriptの編集HEADとWebアプリの実デプロイ版は異なり得る。GAS側の編集ファイルだけ確認して「本番ソース確認完了」とするのは禁止。**Vercel本番のAPPS_SCRIPT_URLが指す既存/execデプロイID**、その`deploymentConfig.versionNumber`、当該versionNumberで取得した**公開中の全ソース**、編集HEAD全ソースの3組で照合する。
+- Vercel本番プロジェクトの環境変数メタデータを読み取り専用照会。**APPS_SCRIPT_URLはproductionのencrypted、APPS_SCRIPT_SECRETはproductionのsensitive設定として存在**。値や秘密情報は復号・表示・コピーしていない。GitHub `bridge.js` のURL既定値が本番の実接続先とは断定しない。
+- 公式Apps Script APIにread-only GETが存在：`GET /v1/projects/{scriptId}/deployments/{deploymentId}` と `GET /v1/projects/{scriptId}/content?versionNumber=N`、編集HEAD用の `GET /v1/projects/{scriptId}/content`。OAuth読み取り専用スコープが必要。現在接続可能なGoogle DriveからはこのApps Scriptソース／公開デプロイのAPI取得アクションがない。**稼働中GAS全ソース・versionNumberは未取得**。
+- ガチャ専用featureに、**本番非接続のオフライン照合ツール**`tools/gacha-deployed-gas-witness.mjs` を追加。本人が私有領域でGETした3種類のJSONに対し、デプロイID・scriptId一致、appsscript.json・全ソースの存在、重複関数・ScriptLock・ラキフェス4回条件・獲得済み除外等の静的条件を照合。ソース本文や機密IDは表示せず、結果は必ずレビュー用。GitHubへの個別GASソースのアップロードはしない。
+- 専用 `tests/gacha-deployed-gas-witness.test.mjs` と `.github/workflows/gacha-deployed-gas-witness.yml` の**架空コード・架空デプロイの新規8/8 PASS・0 FAIL**：[GitHub Actions 40448616977](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40448616977)。既合格の旧テストは再実行していない。
+- 実際の取得とチェックの手順は `docs/GACHA_PRODUCTION_GAS_WITNESS_RUNBOOK_20261027.md` に記録。**Apps Scriptの本番コード・シート・ガチャ権利・受付スイッチの変更なし**。
+- [Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44) の最重要ブロッカーを、HEADだけでなく**実公開バージョンの全ファイル照合**へ更新した。Draft状態は維持。変更はガチャfeatureブランチのツール・テスト・ワークフロー・文書とPRの説明文だけ。
