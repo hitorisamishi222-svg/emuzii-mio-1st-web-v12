@@ -16,7 +16,7 @@ const js=readFileSync('gacha-page.js','utf8');
 const sourcePreview="const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';";
 assert.ok(js.includes(sourcePreview),'Preview mode switch was modified; halt without test-time override');
 const testJs=js.replace(sourcePreview,'const isPreview=false; // LOCAL E2E IN-MEMORY OVERRIDE ONLY');
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,...(process.env.MIO_SYSTEM_CHROME==='1'?{channel:'chrome'}:{})});
 const id='MOCK-WEB-ONLY';
 const valid=overrides=>({
  ok:true,participantId:id,confirmed:true,
