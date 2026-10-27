@@ -259,3 +259,10 @@
 - Vercel既存プロジェクト `emuzii-mio-1st-web-v12` の**production限定**環境変数 `APPS_SCRIPT_URL` を、権限あるVercel読み取り操作で内部照合。現行値はHTTPSのGoogle Apps Script `/exec` の形式で、**本番GitHub `main:bridge.js` 内の既存フォールバック `/exec` とデプロイ識別子まで完全一致**。確認結果は真偽値だけ記録し、URL本文・デプロイID・認証情報・secret値はGitHub・PR・チャットへ転記していない。
 - **改善された状況**：これで「照合すべき稼働先 `/exec` が曖昧」というブロッカーは軽減。ただし、そのデプロイの**公開 versionNumber および公開版の全ソースは依然未取得**。GAS編集HEADや10/11バックアップが実行中のコードと同じだと断定してはならない。
 - [Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44) は引き続き未マージ・公開禁止。既存プロダクションのVercel環境変数自体は編集せず、受付スイッチ・参加者/当選/権利データ・本番GASにも一切変更なし。
+
+ 
+## 追記：2026-10-27 本番GAS URL確認後のリリース監査見直し
+- Vercel本番 `APPS_SCRIPT_URL`（production、encrypted）の値を読み取り専用で取得し、**既存本番 `main:bridge.js` のデフォルトApps Script `/exec` URLとデプロイ識別子まで完全一致**を確認。接続URL・デプロイID・secretの具体値は本ドキュメントにもPRにも出さない。**デプロイされたGASのversionNumber・全ソース取得は引き続き未完了**。
+- Draft PR #44から自動生成されたVercel preview（`e8e875b...`）のビルドログを読み取り専用で確認。**Deployment completed**。重大なビルドエラーは見つからず。既存 `builds` 設定に伴うVercel注意とnpm `cache-dir` 警告の2件あり、これは成功ビルドに影響しなかった。実抽選・本番GASの呼出は行わない。
+- **監査自動化の過大評価を訂正**：`.github/workflows/gacha-pr44-candidate-integrity.yml` は featureブランチの当該テスト／ワークフローファイルpushまたは手動workflow_dispatchで起動する。**本番mainが更新された瞬間に自動起動するわけではない**。ただし実行された場合は最新 `ref: main` を取得し、保護SHAと異なれば停止する。PR #44本文に **公開・マージ直前の手動再監査を必須**と追記済み。古い合格実行結果を最終判定に使わない。
+- 重要：`main` の変更・PR #44のReady化・マージ・Vercel本番昇格・GAS・Sheet変更なし。新規の抽選機能検証なし、従来合格済みテストも再実行しない。残りブロッカーは **実際の公開GASの全ソース＋バージョン確認**と最後の本番連携確認。
