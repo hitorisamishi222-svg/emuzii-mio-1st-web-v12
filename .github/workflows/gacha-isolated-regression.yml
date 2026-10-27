@@ -9,6 +9,7 @@ on:
       - 'api-gacha.js'
       - 'gacha-*.js'
       - 'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs'
+      - 'release-prep/gacha-probability-display-v191-candidate.gs'
       - 'tests/gacha-*.test.mjs'
       - '.github/workflows/gacha-isolated-regression.yml'
 permissions:
