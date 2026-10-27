@@ -67,8 +67,9 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 #galleryGrid .work-info{display:flex;flex-direction:column;flex:1}
 #galleryGrid .work-info .work-link{margin-top:auto;align-self:stretch;text-align:center}
 </style>
+<link rel="stylesheet" href="/background-theme.css">
 </head>
-<body>
+<body data-mio-background="princess">
 <div class="mio-art-banner" role="img" aria-label="翠央のお姫様背景イラスト"></div>
 <main class="wrap">
 <nav class="site-nav" aria-label="ページ移動"><a href="/">← 翠央1周年 トップ</a><a href="/announcements.html">📢 お知らせ</a><a class="gallery-admin-only" href="/gallery-manage.html" hidden>🛡️ 掲載管理へ</a><span class="mark">MIO ✧ 1ST ANNIVERSARY</span></nav>
@@ -140,4 +141,5 @@ async function showAdminNavigation(){
 }
 showAdminNavigation();
 </script>
+<script defer src="/background-theme.js"></script>
 </body></html>
