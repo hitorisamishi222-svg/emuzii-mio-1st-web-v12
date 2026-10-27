@@ -55,7 +55,8 @@ function harness() {
   };
   const draw=(mode='通常',drawId='f'.repeat(32))=>ctx.gachaAction_(ss,r,{action:'draw',mode,drawId});
   const catalog=()=>ctx.gachaAction_(ss,r,{action:'catalog'});
-  return {sheetData,grant,draw,catalog,setGates:(normal,fest)=>{normalOpen=normal;festOpen=fest;},names};
+  return {sheetData,grant,draw,catalog,setGates:(normal,fest)=>{normalOpen=normal;festOpen=fest;},
+    participantCatalog:(c,won)=>ctx.participantCatalog_(c,won),names};
 }
 
 test('won normal prize is removed; effective probability of only remaining normal prize is 100%',()=>{
@@ -139,4 +140,57 @@ test('a different winning prize key never reappears in same mode',()=>{
   assert.equal(second.prize,'通常B');
   assert.notEqual(first.prize,second.prize);
   assert.equal(x.sheetData['emuzii_当選履歴'].length,2);
+});
+
+test('every eligible subset of the real 16 + 11 prize-weight pattern totals exactly 100.00 percent',()=>{
+  const {participantCatalog}=harness();
+  // Public probability settings only. No participant data or live draw history.
+  const cases=[
+    ['通常',[750,750,750,750,750,750,750,750,600,600,600,600,600,700,150,150]],
+    ['ラキフェス',[800,800,800,800,800,2000,1000,1000,1000,500,500]]
+  ];
+  let subsets=0;
+  for(const [label,weights] of cases) {
+    const prizes=weights.map((units,i)=>({
+      id:'P-'+i,name:'景品'+i,rarity:'N',units,duplicateKey:'key-'+i,stock:null,image:''
+    }));
+    assert.equal(weights.reduce((a,b)=>a+b,0),10000);
+    for(let mask=1;mask<(1<<weights.length);mask++) {
+      const won={};
+      for(let i=0;i<weights.length;i++)if(!(mask & (1<<i)))won['key-'+i]=true;
+      const result=participantCatalog({ready:true,prizes},won);
+      const sum=result.prizes.reduce((a,p)=>a+Math.round(p.chance*100),0);
+      if(sum!==10000) throw Error(label+' subset '+mask+' total '+sum+' != 10000');
+      for(const p of result.prizes){
+        if(!Number.isInteger(Math.round(p.chance*100))||p.chance<0)
+          throw Error(label+' subset '+mask+' invalid prize chance');
+      }
+      subsets++;
+    }
+  }
+  assert.equal(subsets,67582);
+});
+
+test('display rounding never mutates source weights, draw identities or prize order',()=>{
+  const {participantCatalog}=harness();
+  const prizes=[
+    {id:'A',name:'景品A',units:750,duplicateKey:'a',rarity:'N',image:''},
+    {id:'B',name:'景品B',units:750,duplicateKey:'b',rarity:'N',image:''},
+    {id:'C',name:'景品C',units:750,duplicateKey:'c',rarity:'N',image:''}
+  ];
+  const original=JSON.stringify(prizes);
+  const out=participantCatalog({ready:true,prizes},{});
+  assert.equal(out.prizes.reduce((n,p)=>n+Math.round(p.chance*100),0),10000);
+  assert.deepEqual(Array.from(out.prizes,p=>p.id),['A','B','C']);
+  assert.equal(JSON.stringify(prizes),original);
+});
+
+test('all prizes already won displays no available prize and no draw-ready state',()=>{
+  const {participantCatalog}=harness();
+  const res=participantCatalog({ready:true,prizes:[
+    {id:'A',name:'A',units:10000,duplicateKey:'a'}
+  ]},{a:true});
+  assert.equal(res.ready,false);
+  assert.equal(res.total,0);
+  assert.equal(res.prizes.length,0);
 });
