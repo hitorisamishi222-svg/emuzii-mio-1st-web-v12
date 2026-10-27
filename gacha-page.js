@@ -74,7 +74,12 @@ async function loadCatalog(includeHistory=true){
     }
     return true
   }catch(e){
-    $('drawPanel').hidden=false;$('drawNormal').disabled=true;$('drawFest').disabled=true;note(e.message);return false
+    // Invalidate the previous catalog if a refresh fails. The finally block
+    // must never re-enable a draw from stale open gates or remaining rights.
+    lastCatalog=null;
+    $('drawPanel').hidden=false;$('drawNormal').disabled=true;$('drawFest').disabled=true;
+    $('retryDraw').hidden=!remember();
+    note(e.message);return false
   }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
 }
 async function execute(pending){
