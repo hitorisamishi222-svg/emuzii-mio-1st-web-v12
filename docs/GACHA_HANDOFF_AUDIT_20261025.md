@@ -241,3 +241,5 @@
 - **新規監査 PASS**：[GitHub Actions 40447214293](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40447214293)。mainの保護済みSHA・候補HEADの固定、候補の祖先がmainであること、候補の変更が8コミット・8ファイルに限定されること、元featureとのバイト単位一致、Vercel既存87ビルド/25ルート保全・新規4静的ファイルのみを検証。合格済みガチャ抽選テストは再実行していない。
 - 現在稼働中のApps Scriptの全ファイルHEADは依然未取得。Google Drive検索では「10/11本番Code.gsバックアップ」と「GitHub v1.9.1参照原本（本番HEAD未照合）」のみが関連するCode.gs文書。**日付の古いバックアップを現行GASとみなしてマージ/本番公開しないこと**。
 - ブロッカー：稼働中GASソース現物・参加者の権利データ保持・認証/端末復旧/新規受付の現行動作・管理者最終判断。DraftをReadyにせず、main/Vercel Production/GAS/Sheet/景品キー/受付スイッチを変更しない。
+
+- **監査設定の是正（同日）**：初回のPR #44 8ファイル監査CIはmainの**過去固定SHA**を直接checkoutしていたため、将来mainが更新されても検知できない欠点があった。`.github/workflows/gacha-pr44-candidate-integrity.yml` のmain checkoutを **`ref: main`（実際の最新HEAD）**に変更し、監査scriptの `expectedBase=a701935c...` との比較で**変更後は失敗停止する**構成へ修正。**変更後PASS**：[GitHub Actions 40447386863](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40447386863)。この再実行は**CI設定の変更箇所の確認のみ**であり、ガチャ抽選等の合格済みテストは再実行していない。
