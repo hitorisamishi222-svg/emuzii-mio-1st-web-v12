@@ -18,7 +18,7 @@ if(!main||!candidate||!feature||new Set([main,candidate,feature]).size!==3)
 const git=(cwd,...args)=>execFileSync('git',['-C',cwd,...args],{encoding:'utf8'}).trim();
 const sha=buf=>createHash('sha256').update(buf).digest('hex');
 const expectedBase='a701935c72c8f2fd37dd798c269c28376081494e';
-const expectedCandidate='589f96dd1c7a0257b306adcc5477031cf081c2d8';
+const expectedCandidate='703720294ad7588c2f5fe887e2dd2bab7e0fcfee';
 const filenames=[
  'api-gacha.js','assets/mio-undersea-palace-stage.svg','gacha-contract.js',
  'gacha-deluxe-v21.css','gacha-deluxe-v21.js',
@@ -30,8 +30,8 @@ assert.equal(headMain,expectedBase,'STOP: main was changed; refresh protected ba
 assert.equal(headCandidate,expectedCandidate,'STOP: PR #44 candidate changed since review; re-review');
 assert.equal(git(candidate,'merge-base','HEAD',expectedBase),expectedBase,
  'candidate ancestry does not preserve production baseline');
-assert.equal(git(candidate,'rev-list','--count',expectedBase+'..HEAD'),'9',
- 'eight files, nine selective commits; no unexpected candidate commits');
+assert.equal(git(candidate,'rev-list','--count',expectedBase+'..HEAD'),'10',
+ 'eight files, ten selective commits; no unexpected candidate commits');
 const changed=git(candidate,'diff','--name-only',expectedBase+'..HEAD').split('\n').filter(Boolean).sort();
 assert.deepEqual(changed,filenames,'candidate changed an unrelated source file');
 const hashes=filenames.map(path=>{
