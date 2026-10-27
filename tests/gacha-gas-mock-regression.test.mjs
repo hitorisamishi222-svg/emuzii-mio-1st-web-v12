@@ -257,62 +257,82 @@ test('replaying same draw ID never rewrites its historical win probability',()=>
   assert.equal(JSON.stringify(x.sheetData['emuzii_当選履歴']),saved);
 });
 
-test('staged GAS keeps other prizes available when a different prize global stock is exhausted',()=>{
+
+test('a prize previously won by another participant is still available for this participant',()=>{
   const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
-  // N-A limited to one copy globally, already won by ANOTHER participant.
   x.sheetData['emuzii_景品設定'][0][6]=1;
   x.sheetData['emuzii_当選履歴'].push([
-    'd'.repeat(32),'MIO-W-'+'d'.repeat(24),'MIO-0099','ほかの参加者',
+    'd'.repeat(32),'MIO-W-'+'d'.repeat(24),'MIO-0099','別の参加者',
     '通常','N-A','通常A',50,new Date(),1,'確定','N','','shared-a'
   ]);
   const c=x.catalog();
-  assert.equal(c.remaining,8,'a foreign win must not spend our rights');
+  assert.equal(c.remaining,8,'another participant must not spend our rights');
   assert.equal(c.normal.ready,true);
-  assert.deepEqual(Array.from(c.normal.prizes,p=>p.id),['N-B']);
-  assert.equal(c.normal.prizes[0].chance,100);
-  const draw=x.draw('通常','a'.repeat(32));
-  assert.equal(draw.ok,true);
-  assert.equal(draw.prize,'通常B');
-  assert.equal(draw.remaining,7);
+  assert.deepEqual(Array.from(c.normal.prizes,p=>p.id),['N-A','N-B']);
+  assert.deepEqual(Array.from(c.normal.prizes,p=>p.chance),[50,50]);
+  const result=x.draw('通常','a'.repeat(32));
+  assert.equal(result.ok,true);
+  assert.equal(result.prize,'通常A','same item is available independently to another user');
+  assert.equal(result.remaining,7);
   assert.equal(x.sheetData['emuzii_当選履歴'].length,2);
-  assert.equal(x.sheetData['emuzii_当選履歴'][1][7],100);
+  assert.equal(x.sheetData['emuzii_当選履歴'][1][2],x.names.id);
+  const after=x.catalog();
+  assert.deepEqual(Array.from(after.normal.prizes,p=>p.id),['N-B']);
+  assert.deepEqual(Array.from(after.fest.prizes,p=>p.id),['F-B'],
+    'once personally won, the shared item must disappear from festival as well');
 });
 
-test('staged GAS respects stock=0 and suspends a mode only when every configured prize is exhausted',()=>{
+test('global quantity metadata never removes items or changes odds for a participant',()=>{
   const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
   x.sheetData['emuzii_景品設定'][0][6]=0;
-  x.sheetData['emuzii_景品設定'][1][6]=0;
+  x.sheetData['emuzii_景品設定'][1][6]=1;
+  x.sheetData['emuzii_景品設定'][2][6]='invalid legacy value';
+  const c=x.catalog();
+  assert.equal(c.normal.ready,true);
+  assert.equal(c.fest.ready,true);
+  assert.deepEqual(Array.from(c.normal.prizes,p=>p.chance),[50,50]);
+  assert.deepEqual(Array.from(c.fest.prizes,p=>p.chance),[50,50]);
+  assert.equal(c.normal.prizes.some(p=>Object.hasOwn(p,'stock')),false);
+  const first=x.draw('通常','b'.repeat(32));
+  assert.equal(first.ok,true);
+  assert.equal(first.prize,'通常A');
+  const second=x.draw('通常','c'.repeat(32));
+  assert.equal(second.ok,true);
+  assert.equal(second.prize,'通常B');
+  assert.equal(x.catalog().normal.ready,false);
+});
+
+test('one participant can receive every distinct key once, never duplicate it across modes',()=>{
+  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
+  x.grant('shared-a','通常','N-A');
+  x.grant('historical-b');
+  x.grant('historical-c');
+  x.grant('historical-d');
+  let c=x.catalog();
+  assert.equal(c.festUnlocked,true);
+  assert.deepEqual(Array.from(c.normal.prizes,p=>p.id),['N-B']);
+  assert.deepEqual(Array.from(c.fest.prizes,p=>p.id),['F-B']);
+  const festival=x.draw('ラキフェス','c'.repeat(32));
+  assert.equal(festival.ok,true);
+  assert.equal(festival.prize,'豪華B');
+  c=x.catalog();
+  assert.equal(c.fest.ready,false,'festival has been collected by this user');
+  assert.equal(c.normal.ready,true,'normal still has an unowned prize');
+  assert.deepEqual(Array.from(c.normal.prizes,p=>p.id),['N-B']);
+  const repeat=x.draw('ラキフェス','e'.repeat(32));
+  assert.equal(repeat.ok,false);
+  assert.equal(x.sheetData['emuzii_当選履歴'].length,5,'no extra history or right consumption');
+});
+
+test('only the user who owns all normal prizes must stop; unrelated histories do not stop a fresh user',()=>{
+  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
+  x.grant('shared-a','通常','N-A');
+  x.grant('normal-b','通常','N-B');
+  const c=x.catalog();
+  assert.equal(c.normal.ready,false);
+  assert.equal(c.normal.prizes.length,0);
   const before=x.sheetData['emuzii_当選履歴'].length;
-  const catalog=x.catalog();
-  assert.equal(catalog.normal.ready,false);
-  assert.equal(catalog.normal.prizes.length,0);
-  const result=x.draw('通常','a'.repeat(32));
+  const result=x.draw('通常','f'.repeat(32));
   assert.equal(result.ok,false);
   assert.equal(x.sheetData['emuzii_当選履歴'].length,before);
-});
-
-test('staged GAS lets two participants exhaust a limited prize and never draws a third copy',()=>{
-  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
-  x.sheetData['emuzii_景品設定'][0][6]=2;
-  const foreign=(hex)=>[
-    hex.repeat(32),'MIO-W-'+hex.repeat(24),'MIO-0099','ほかの参加者',
-    '通常','N-A','通常A',50,new Date(),1,'確定','N','','shared-a'
-  ];
-  x.sheetData['emuzii_当選履歴'].push(foreign('d'));
-  assert.equal(x.catalog().normal.prizes.length,2,'one of two copies remains');
-  x.sheetData['emuzii_当選履歴'].push(foreign('e'));
-  assert.deepEqual(Array.from(x.catalog().normal.prizes,p=>p.id),['N-B']);
-  const result=x.draw('通常','f'.repeat(32));
-  assert.equal(result.prize,'通常B');
-  assert.equal(result.ok,true);
-});
-
-test('a valid stock limit never drops unaffected festival prizes',()=>{
-  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
-  x.sheetData['emuzii_景品設定'][0][6]=0;
-  const c=x.catalog();
-  assert.equal(c.normal.prizes.length,1);
-  assert.equal(c.fest.prizes.length,2);
-  assert.equal(c.normal.prizes[0].chance,100);
-  assert.equal(c.fest.prizes.reduce((n,p)=>n+p.chance,0),100);
 });
