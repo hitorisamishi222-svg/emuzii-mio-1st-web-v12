@@ -232,3 +232,12 @@
 - **Draft PR #44（レビュー専用／DO NOT MERGE）**：https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44。Merge/releaseは未実施。PR本文に4項目のブロッカー（現行GASソース未取得、実データ保護・端末復旧影響、ライブ読取連携、管理者最終承認）を明示。
 - 2026-10-26に確認した本番Sheetの受付スイッチ2つはOFF、今回も変更なし。確定履歴25件・景品27枠・各種バックアップは保護。**実際の抽選と権利消費を伴う動作は本番で行っていない**。
 - **次**：稼働中Apps Scriptの全ファイルを読み取り専用で取得し、10/11バックアップ・開発版・現行本番の実差分を確認する。現行ソースを確認するまでDraft PRをReadyにせず、マージ/昇格せず、管理画面スイッチを触らない。
+
+ 
+## 追記：2026-10-27 PR #44 8ファイル統合候補の独立ソース完全性監査
+- 対象PR：**[Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44)**、候補HEAD `e8e875b7433c86fe250fafc090c77892c4432ed1`、元の本番保護 `main:a701935c72c8f2fd37dd798c269c28376081494e`。PRは `draft=true`、`merged=false`、現在未公開。
+- **候補に入れた8ファイルのGitHub blob SHAを、ガチャfeature元の8ファイルと1件ずつ読み取り専用比較。8/8完全一致**：`api-gacha.js`, `gacha-page.js`, `gacha.html`, `vercel.json`, `gacha-contract.js`, `gacha-deluxe-v21.js`, `gacha-deluxe-v21.css`, `assets/mio-undersea-palace-stage.svg`。
+- 専用 `tests/gacha-pr44-candidate-integrity.mjs` とGitHub Actions `.github/workflows/gacha-pr44-candidate-integrity.yml` をガチャ**featureブランチにのみ**追加。main・PR #44候補のソースにはテスト用ファイルを混入させない。
+- **新規監査 PASS**：[GitHub Actions 40447214293](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40447214293)。mainの保護済みSHA・候補HEADの固定、候補の祖先がmainであること、候補の変更が8コミット・8ファイルに限定されること、元featureとのバイト単位一致、Vercel既存87ビルド/25ルート保全・新規4静的ファイルのみを検証。合格済みガチャ抽選テストは再実行していない。
+- 現在稼働中のApps Scriptの全ファイルHEADは依然未取得。Google Drive検索では「10/11本番Code.gsバックアップ」と「GitHub v1.9.1参照原本（本番HEAD未照合）」のみが関連するCode.gs文書。**日付の古いバックアップを現行GASとみなしてマージ/本番公開しないこと**。
+- ブロッカー：稼働中GASソース現物・参加者の権利データ保持・認証/端末復旧/新規受付の現行動作・管理者最終判断。DraftをReadyにせず、main/Vercel Production/GAS/Sheet/景品キー/受付スイッチを変更しない。
