@@ -2,7 +2,7 @@
  * DEVELOPMENT CANDIDATE ONLY — DO NOT REPLACE THE PROTECTED PRODUCTION GAS FILE.
  * Per-participant once-only wins (including both gacha modes). No global stock
  * depletion or shared quantity limits. Changes scoped to probability display,
- * catalog_ removal of legacy global stock rules, and draw history odds. Merge only after
+ * catalog_/setupGacha_ removal of unused global stock settings, and win odds. Merge only after
  * full deployed Apps Script source verification and scoped registration checks.
  */
 /**
@@ -396,7 +396,7 @@ function setupGacha_(){
   var ss=SpreadsheetApp.openById(SHEET_ID),p=ss.getSheetByName(PRIZE_TAB),h=ss.getSheetByName(DRAW_TAB);
   if(!p){
     p=ss.insertSheet(PRIZE_TAB);
-    p.appendRow(['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','数量上限（空欄は制限なし）','景品画像URL（任意・HTTPS）','運営メモ','被り判定キー（任意）']);
+    p.appendRow(['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','未使用（入力不要）','景品画像URL（任意・HTTPS）','運営メモ','被り判定キー（任意）']);
     p.setFrozenRows(1);
     p.getRange('A1:J1').setBackground('#092d60').setFontColor('#ffffff').setFontWeight('bold');
     p.getRange('A2:J101').setBackground('#fff2cc');
@@ -405,11 +405,13 @@ function setupGacha_(){
     p.setColumnWidth(3,240);p.setColumnWidth(8,260);p.setColumnWidth(9,320);
   }
 
-  p.getRange('A1:J1').setValues([['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','数量上限（空欄は制限なし）','景品画像URL（任意・HTTPS）','運営メモ','被り判定キー（任意）']]);
+  p.getRange('A1:J1').setValues([['種類（通常/ラキフェス）','景品ID（重複不可）','景品名','レア度','確率（％・小数2桁まで）','有効','未使用（入力不要）','景品画像URL（任意・HTTPS）','運営メモ','被り判定キー（任意）']]);
   p.getRange('E2:E101').setDataValidation(SpreadsheetApp.newDataValidation().requireNumberBetween(0,100).setAllowInvalid(false).setHelpText('各種類ごとに有効景品の確率合計を100％にしてください。小数第2位まで。').build()).setNumberFormat('0.00');
-  p.getRange('G2:G101').setDataValidation(SpreadsheetApp.newDataValidation().requireNumberGreaterThanOrEqualTo(0).setAllowInvalid(false).setHelpText('0以上の整数。空欄は数量制限なし。').build()).setNumberFormat('0');
+  // Retain column G for backwards-compatible sheet layout; do not read or use its values.
+  p.getRange('G2:G101').clearDataValidations();
   p.getRange('E1').setNote('通常・ラキフェスそれぞれで、有効な景品の確率合計を100％にしてください。小数第2位まで。未設定や合計の不一致がある間は抽選できません。');
-  p.getRange('H1').setNote('数量上限に達すると抽選は安全のため停止します。確率の再配分などを運営で確認してください。');
+  p.getRange('G1').setNote('未使用の予備列です。景品は参加者ごとに1回のみ当選できます。既存データは保持します。');
+  p.getRange('H1').setNote('各景品の画像URLを設定します。HTTPSを使用してください。');
   p.getRange('J1').setNote('同じ景品を通常/ラキフェスで別ID登録する場合だけ、同じ被り判定キーを設定してください。空欄時は景品名で被り判定します。');
   p.setColumnWidth(10,220);
 
