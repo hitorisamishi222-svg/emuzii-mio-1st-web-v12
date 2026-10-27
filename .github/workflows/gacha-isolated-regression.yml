@@ -24,4 +24,4 @@ jobs:
         with:
           node-version: '22'
       - name: Verify gacha source and regression tests
-        run: node --test tests/gacha-recorded-replay.test.mjs tests/gacha-draw-preflight.test.mjs tests/gacha-gas-mock-regression.test.mjs tests/gacha-probability-candidate-scope.test.mjs tests/gacha-api-mock-integration.test.mjs
+        run: node --test tests/gacha-recorded-replay.test.mjs tests/gacha-draw-preflight.test.mjs tests/gacha-gas-mock-regression.test.mjs tests/gacha-probability-candidate-scope.test.mjs tests/gacha-api-mock-integration.test.mjs tests/gacha-browser-retry.test.mjs
