@@ -266,3 +266,13 @@
 - Draft PR #44から自動生成されたVercel preview（`e8e875b...`）のビルドログを読み取り専用で確認。**Deployment completed**。重大なビルドエラーは見つからず。既存 `builds` 設定に伴うVercel注意とnpm `cache-dir` 警告の2件あり、これは成功ビルドに影響しなかった。実抽選・本番GASの呼出は行わない。
 - **監査自動化の過大評価を訂正**：`.github/workflows/gacha-pr44-candidate-integrity.yml` は featureブランチの当該テスト／ワークフローファイルpushまたは手動workflow_dispatchで起動する。**本番mainが更新された瞬間に自動起動するわけではない**。ただし実行された場合は最新 `ref: main` を取得し、保護SHAと異なれば停止する。PR #44本文に **公開・マージ直前の手動再監査を必須**と追記済み。古い合格実行結果を最終判定に使わない。
 - 重要：`main` の変更・PR #44のReady化・マージ・Vercel本番昇格・GAS・Sheet変更なし。新規の抽選機能検証なし、従来合格済みテストも再実行しない。残りブロッカーは **実際の公開GASの全ソース＋バージョン確認**と最後の本番連携確認。
+
+ 
+## 追記：2026-10-27 ガチャ再読込失敗で古いカタログが残る問題・安全修正
+- 前後のコード監査で `gacha-page.js` の `loadCatalog` が通信/履歴エラーをcatchしてボタンを無効化する一方、`finally` が残っている `lastCatalog` から `setButtons(lastCatalog)` を再実行し、**直前の古い権利・受付情報で抽選ボタンを再有効化する危険**を確認。サーバー側にはdraw直前read-only preflightがあるものの、UI上の安全性として修正対象。
+- ガチャ専用featureで失敗catch時の `lastCatalog=null`・両ボタン停止、未確認drawIdがある場合は再確認ボタンを維持する局所修正を実施。**再読込が成功するまでは新規抽選を有効化しない**。認証・端末復旧・景品選択・当選履歴・抽選確定処理は変更なし。
+- 新規 `tests/gacha-stale-refresh-failclosed-browser.mjs` と専用workflow `.github/workflows/gacha-stale-refresh-failclosed-browser.yml` を追加。ローカルChromeの375px/430px画面で**カタログ更新失敗／履歴更新失敗／回復後の再有効化**を確認。初回実行はブラウザのfocus/pageshow自動リフレッシュと手動更新が競合し、テストのリクエスト数断定で失敗したため、テスト用の配信メモリ上だけで自動更新を停止（本体コードはその点を変更していない）。
+- **修正後4/4 PASS**：[GitHub Actions 40451486511](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40451486511)。実GAS通信・当選・権利消費0。合格済み旧テストの再実行なし。
+- **Draft PR #44**の1ファイル `gacha-page.js` だけ安全修正済みコードを反映。候補HEAD `589f96dd1c7a0257b306adcc5477031cf081c2d8`、`main` から **ahead 9 commits / behind 0、差分は依然8ファイルのみ**。Vercel新プレビューは **READY**、Production targetではない。
+- PRの8ファイル監査は古い候補SHAを固定checkoutしていたため**期待どおり変更検知で停止**。workflowを `release/mio-gacha-deluxe-candidate-20261027` 最新HEAD checkoutへ変更し、script内の候補SHAと9コミットを明示して監査。**修正後PASS**：[GitHub Actions 40451753726](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40451753726)。
+- 本番 `main`・Vercel Production・GAS・Google Sheet・抽選の権利／履歴・管理者受付スイッチは**無変更**。[Draft PR #44](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44)は未マージ。実稼働Apps Scriptの公開versionNumber・全ソースの現物照合が未完了であるため、公開は禁止。
