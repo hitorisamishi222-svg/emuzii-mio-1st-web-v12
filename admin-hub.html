@@ -45,6 +45,14 @@ small{color:#d3e5f3}footer{color:#a9cbe4;text-align:center;font-size:12px;margin
 </div>
 <p class="note"><small>各リンク先でもサーバー側の管理者認証が必要です。このメニューだけで編集権限を付与することはありません。</small></p>
 </div>
+<div class="panel" aria-labelledby="backgroundTitle">
+<h2 id="backgroundTitle">🎨 背景切替</h2>
+<p>公開ページの背景を「姫」「魔王」から選択します。</p>
+<label for="backgroundChoice">背景の種類</label>
+<select id="backgroundChoice"><option value="princess">姫</option><option value="devil">魔王</option></select>
+<button id="backgroundSave" type="button">背景を保存</button>
+<p id="backgroundStatus" role="status" aria-live="polite"></p>
+</div>
 <div class="panel">
 <h2>次期大型アップデートの対象</h2>
 <p>お知らせ・ギャラリー・ファンアート受付・背景切替・音楽案内・皆勤賞の運営確認を順次統合します。未実装機能を操作できるようには表示していません。</p>
@@ -76,6 +84,31 @@ small{color:#d3e5f3}footer{color:#a9cbe4;text-align:center;font-size:12px;margin
  }catch{
   authorized.hidden=true;locked.hidden=false;status.textContent='⚠️ 管理者権限を確認できません。編集メニューを安全のため非表示にしています。';
  }
+})();
+</script>
+<script>
+(async()=>{
+ const select=document.getElementById('backgroundChoice'),button=document.getElementById('backgroundSave'),status=document.getElementById('backgroundStatus');
+ let revision=null;
+ button.disabled=true;
+ try{
+  const r=await fetch('/api/background',{credentials:'same-origin',cache:'no-store'});
+  if(!r.ok)throw Error();
+  const data=await r.json();
+  if(data.ok!==true||!['princess','devil'].includes(data.theme)||!Number.isSafeInteger(data.revision))throw Error();
+  select.value=data.theme;revision=data.revision;button.disabled=false;
+ }catch{status.textContent='設定を読み込めません。保存は停止しています。';}
+ button.addEventListener('click',async()=>{
+  if(revision===null)return;
+  button.disabled=true;status.textContent='保存中…';
+  try{
+   const r=await fetch('/api/background',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme:select.value,revision})});
+   const data=await r.json();
+   if(!r.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
+   revision=data.revision;status.textContent='保存しました。公開ページを再読み込みすると反映されます。';
+  }catch(e){status.textContent='保存できませんでした。再読み込みして確認してください。';}
+  finally{button.disabled=false;}
+ });
 })();
 </script>
 </body>
