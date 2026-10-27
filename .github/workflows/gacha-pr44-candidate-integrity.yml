@@ -23,10 +23,10 @@ jobs:
           path: gacha-feature
           persist-credentials: false
           fetch-depth: 0
-      - name: Checkout protected production baseline
+      - name: Checkout CURRENT production main (abort if main HEAD changed)
         uses: actions/checkout@v4
         with:
-          ref: a701935c72c8f2fd37dd798c269c28376081494e
+          ref: main
           path: protected-main
           persist-credentials: false
           fetch-depth: 0
