@@ -82,19 +82,20 @@ async function loadCatalog(includeHistory=true){
     note(e.message);return false
   }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
 }
-async function execute(pending){
+async function execute(pending,recoveryOnly=false){
   if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
   if(busy)return;
-  busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;$('crystal').classList.add('spinning');
-  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=reduceMotion?800:5000;
-  skipRequested=false;$('skipDraw').hidden=reduceMotion;$('skipDraw').disabled=reduceMotion;
+  busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;if(!recoveryOnly)$('crystal').classList.add('spinning');
+  const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=recoveryOnly?0:reduceMotion?800:5000;
+  skipRequested=false;$('skipDraw').hidden=recoveryOnly||reduceMotion;$('skipDraw').disabled=recoveryOnly||reduceMotion;
   let refreshAfter=false, failureMessage='';
-  startEffect(pending.mode);
-  note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
+  if(!recoveryOnly)startEffect(pending.mode);
+  if(recoveryOnly)note('確定済みの当選履歴を照会しています。新しい抽選は行いません。');
+  else note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
   try{
-    const d=await post('/api/gacha',{action:'draw',...pending});
-    if(d.participantId!==participant||d.drawId!==pending.drawId||d.mode!==pending.mode||typeof d.prize!=='string'||!d.prize.trim()||!Number.isSafeInteger(d.ordinal)||d.ordinal<1||(d.remaining!=null&&(!Number.isSafeInteger(d.remaining)||d.remaining<0))){throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください')}
+    const d=await post('/api/gacha',{action:recoveryOnly?'recover':'draw',...pending});
+    if(d.participantId!==participant||d.drawId!==pending.drawId||d.mode!==pending.mode||typeof d.prize!=='string'||!d.prize.trim()||!Number.isSafeInteger(d.ordinal)||d.ordinal<1||(d.remaining!=null&&(!Number.isSafeInteger(d.remaining)||d.remaining<0))||(recoveryOnly&&d.replayed!==true)){throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください')}
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
     renderResult(d);forget();
     note(Number.isSafeInteger(d.remaining)?`${d.ordinal}回目の結果を保存しました。残り ${d.remaining}回。`:`${d.ordinal}回目の結果を確認しました。残り回数は最新のガチャ情報でご確認ください。`);
@@ -177,7 +178,7 @@ async function start(mode){
   void execute(p)
 }
 $('skipDraw').addEventListener('click',()=>{if(!busy)return;skipRequested=true;$('skipDraw').disabled=true;$('skipDraw').hidden=true;if(skipWaitResolve)skipWaitResolve();note('演出をスキップしました。確定した抽選結果を確認しています…')});
-$('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void execute(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
+$('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void execute(p,true)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
 let lastBackgroundRefresh=0;
 function refreshOpenState(){
   if(document.hidden||busy||confirming||!participant||!lastCatalog||remember())return;
