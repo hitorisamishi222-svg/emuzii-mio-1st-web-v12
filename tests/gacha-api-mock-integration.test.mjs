@@ -176,3 +176,39 @@ test('read-only history endpoint only invokes the history action',async()=>{
   assert.deepEqual(calls,['history']);
   assert.equal(res.payload.history[0].drawId,drawId);
 });
+
+test('API rejects mismatched or incomplete committed GAS results without issuing another draw',async()=>{
+  const base=successfulDraw();
+  const cases=[
+    ['wrong draw ID',{drawId:'d'.repeat(32)}],
+    ['wrong gacha mode',{mode:'ラキフェス'}],
+    ['blank prize',{prize:'   '}],
+    ['missing ordinal',{ordinal:undefined}],
+    ['fractional ordinal',{ordinal:1.5}],
+    ['negative remaining',{remaining:-1}],
+    ['fractional remaining',{remaining:1.5}],
+    ['unknown replay status',{replayed:undefined}],
+    ['wrong participant',{participantId:'MIO-W-'+'f'.repeat(24)}],
+    ['invalid image',{image:12}],
+    ['invalid rarity',{rarity:34}]
+  ];
+  for (const [label,change] of cases) {
+    const {res,calls}=await invoke({action:'draw',drawId,mode:'通常'},
+      action=>action==='catalog'?catalog():{...base,...change});
+    assert.equal(res.statusCode,409,label);
+    assert.equal(res.payload.ok,false,label);
+    assert.deepEqual(calls,['catalog','draw'],label);
+    assert.equal(res.headers['Set-Cookie'],undefined,label);
+  }
+});
+
+test('API allows explicitly marked GAS replay for the same drawId without a fresh write',async()=>{
+  const existing={...successfulDraw(),replayed:true,remaining:1};
+  const {res,calls}=await invoke({action:'draw',drawId,mode:'通常'},
+    action=>action==='catalog'?catalog():existing);
+  assert.equal(res.statusCode,200);
+  assert.equal(res.payload.replayed,true);
+  assert.deepEqual(calls,['catalog','draw']);
+  // GAS is the authority for whether the same id has already been committed.
+  // The API relays the idempotent draw request once and NEVER issues two draws.
+});
