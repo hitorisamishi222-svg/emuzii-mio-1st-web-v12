@@ -210,3 +210,49 @@ test('candidate backend advertises revision only with cross-mode nonduplication 
   assert.equal(after.normal.safetyRevision,'mio-crossmode-nodup-v1');
   assert.equal(after.fest.safetyRevision,'mio-crossmode-nodup-v1');
 });
+
+test('staged GAS logs effective 100% odds, not original 50%, when only one normal prize remains',()=>{
+  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
+  x.grant('shared-a','通常','N-A');
+  const catalog=x.catalog();
+  assert.equal(catalog.normal.prizes.length,1);
+  assert.equal(catalog.normal.prizes[0].chance,100);
+  const out=x.draw('通常','a'.repeat(32));
+  assert.equal(out.ok,true);
+  assert.equal(out.prize,'通常B');
+  const last=x.sheetData['emuzii_当選履歴'].at(-1);
+  assert.equal(last[7],100);
+  assert.equal(last[5],'N-B');
+  assert.equal(x.sheetData['emuzii_当選履歴'].length,2);
+});
+
+test('staged GAS logs fifth-draw festival probability after cross-mode win exclusion',()=>{
+  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
+  x.grant('shared-a','通常','N-A');
+  x.grant('historical-b');
+  x.grant('historical-c');
+  x.grant('historical-d');
+  const c=x.catalog();
+  assert.equal(c.fest.prizes.length,1);
+  assert.equal(c.fest.prizes[0].chance,100);
+  const out=x.draw('ラキフェス','b'.repeat(32));
+  assert.equal(out.ok,true);
+  assert.equal(out.prize,'豪華B');
+  assert.equal(out.ordinal,5);
+  const row=x.sheetData['emuzii_当選履歴'].at(-1);
+  assert.equal(row[7],100);
+  assert.equal(row[4],'ラキフェス');
+  assert.equal(row[13],'fest-b');
+});
+
+test('replaying same draw ID never rewrites its historical win probability',()=>{
+  const x=harness('../release-prep/gacha-probability-display-v191-candidate.gs');
+  x.grant('shared-a','通常','N-A');
+  const id='a'.repeat(32);
+  assert.equal(x.draw('通常',id).ok,true);
+  const saved=JSON.stringify(x.sheetData['emuzii_当選履歴']);
+  const replay=x.draw('通常',id);
+  assert.equal(replay.ok,true);
+  assert.equal(replay.replayed,true);
+  assert.equal(JSON.stringify(x.sheetData['emuzii_当選履歴']),saved);
+});
