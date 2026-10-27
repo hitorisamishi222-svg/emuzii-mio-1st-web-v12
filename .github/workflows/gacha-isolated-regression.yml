@@ -4,6 +4,13 @@ on:
     branches:
       - fix/gacha-recorded-replay-safety-20261027
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'api-gacha.js'
+      - 'gacha-*.js'
+      - 'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs'
+      - 'tests/gacha-*.test.mjs'
+      - '.github/workflows/gacha-isolated-regression.yml'
 permissions:
   contents: read
 jobs:
