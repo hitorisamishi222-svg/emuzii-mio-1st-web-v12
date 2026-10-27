@@ -470,27 +470,9 @@ function wonDuplicateKeys_(ss,id){
 function participantCatalog_(catalog,wonKeys){
   var available=(catalog.prizes||[]).filter(function(p){return !wonKeys[p.duplicateKey]});
   var units=available.reduce(function(sum,p){return sum+p.units},0);
-
-  // Presentation only: apportion exactly 10,000 hundredths of one percent
-  // by largest remainder. This does NOT change GAS's weighted draw itself.
-  // Floor all shares first, then distribute leftover hundredths to the
-  // largest integer remainders (stable original-order tie breaker).
-  var shares=available.map(function(p,index){
-    var scaled=p.units*10000;
-    return {index:index,base:units>0?Math.floor(scaled/units):0,
-      remainder:units>0?scaled%units:0};
-  });
-  if(units>0){
-    var left=10000-shares.reduce(function(sum,s){return sum+s.base},0);
-    var priority=shares.slice().sort(function(a,b){
-      return b.remainder-a.remainder||a.index-b.index;
-    });
-    for(var j=0;j<left;j++)priority[j].base++;
-  }
-
-  var prizes=available.map(function(p,index){
-    return {id:p.id,name:p.name,rarity:p.rarity,
-      chance:shares[index].base/100,stock:p.stock,image:p.image};
+  var prizes=available.map(function(p){
+    var effective=units>0?Math.round((p.units/units)*10000)/100:0;
+    return {id:p.id,name:p.name,rarity:p.rarity,chance:effective,stock:p.stock,image:p.image};
   });
   return {
     ready:catalog.ready&&available.length>0,
