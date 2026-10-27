@@ -1,0 +1,35 @@
+name: Gacha selective release boundary (new only)
+
+on:
+  push:
+    branches:
+      - feature/mio-royal-gacha-deluxe-20261023
+    paths:
+      - 'tools/gacha-release-boundary-check.mjs'
+      - '.github/workflows/gacha-release-boundary-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare-only-no-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source-controlled gacha feature
+        uses: actions/checkout@v4
+        with:
+          path: gacha-feature
+          persist-credentials: false
+      - name: Checkout pinned concurrent-recovery-preserving production main
+        uses: actions/checkout@v4
+        with:
+          ref: a701935c72c8f2fd37dd798c269c28376081494e
+          path: current-main-reference
+          persist-credentials: false
+      - name: Strict read-only eight-file release boundary gate
+        run: |
+          node --version
+          node --check gacha-feature/tools/gacha-release-boundary-check.mjs
+          node gacha-feature/tools/gacha-release-boundary-check.mjs current-main-reference gacha-feature
