@@ -222,3 +222,13 @@
 - 最初の試行で9ケース通過後、`focus/visibilitychange` による**仕様どおりのカタログ自動再取得**が1件の「ちょうど1回だけ読み取り」の厳格すぎるテスト判定に引っかかった。判定を「1〜3回の読取は許容、抽選要求は絶対0」に修正した。
 - 次の試行のChromiumインストールがGitHub側で遅延したため、Chrome搭載runnerを使用するようテスト用ワークフローとtestの起動オプションだけ変更。アプリ側の抽選本体・権利・景品・デモ演出は修正していない。成功した実行IDは `40440700532`。
 - **この合格はモックによる新しい安全契約テストのみ**。稼働中GAS現行ソース照合・実ブラウザでのライブ連携（権利消費なし）・デプロイ公開可否はまだ未確認。本番でのガチャ受付スイッチを勝手に変更しない。ほかチャットの端末復旧変更をマージ・上書きしない。
+
+ 
+## 追記：2026-10-27 選択的8ファイル統合候補と Draft PR #44
+- 既存稼働中のVercel Productionは `main:a701935c72c8f2fd37dd798c269c28376081494e` で READY、ガチャ開発featureは別 Preview で READY であることをVercelに照会確認。**本番の配信先は変更なし**。
+- `main` の認証/端末復旧/登録を保持するため、開発featureを丸ごとマージせず、公開候補8ファイルだけを比較する `tools/gacha-release-boundary-check.mjs` を新設。別の `.github/workflows/gacha-release-boundary-check.yml` で検証し、**PASS**：[GitHub Actions 40446282074](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40446282074)。既存静的ビルド87件とroute25本の完全保護、ガチャの追加ビルド4件のみ、既存ガチャAPIへ無関係な認証差分がないことを確認。mainが期待SHAでない場合は検査を停止。
+- **本番mainから専用のレビュー用ブランチ `release/mio-gacha-deluxe-candidate-20261027` を分岐**して、開発featureのガチャ専用8ファイルのみを個別にコピー。比較結果は `main` に対し **ahead 8 / behind 0、変更ファイルちょうど8件**。取り込み対象：更新 `api-gacha.js`, `gacha-page.js`, `gacha.html`, `vercel.json`; 新規 `gacha-contract.js`, `gacha-deluxe-v21.js`, `gacha-deluxe-v21.css`, `assets/mio-undersea-palace-stage.svg`。
+- このブランチのVercel Previewは `e8e875b7433c86fe250fafc090c77892c4432ed1` で **READY、target=null（本番ではない）**。
+- **Draft PR #44（レビュー専用／DO NOT MERGE）**：https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/pull/44。Merge/releaseは未実施。PR本文に4項目のブロッカー（現行GASソース未取得、実データ保護・端末復旧影響、ライブ読取連携、管理者最終承認）を明示。
+- 2026-10-26に確認した本番Sheetの受付スイッチ2つはOFF、今回も変更なし。確定履歴25件・景品27枠・各種バックアップは保護。**実際の抽選と権利消費を伴う動作は本番で行っていない**。
+- **次**：稼働中Apps Scriptの全ファイルを読み取り専用で取得し、10/11バックアップ・開発版・現行本番の実差分を確認する。現行ソースを確認するまでDraft PRをReadyにせず、マージ/昇格せず、管理画面スイッチを触らない。
