@@ -9,7 +9,8 @@ const catalog=()=>({
   ok:true,participantId,confirmed:true,festEntitled:false,festUnlocked:false,
   normalOpen:true,festOpen:false,used:0,remaining:4,nextOrdinal:1,
   webDrawsUsed:0,festAvailableFrom:5,
-  normal:{ready:true,prizes:[]},fest:{ready:false,prizes:[]}
+  normal:{ready:true,prizes:[],safetyRevision:'mio-crossmode-nodup-v1'},
+  fest:{ready:false,prizes:[],safetyRevision:'mio-crossmode-nodup-v1'}
 });
 const recorded=()=>({
   ok:true,participantId,history:[{...request,prize:'翠央グッズ',ordinal:1,rarity:'R',image:''}]
@@ -82,7 +83,7 @@ test('valid catalog cannot authorize a new draw when basic rights or admin gates
     ['membership unconfirmed', {confirmed:false}],
     ['zero remaining rights', {remaining:0}],
     ['normal gate closed', {normalOpen:false}],
-    ['normal prizes not ready', {normal:{ready:false,prizes:[]}}],
+    ['normal prizes not ready', {normal:{ready:false,prizes:[],safetyRevision:'mio-crossmode-nodup-v1'}}],
   ];
   for (const [label,overrides] of scenarios) {
     const base={...catalog(),...overrides};
@@ -95,13 +96,13 @@ test('valid catalog cannot authorize a new draw when basic rights or admin gates
 
 test('fifth-draw condition and fest-specific admin gate must all be met',async()=>{
   const fest={...catalog(),used:4,remaining:4,nextOrdinal:5,webDrawsUsed:4,
-    festEntitled:true,festUnlocked:true,festOpen:true,fest:{ready:true,prizes:[]}};
+    festEntitled:true,festUnlocked:true,festOpen:true,fest:{ready:true,prizes:[],safetyRevision:'mio-crossmode-nodup-v1'}};
   const wanted={...request,mode:'ラキフェス'};
   for (const [label,overrides] of [
     ['admin gate closed',{festOpen:false}],
     ['not entitled',{festEntitled:false,festUnlocked:false}],
     ['not unlocked',{webDrawsUsed:3,festUnlocked:false}],
-    ['prizes missing',{fest:{ready:false,prizes:[]}}],
+    ['prizes missing',{fest:{ready:false,prizes:[],safetyRevision:'mio-crossmode-nodup-v1'}}],
   ]) {
     const t=track(action=>action==='catalog'?{...fest,...overrides}:{...recorded(),history:[]});
     assert.deepEqual(await preflightGachaDraw(t.read,identity,wanted),
@@ -133,4 +134,27 @@ test('invalid identity, draw id, or mode never contacts GAS',async()=>{
     assert.deepEqual(await preflightGachaDraw(t.read,ident,req),{kind:'blocked'});
   }
   assert.deepEqual(t.actions,[]);
+});
+
+test('legacy backend lacking reviewed safety revision cannot authorize a new draw',async()=>{
+  const legacy={...catalog(),normal:{ready:true,prizes:[]},fest:{ready:false,prizes:[]}};
+  const t=track(action=>action==='catalog'?legacy:{...recorded(),history:[]});
+  assert.deepEqual(await preflightGachaDraw(t.read,identity,request),{kind:'blocked'});
+  assert.deepEqual(t.actions,['catalog','history']);
+});
+
+test('mismatched mode safety revisions cannot authorize a new draw',async()=>{
+  const invalid={...catalog(),fest:{ready:false,prizes:[],safetyRevision:'legacy-v0'}};
+  const t=track(action=>action==='catalog'?invalid:{...recorded(),history:[]});
+  assert.deepEqual(await preflightGachaDraw(t.read,identity,request),{kind:'blocked'});
+  assert.deepEqual(t.actions,['catalog','history']);
+});
+
+test('legacy GAS still permits read-only recovery of a proven committed result',async()=>{
+  const legacy={...catalog(),normal:{ready:true,prizes:[]},fest:{ready:false,prizes:[]}};
+  const t=track(action=>action==='catalog'?legacy:recorded());
+  const decision=await preflightGachaDraw(t.read,identity,request);
+  assert.equal(decision.kind,'replayed');
+  assert.equal(decision.data.drawId,request.drawId);
+  assert.deepEqual(t.actions,['catalog','history']);
 });
