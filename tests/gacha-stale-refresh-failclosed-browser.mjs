@@ -12,7 +12,14 @@ const origin='http://127.0.0.1:8765';
 const source=readFileSync('gacha-page.js','utf8');
 const previewLiteral="const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';";
 assert.ok(source.includes(previewLiteral),'preview handling changed; stop before simulating');
-const browserSource=source.replace(previewLiteral,'const isPreview=false; // local intercepted-API test only');
+// Disable ONLY automatic focus/pageshow/timer refresh in the served local
+// test copy so this regression isolates the explicit refresh button.
+// Production source, API guards, and draw behavior are never altered.
+const browserSource=source.replace(previewLiteral,'const isPreview=false; // local intercepted-API test only')
+ .replace('window.setInterval(refreshOpenState,30000);','/* mock E2E: no periodic background refresh */')
+ .replace("window.addEventListener('focus',refreshOpenState);",'/* mock E2E: no focus refresh */')
+ .replace("document.addEventListener('visibilitychange',refreshOpenState);",'/* mock E2E: no visibility refresh */')
+ .replace("window.addEventListener('pageshow',refreshOpenState);",'/* mock E2E: no pageshow refresh */');
 const browser=await chromium.launch({headless:true,...(process.env.MIO_SYSTEM_CHROME==='1'?{channel:'chrome'}:{})});
 const participant='MOCK-WEB-SAFE-NO-LIVE-DATA';
 const catalog={
