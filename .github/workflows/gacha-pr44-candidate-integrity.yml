@@ -33,7 +33,7 @@ jobs:
       - name: Checkout isolated PR44 draft candidate
         uses: actions/checkout@v4
         with:
-          ref: e8e875b7433c86fe250fafc090c77892c4432ed1
+          ref: release/mio-gacha-deluxe-candidate-20261027
           path: pr44-candidate
           persist-credentials: false
           fetch-depth: 0
