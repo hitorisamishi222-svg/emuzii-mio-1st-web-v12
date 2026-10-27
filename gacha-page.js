@@ -1,7 +1,9 @@
+import {hasSafeGachaContract} from './gacha-contract.js';
 const $=id=>document.getElementById(id);
 let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null,animationTimers=[],skipRequested=false,skipWaitResolve=null;
 const pendingKey=()=>`mio_pending_draw_${participant||'unknown'}`;
 const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';
+const gachaContractError='ガチャの安全確認が完了していません。新規抽選を停止しています。運営へご連絡ください。';
 function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'応答を確認できませんでした'}}}
 async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});const d=parse(await r.text());if(!r.ok||!d||d.ok!==true){const e=Error(d?.error||'抽選結果を確認できませんでした。同じ抽選IDで再確認してください');e.status=r.status;throw e}return d}
 function note(t){$('drawMessage').textContent=t||''}
@@ -31,6 +33,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function renderCatalog(target,c){target.replaceChildren();const p=document.createElement('p');p.className='catalog-status';p.textContent=c.message;target.append(p);for(const x of c.prizes||[]){const row=document.createElement('div');row.className='prize';const image=safeImage(x.image);if(image){const img=document.createElement('img');img.src=image;img.alt=x.name||'';img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});row.append(img)}const meta=document.createElement('div');const n=document.createElement('strong');n.textContent=x.name;const s=document.createElement('span');s.textContent=`${x.rarity?x.rarity+' · ':''}${x.chance}%`;meta.append(n,s);row.append(meta);target.append(row)}}
 function renderResult(d){lastResult=d;const stage=$('gachaStage'),card=$('drawResultCard'),img=$('drawResultImage');stage.classList.toggle('is-fest',d.mode==='ラキフェス');revealEffect(d.rarity,d.mode);card.hidden=false;card.classList.remove('result-pop');void card.offsetWidth;card.classList.add('result-pop');$('drawRarity').textContent=d.rarity||'';$('drawPrizeName').textContent=d.prize||'当選';$('drawOrdinal').textContent=`${d.ordinal}回目${d.replayed?'（確認済み結果）':''}`;const image=safeImage(d.image);if(image){img.src=image;img.alt=d.prize||'当選景品';img.hidden=false;img.onerror=()=>{img.hidden=true}}else{img.hidden=true;img.removeAttribute('src')}window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{rarity:d.rarity,mode:d.mode}}));if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)card.scrollIntoView({behavior:'smooth',block:'center'});else card.scrollIntoView({behavior:'auto',block:'center'})}
 function setButtons(c){
+  if(!hasSafeGachaContract(c)){$('drawNormal').disabled=true;$('drawFest').disabled=true;note(gachaContractError);return;}
   if(busy){note('ガチャ情報の更新中です。少し待ってからもう一度押してください。');return;}
   if(confirming){note('抽選の確認画面で操作を完了してください。');return;}
   const pending=remember(),start=Number(c.festAvailableFrom)||5,normalOpen=c.normalOpen===true,festOpen=c.festOpen===true;
@@ -49,6 +52,7 @@ async function loadCatalog(includeHistory=true){
   busy=true;
   try{
     const c=await post('/api/gacha',{action:'catalog'});
+    if(!hasSafeGachaContract(c)){lastCatalog=null;throw Error(gachaContractError);}
     lastCatalog=c;participant=c.participantId;$('drawPanel').hidden=false;
     $('drawRemaining').textContent=`ガチャ残り ${c.remaining}回 ／ 使用済み ${c.used}回`;
     renderCatalog($('normalPrizes'),c.normal);renderCatalog($('festPrizes'),c.fest);
@@ -148,6 +152,7 @@ async function start(mode){
   // loadCatalog sets busy while fetching; avoid leaving buttons disabled after a failed refresh.
   if(!await loadCatalog(false)||!lastCatalog){if(lastCatalog)setButtons(lastCatalog);note('ガチャ設定を取得できませんでした。通信状態を確認して再試行してください。');return;}
   const c=lastCatalog;
+  if(!hasSafeGachaContract(c)){lastCatalog=null;$('drawNormal').disabled=true;$('drawFest').disabled=true;note(gachaContractError);return;}
   $('drawNormal').disabled=true;
   $('drawFest').disabled=true;
   const available=mode==='通常'
