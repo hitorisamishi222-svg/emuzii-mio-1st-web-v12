@@ -201,3 +201,14 @@
 - 修正後 **新規4/4 PASS、0 FAIL**：[GitHub Actions 40308236545](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40308236545)。検査内容：①生成候補が構文的に実行可能、②Web確定抽選3回時はラキフェス拒否、③Web4回後の5回目のラキフェスで通常景品重複除外と確定記録、④残り1権利の2回目の要求を拒否。テストは架空シート・架空参加者のみ。合格済みの別テストは再実行なし。
 - **区別**：この実行検証の対象は**GitHub旧mainから作ったレビュー用候補**であり、上記10/11バックアップの全体動作や現在稼働中GASの保証ではない。端末復旧・新規受付などの関数は置換していない。
 - `main`、Vercel、本番Apps Script、Googleシートへの書き込みは行わず、ガチャ専用featureのテスト・CI・ドキュメントだけ更新。
+
+ 
+## 追記：2026-10-27 開発版ガチャAPIと画面の旧GAS応答フェイルクローズ保護
+- 直前の作業結果と前後の指示を再確認。前回の `gacha-page.js` へのガード更新は**前ターン末の書込が完了しておらず**、今回の事前確認ではガード未保存と判明。今回の修正は未保存分をやり直し、**新たにVercelのサーバー側でも検査**する方式とした。
+- 共通の純関数 `gacha-contract.js` 新設。`ok`、承認有無、カタログ2種の状態、通常／ラキフェス受付、総使用数・残回数・Web確定数・次回抽選番号・ラキフェス開始回数・解放状態を確認。未知または矛盾した旧GASカタログは拒否。ラキフェスの条件は**Web確定抽選4回以降、5回目から**（B23は5）。これは現行GASの互換性を保証するものではない。
+- `gacha-page.js` では読込時・操作ボタン有効化時・抽選直前の3箇所で検査し、旧形式なら新規抽選を停止。抽選演出・過去結果表示・抽選ID等の既存ロジックは変更しない。
+- `api-gacha.js` の `draw` リクエストは、**既存のログイン済み同一Web ID**でまず読み取り専用 `bridge('catalog',identity)` を検査。欠落・矛盾・ID不一致なら GAS `draw` を呼ばずに409応答。同じ抽選IDの再送は、カタログ契約が整合している限り元の `drawId` で既存GASへそのまま通して冪等再確認を維持する。履歴やカタログ表示への新しい副作用は追加しない。**抽選ごとにGAS読取呼出が1回増える**点は負荷監視事項。
+- 明示列挙の `vercel.json` に新規 `gacha-contract.js` を静的ビルド登録。ガチャ専用featureブランチのみ変更。
+- 専用GitHub Actions `.github/workflows/gacha-safe-catalog-contract.yml` と `tests/gacha-safe-catalog-contract.test.mjs` を実行。**今回の変更に限定した新規13/13 PASS、0 FAIL**：[GitHub Actions 40439299143](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40439299143)。`gacha-page.js`、`api-gacha.js`、`gacha-contract.js` の構文検証も成功。元の合格済み機能テストは再実行していない。
+- 同コミット `f886c3aafb3c657d70184f27473ab93af0586a1f` のプレビューVercelは READY と確認。**本番環境へは昇格していない**。
+- 重要：2026-10-26現在本番シート受付スイッチは通常・ラキフェス両方OFF。**勝手にONへ変更禁止**。本番GASの現行HEADの取得と最終互換確認、既存端末復旧との影響確認は残存。全体の本番公開は未実施。
