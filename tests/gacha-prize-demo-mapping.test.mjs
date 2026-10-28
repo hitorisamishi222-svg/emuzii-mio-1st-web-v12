@@ -107,3 +107,19 @@ test('all gacha controls remain adjacent to stage and NEVER auto-scroll on a dra
   assert.doesNotMatch(page,/scrollIntoView/,
     'real draw and result must NEVER automatically move the page');
 });
+
+test('prize emerges in front of fixed square machine, with accessible close button',()=>{
+  const css=readFileSync(new URL('../gacha-deluxe-v21.css',import.meta.url),'utf8');
+  const overlay=css.slice(css.indexOf('/* v2.1.8 — Prize reveal overlays'));
+  assert.match(overlay,/position:absolute!important/);
+  assert.match(overlay,/z-index:95!important/);
+  assert.match(overlay,/transform-origin:50% 83%!important/);
+  assert.match(overlay,/transform:translateY\(22%\) scale\(\.2\)!important/);
+  assert.match(overlay,/transition:opacity \.45s ease,transform \.58s/);
+  assert.match(overlay,/\.mio-prize-close/);
+  assert.match(js,/stage\.append\(resultDock\)/);
+  assert.match(js,/resultDock\.setAttribute\('role','dialog'\)/);
+  assert.match(js,/close\.textContent='閉じる · 次のガチャへ'/);
+  assert.match(js,/pendingRevealTimer=setTimeout/);
+  assert.match(js,/window\.dispatchEvent\(new Event\('mio:gacha-prize-closed'\)\)/);
+});
