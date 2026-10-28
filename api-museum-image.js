@@ -56,7 +56,7 @@ export function createImageHandler(deps={}){
   const item=validateArchiveExhibit({...raw,imageUrl:'/assets/museum-draft-upload.webp'});
   if(!item)return say(res,400,'EXHIBIT_INVALID');
   const pool=new PoolClass({connectionString:process.env.GALLERY_DATABASE_URL,max:1,connectionTimeoutMillis:4000});
-  let c,createdUrl=null,committed=false;
+  let c,createdUrl=null,committed=false,commitAttempted=false;
   try{
    c=await pool.connect();
    const admin=await verify(c,req);
@@ -103,6 +103,9 @@ export function createImageHandler(deps={}){
      "INSERT INTO gallery_admin_audit(actor_id,action,target,result) VALUES($1,$2,$3,'success')",
      [admin.id,'museum_'+(action==='imageCreate'?'image_created':'image_replaced'),String(result.rows[0].id)]
     );
+    // Once COMMIT is sent, a network error leaves the DB result uncertain.
+    // Never delete the new Blob until reconciliation confirms it was not committed.
+    commitAttempted=true;
     await c.query('COMMIT');committed=true;
     return res.status(200).json({ok:true,exhibit:{
      id:String(result.rows[0].id),status:'draft',revision:Number(result.rows[0].revision),
@@ -116,7 +119,7 @@ export function createImageHandler(deps={}){
    c?.release();
    await pool.end().catch(()=>{});
    // If DB write/audit failed, remove the NEW image. Never remove existing galleries.
-   if(createdUrl&&!committed)await remove(createdUrl).catch(()=>{});
+   if(createdUrl&&!committed&&!commitAttempted)await remove(createdUrl).catch(()=>{});
    // Previous image is intentionally retained until a separate reviewed cleanup process.
   }
  };
