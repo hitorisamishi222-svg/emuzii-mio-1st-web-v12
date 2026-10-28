@@ -786,7 +786,7 @@
 
 /* v2.1.9 — stable no-scroll controls: skip/status live below the machine.
    Nothing above #gachaStage changes its height during a draw or after close. */
-.gacha-page #drawPanel>.mio-deluxe-demo-skip:not([hidden]){
+.gacha-page #drawPanel .mio-gacha-skip-slot>.mio-deluxe-demo-skip:not([hidden]){
   display:block!important;
   width:min(100%,440px);
   min-height:42px;
@@ -799,7 +799,7 @@
   font-weight:800;
   cursor:pointer;
 }
-.gacha-page #drawPanel>.mio-deluxe-demo-skip[hidden]{display:none!important}
+.gacha-page #drawPanel .mio-gacha-skip-slot>.mio-deluxe-demo-skip[hidden]{display:none!important}
 .gacha-page #drawPanel>.mio-deluxe-demo-status{
   width:min(100%,440px);
   box-sizing:border-box;
@@ -848,4 +848,52 @@
 .gacha-page #skipDraw[hidden]{
   visibility:hidden!important;
   pointer-events:none!important;
+}
+
+
+/* v2.1.10 — exact height invariant from Chrome:
+   close previously reduced the document by 15px and shifted the 336px whale
+   from y=257.64 to y=272.64. All text and skip toggles below the machine
+   now retain fixed space so Safari/Chrome do not clamp the page scroll. */
+.gacha-page #drawPanel .mio-gacha-skip-slot{
+  width:min(100%,440px);
+  box-sizing:border-box;
+  height:50px;
+  min-height:50px;
+  max-height:50px;
+  margin:3px auto 4px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.gacha-page #drawPanel .mio-gacha-skip-slot #skipDraw:not([hidden]),
+.gacha-page #drawPanel .mio-gacha-skip-slot .mio-deluxe-demo-skip:not([hidden]){
+  width:100%;
+  max-width:100%;
+  margin:0!important;
+  box-sizing:border-box;
+}
+.gacha-page #drawPanel>.mio-deluxe-demo-status{
+  box-sizing:border-box;
+  height:65px!important;
+  min-height:65px!important;
+  max-height:65px!important;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  margin:4px auto 7px!important;
+}
+.gacha-page #drawPanel>#drawMessage{
+  box-sizing:border-box;
+  height:72px!important;
+  min-height:72px!important;
+  max-height:72px!important;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+@media(max-width:430px){
+  .gacha-page #drawPanel .mio-gacha-skip-slot{
+    height:48px;
+    min-height:48px;
+    max-height:48px;
+  }
 }
