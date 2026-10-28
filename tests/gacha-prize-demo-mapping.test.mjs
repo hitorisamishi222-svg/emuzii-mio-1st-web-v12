@@ -89,11 +89,21 @@ test('iPhone image sizing retains original whale canvas and landscape prize prop
   assert.deepEqual(jpegDimensions('assets/mio-royal-whale-machine.jpg'),[900,900]);
 });
 
-test('preview buttons are immediately before machine, scrolling into view on a demo tap',()=>{
-  assert.match(js,/stage\.insertAdjacentElement\('beforebegin',demo\)/);
-  assert.match(js,/stage\.scrollIntoView\?\.\(\{behavior:reducedMotion\?'auto':'smooth',block:'center'\}\)/);
-  assert.doesNotMatch(js,/foot\.insertAdjacentElement\('afterend',demo\)/);
+test('all gacha controls remain adjacent to stage and NEVER auto-scroll on a draw',()=>{
+  const css=readFileSync(new URL('../gacha-deluxe-v21.css',import.meta.url),'utf8');
+  const compact=css.slice(css.indexOf('/* v2.1.7 — NO AUTO-SLIDE'));
+  assert.ok(compact.startsWith('/* v2.1.7 — NO AUTO-SLIDE'));
+  assert.match(compact,/mio-deluxe-demo-mode/);
+  assert.match(compact,/royal-gacha-controls/);
+  assert.match(compact,/100svh - 350px/);
+  assert.match(compact,/aspect-ratio:1 \/ 1!important/);
+  assert.match(js,/stage\.insertAdjacentElement\('beforebegin',controls\)/,
+    'real draw buttons must be immediately beside the machine');
+  assert.match(js,/stage\.insertAdjacentElement\('beforebegin',demo\)/,
+    'the rehearsal buttons must be immediately beside the machine');
+  assert.doesNotMatch(js,/scrollIntoView/,
+    'preview must NEVER automatically move page before or after animation');
   const page=readFileSync(new URL('../gacha-page.js',import.meta.url),'utf8');
-  assert.match(page,/\$\('gachaStage'\)\.scrollIntoView\?\.\(\{behavior:reduceMotion\?'auto':'smooth',block:'center'\}\)/,
-    'confirmed real draws need the same visibility handling');
+  assert.doesNotMatch(page,/scrollIntoView/,
+    'real draw and result must NEVER automatically move the page');
 });
