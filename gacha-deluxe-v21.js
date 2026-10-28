@@ -77,7 +77,9 @@
   const skipDemo=document.createElement('button');skipDemo.type='button';skipDemo.className='mio-deluxe-demo-skip';skipDemo.textContent='演出をスキップ';skipDemo.hidden=true;skipDemo.disabled=true;
   const status=document.createElement('p');status.className='mio-deluxe-demo-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='どちらも実抽選しません。';
   actionRow.append(normal,fest);demo.append(heading,description,label,select,actionRow,skipDemo,status);
-  foot.insertAdjacentElement('afterend',demo);
+  // Put the actual demo controls immediately ABOVE the machine, not below
+  // the entire machine, prize-result dock and explanatory footnote.
+  stage.insertAdjacentElement('beforebegin',demo);
   let active=false,activePrize=null,selectedMode='通常',previewPrizes=[];
   const timers=[];
   function showPreviewPrizes(mode){
@@ -153,6 +155,10 @@
     active=true;normal.disabled=true;fest.disabled=true;select.disabled=true;skipDemo.hidden=false;skipDemo.disabled=false;
     reset();const rarity=prize.rarity;
     stage.classList.toggle('is-fest',mode==='ラキフェス');
+    // Starting a preview gently brings the machine into view, so the
+    // first seconds of the animation are not played off-screen on iPhone.
+    const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;
+    stage.scrollIntoView?.({behavior:reducedMotion?'auto':'smooth',block:'center'});
     stage.classList.add('draw-active');
     // Keep preview animation self-contained: the existing live FX listeners
     // also react to mio:gacha-* and would spawn unrelated timers/sounds.
