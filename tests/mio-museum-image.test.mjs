@@ -187,7 +187,32 @@ test('frontend has visible privacy warning, preview, and a two-stage publish flo
  assert.match(js,/canvas\.toBlob/);
  assert.match(js,/MAX_OUTPUT=700_000/);
  assert.doesNotThrow(()=>new Script(js));
+ const inlineStart=page.indexOf('<script>');
+ const inlineEnd=page.indexOf('</script>',inlineStart);
+ assert.ok(inlineStart>=0&&inlineEnd>inlineStart);
+ assert.doesNotThrow(()=>new Script(page.slice(inlineStart+'<script>'.length,inlineEnd)));
  assert.ok(routes.builds.some(x=>x.src==='api-museum-image.js'));
  assert.ok(routes.routes.some(x=>x.src==='/api/museum/image'));
  assert.ok(routes.builds.some(x=>x.src==='gacha-deluxe-v21.js'));
+});
+
+test('ambiguous COMMIT result keeps newly uploaded image for reconciliation',async()=>{
+ await withEnv(async()=>{
+  const deleted=[];const commands=[];
+  const handler=createImageHandler({
+   PoolClass:fakePool(async sql=>{
+    commands.push(sql);
+    if(sql.startsWith('INSERT INTO museum_public_exhibits'))
+     return {rowCount:1,rows:[{id:ID,status:'draft',revision:0}]};
+    if(sql==='COMMIT')throw Error('network failed after commit request');
+    return {rowCount:1,rows:[]};
+   }),verifyAdmin:async()=>({id:UID,role:'owner'}),
+   putBlob:async path=>({url:blobUrl(path)}),
+   delBlob:async url=>deleted.push(url)
+  });
+  const out=response();await handler(request({action:'imageCreate',item:sample,image}),out);
+  assert.equal(out.code,503);
+  assert.ok(commands.includes('COMMIT'));
+  assert.deepEqual(deleted,[]);
+ });
 });
