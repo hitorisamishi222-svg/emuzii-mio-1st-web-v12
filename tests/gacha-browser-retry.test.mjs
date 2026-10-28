@@ -118,7 +118,7 @@ test('read-only pending result recovery never scrolls away to restart the whale 
 
 test('real draw buttons remain disabled while the winner is on the whale machine',async()=>{
   const h=harness(new Map());
-  const result=h.nodes.get('drawResultCard');
+  const result=h.context.document.getElementById('drawResultCard');
   result.hidden=false;
   h.context.fixture=catalog();
   vm.runInContext('setButtons(fixture)',h.context);
