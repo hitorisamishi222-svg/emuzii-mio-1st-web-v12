@@ -61,9 +61,12 @@ test('protected media page and route are included',()=>{
 test('inline management scripts are syntactically valid',()=>{
  for(const name of ['announcements-manage.html','media-manage.html']){
   const html=readFileSync(new URL('../'+name,import.meta.url),'utf8');
-  const match=html.match(/<script(?: type="module")?>([\\s\\S]*?)<\\/script>/);
-  assert.ok(match,'script not found: '+name);
-  assert.doesNotThrow(()=>new vm.Script(match[1],{filename:name}));
+  const start=html.indexOf('<script');
+  const open=html.indexOf('>',start);
+  const close=html.indexOf('</script>',open);
+  const source=html.slice(open+1,close);
+  assert.ok(start>=0&&open>start&&close>open,'script not found: '+name);
+  assert.doesNotThrow(()=>new vm.Script(source,{filename:name}));
  }
 });
 test('schema creation is separate and enrollment data remains untouched',()=>{
