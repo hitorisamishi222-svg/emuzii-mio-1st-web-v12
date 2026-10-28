@@ -43,7 +43,7 @@ test('public announcement GET maps updated_at to updatedAt without audit writes'
   const auth=authQuery(sql,args);if(auth)return auth;
   if(sql.includes('FROM anniversary_announcements')){
    assert.match(sql,/WHERE published=true/);
-   return {rows:[notice],rowCount:1};
+   return {rows:[{...notice,published:true}],rowCount:1};
   }
   throw Error('unexpected SQL');
  },async()=>{
@@ -51,7 +51,7 @@ test('public announcement GET maps updated_at to updatedAt without audit writes'
   assert.equal(out.code,200);
   assert.equal(out.data.items[0].updatedAt,notice.updated_at);
   assert.equal(out.data.items[0].id,'42');
-  assert.equal(out.data.items[0].published,false); // DB should already filter published rows.
+  assert.equal(out.data.items[0].published,true);
  });
  assert.ok(!calls.some(sql=>/BEGIN|INSERT INTO gallery_admin_audit/.test(sql)));
 });
