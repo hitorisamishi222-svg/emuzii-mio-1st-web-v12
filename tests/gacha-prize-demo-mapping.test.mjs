@@ -49,7 +49,7 @@ test('luxury rehearsal draws zero prizes and reads only its static local fixture
   const preview=js.slice(js.indexOf('// Preview-only interaction.'));
   assert.match(preview,/previewHost/);
   assert.match(preview,/deluxeDemo/);
-  assert.doesNotMatch(preview,/fetch\\('\\/gacha-prize-demo-catalog\\.json'/);
+  assert.ok(!preview.includes("fetch('/gacha-prize-demo-catalog.json'"));
   // The preview starts synchronously from a copy of the public prize
   // catalog, so Safari has no extra JSON network dependency at startup.
   const marker='const PREVIEW_SNAPSHOT = ';
