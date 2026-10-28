@@ -40,3 +40,25 @@ const REVIEW_ACTIONS=Object.freeze({
 export function reviewTransition(action){
  return Object.hasOwn(REVIEW_ACTIONS,action)?REVIEW_ACTIONS[action]:null;
 }
+
+const THUMB_EXT=/\.(?:png|jpe?g|webp|gif|svg)$/i;
+export function secureMediaThumbnail(value){
+ if(typeof value!=='string'||value.length>1024)return null;
+ if(value==='')return '';
+ if(/^\/assets\/[A-Za-z0-9_/-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(value)&&!value.includes('..'))return value;
+ try{
+  const u=new URL(value);
+  if(u.protocol!=='https:'||u.username||u.password||!THUMB_EXT.test(u.pathname))return null;
+  if(!/^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(u.hostname))return null;
+  return u.href.length<=1024?u.href:null;
+ }catch{return null;}
+}
+export function validateMediaAdminItem(value){
+ if(!value||typeof value!=='object'||Array.isArray(value)||value.consent!==true)return null;
+ if(value.category!=='動画'&&value.category!=='音声・楽曲')return null;
+ const title=clean(value.title,120,true),creator=clean(value.creator,80,true);
+ const description=clean(value.description,1000,false,true);
+ const url=secureWorkUrl(value.url),thumbnail=secureMediaThumbnail(value.thumbnail||'');
+ if(title===null||creator===null||description===null||!url||thumbnail===null)return null;
+ return {title,creator,description,category:value.category,url,thumbnail};
+}
