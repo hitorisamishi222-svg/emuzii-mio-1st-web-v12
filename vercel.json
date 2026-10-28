@@ -388,6 +388,26 @@
     {
       "src": "sitemap.xml",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-curate.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-museum-exhibits.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -535,6 +555,43 @@
       "dest": "/sitemap.xml",
       "headers": {
         "Content-Type": "application/xml; charset=utf-8"
+      }
+    },
+    {
+      "src": "/api/museum/exhibits",
+      "dest": "/api-museum-exhibits.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.html",
+      "dest": "/museum-archive.html",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.css",
+      "dest": "/museum-archive.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.js",
+      "dest": "/museum-archive.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-curate.html",
+      "dest": "/museum-curate.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
       }
     },
     {
