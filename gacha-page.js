@@ -97,6 +97,42 @@ async function execute(pending){
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
   }
 }
+// The old retry button re-sent action:'draw'. That can create a new draw if
+// the first request never committed. Recover ONLY from existing signed history.
+// A missing or old result stays pending; never spend another right implicitly.
+async function recoverPrevious(p){
+  if(isPreview||busy)return;
+  if(!p||!/^[a-f0-9]{32}$/.test(p.drawId)||!['通常','ラキフェス'].includes(p.mode)){
+    note('前回の抽選IDを確認できません。再抽選せず、運営にご連絡ください。');
+    return;
+  }
+  busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;
+  let recovered=false;
+  note('当選履歴から前回の結果を確認中です。新しい抽選はしません。');
+  try{
+    const history=await post('/api/gacha',{action:'history'});
+    if(history.participantId!==participant||!Array.isArray(history.history))throw Error('当選履歴の本人確認に失敗しました');
+    const rows=history.history.filter(x=>x.drawId===p.drawId);
+    if(rows.length!==1||rows[0].mode!==p.mode||typeof rows[0].prize!=='string'||!rows[0].prize.trim()||
+      !Number.isSafeInteger(Number(rows[0].ordinal))||Number(rows[0].ordinal)<1){
+      throw Error('確定した前回の当選結果が見つかりません');
+    }
+    const x=rows[0];
+    renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
+      prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
+      image:String(x.image||''),replayed:true});
+    forget();
+    recovered=true;
+    note('保存済みの抽選結果を確認しました。もう一度引くには景品の「閉じる」を押してください。');
+  }catch(e){
+    $('retryDraw').hidden=false;
+    note((e?.message||'当選結果を確認できませんでした')+'。同じ抽選IDを保持しています。再抽選せず運営へご連絡ください。');
+  }finally{
+    busy=false;$('retryDraw').disabled=false;
+    if(recovered)void loadCatalog();
+    else if(lastCatalog)setButtons(lastCatalog);
+  }
+}
 function confirmDraw(mode){
   let overlay=$('gachaConfirmOverlay');
   if(!overlay){
@@ -167,7 +203,7 @@ async function start(mode){
   void execute(p)
 }
 $('skipDraw').addEventListener('click',()=>{if(!busy)return;skipRequested=true;$('skipDraw').disabled=true;$('skipDraw').hidden=true;if(skipWaitResolve)skipWaitResolve();note('演出をスキップしました。確定した抽選結果を確認しています…')});
-$('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void execute(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
+$('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void recoverPrevious(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
 let lastBackgroundRefresh=0;
 function refreshOpenState(){
   if(document.hidden||busy||confirming||!participant||!lastCatalog||remember())return;
