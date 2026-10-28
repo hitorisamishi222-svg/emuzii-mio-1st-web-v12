@@ -71,6 +71,10 @@ jobs:
         run: |
           command -v google-chrome || command -v chromium
           node tests/gacha-chromium-viewport-smoke.mjs
+      - name: Same Chrome user flow against REAL preview CDN (no signed-in accounts)
+        env:
+          GACHA_BROWSER_ORIGIN: https://emuzii-mio-1st-web-v12-git-release-gacha-54b53b-gtgz8867jh-3139.vercel.app/
+        run: node tests/gacha-chromium-viewport-smoke.mjs
       - name: Save before/reveal/close/second-draw screenshots
         if: always()
         uses: actions/upload-artifact@v4
