@@ -1,0 +1,222 @@
+{
+  "snapshot": "2026-10-28",
+  "source": "read-only prize sheet; visual demo only; no live GAS requests",
+  "prizes": [
+    {
+      "id": "MEM-01",
+      "mode": "通常",
+      "name": "お試し配信アイコン",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-01.jpg"
+    },
+    {
+      "id": "MEM-02",
+      "mode": "通常",
+      "name": "2次審査中アイコン",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-02.jpg"
+    },
+    {
+      "id": "MEM-03",
+      "mode": "通常",
+      "name": "ギフリア① ごきげんおてねこ",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-03.jpg"
+    },
+    {
+      "id": "MEM-04",
+      "mode": "通常",
+      "name": "ギフリア② グルグルグルグル",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-04.jpg"
+    },
+    {
+      "id": "MEM-05",
+      "mode": "通常",
+      "name": "ギフリア③ 誰よりも楽しむユニコーン",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-05.jpg"
+    },
+    {
+      "id": "MEM-06",
+      "mode": "通常",
+      "name": "ギフリア④ 崇めよ",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-06.jpg"
+    },
+    {
+      "id": "MEM-07",
+      "mode": "通常",
+      "name": "衣装コレクション 5月ノーマルver.",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-07.jpg"
+    },
+    {
+      "id": "MEM-08",
+      "mode": "通常",
+      "name": "衣装コレクション 6月ノーマルver.",
+      "rarity": "N",
+      "odds": 7.5,
+      "image": "/gacha-mem-08.jpg"
+    },
+    {
+      "id": "MEM-09",
+      "mode": "通常",
+      "name": "初配信アイコン",
+      "rarity": "R",
+      "odds": 6,
+      "image": "/gacha-mem-09.jpg"
+    },
+    {
+      "id": "MEM-10",
+      "mode": "通常",
+      "name": "衣装コレクション 6月記念日ver.",
+      "rarity": "R",
+      "odds": 6,
+      "image": "/gacha-mem-10.jpg"
+    },
+    {
+      "id": "MEM-11",
+      "mode": "通常",
+      "name": "待ち受け ラキフェスver.",
+      "rarity": "R",
+      "odds": 6,
+      "image": "/gacha-mem-11.jpg"
+    },
+    {
+      "id": "MEM-12",
+      "mode": "通常",
+      "name": "待ち受け リアライver.",
+      "rarity": "R",
+      "odds": 6,
+      "image": "/gacha-mem-12.jpg"
+    },
+    {
+      "id": "MEM-13",
+      "mode": "通常",
+      "name": "スーパーいいね 35回ボイス",
+      "rarity": "R",
+      "odds": 6,
+      "image": "/gacha-mem-13.jpg"
+    },
+    {
+      "id": "MEM-14",
+      "mode": "通常",
+      "name": "Rから1つ＋Nから2つ選べる",
+      "rarity": "SR",
+      "odds": 7,
+      "image": "/gacha-mem-14.jpg"
+    },
+    {
+      "id": "MEM-15",
+      "mode": "通常",
+      "name": "初配信の画像",
+      "rarity": "UR",
+      "odds": 1.5,
+      "image": "/gacha-mem-15.jpg"
+    },
+    {
+      "id": "MEM-16",
+      "mode": "通常",
+      "name": "ドラムしてる翠央",
+      "rarity": "UR",
+      "odds": 1.5,
+      "image": "/gacha-mem-16.jpg"
+    },
+    {
+      "id": "LF-09",
+      "mode": "ラキフェス",
+      "name": "初配信アイコン",
+      "rarity": "N",
+      "odds": 8,
+      "image": "/gacha-lf-09.jpg"
+    },
+    {
+      "id": "LF-10",
+      "mode": "ラキフェス",
+      "name": "衣装コレクション 6月記念日ver.",
+      "rarity": "N",
+      "odds": 8,
+      "image": "/gacha-lf-10.jpg"
+    },
+    {
+      "id": "LF-11",
+      "mode": "ラキフェス",
+      "name": "待ち受け ラキフェスver.",
+      "rarity": "N",
+      "odds": 8,
+      "image": "/gacha-lf-11.jpg"
+    },
+    {
+      "id": "LF-12",
+      "mode": "ラキフェス",
+      "name": "待ち受け リアライver.",
+      "rarity": "N",
+      "odds": 8,
+      "image": "/gacha-lf-12.jpg"
+    },
+    {
+      "id": "LF-13",
+      "mode": "ラキフェス",
+      "name": "スーパーいいね 35回ボイス",
+      "rarity": "N",
+      "odds": 8,
+      "image": "/gacha-lf-13.jpg"
+    },
+    {
+      "id": "LF-14",
+      "mode": "ラキフェス",
+      "name": "通常ガチャNから1つ＋Nから2つ選べる",
+      "rarity": "R",
+      "odds": 20,
+      "image": "/gacha-lf-14.jpg"
+    },
+    {
+      "id": "LF-15",
+      "mode": "ラキフェス",
+      "name": "スーパーいいね 40回ボイス",
+      "rarity": "SR",
+      "odds": 10,
+      "image": "/gacha-lf-15.jpg"
+    },
+    {
+      "id": "LF-16",
+      "mode": "ラキフェス",
+      "name": "初配信の画像",
+      "rarity": "SR",
+      "odds": 10,
+      "image": "/gacha-lf-16.jpg"
+    },
+    {
+      "id": "LF-17",
+      "mode": "ラキフェス",
+      "name": "ドラムしてる翠央",
+      "rarity": "SR",
+      "odds": 10,
+      "image": "/gacha-lf-17.jpg"
+    },
+    {
+      "id": "LF-18",
+      "mode": "ラキフェス",
+      "name": "「ヒカリへ」審査提出動画",
+      "rarity": "UR",
+      "odds": 5,
+      "image": "/gacha-lf-18.jpg"
+    },
+    {
+      "id": "LF-19",
+      "mode": "ラキフェス",
+      "name": "「Rising Hope」審査提出動画",
+      "rarity": "UR",
+      "odds": 5,
+      "image": "/gacha-lf-19.jpg"
+    }
+  ]
+}
