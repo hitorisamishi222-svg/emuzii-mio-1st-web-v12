@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import {secureMediaThumbnail,validateMediaAdminItem,reviewTransition} from '../gallery-submissions-core.js';
 
 const base={
@@ -55,4 +56,21 @@ test('protected media page and route are included',()=>{
  assert.match(admin,/href="\/media-manage\.html"/);
  assert.match(page,/\/api\/gallery\/moderate/);
  assert.match(page,/authorizedDevice!==true/);
+});
+
+test('inline management scripts are syntactically valid',()=>{
+ for(const name of ['announcements-manage.html','media-manage.html']){
+  const html=readFileSync(new URL('../'+name,import.meta.url),'utf8');
+  const match=html.match(/<script(?: type="module")?>([\\s\\S]*?)<\\/script>/);
+  assert.ok(match,'script not found: '+name);
+  assert.doesNotThrow(()=>new vm.Script(match[1],{filename:name}));
+ }
+});
+test('schema creation is separate and enrollment data remains untouched',()=>{
+ const files=['api-announcements.js','api-gallery-submissions.js','api-gallery-items.js'];
+ for(const name of files){
+  const body=readFileSync(new URL('../'+name,import.meta.url),'utf8');
+  assert.doesNotMatch(body,/CREATE TABLE/i);
+  assert.doesNotMatch(body,/emuzii_皆勤31日|SHEET_ID|APPS_SCRIPT_URL/);
+ }
 });
