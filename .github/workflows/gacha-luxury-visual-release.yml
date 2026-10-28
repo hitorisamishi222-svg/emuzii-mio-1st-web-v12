@@ -16,6 +16,7 @@ on:
       - 'tests/gacha-prize-demo-mapping.test.mjs'
       - 'tests/gacha-release-visual-scope.test.mjs'
       - 'tests/gacha-legacy-recovery.test.mjs'
+      - 'tests/gacha-chromium-viewport-smoke.mjs'
       - '.github/workflows/gacha-luxury-visual-release.yml'
   pull_request:
     paths:
@@ -31,6 +32,7 @@ on:
       - 'tests/gacha-prize-demo-mapping.test.mjs'
       - 'tests/gacha-release-visual-scope.test.mjs'
       - 'tests/gacha-legacy-recovery.test.mjs'
+      - 'tests/gacha-chromium-viewport-smoke.mjs'
       - '.github/workflows/gacha-luxury-visual-release.yml'
 jobs:
   visual-only:
@@ -47,3 +49,15 @@ jobs:
           node --check gacha-effects-v19.js
       - name: Visual and no-draw test suite
         run: node --test tests/gacha-overlay-flow.test.mjs tests/gacha-prize-demo-mapping.test.mjs tests/gacha-release-visual-scope.test.mjs tests/gacha-legacy-recovery.test.mjs
+      - name: Real headless Chrome iPhone viewport, image, overlay, second-spin test
+        run: |
+          command -v google-chrome || command -v chromium
+          node tests/gacha-chromium-viewport-smoke.mjs
+      - name: Save before/reveal/close/second-draw screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gacha-iphone-chrome-evidence
+          path: artifacts/*.png
+          if-no-files-found: ignore
+          retention-days: 7
