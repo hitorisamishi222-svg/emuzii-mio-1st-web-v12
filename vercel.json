@@ -364,6 +364,30 @@
     {
       "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-profile.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-news.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "robots.txt",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "sitemap.xml",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -469,6 +493,48 @@
       "headers": {
         "Cache-Control": "no-store, max-age=0",
         "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum.html",
+      "dest": "/museum.html",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-profile.html",
+      "dest": "/mio-profile.html",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum.css",
+      "dest": "/museum.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-news.js",
+      "dest": "/museum-news.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/robots.txt",
+      "headers": {
+        "Content-Type": "text/plain; charset=utf-8"
+      }
+    },
+    {
+      "src": "/sitemap.xml",
+      "dest": "/sitemap.xml",
+      "headers": {
+        "Content-Type": "application/xml; charset=utf-8"
       }
     },
     {
