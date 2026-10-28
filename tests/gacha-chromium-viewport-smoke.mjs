@@ -95,6 +95,7 @@ try{
   await screenshot('01-iphone-gacha-before.png');
   await evaluate("document.querySelector('.mio-deluxe-demo-actions button').click()");
   await poll(()=>evaluate("document.querySelector('#gachaStage').classList.contains('mio-prize-open')"),11000,'first prize reveal');
+  await pause(750); // let the real flying-out transition finish before measuring/capturing
   const first=await evaluate(sample);
   assert.ok(first.imgOk,'winning prize JPEG should appear');
   assert.ok(first.text.trim(),'winning prize name should appear');
@@ -103,6 +104,7 @@ try{
   assert.ok(Math.abs(first.scroll-before.scroll)<2,'page moved when prize appeared');
   assert.ok(Math.abs(first.y-before.y)<2,'whale machine shifted on first prize');
   assert.ok(first.modal.x>=first.x-2&&first.modal.y>=first.y-2,'prize must overlay whale machine');
+  assert.ok(first.modal.w>=first.w*.8,'prize should finish its fly-out animation at large readable size');
   assert.ok(first.modal.w<=first.w+4&&first.modal.h<=first.h+4,'prize must stay inside whale frame');
   await screenshot('02-iphone-winning-prize-overlay.png');
   await evaluate("document.querySelector('#mioPrizeClose').click()");
@@ -114,6 +116,7 @@ try{
   await screenshot('03-iphone-prize-closed.png');
   await evaluate("document.querySelectorAll('.mio-deluxe-demo-actions button')[1].click()");
   await poll(()=>evaluate("document.querySelector('#gachaStage').classList.contains('mio-prize-open')"),11000,'second prize reveal');
+  await pause(750);
   const second=await evaluate(sample);
   assert.ok(second.imgOk&&second.text,'second mode should show a real prize');
   assert.ok(Math.abs(second.scroll-before.scroll)<2,'repeated draw scrolled page');
