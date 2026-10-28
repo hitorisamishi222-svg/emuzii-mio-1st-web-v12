@@ -49,3 +49,13 @@
 - 詳細: `docs/MIO_BACKGROUND_RELEASE.md`, `docs/MIO_CONTENT_MANAGEMENT_RELEASE.md`, `docs/MIO_GALLERY_SUBMISSIONS_RELEASE.md`, `docs/MIO_VNEXT_SCOPE_v1.md`
 
 **実機操作: 現時点では不要。** 実DBの承認済み検証に移る前に、データ正本と移行安全性を確定する。
+
+
+## 追記: main更新とPR競合（2026-10-28 18:52 JST以降の確認）
+- main に、別のガチャ担当のコミットが1件反映された。変更ファイルは `gacha-*.js/css/html`、ガチャ用テスト、ガチャ用素材・ワークフロー、`vercel.json`。
+- PR #43 は main に対して behind_by=1、ahead_by=65 で、現在の GitHub `mergeable_state=dirty`。**マージ競合あり。**
+- main の `vercel.json` に追加されたビルド対象は `gacha-deluxe-v21.js`, `gacha-deluxe-v21.css`, `gacha-prize-demo-catalog.json`, `assets/mio-undersea-palace-stage.svg` の4件。
+- このPRの `vercel.json` に追加したのは、管理メニュー、背景切替、皆勤賞参照、ファンアート応募・審査、音楽・動画管理の独立したルート・ビルド。
+- 一方だけをそのまま採用すると、他方のビルド設定が欠ける可能性がある。**自動マージ・mainの上書き・ガチャファイルの手動編集は禁止。**
+- 公開前に、ガチャ側のmain変更を正本として保ちながら両方の `vercel.json` 差分を統合し、全参照ファイルとビルドの存在を再照合する。統合は競合の解消手順と承認を確認してから行う。
+- この追記時点で、最新PRコミットのActions実行結果は未取得。古い133件合格を今回の新規テストに流用しない。
