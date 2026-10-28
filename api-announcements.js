@@ -14,18 +14,8 @@ export default async function handler(req,res){
  const pool=new Pool({connectionString:process.env.GALLERY_DATABASE_URL,max:1,connectionTimeoutMillis:4000});let c;
  try{
   c=await pool.connect();
-  // This isolated content table is initialized idempotently on the gallery-admin database.
-  // It never modifies attendance, gacha, or registration tables.
-  await c.query(`CREATE TABLE IF NOT EXISTS anniversary_announcements (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title TEXT NOT NULL CHECK(char_length(title) BETWEEN 1 AND 120),
-    body TEXT NOT NULL CHECK(char_length(body) BETWEEN 1 AND 5000),
-    published BOOLEAN NOT NULL DEFAULT FALSE,
-    revision INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by TEXT
-  )`);
+  // Schema is installed only through reviewed db/announcements.sql migration.
+  // Normal page visits never create or alter tables.
   let admin=null;
   const token=cookie(req,'mio_gallery_session'),device=cookie(req,'mio_gallery_device');
   if(/^[A-Za-z0-9_-]{40,64}$/.test(token)&&/^[A-Za-z0-9_-]{40,64}$/.test(device)){
