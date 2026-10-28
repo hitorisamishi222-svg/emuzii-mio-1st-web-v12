@@ -72,6 +72,7 @@ export default async function handler(req,res){
   }
   const admin=await sessionAdmin(c,req);
   if(!admin)return fail(res,401,'ADMIN_LOGIN_REQUIRED');
+  if(admin.role!=='owner')return fail(res,403,'MUSEUM_OWNER_ONLY');
   if(req.method==='GET'){
    const q=await c.query(
     `SELECT id,kind,title,description,credit,occurred_on::text AS occurred_on,image_url,external_url,
