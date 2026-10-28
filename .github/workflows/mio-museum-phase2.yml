@@ -1,0 +1,35 @@
+name: Museum phase 2 scoped validation
+on:
+  pull_request:
+    branches:
+      - release/mio-museum-phase1-20261028
+    paths:
+      - 'museum*'
+      - 'api-museum-exhibits.js'
+      - 'db/museum-public-exhibits.sql'
+      - 'gallery-manage.html'
+      - 'vercel.json'
+      - 'robots.txt'
+      - 'tests/mio-museum-phase1.test.mjs'
+      - 'tests/mio-museum-phase2.test.mjs'
+      - '.github/workflows/mio-museum-phase2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scoped-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+      - name: Syntax checks
+        run: |
+          node --check api-museum-exhibits.js
+          node --check museum-exhibits-core.js
+          node --check museum-archive.js
+      - name: Museum phase 1 and 2 contracts
+        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs
