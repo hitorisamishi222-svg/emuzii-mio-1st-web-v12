@@ -89,7 +89,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
 'use strict';
 const $=id=>document.getElementById(id);
 const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
-let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,previewObjectUrl=null;
+let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null;
 const note=s=>{$('saveStatus').textContent=s;};
 const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開'};
 const asInput=(item,k)=>{
@@ -99,10 +99,10 @@ const asInput=(item,k)=>{
 function buttons(){
  $('uploadImage').disabled=busy||!editable||!imageUploadEnabled;
  $('clearImage').disabled=busy||!$('uploadImage').files?.length;
- $('save').disabled=busy||!editable;
- $('publish').disabled=busy||!editable||!selected||selected.status!=='draft';
- $('hide').disabled=busy||!editable||!selected||selected.status!=='published';
- $('reopen').disabled=busy||!editable||!selected||selected.status!=='hidden';
+ $('save').disabled=busy||!editable||saveNeedsReview;
+ $('publish').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='draft';
+ $('hide').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='published';
+ $('reopen').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='hidden';
  $('reload').disabled=busy;
 }
 function clearSelectedImage(){
@@ -143,6 +143,7 @@ async function load(preferredId){
   const response=await fetch('/api/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
   const data=await response.json();
   if(!response.ok||data.ok!==true||data.authorized!==true)throw Error(data.code||'NOT_AUTHORIZED');
+  saveNeedsReview=false;
   editable=data.editable===true;imageUploadEnabled=data.imageUploadEnabled===true;
   items=Array.isArray(data.items)?data.items:[];
   const sel=$('selectExhibit');sel.replaceChildren();
@@ -166,6 +167,7 @@ async function load(preferredId){
 $('reload').addEventListener('click',()=>load(selected?.id));
 async function submit(action){
  if(busy||!editable)return;
+ if(saveNeedsReview){note('前回の保存結果を確認できません。先に「最新の展示を読み直す」を押してください。');return;}
  if(action==='create'||action==='update'){
   if(!$('exhibitForm').reportValidity())return;
  }
@@ -185,6 +187,7 @@ async function submit(action){
  const file=(action==='create'||action==='update')?$('uploadImage').files?.[0]:null;
  if(file&&!imageUploadEnabled){note('画像登録機能はまだ準備中です。画像の選択を取り消すか、公開画像URLをご利用ください。');return;}
  busy=true;buttons();note('変更を確認して保存しています…');
+ let imageRequestStarted=false;
  try{
   let endpoint='/api/museum/exhibits';
   if(file){
@@ -196,6 +199,7 @@ async function submit(action){
    endpoint='/api/museum/image';
    note('確認済みの画像と下書きをまとめて保存しています…');
   }
+  imageRequestStarted=Boolean(file);
   const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await response.json();
   if(!response.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
@@ -203,7 +207,8 @@ async function submit(action){
   busy=false;await load(data.item?.id||data.exhibit?.id);
   note('✅ '+words[action]+'を保存しました。');
  }catch(e){
-  note('⚠️ 処理に失敗しました。入力内容は残しています。最新状態を読み直してから確認してください（'+e.message+'）。');
+  if(imageRequestStarted)saveNeedsReview=true;
+  note('⚠️ 保存結果を確認できません。入力は残していますが、重複保存を防ぐため一覧を読み直してから再操作してください（'+e.message+'）。');
  }finally{busy=false;buttons();}
 }
 $('exhibitForm').addEventListener('submit',event=>{event.preventDefault();submit(selected?'update':'create');});
