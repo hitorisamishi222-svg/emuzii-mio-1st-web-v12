@@ -176,7 +176,7 @@
        p.filter(x=>x.mode==='通常').length!==16||
        p.filter(x=>x.mode==='ラキフェス').length!==11||
        p.some(x=>!x.id||!x.name||!['N','R','SR','UR'].includes(x.rarity)||
-         !/^\\/gacha-(?:mem|lf)-\\d{2}\\.jpg$/.test(x.image)))throw Error('景品データの内容を確認できません');
+         !/^\/gacha-(?:mem|lf)-\d{2}\.jpg$/.test(x.image)))throw Error('景品データの内容を確認できません');
     previewPrizes=p;
     showPreviewPrizes('通常');
     normal.disabled=false;fest.disabled=false;select.disabled=false;
