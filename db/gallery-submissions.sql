@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS gallery_submissions (
   description text NOT NULL DEFAULT '' CHECK (char_length(description) <= 1000),
   category text NOT NULL CHECK (category IN ('動画','イラスト','音声・楽曲','ファンアート','その他')),
   external_url text NOT NULL CHECK (external_url ~ '^https://'),
+  thumbnail_url text NOT NULL DEFAULT '' CHECK (char_length(thumbnail_url) <= 1024),
   consent boolean NOT NULL CHECK (consent = true),
   source_hash text NOT NULL CHECK (char_length(source_hash) = 64),
   status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','hidden')),
