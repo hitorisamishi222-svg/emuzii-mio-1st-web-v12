@@ -53,7 +53,15 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
   <input id="credit" maxlength="80" placeholder="掲載許可を得た名前">
   <label for="imageUrl">公開画像のURL</label>
   <input id="imageUrl" maxlength="1024" placeholder="/assets/ファイル名.webp">
-  <p class="note">歴代アイコン・スクショには画像が必要です。既存の /assets/ 画像、または運営用のVercel Blob画像URLを使います。画像ファイルのアップロードは今後の段階で対応します。</p>
+  <p class="note">既存画像のURLを入力するか、スマホから写真を選んでください。写真を選んだ場合は、端末内で縮小・位置情報等のメタデータを除いた新しい画像を作って保存します。</p>
+  <label for="uploadImage">📸 スマホの写真・スクショを選ぶ（任意）</label>
+  <input id="uploadImage" type="file" accept="image/*,.heic,.heif" disabled>
+  <div id="imagePreview" hidden style="margin:12px 0;border:1px solid #b3d1ec88;border-radius:12px;background:#071b34;padding:10px">
+    <img id="imagePreviewImg" alt="登録する画像の確認" style="display:block;max-height:340px;max-width:100%;object-fit:contain;margin:auto">
+  </div>
+  <button id="clearImage" type="button" disabled>写真の選択を取り消す</button>
+  <p id="imageHelp" class="note">画像登録機能はまだ停止中です。安全確認後に利用可能になります。</p>
+  <p class="alert" style="font-weight:700">⚠️ この展示は一般公開用です。下書きの段階でも、保存した画像はURLを知っている人が閲覧できる公開ストレージに置かれます。非公開のスクショ・個人情報・他人の顔や名前がある画像はアップロードしないでください。宝箱用画像もここでは扱いません。</p>
   <label for="externalUrl">関連ページ（任意）</label>
   <input id="externalUrl" maxlength="2048" placeholder="https://...">
   <label class="check" for="rightsConfirmed"><input id="rightsConfirmed" type="checkbox" required> <span>作品の権利・掲載許可を確認しました。</span></label>
@@ -81,7 +89,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
 'use strict';
 const $=id=>document.getElementById(id);
 const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
-let items=[],selected=null,editable=false,busy=false;
+let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,previewObjectUrl=null;
 const note=s=>{$('saveStatus').textContent=s;};
 const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開'};
 const asInput=(item,k)=>{
@@ -89,14 +97,34 @@ const asInput=(item,k)=>{
  return typeof v==='string'?v:'';
 };
 function buttons(){
+ $('uploadImage').disabled=busy||!editable||!imageUploadEnabled;
+ $('clearImage').disabled=busy||!$('uploadImage').files?.length;
  $('save').disabled=busy||!editable;
  $('publish').disabled=busy||!editable||!selected||selected.status!=='draft';
  $('hide').disabled=busy||!editable||!selected||selected.status!=='published';
  $('reopen').disabled=busy||!editable||!selected||selected.status!=='hidden';
  $('reload').disabled=busy;
 }
-function choose(){
- selected=items.find(x=>x.id===$('selectExhibit').value)||null;
+function clearSelectedImage(){
+  if(previewObjectUrl){URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=null;}
+  $('uploadImage').value='';$('imagePreview').hidden=true;
+  $('imagePreviewImg').removeAttribute('src');buttons();
+ }
+ $('uploadImage').addEventListener('change',()=>{
+  if(previewObjectUrl){URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=null;}
+  const file=$('uploadImage').files?.[0];
+  if(!file){$('imagePreview').hidden=true;$('imagePreviewImg').removeAttribute('src');buttons();return;}
+  if(file.size>12*1024*1024){note('12MB以内の画像を選んでください。');clearSelectedImage();return;}
+  previewObjectUrl=URL.createObjectURL(file);
+  $('imagePreviewImg').src=previewObjectUrl;
+  $('imagePreview').hidden=false;
+  note('この画像に個人情報などが映り込んでいないか確認してください。保存ボタンを押すまで送信されません。');
+  buttons();
+ });
+ $('clearImage').addEventListener('click',()=>{clearSelectedImage();note('選択した写真を取り消しました。');});
+ function choose(){
+  clearSelectedImage();
+  selected=items.find(x=>x.id===$('selectExhibit').value)||null;
  for(const k of keys)$(k).value=asInput(selected,k);
  if(!selected){$('kind').value='icons';$('exhibitForm').reset();$('kind').value='icons';}
  $('rightsConfirmed').checked=false;$('privacyConfirmed').checked=false;
@@ -115,7 +143,8 @@ async function load(preferredId){
   const response=await fetch('/api/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
   const data=await response.json();
   if(!response.ok||data.ok!==true||data.authorized!==true)throw Error(data.code||'NOT_AUTHORIZED');
-  editable=data.editable===true;items=Array.isArray(data.items)?data.items:[];
+  editable=data.editable===true;imageUploadEnabled=data.imageUploadEnabled===true;
+  items=Array.isArray(data.items)?data.items:[];
   const sel=$('selectExhibit');sel.replaceChildren();
   const fresh=document.createElement('option');fresh.value='';fresh.textContent='＋ 新しい思い出を登録';sel.append(fresh);
   for(const item of items){
@@ -123,6 +152,9 @@ async function load(preferredId){
   }
   sel.value=items.some(x=>x.id===preferredId)?preferredId:'';
   choose();
+  $('imageHelp').textContent=imageUploadEnabled?
+   '✅ 写真を選んで下書き保存できます。スマホの画像を端末内で縮小します。':
+   '🔒 写真のアップロードは現在停止中です。既存画像URLの登録は下書き保存できます。';
   $('editor').hidden=false;$('unavailable').hidden=true;
   $('authStatus').textContent=editable?'✅ 翠央記念館のオーナー権限を確認しました。':'🔒 オーナー権限は確認しました。現在、展示編集は安全のため停止中です。';
   note('表示：'+items.length+'件。'+(editable?'編集と公開管理が利用できます。':'編集機能は公開前検証が完了するまで停止しています。'));
@@ -137,6 +169,7 @@ async function submit(action){
  if(action==='create'||action==='update'){
   if(!$('exhibitForm').reportValidity())return;
  }
+ if(action==='publish'&&$('uploadImage').files?.length){note('新しい写真を選んでいます。先に画像付きの下書きを保存し、改めて公開してください。');return;}
  if(action==='publish'&&(!$('rightsConfirmed').checked||!$('privacyConfirmed').checked)){
   note('公開前に作品の権利と個人情報を再確認して、2つのチェックを入れてください。');return;
  }
@@ -149,13 +182,25 @@ async function submit(action){
   payload.item.rightsConfirmed=$('rightsConfirmed').checked;
   payload.item.privacyConfirmed=$('privacyConfirmed').checked;
  }else if(action==='publish'){payload.rightsConfirmed=true;payload.privacyConfirmed=true;}
+ const file=(action==='create'||action==='update')?$('uploadImage').files?.[0]:null;
+ if(file&&!imageUploadEnabled){note('画像登録機能はまだ準備中です。画像の選択を取り消すか、公開画像URLをご利用ください。');return;}
  busy=true;buttons();note('変更を確認して保存しています…');
  try{
-  const response=await fetch('/api/museum/exhibits',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  let endpoint='/api/museum/exhibits';
+  if(file){
+   if(!window.MioMuseumImage?.encode)throw Error('IMAGE_ENCODER_UNAVAILABLE');
+   note('端末内で写真を軽量化しています。写真はまだ公開されていません。');
+   const encoded=await window.MioMuseumImage.encode(file);
+   payload.action=action==='create'?'imageCreate':'imageUpdate';
+   payload.image={base64:encoded.base64,format:encoded.format};
+   endpoint='/api/museum/image';
+   note('確認済みの画像と下書きをまとめて保存しています…');
+  }
+  const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await response.json();
   if(!response.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
   note('✅ 処理が成功しました。');
-  busy=false;await load(data.item.id);
+  busy=false;await load(data.item?.id||data.exhibit?.id);
   note('✅ '+words[action]+'を保存しました。');
  }catch(e){
   note('⚠️ 処理に失敗しました。入力内容は残しています。最新状態を読み直してから確認してください（'+e.message+'）。');
@@ -165,4 +210,5 @@ $('exhibitForm').addEventListener('submit',event=>{event.preventDefault();submit
 for(const action of ['publish','hide','reopen'])$(action).addEventListener('click',()=>submit(action));
 load('');
 </script>
+<script defer src="/museum-image-client.js"></script>
 </body></html>
