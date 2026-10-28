@@ -19,7 +19,7 @@ const won=()=>({ok:true,participantId:id,drawId,mode:'通常',
 const missing=()=>({ok:false,error:'確定した結果はまだ見つかりません'});
 
 function harness(savedStorage=new Map([[key,JSON.stringify(pending)]]),recoverReply=won()){
-  const nodes=new Map();
+  const nodes=new Map(),scrollEvents=[];
   function el(name='div'){
     const handlers={};
     return {
@@ -27,7 +27,7 @@ function harness(savedStorage=new Map([[key,JSON.stringify(pending)]]),recoverRe
       classList:{add(){},remove(){},toggle(){}},
       addEventListener(ev,cb){handlers[ev]=cb},
       setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},remove(){},
-      scrollIntoView(){},get offsetWidth(){return 3},
+      scrollIntoView(opts){scrollEvents.push({name,opts})},get offsetWidth(){return 3},
       handlers
     };
   }
@@ -66,7 +66,7 @@ function harness(savedStorage=new Map([[key,JSON.stringify(pending)]]),recoverRe
   };
   vm.runInContext(script,context,{filename:'gacha-page.js'});
   vm.runInContext('participant='+JSON.stringify(id)+';',context);
-  return {nodes,calls,savedStorage,context};
+  return {nodes,calls,savedStorage,context,scrollEvents};
 }
 async function clickRetry(h){
   h.nodes.get('retryDraw').handlers.click();
@@ -101,4 +101,20 @@ test('after simulated page reload, recovery retains the same drawId and never is
   assert.equal(after.calls[0].drawId,drawId);
   assert.equal(after.calls.every(c=>c.action!=='draw'),true);
   assert.equal(storage.has(key),false);
+});
+
+test('real confirmed draw scrolls to whale machine before showing draw animation',async()=>{
+  const h=harness(new Map());
+  await vm.runInContext("execute({drawId:'"+drawId+"',mode:'通常'})",h.context);
+  const stageScroll=h.scrollEvents.find(x=>x.name==='gachaStage');
+  assert.ok(stageScroll,'whale machine must be brought into viewport');
+  assert.equal(stageScroll.opts.block,'center');
+  assert.equal(stageScroll.opts.behavior,'auto','reduced-motion setting must be respected');
+});
+
+test('read-only pending result recovery never scrolls away to restart the whale animation',async()=>{
+  const h=harness();
+  await clickRetry(h);
+  assert.equal(h.scrollEvents.some(x=>x.name==='gachaStage'),false);
+  assert.deepEqual(h.calls.map(x=>x.action),['recover','catalog','history']);
 });
