@@ -71,15 +71,16 @@ async function moderate(entry,action,label){
  busy=true;
  document.querySelectorAll('button').forEach(x=>x.disabled=true);
  $('status').textContent='審査結果を保存中…';
+ let saved=false;
  try{
   const r=await fetch('/api/gallery/submissions',{method:'POST',credentials:'same-origin',cache:'no-store',
    headers:{'Content-Type':'application/json'},body:JSON.stringify({action,id:entry.id,revision:entry.revision})});
   const data=await r.json();
   if(!r.ok||data.ok!==true)throw Error(data.code||'保存失敗');
-  $('status').textContent='✅ 保存しました。';
+  saved=true;$('status').textContent='✅ 保存しました。';
  }catch(e){$('status').textContent='⚠️ 保存できません。権限または最新状態を確認してください（'+e.message+'）。';}
  finally{busy=false;document.querySelectorAll('button').forEach(x=>x.disabled=false);}
- await fetchList();
+ if(saved)await fetchList();
 }
 $('refresh').addEventListener('click',fetchList);
 (async()=>{
