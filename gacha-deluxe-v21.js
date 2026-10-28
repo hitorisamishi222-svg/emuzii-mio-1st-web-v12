@@ -130,6 +130,13 @@
   // Put the actual demo controls immediately ABOVE the machine, not below
   // the entire machine, prize-result dock and explanatory footnote.
   stage.insertAdjacentElement('beforebegin',demo);
+  // These controls have changing text/visibility during animations. If they
+  // remain ABOVE the stage, Safari/Chrome adjusts the whale's screen position.
+  // Put them BELOW the fixed machine, keeping its top edge stable forever.
+  const liveSkip=document.getElementById('skipDraw');
+  if(liveSkip)stage.insertAdjacentElement('afterend',liveSkip);
+  stage.insertAdjacentElement('afterend',skipDemo);
+  skipDemo.insertAdjacentElement('afterend',status);
   let active=false,activePrize=null,selectedMode='通常',previewPrizes=[];
   demoClosed=()=>{
     reset();
