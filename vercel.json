@@ -408,6 +408,14 @@
     {
       "src": "api-museum-exhibits.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "museum-image-client.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-museum-image.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -589,6 +597,21 @@
     {
       "src": "/museum-curate.html",
       "dest": "/museum-curate.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-image-client.js",
+      "dest": "/museum-image-client.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/museum/image",
+      "dest": "/api-museum-image.js",
       "headers": {
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff"
