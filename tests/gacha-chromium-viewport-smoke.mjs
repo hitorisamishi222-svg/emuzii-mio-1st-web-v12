@@ -84,6 +84,8 @@ try{
   await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/gacha.html?deluxeDemo=1'});
   await poll(()=>evaluate("document.readyState==='complete'"),20000,'loaded DOM');
   await poll(()=>evaluate("document.querySelector('.mio-deluxe-demo-status')?.textContent?.includes('27種類')"),20000,'27-item demo data');
+  assert.equal(requests.filter(url=>url.includes('/gacha-prize-demo-catalog.json')).length,0,
+    'iPhone preview must initialize with no separate catalog request');
   const images=await evaluate("(async()=>{const c=await (await fetch('/gacha-prize-demo-catalog.json')).json();return Promise.all(c.prizes.map(p=>new Promise(resolve=>{const image=new Image();image.onload=()=>resolve({id:p.id,ok:image.naturalWidth>0});image.onerror=()=>resolve({id:p.id,ok:false});image.src=p.image;})));})()");
   assert.equal(images.length,27);
   assert.deepEqual(images.filter(p=>!p.ok),[],'all 27 real image files must load inside Chrome');
