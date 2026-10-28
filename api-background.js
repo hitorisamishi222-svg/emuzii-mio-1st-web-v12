@@ -10,7 +10,7 @@ const getCookie=(req,key)=>{
   const pair=String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(key+'='));
   try{return pair?decodeURIComponent(pair.slice(key.length+1)):''}catch{return ''}
 };
-const defaults=()=>({ok:true,theme:'princess',revision:0});
+const defaults=(configured=false)=>({ok:true,theme:'princess',revision:0,configured});
 
 export default async function handler(req,res){
   res.setHeader('Cache-Control','private, no-store');
@@ -50,9 +50,9 @@ export default async function handler(req,res){
         throw e;
       }
       const current=q.rows[0];
-      if(!current)return res.status(200).json(defaults());
-      if(!THEMES.has(current.theme))return fail(res,503,'INVALID_SAVED_BACKGROUND');
-      return res.status(200).json({ok:true,theme:current.theme,revision:current.revision});
+      if(!current)return res.status(200).json(defaults(true));
+      if(!THEMES.has(current.theme)||!Number.isSafeInteger(Number(current.revision))||Number(current.revision)<1)return fail(res,503,'INVALID_SAVED_BACKGROUND');
+      return res.status(200).json({ok:true,theme:current.theme,revision:Number(current.revision),configured:true});
     }
     const token=getCookie(req,'mio_gallery_session');
     const device=getCookie(req,'mio_gallery_device');
