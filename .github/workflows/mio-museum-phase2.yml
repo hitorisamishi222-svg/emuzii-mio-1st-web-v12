@@ -6,12 +6,14 @@ on:
     paths:
       - 'museum*'
       - 'api-museum-exhibits.js'
+      - 'api-museum-image.js'
       - 'db/museum-public-exhibits.sql'
       - 'gallery-manage.html'
       - 'vercel.json'
       - 'robots.txt'
       - 'tests/mio-museum-phase1.test.mjs'
       - 'tests/mio-museum-phase2.test.mjs'
+      - 'tests/mio-museum-image.test.mjs'
       - '.github/workflows/mio-museum-phase2.yml'
   workflow_dispatch:
 permissions:
@@ -29,7 +31,9 @@ jobs:
       - name: Syntax checks
         run: |
           node --check api-museum-exhibits.js
+          node --check api-museum-image.js
+          node --check museum-image-client.js
           node --check museum-exhibits-core.js
           node --check museum-archive.js
       - name: Museum phase 1 and 2 contracts
-        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs
+        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs
