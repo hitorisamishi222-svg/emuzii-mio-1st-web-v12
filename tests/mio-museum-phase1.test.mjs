@@ -25,7 +25,7 @@ test('public museum and profile have titles, canonical URLs and Japanese content
  }
 });
 test('navigation is public and has no broken local exhibit links',()=>{
- const pathRegexp=/href="(\/[^"#?]*)(?:[?#][^"]*)?"/g;
+ const pathRegexp=/<a\b[^>]*\bhref="(\/[^"#?]*)(?:[?#][^"]*)?"/g;
  const publicRoutes=new Set(['/','/museum.html','/mio-profile.html','/gallery.html','/announcements.html']);
  for(const page of [muse,profile]){
   for(const match of page.matchAll(pathRegexp)){
