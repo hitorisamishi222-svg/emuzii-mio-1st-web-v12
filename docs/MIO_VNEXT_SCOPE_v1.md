@@ -56,3 +56,14 @@ F. 権限・スマホ・回帰テスト
 - `docs/MIO_GALLERY_SUBMISSIONS_RELEASE.md`: 運営者が承認するまでフラグOFF、マイグレーション未実施、実機検証未実施であることを明記。
 - 新規の `tests/gallery-submissions.test.mjs` は既存CIの `npm test` に組み込まれ、2026-10-28のPRコミットでRegression tests SUCCESS。
 - Vercelの開発デプロイはREADY。ただし実DB保存と管理者端末・公開の運用テストは未実施。PR #43はドラフト継続。
+
+
+## 実装進捗 2026-10-28: お知らせと音楽・動画管理（開発ブランチ）
+- 既存 `announcements-manage.html` をそのまま管理メニューで再利用。保存完了後に操作ボタンが復帰しない問題と、保存失敗時に下書きが消える問題を修正。
+- `api-announcements.js` のリクエストごとのテーブル自動作成を廃止し、事前確認用 `db/announcements.sql` に分離。
+- `media-manage.html` を新設。作品名・投稿者・作品紹介・HTTPSリンク・サムネイル・権利確認を、既存の管理者認証と承認端末で登録・編集。管理メニューからリンク。
+- 音楽・動画は `gallery_submissions` の審査済み作品へ統合。登録・更新時は `pending` に戻し、管理者が承認するまで新しい内容は掲載しない。DBマイグレーションは未実施。
+- `api-gallery-items.js`: 新規任意テーブルの不具合時に既存ギャラリーまで非表示にしない。公開許可フラグOFFが初期値。
+- `tests/mio-vnext-media.test.mjs` でカテゴリ・権利確認・URL/画像制限・保存失敗時の保護・実行時スキーマ変更禁止を検証。
+- 公開前の条件を `docs/MIO_CONTENT_MANAGEMENT_RELEASE.md` に記載。本番URL/参加者/GAS/ガチャは無変更。
+- **未実施:** 実DB保存・実機操作・公開フラグのON・権利確認・新作品の実掲載。お知らせのリンク/掲載期間、新曲の並び替え、画像ファイル直接アップロードは今回未実装。
