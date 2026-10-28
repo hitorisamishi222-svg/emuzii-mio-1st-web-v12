@@ -6,6 +6,16 @@ import {tmpdir} from 'node:os';
 import {join,resolve,sep,extname} from 'node:path';
 import http from 'node:http';
 
+const remoteOrigin=process.env.GACHA_BROWSER_ORIGIN||'';
+if(remoteOrigin){
+  const u=new URL(remoteOrigin);
+  assert.equal(u.protocol,'https:','remote smoke requires HTTPS');
+  assert.equal(u.hostname,'emuzii-mio-1st-web-v12-git-release-gacha-54b53b-gtgz8867jh-3139.vercel.app',
+    'only the gacha release PREVIEW may be accessed; never production');
+  assert.equal(u.pathname,'/','remote smoke accepts origin only');
+  assert.equal(u.search,'');
+  assert.equal(u.hash,'');
+}
 const cwd=process.cwd();
 const tmp=await mkdtemp(join(tmpdir(),'mio-gacha-browser-'));
 const browsers=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
@@ -77,11 +87,15 @@ try{
   async function screenshot(name){
     const shot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
     await mkdir('artifacts',{recursive:true});
-    await writeFile(join('artifacts',name),Buffer.from(shot.data,'base64'));
+    const prefix=remoteOrigin?'remote-':'local-';
+    await writeFile(join('artifacts',prefix+name),Buffer.from(shot.data,'base64'));
   }
   await cdp('Page.enable');await cdp('Runtime.enable');await cdp('Network.enable');
   await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:3,mobile:true});
-  await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/gacha.html?deluxeDemo=1'});
+  const previewUrl=remoteOrigin
+    ?remoteOrigin+'gacha.html?deluxeDemo=1'
+    :'http://127.0.0.1:'+port+'/gacha.html?deluxeDemo=1';
+  await cdp('Page.navigate',{url:previewUrl});
   await poll(()=>evaluate("document.readyState==='complete'"),20000,'loaded DOM');
   await poll(()=>evaluate("document.querySelector('.mio-deluxe-demo-status')?.textContent?.includes('27種類')"),20000,'27-item demo data');
   assert.equal(requests.filter(url=>url.includes('/gacha-prize-demo-catalog.json')).length,0,
@@ -148,7 +162,7 @@ try{
     '375px iPhone prize closing must not move viewport');
   console.log('PASS: 375x812 iPhone viewport, button visible, prize open/close no page motion');
   assert.equal(requests.filter(url=>/\/api\/gacha|\/api\/status/.test(url)).length,0,'demo must not request live API');
-  console.log('PASS: Chrome 390x844, 27 JPEGs, 2 prize reveals, close, no page motion, no live APIs');
+  console.log('PASS: '+(remoteOrigin?'Vercel preview CDN':'local')+' Chrome 390x844, 27 JPEGs, 2 prize reveals, close, no page motion, no live APIs');
   console.log(JSON.stringify({before,first,closed,second,requests:requests.length}));
 }finally{
   if(socket&&socket.readyState===WebSocket.OPEN)socket.close();
