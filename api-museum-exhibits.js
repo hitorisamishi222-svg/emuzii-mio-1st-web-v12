@@ -64,7 +64,7 @@ export default async function handler(req,res){
   c=await pool.connect();
   if(scope==='public'&&req.method==='GET'){
    const q=await c.query(
-    `SELECT kind,title,description,credit,occurred_on,image_url,external_url
+    `SELECT kind,title,description,credit,occurred_on::text AS occurred_on,image_url,external_url
      FROM museum_public_exhibits WHERE status='published'
      ORDER BY occurred_on DESC NULLS LAST, created_at DESC LIMIT 250`
    );
@@ -74,7 +74,7 @@ export default async function handler(req,res){
   if(!admin)return fail(res,401,'ADMIN_LOGIN_REQUIRED');
   if(req.method==='GET'){
    const q=await c.query(
-    `SELECT id,kind,title,description,credit,occurred_on,image_url,external_url,
+    `SELECT id,kind,title,description,credit,occurred_on::text AS occurred_on,image_url,external_url,
      status,revision,created_at,updated_at,published_at
      FROM museum_public_exhibits
      ORDER BY updated_at DESC,id DESC LIMIT 250`
@@ -97,7 +97,7 @@ export default async function handler(req,res){
    if(action==='create'){
     q=await c.query(
      `INSERT INTO museum_public_exhibits
-      (kind,title,description,credit,occurred_on,image_url,external_url,
+      (kind,title,description,credit,occurred_on::text AS occurred_on,image_url,external_url,
        status,rights_checked_at,privacy_checked_at,reviewed_by)
       VALUES($1,$2,$3,$4,$5,$6,$7,'draft',now(),now(),$8)
       RETURNING id,status,revision`,
