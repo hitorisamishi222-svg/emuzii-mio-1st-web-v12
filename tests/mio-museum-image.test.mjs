@@ -181,7 +181,7 @@ test('frontend has visible privacy warning, preview, and a two-stage publish flo
  assert.match(page,/id="uploadImage"/);
  assert.match(page,/id="imagePreviewImg"/);
  assert.match(page,/下書きの段階でも/);
- assert.match(page,/画像を選んでいます。先に画像付きの下書きを保存/);
+ assert.match(page,/新しい写真を選んでいます。先に画像付きの下書きを保存/);
  assert.match(page,/\/api\/museum\/image/);
  assert.match(page,/imageUploadEnabled/);
  assert.match(js,/canvas\.toBlob/);
