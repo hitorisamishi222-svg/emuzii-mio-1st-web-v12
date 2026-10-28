@@ -33,7 +33,12 @@
     const glyph=document.createElement('span');glyph.className='step-icon';glyph.setAttribute('aria-hidden','true');glyph.textContent=emoji;
     const text=document.createElement('span');text.textContent=label;item.append(glyph,text);steps.append(item);
   });
-  if(controls)controls.insertAdjacentElement('afterend',steps);else stage.insertAdjacentElement('beforebegin',steps);
+  if(controls){
+    // Instructions/progression first, then buttons immediately adjacent to
+    // the machine. This keeps the whole effect in the tap's current viewport.
+    controls.insertAdjacentElement('beforebegin',steps);
+    stage.insertAdjacentElement('beforebegin',controls);
+  }else stage.insertAdjacentElement('beforebegin',steps);
   const foot=document.createElement('p');foot.className='mio-deluxe-footnote';foot.textContent='光・宝石の表現は演出です。当選内容と残り回数はシステムの確定結果を表示します。';
   stage.insertAdjacentElement('afterend',foot);
   // Keep the artwork/spotlights unobstructed: the result is a separate dock
@@ -63,6 +68,7 @@
   // The visual rehearsal must be explicitly requested. Never display it in the normal gacha flow.
   const previewHost=/^emuzii-mio-1st-web-v12-[a-z0-9-]+\.vercel\.app$/i.test(location.hostname)||location.hostname==='localhost'||location.hostname==='127.0.0.1';
   if(!previewHost||new URLSearchParams(location.search).get('deluxeDemo')!=='1')return;
+  panel.classList.add('mio-deluxe-demo-mode');
   // Block real draw controls during the rehearsal to prevent accidental paid/limited draws.
   if(controls){controls.querySelectorAll('button').forEach(button=>{button.disabled=true;button.setAttribute('aria-disabled','true');button.title='演出デモ中は実抽選を利用できません'})}
   const demo=document.createElement('section');demo.className='mio-deluxe-demo';demo.setAttribute('aria-label','演出専用体験デモ');
