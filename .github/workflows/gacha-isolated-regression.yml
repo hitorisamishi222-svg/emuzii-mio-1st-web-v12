@@ -8,6 +8,8 @@ on:
     paths:
       - 'api-gacha.js'
       - 'gacha-*.js'
+      - 'gacha-prize-demo-catalog.json'
+      - 'vercel.json'
       - 'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs'
       - 'release-prep/gacha-probability-display-v191-candidate.gs'
       - 'tests/gacha-*.test.mjs'
@@ -24,4 +26,6 @@ jobs:
         with:
           node-version: '22'
       - name: Verify gacha source and regression tests
-        run: node --test tests/gacha-recorded-replay.test.mjs tests/gacha-draw-preflight.test.mjs tests/gacha-gas-mock-regression.test.mjs tests/gacha-probability-candidate-scope.test.mjs tests/gacha-api-mock-integration.test.mjs tests/gacha-browser-retry.test.mjs
+        run: |
+          node --check gacha-deluxe-v21.js
+          node --test tests/gacha-recorded-replay.test.mjs tests/gacha-draw-preflight.test.mjs tests/gacha-gas-mock-regression.test.mjs tests/gacha-probability-candidate-scope.test.mjs tests/gacha-api-mock-integration.test.mjs tests/gacha-browser-retry.test.mjs tests/gacha-prize-demo-mapping.test.mjs
