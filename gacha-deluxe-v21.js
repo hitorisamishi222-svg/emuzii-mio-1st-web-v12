@@ -67,43 +67,91 @@
   if(controls){controls.querySelectorAll('button').forEach(button=>{button.disabled=true;button.setAttribute('aria-disabled','true');button.title='演出デモ中は実抽選を利用できません'})}
   const demo=document.createElement('section');demo.className='mio-deluxe-demo';demo.setAttribute('aria-label','演出専用体験デモ');
   const heading=document.createElement('h3');heading.textContent='✨ 豪華演出を体験（プレビュー限定）';
-  const description=document.createElement('p');description.textContent='これは映像だけのダミー体験です。抽選APIには接続せず、残回数・当選記録・本番データを変更しません。';
-  const label=document.createElement('label');label.textContent='演出するレア度';
-  const select=document.createElement('select');select.id='mio-deluxe-demo-rarity';label.htmlFor=select.id;select.setAttribute('aria-label','演出するレア度');
-  for(const rarity of ['N','R','SR','UR']){const option=document.createElement('option');option.value=rarity;option.textContent=rarity;select.append(option)}
+  const description=document.createElement('p');description.textContent='登録済み景品の名前・画像・レア度を使う表示見本です（2026/10/28設定の控え）。抽選APIに接続せず、ガチャ回数・当選履歴・本番データを変更しません。';
+  const label=document.createElement('label');label.textContent='演出で表示する景品';
+  const select=document.createElement('select');select.id='mio-deluxe-demo-rarity';label.htmlFor=select.id;select.setAttribute('aria-label','プレビューする景品を選択');select.disabled=true;
+  const waiting=document.createElement('option');waiting.value='';waiting.textContent='景品情報を読み込み中…';select.append(waiting);
   const actionRow=document.createElement('div');actionRow.className='mio-deluxe-demo-actions';
-  const normal=document.createElement('button');normal.type='button';normal.textContent='💎 通常を体験';
-  const fest=document.createElement('button');fest.type='button';fest.textContent='👑 ラキフェス体験';
+  const normal=document.createElement('button');normal.type='button';normal.textContent='💎 通常を体験';normal.disabled=true;
+  const fest=document.createElement('button');fest.type='button';fest.textContent='👑 ラキフェス体験';fest.disabled=true;
   const skipDemo=document.createElement('button');skipDemo.type='button';skipDemo.className='mio-deluxe-demo-skip';skipDemo.textContent='演出をスキップ';skipDemo.hidden=true;skipDemo.disabled=true;
   const status=document.createElement('p');status.className='mio-deluxe-demo-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='どちらも実抽選しません。';
   actionRow.append(normal,fest);demo.append(heading,description,label,select,actionRow,skipDemo,status);
   foot.insertAdjacentElement('afterend',demo);
-  let active=false;let activeRarity='N';const timers=[];
+  let active=false,activePrize=null,selectedMode='通常',previewPrizes=[];
+  const timers=[];
+  function showPreviewPrizes(mode){
+    const existing=mode===selectedMode?select.value:'';
+    selectedMode=mode;
+    const subset=previewPrizes.filter(p=>p.mode===mode);
+    select.replaceChildren();
+    for(const p of subset){
+      const option=document.createElement('option');
+      option.value=p.id;
+      option.textContent=p.id+' · '+p.name+' ['+p.rarity+']';
+      select.append(option);
+    }
+    if(existing&&subset.some(p=>p.id===existing))select.value=existing;
+  }
+  // A static snapshot of PUBLIC prize metadata only, fetched from this
+  // preview deployment. It cannot query GAS, spend rights, or see participants.
+  void (async()=>{
+    try{
+      const response=await fetch('/gacha-prize-demo-catalog.json',{credentials:'omit',cache:'no-store'});
+      if(!response.ok)throw Error('プレビュー景品情報を取得できません');
+      const payload=await response.json();
+      const p=payload?.prizes;
+      if(!Array.isArray(p)||p.length!==27||
+         p.filter(x=>x.mode==='通常').length!==16||
+         p.filter(x=>x.mode==='ラキフェス').length!==11||
+         p.some(x=>!x.id||!x.name||!['N','R','SR','UR'].includes(x.rarity)||
+           !/^\/gacha-(?:mem|lf)-\d{2}\.jpg$/.test(x.image)))throw Error('景品データの内容を確認できません');
+      previewPrizes=p;
+      showPreviewPrizes('通常');
+      normal.disabled=false;fest.disabled=false;select.disabled=false;
+      status.textContent='登録済み景品27種類の表示見本を読み込みました。景品を選んで演出を確認できます（当選ではありません）。';
+    }catch(error){
+      status.textContent=error.message+'。実抽選は行いません。';
+    }
+  })();
   const queue=(fn,ms)=>timers.push(setTimeout(fn,ms));
   const reset=()=>{
     while(timers.length)clearTimeout(timers.pop());
     stage.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur','is-fest','is-normal','v20-prize-visible','v19-reveal-running','v19-reveal-finished','v191-rarity-n','v191-rarity-r','v191-rarity-sr','v191-rarity-ur');
-    const result=document.getElementById('drawResultCard');if(result){result.hidden=true;result.classList.remove('mio-deluxe-demo-result','result-pop')}
+    const result=document.getElementById('drawResultCard');if(result){result.hidden=true;result.classList.remove('mio-deluxe-demo-result','result-pop')}const oldImage=document.getElementById('drawResultImage');if(oldImage){oldImage.hidden=true;oldImage.removeAttribute('src')}
     clearStage();phase(0,false);
   };
-  function finishDemo(rarity){
+  function finishDemo(prize){
+    if(!prize)return;
+    const rarity=prize.rarity;
     while(timers.length)clearTimeout(timers.pop());
     stage.classList.remove('draw-active','royal-charge','royal-release','royal-climax');stage.classList.add('royal-sequence-complete','rarity-'+rarity.toLowerCase());
     clearStage();phase(3,false);
     const card=document.getElementById('drawResultCard');
     if(card){card.hidden=false;card.classList.remove('result-pop');card.classList.add('mio-deluxe-demo-result');
-      const image=document.getElementById('drawResultImage');if(image){image.hidden=true;image.removeAttribute('src')}
+      const image=document.getElementById('drawResultImage');
+      if(image){
+        image.hidden=true;image.removeAttribute('src');
+        image.alt=prize.name+'（実景品の表示見本）';
+        image.onerror=()=>{image.hidden=true;status.textContent='景品の画像表示に失敗しました。ファイルの配信を確認してください（当選はしていません）。'};
+        image.onload=()=>{image.hidden=false};
+        image.src=prize.image;
+      }
       const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
-      if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent='豪華演出の見本';if(ordinal)ordinal.textContent='ダミー表示 — 抽選・当選はしていません';
+      if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent=prize.name;if(ordinal)ordinal.textContent=prize.id+' · 設定確率 '+prize.odds+'% · 表示見本（当選ではありません）';
     }
     if(card){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;card.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});}
-    status.textContent='デモ完了。抽選回数・履歴は変わっていません。';
+    status.textContent='表示確認：'+prize.id+' '+prize.name+'。当選処理・残回数・履歴は変わっていません。';
     active=false;normal.disabled=false;fest.disabled=false;select.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
   }
   function run(mode){
-    if(active)return;
+    if(active||!previewPrizes.length)return;
+    if(selectedMode!==mode)showPreviewPrizes(mode);
+    const prize=previewPrizes.find(p=>p.mode===mode&&p.id===select.value);
+    if(!prize)return;
+    activePrize=prize;
     active=true;normal.disabled=true;fest.disabled=true;select.disabled=true;skipDemo.hidden=false;skipDemo.disabled=false;
-    reset();const rarity=activeRarity=select.value;
+    reset();const rarity=prize.rarity;
     stage.classList.toggle('is-fest',mode==='ラキフェス');
     stage.classList.add('draw-active');
     // Keep preview animation self-contained: the existing live FX listeners
@@ -115,9 +163,9 @@
     queue(()=>{stage.classList.add('royal-charge');status.textContent='魔法が集まっています…（演出デモ）'},900*k);
     queue(()=>{stage.classList.remove('royal-charge');stage.classList.add('royal-release');status.textContent='クジラが宝物を運んでいます…（演出デモ）'},1900*k);
     queue(()=>{stage.classList.add('royal-climax');status.textContent='結果の演出が現れます…（演出デモ）'},3650*k);
-    queue(()=>finishDemo(rarity),5000*k);
+    queue(()=>finishDemo(prize),5000*k);
   }
-  skipDemo.addEventListener('click',()=>{if(active)finishDemo(activeRarity)});
+  skipDemo.addEventListener('click',()=>{if(active)finishDemo(activePrize)});
   normal.addEventListener('click',()=>run('通常'));
   fest.addEventListener('click',()=>run('ラキフェス'));
   window.addEventListener('pagehide',()=>{while(timers.length)clearTimeout(timers.pop())},{once:true});
