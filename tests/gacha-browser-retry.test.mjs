@@ -103,13 +103,10 @@ test('after simulated page reload, recovery retains the same drawId and never is
   assert.equal(storage.has(key),false);
 });
 
-test('real confirmed draw scrolls to whale machine before showing draw animation',async()=>{
+test('real confirmed draw starts in place without any automatic page slide',async()=>{
   const h=harness(new Map());
   await vm.runInContext("execute({drawId:'"+drawId+"',mode:'通常'})",h.context);
-  const stageScroll=h.scrollEvents.find(x=>x.name==='gachaStage');
-  assert.ok(stageScroll,'whale machine must be brought into viewport');
-  assert.equal(stageScroll.opts.block,'center');
-  assert.equal(stageScroll.opts.behavior,'auto','reduced-motion setting must be respected');
+  assert.deepEqual(h.scrollEvents,[],'user sees the animation without moving screen');
 });
 
 test('read-only pending result recovery never scrolls away to restart the whale animation',async()=>{
