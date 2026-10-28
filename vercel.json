@@ -384,6 +384,10 @@
     {
       "src": "gallery-submissions-admin.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "media-manage.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -538,6 +542,14 @@
     {
       "src": "/gallery-submissions-admin.html",
       "dest": "/gallery-submissions-admin.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/media-manage.html",
+      "dest": "/media-manage.html",
       "headers": {
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff"
