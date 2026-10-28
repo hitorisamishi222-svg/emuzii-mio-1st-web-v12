@@ -89,7 +89,13 @@ async function execute(pending,recoveryOnly=false){
   const started=performance.now(),fest=pending.mode==='ラキフェス',reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches,minMs=recoveryOnly?0:reduceMotion?800:5000;
   skipRequested=false;$('skipDraw').hidden=recoveryOnly||reduceMotion;$('skipDraw').disabled=recoveryOnly||reduceMotion;
   let refreshAfter=false, failureMessage='';
-  if(!recoveryOnly)startEffect(pending.mode);
+  if(!recoveryOnly){
+    // The user has explicitly confirmed this draw. Bring the already-built
+    // gacha machine into view before the animation starts; do not change draw
+    // IDs, entitlement or backend behavior.
+    $('gachaStage').scrollIntoView?.({behavior:reduceMotion?'auto':'smooth',block:'center'});
+    startEffect(pending.mode);
+  }
   if(recoveryOnly)note('確定済みの当選履歴を照会しています。新しい抽選は行いません。');
   else note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
