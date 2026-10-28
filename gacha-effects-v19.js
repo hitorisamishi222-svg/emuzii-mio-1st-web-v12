@@ -258,6 +258,18 @@ if(stage&&resultCard&&!stage.querySelector('.v19-fx-root')){
     void showReveal(k);
   });
   window.addEventListener('mio:gacha-animation-error',()=>{stage.classList.remove('v20-prize-visible');outletRevealToken++;stage.classList.remove('v20-stage-awaken');stopBgm();winnerGem.style.opacity='0';winnerGem.classList.remove('v191-winner-drop');outlet.classList.remove('v20-eject');clearRarityState()});
+  window.addEventListener('mio:gacha-prize-closed',()=>{
+    // The item is already safely committed. Reset VISUAL FX only; never
+    // touch the signed draw, remaining rights, or the result history.
+    token++;outletRevealToken++;clearTimeout(watchdog);stopBgm();
+    reveal.className='v19-reveal';
+    stage.classList.remove('v20-prize-visible','v20-stage-awaken','v19-reveal-running','v19-reveal-finished',
+      'royal-sequence-complete','rarity-n','rarity-r','rarity-sr','rarity-ur');
+    winnerGem.style.opacity='0';
+    winnerGem.classList.remove('v191-winner-drop');
+    outlet.classList.remove('v20-eject');
+    clearRarityState();
+  });
 
   const stageObserver=new MutationObserver(()=>syncMachine());
   stageObserver.observe(stage,{attributes:true,attributeFilter:['class']});
