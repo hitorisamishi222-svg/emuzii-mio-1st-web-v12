@@ -175,7 +175,7 @@ test('preview uses actual prize record, requires close before second spin, never
   assert.equal(stage.classList.contains('mio-prize-open'),true);
   assert.equal(h.find('drawPrizeName').textContent,catalog.prizes.find(p=>p.mode==='ラキフェス').name);
   assert.equal(result.parentNode,stage);
-  assert.deepEqual(h.network,['/gacha-prize-demo-catalog.json']);
+  assert.deepEqual(h.network,[],'preview must initialize without JSON fetch or any API call');
   assert.deepEqual(h.scrolls,[]);
 });
 
