@@ -811,3 +811,41 @@
   font-size:11px;
   line-height:1.35;
 }
+
+
+/* v2.1.10 — iPhone full-height invariant: scrollbar must never re-anchor
+   when progress text changes or the skip button changes visibility. */
+.gacha-page #drawPanel>.mio-deluxe-demo-status{
+  box-sizing:border-box!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  overflow:auto!important;
+  overflow-wrap:anywhere;
+}
+.gacha-page #drawPanel>.mio-deluxe-demo-skip,
+.gacha-page #drawPanel>.mio-deluxe-demo-skip[hidden]{
+  box-sizing:border-box!important;
+  display:block!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:4px auto 5px!important;
+}
+.gacha-page #drawPanel>.mio-deluxe-demo-skip[hidden]{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+.gacha-page #skipDraw,
+.gacha-page #skipDraw[hidden]{
+  box-sizing:border-box!important;
+  display:block!important;
+  height:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:4px auto 5px!important;
+}
+.gacha-page #skipDraw[hidden]{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
