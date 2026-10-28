@@ -3,7 +3,7 @@
 import pg from 'pg';
 import {createHash,createHmac} from 'node:crypto';
 import {approvedGalleryItems} from './gallery-items.js';
-import {secureWorkUrl,validateGallerySubmission,reviewTransition} from './gallery-submissions-core.js';
+import {secureWorkUrl,validateGallerySubmission,validateMediaAdminItem,reviewTransition} from './gallery-submissions-core.js';
 const {Pool}=pg;
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const reply=(res,code,data)=>res.status(code).json(data);
@@ -60,7 +60,7 @@ export default async function handler(req,res){
   if(req.method==='GET'){
    const admin=await adminIdentity(c,req);
    if(!admin)return fail(res,401,'ADMIN_LOGIN_REQUIRED');
-   const q=await c.query(`SELECT id,title,creator,description,category,external_url,status,revision,created_at,reviewed_at
+   const q=await c.query(`SELECT id,title,creator,description,category,external_url,thumbnail_url,status,revision,created_at,reviewed_at
     FROM gallery_submissions ORDER BY CASE WHEN status='pending' THEN 0 ELSE 1 END,created_at DESC LIMIT 100`);
    return reply(res,200,{ok:true,items:q.rows,authorized:true,authorizedDevice:true});
   }
@@ -84,6 +84,46 @@ export default async function handler(req,res){
      VALUES($1,$2,$3,$4,$5,true,$6)`,[fields.title,fields.creator,fields.description,fields.category,fields.url,ipHash]);
     await c.query('COMMIT');
     return reply(res,201,{ok:true,received:true,message:'応募を受け付けました。掲載には運営の確認が必要です。'});
+   }catch(e){
+    await c.query('ROLLBACK').catch(()=>{});
+    if(e.code==='23505')return fail(res,409,'SUBMISSION_ALREADY_RECEIVED');
+    throw e;
+   }
+  }
+  // Media curation reuses the same moderated queue, not a second gallery database.
+  if(action==='mediaCreate'||action==='mediaUpdate'){
+   const admin=await adminIdentity(c,req);
+   if(!admin)return fail(res,401,'ADMIN_LOGIN_REQUIRED');
+   const item=validateMediaAdminItem(req.body?.item);
+   if(!item)return fail(res,400,'MEDIA_FIELDS_INVALID');
+   if(approvedGalleryItems.some(x=>secureWorkUrl(x.url)===item.url))
+    return fail(res,409,'ALREADY_PUBLISHED');
+   const id=req.body?.id,revision=req.body?.revision;
+   if(action==='mediaUpdate'&&
+      (typeof id!=='string'||!/^[0-9a-f-]{36}$/i.test(id)||!Number.isSafeInteger(revision)||revision<0))
+    return fail(res,400,'FIELDS_INVALID');
+   await c.query('BEGIN');
+   try{
+    let q;
+    if(action==='mediaCreate'){
+     q=await c.query(`INSERT INTO gallery_submissions
+      (title,creator,description,category,external_url,thumbnail_url,consent,source_hash,status)
+      VALUES($1,$2,$3,$4,$5,$6,true,$7,'pending')
+      RETURNING id,revision,status`,
+      [item.title,item.creator,item.description,item.category,item.url,item.thumbnail,sha('admin:'+admin.id)]);
+    }else{
+     q=await c.query(`UPDATE gallery_submissions SET
+      title=$1,creator=$2,description=$3,category=$4,external_url=$5,thumbnail_url=$6,
+      status='pending',revision=revision+1,reviewed_at=NULL,reviewed_by=NULL
+      WHERE id=$7 AND revision=$8 AND category IN ('動画','音声・楽曲')
+      RETURNING id,revision,status`,
+      [item.title,item.creator,item.description,item.category,item.url,item.thumbnail,id,revision]);
+    }
+    if(!q.rowCount){await c.query('ROLLBACK');return fail(res,409,'MEDIA_CHANGED_RELOAD');}
+    await c.query("INSERT INTO gallery_admin_audit(actor_id,action,target,result) VALUES($1,$2,$3,'success')",
+     [admin.id,action==='mediaCreate'?'media_create':'media_update',String(q.rows[0].id)]);
+    await c.query('COMMIT');
+    return reply(res,200,{ok:true,item:q.rows[0]});
    }catch(e){
     await c.query('ROLLBACK').catch(()=>{});
     if(e.code==='23505')return fail(res,409,'SUBMISSION_ALREADY_RECEIVED');
