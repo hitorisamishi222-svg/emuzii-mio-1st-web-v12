@@ -41,10 +41,46 @@
   }else stage.insertAdjacentElement('beforebegin',steps);
   const foot=document.createElement('p');foot.className='mio-deluxe-footnote';foot.textContent='光・宝石の表現は演出です。当選内容と残り回数はシステムの確定結果を表示します。';
   stage.insertAdjacentElement('afterend',foot);
-  // Keep the artwork/spotlights unobstructed: the result is a separate dock
-  // immediately below the stage, in both rehearsal and actual draw UI.
+  // The winner emerges directly in FRONT of the whale machine without
+  // extending the page. Close the prize to return to the identical viewport.
   const resultDock=document.getElementById('drawResultCard');
-  if(resultDock){stage.insertAdjacentElement('afterend',resultDock);resultDock.classList.add('mio-result-dock');}
+  let pendingRevealTimer=null,demoClosed=null;
+  if(resultDock){
+    stage.append(resultDock);
+    resultDock.classList.remove('mio-result-dock');
+    resultDock.classList.add('mio-prize-overlay');
+    resultDock.setAttribute('role','dialog');
+    resultDock.setAttribute('aria-label','当選アイテム');
+    const close=document.createElement('button');
+    close.type='button';
+    close.id='mioPrizeClose';
+    close.className='mio-prize-close';
+    close.textContent='閉じる · 次のガチャへ';
+    close.setAttribute('aria-label','アイテムを閉じてガチャに戻る');
+    resultDock.append(close);
+    close.addEventListener('click',()=>{
+      if(pendingRevealTimer!==null){clearTimeout(pendingRevealTimer);pendingRevealTimer=null;}
+      resultDock.hidden=true;
+      resultDock.classList.remove('result-pop','mio-deluxe-demo-result');
+      stage.classList.remove('mio-prize-open','v20-prize-visible','royal-sequence-complete');
+      window.dispatchEvent(new Event('mio:gacha-prize-closed'));
+      if(typeof demoClosed==='function')demoClosed();
+    });
+  }
+  function showPrizeOnMachine(rarity,fromDemo=false){
+    if(!resultDock||resultDock.hidden)return;
+    if(pendingRevealTimer!==null)clearTimeout(pendingRevealTimer);
+    // The existing FX drops the rare capsule first (UR takes longest).
+    // Open the actual prize after the capsule's ejection, on the SAME stage.
+    const key=String(rarity||'').toUpperCase();
+    const delay=fromDemo?220:key==='UR'?1550:key==='SR'?950:key==='R'?520:320;
+    pendingRevealTimer=setTimeout(()=>{
+      pendingRevealTimer=null;
+      if(resultDock.hidden)return;
+      stage.classList.add('mio-prize-open');
+      resultDock.querySelector('#mioPrizeClose')?.focus({preventScroll:true});
+    },delay);
+  }
   function phase(n,active){
     steps.dataset.running=active?'true':'false';
     [...steps.children].forEach((li,i)=>{li.dataset.state=i<n-1?'done':i===n-1?'active':'idle'});
@@ -60,9 +96,17 @@
   observer.observe(stage,{attributes:true,attributeFilter:['class']});
   window.addEventListener('mio:gacha-animation-start',()=>{stage.classList.add('mio-deluxe-running');phase(1,true)});
   window.addEventListener('mio:gacha-result-ready',()=>{clearStage();phase(3,true)});
-  window.addEventListener('mio:gacha-result-shown',()=>{clearStage();phase(3,false)});
-  window.addEventListener('mio:gacha-animation-error',()=>{clearStage();phase(0,false)});
-  window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
+  window.addEventListener('mio:gacha-result-shown',e=>{
+    clearStage();phase(3,false);showPrizeOnMachine(e.detail?.rarity);
+  });
+  window.addEventListener('mio:gacha-animation-error',()=>{
+    if(pendingRevealTimer!==null){clearTimeout(pendingRevealTimer);pendingRevealTimer=null;}
+    stage.classList.remove('mio-prize-open');clearStage();phase(0,false);
+  });
+  window.addEventListener('pagehide',()=>{
+    observer.disconnect();
+    if(pendingRevealTimer!==null)clearTimeout(pendingRevealTimer);
+  },{once:true});
 
   // Preview-only interaction. Hard block on the real public hostname.
   // The visual rehearsal must be explicitly requested. Never display it in the normal gacha flow.
@@ -87,6 +131,14 @@
   // the entire machine, prize-result dock and explanatory footnote.
   stage.insertAdjacentElement('beforebegin',demo);
   let active=false,activePrize=null,selectedMode='通常',previewPrizes=[];
+  demoClosed=()=>{
+    reset();
+    activePrize=null;
+    normal.disabled=!previewPrizes.length;
+    fest.disabled=!previewPrizes.length;
+    select.disabled=!previewPrizes.length;
+    status.textContent='ガチャBOXに戻りました。続けて景品の演出を確認できます（実抽選なし）。';
+  };
   const timers=[];
   function showPreviewPrizes(mode){
     const existing=mode===selectedMode?select.value:'';
@@ -148,12 +200,14 @@
       const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
       if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent=prize.name;if(ordinal)ordinal.textContent=prize.id+' · 設定確率 '+prize.odds+'% · 表示見本（当選ではありません）';
     }
-    // The result is immediately below the machine; never move the screen automatically.
+    // A 220ms capsule-pop delay reveals this prize over the whale machine.
+    showPrizeOnMachine(rarity,true);
     status.textContent='表示確認：'+prize.id+' '+prize.name+'。当選処理・残回数・履歴は変わっていません。';
-    active=false;normal.disabled=false;fest.disabled=false;select.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
+    // Keep next-spin controls locked until the participant closes the prize.
+    active=false;normal.disabled=true;fest.disabled=true;select.disabled=true;skipDemo.hidden=true;skipDemo.disabled=true;
   }
   function run(mode){
-    if(active||!previewPrizes.length)return;
+    if(active||stage.classList.contains('mio-prize-open')||resultDock&&!resultDock.hidden||!previewPrizes.length)return;
     if(selectedMode!==mode)showPreviewPrizes(mode);
     const prize=previewPrizes.find(p=>p.mode===mode&&p.id===select.value);
     if(!prize)return;
