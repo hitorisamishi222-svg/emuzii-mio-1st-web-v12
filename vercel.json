@@ -26,6 +26,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "attendance-admin.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "attendance-admin-csv.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gallery.html",
       "use": "@vercel/static"
     },
@@ -460,6 +468,22 @@
       "dest": "/admin-hub.html",
       "headers": {
         "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/attendance-admin.html",
+      "dest": "/attendance-admin.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/attendance-admin-csv.js",
+      "dest": "/attendance-admin-csv.js",
+      "headers": {
+        "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff"
       }
     },
