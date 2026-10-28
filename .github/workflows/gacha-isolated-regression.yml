@@ -1,0 +1,31 @@
+name: Gacha isolated regression
+on:
+  push:
+    branches:
+      - fix/gacha-recorded-replay-safety-20261027
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'api-gacha.js'
+      - 'gacha-*.js'
+      - 'gacha-prize-demo-catalog.json'
+      - 'vercel.json'
+      - 'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs'
+      - 'release-prep/gacha-probability-display-v191-candidate.gs'
+      - 'tests/gacha-*.test.mjs'
+      - '.github/workflows/gacha-isolated-regression.yml'
+permissions:
+  contents: read
+jobs:
+  gacha-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify gacha source and regression tests
+        run: |
+          node --check gacha-deluxe-v21.js
+          node --test tests/gacha-recorded-replay.test.mjs tests/gacha-draw-preflight.test.mjs tests/gacha-gas-mock-regression.test.mjs tests/gacha-probability-candidate-scope.test.mjs tests/gacha-api-mock-integration.test.mjs tests/gacha-browser-retry.test.mjs tests/gacha-prize-demo-mapping.test.mjs tests/gacha-overlay-flow.test.mjs

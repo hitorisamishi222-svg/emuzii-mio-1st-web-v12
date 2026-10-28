@@ -1,4 +1,7 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
+import {preflightGachaDraw} from './gacha-draw-preflight.js';
+import {isVerifiedGachaDrawResult} from './gacha-draw-response.js';
+import {recordedDrawFromHistory} from './gacha-recorded-replay.js';
 
 export default async function handler(req,res){
  const cfg=prepare(req,res);
@@ -9,12 +12,35 @@ export default async function handler(req,res){
  try{body=typeof req.body==='string'?JSON.parse(req.body||'{}'):req.body||{}}
  catch{return res.status(400).json({ok:false,error:'操作を確認してください'})}
  if(!body||typeof body!=='object')return res.status(400).json({ok:false,error:'操作を確認してください'});
- if(!['catalog','draw','history'].includes(body.action))return res.status(400).json({ok:false,error:'操作を確認してください'});
- if(body.action==='draw'&&(!/^[a-f0-9]{32}$/.test(body.drawId||'')||!['通常','ラキフェス'].includes(body.mode)))return res.status(400).json({ok:false,error:'抽選要求が不正です'});
+ if(!['catalog','draw','history','recover'].includes(body.action))return res.status(400).json({ok:false,error:'操作を確認してください'});
+ if(['draw','recover'].includes(body.action)&&(!/^[a-f0-9]{32}$/.test(body.drawId||'')||!['通常','ラキフェス'].includes(body.mode)))return res.status(400).json({ok:false,error:'抽選要求が不正です'});
  try{
   const identity={participantId:session.id,tokenHash:hash(session.token)};
+  // An interrupted draw may or may not have committed on GAS.
+  // This endpoint NEVER issues another draw: it reads authenticated history
+  // and leaves the client's original pending drawId untouched if not found.
+  if(body.action==='recover'){
+   const history=await bridge('history',identity);
+   const recovered=recordedDrawFromHistory(history,{
+    participantId:session.id,drawId:body.drawId,mode:body.mode
+   });
+   if(!recovered)return res.status(409).json({ok:false,error:'前回の確定結果はまだ見つかっていません。新しい抽選は行っていません。同じ抽選IDで再確認するか運営へご連絡ください。'});
+   res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
+   return res.status(200).json(recovered);
+  }
+  if(body.action==='draw'){
+   const decision=await preflightGachaDraw(bridge,identity,{drawId:body.drawId,mode:body.mode});
+   if(decision.kind==='replayed'){
+    res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
+    return res.status(200).json(decision.data);
+   }
+   if(decision.kind!=='fresh')
+    return res.status(409).json({ok:false,error:decision.reason==='gate'?'現在のガチャ受付・利用条件を確認できませんでした。新しい抽選は行っていません。同じ抽選IDで結果を再確認してください。':'ガチャの安全確認が完了していません。新規抽選を停止しています。未確認の抽選は同じIDで再確認してください。'});
+  }
   const data=await bridge(body.action,{...identity,...(body.action==='draw'?{drawId:body.drawId,mode:body.mode}:{})});
   if(data.participantId!==session.id)throw Error('登録を確認できません');
+  if(body.action==='draw'&&!isVerifiedGachaDrawResult(data,{drawId:body.drawId,mode:body.mode},session.id))
+   throw Error('確定結果の整合性を確認できませんでした。同じ抽選IDで再確認してください');
   res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
   return res.status(200).json(data);
  }catch(error){
