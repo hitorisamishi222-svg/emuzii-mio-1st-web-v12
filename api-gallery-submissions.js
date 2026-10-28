@@ -3,7 +3,7 @@
 import pg from 'pg';
 import {createHash,createHmac} from 'node:crypto';
 import {approvedGalleryItems} from './gallery-items.js';
-import {secureWorkUrl,validateGallerySubmission} from './gallery-submissions-core.js';
+import {secureWorkUrl,validateGallerySubmission,reviewTransition} from './gallery-submissions-core.js';
 const {Pool}=pg;
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const reply=(res,code,data)=>res.status(code).json(data);
@@ -32,7 +32,6 @@ const sourceHash=req=>{
  const raw=String(req.headers['x-vercel-forwarded-for']||req.headers['x-forwarded-for']||'unknown').split(',')[0].trim().slice(0,128);
  return createHmac('sha256',process.env.GALLERY_SUBMISSION_RATE_SECRET).update(raw).digest('hex');
 };
-const TRANSITIONS={approve:['pending','approved'],reject:['pending','rejected'],hide:['approved','hidden'],restore:['hidden','approved'],reopen:['rejected','pending']};
 export default async function handler(req,res){
  res.setHeader('Cache-Control','private, no-store');
  res.setHeader('X-Content-Type-Options','nosniff');
@@ -91,7 +90,7 @@ export default async function handler(req,res){
     throw e;
    }
   }
-  const transition=TRANSITIONS[action];
+  const transition=reviewTransition(action);
   if(!transition)return fail(res,400,'ACTION_INVALID');
   const id=req.body?.id,revision=req.body?.revision;
   if(typeof id!=='string'||!/^[0-9a-f-]{36}$/i.test(id)||!Number.isSafeInteger(revision)||revision<0)
