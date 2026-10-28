@@ -80,7 +80,7 @@ export default async function handler(req,res){
      FROM museum_public_exhibits
      ORDER BY updated_at DESC,id DESC LIMIT 250`
    );
-   return res.status(200).json({ok:true,authorized:true,editable:editingOn(),items:q.rows.map(adminRow)});
+   return res.status(200).json({ok:true,authorized:true,editable:editingOn(),imageUploadEnabled:editingOn()&&process.env.MIO_MUSEUM_IMAGE_UPLOAD_ENABLED==='true'&&Boolean(process.env.BLOB_READ_WRITE_TOKEN),items:q.rows.map(adminRow)});
   }
   if(!editingOn())return fail(res,503,'ARCHIVE_EDIT_CLOSED');
   const action=req.body?.action;
