@@ -534,3 +534,38 @@
     animation:none!important;
   }
 }
+
+
+/* v2.1.6 — iPhone visual inspection: original 900x900 whale artwork
+   remains uncropped and unstretched; the stage should be square too.
+   Prize screenshots are naturally wide (e.g. LF-18 is 535x220): scale
+   them legibly across the card without altering the image ratio. */
+.gacha-page #gachaStage,
+.gacha-page #gachaStage.mio-scene-blended{
+  aspect-ratio:1 / 1!important;
+  height:auto!important;
+  scroll-margin-block-start:16px;
+  scroll-margin-block-end:16px;
+}
+.gacha-page #drawResultCard.mio-result-dock:not([hidden]) #drawResultImage:not([hidden]){
+  width:100%!important;
+  max-width:min(100%,535px)!important;
+  height:auto!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  object-fit:contain!important;
+  margin:2px auto 8px;
+}
+.gacha-page .mio-deluxe-demo{
+  margin:6px 0 9px;
+}
+.gacha-page .mio-deluxe-demo-actions{
+  margin-bottom:0;
+}
+@media(max-width:430px){
+  .gacha-page #gachaStage.mio-scene-blended{aspect-ratio:1 / 1!important;}
+  .gacha-page #drawResultCard.mio-result-dock:not([hidden]) #drawResultImage:not([hidden]){
+    width:100%!important;
+    max-width:100%!important;
+  }
+}
