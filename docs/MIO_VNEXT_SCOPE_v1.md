@@ -45,3 +45,14 @@ F. 権限・スマホ・回帰テスト
 - CSVの内容はサーバー送信・保存しない。書き込みAPIを設けない。元シートは変更しない。
 - **制約**: 自動シート連携ではない。CSVの手動書き出しが必要。プレビュー環境は既存の本番ホスト認証制限により管理者実操作ができない。実機テスト・本番反映は未実施。
 - これまでの参加者ログイン復旧、ガチャデータ、皆勤履歴には変更なし。
+
+
+## 実装進捗 2026-10-28: ファンアート応募・承認・掲載（開発版）
+- `gallery.html` にサーバーから受付可能と確認できた場合だけ表示する応募フォームを追加（HTTPS外部作品URLのみ、ファイル直接アップロードなし）。
+- `api-gallery-submissions.js` と `gallery-submissions-core.js`: 既定で受付停止。明示的な設定、専用DBテーブル、管理者認証・承認端末、応募制限、重複URL確認、審査状態・監査ログ。
+- `gallery-submissions-admin.html`: 管理メニューから審査待ち・承認・非掲載・非公開・再公開・再審査。
+- `api-gallery-items.js`: 公開フラグが有効な場合のみ承認済み作品を公開一覧に連結。既存作品の公開経路は維持。
+- `db/gallery-submissions.sql`: 本番で未適用のマイグレーション。稼働中のDBやGASに変更なし。
+- `docs/MIO_GALLERY_SUBMISSIONS_RELEASE.md`: 運営者が承認するまでフラグOFF、マイグレーション未実施、実機検証未実施であることを明記。
+- 新規の `tests/gallery-submissions.test.mjs` は既存CIの `npm test` に組み込まれ、2026-10-28のPRコミットでRegression tests SUCCESS。
+- Vercelの開発デプロイはREADY。ただし実DB保存と管理者端末・公開の運用テストは未実施。PR #43はドラフト継続。
