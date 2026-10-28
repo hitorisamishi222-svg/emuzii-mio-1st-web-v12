@@ -124,7 +124,11 @@ try{
   console.log(JSON.stringify({before,first,closed,second,requests:requests.length}));
 }finally{
   if(socket&&socket.readyState===WebSocket.OPEN)socket.close();
-  if(chrome)chrome.kill('SIGKILL');
+  if(chrome){
+    const exited=new Promise(done=>chrome.once('exit',done));
+    chrome.kill('SIGKILL');
+    await Promise.race([exited,pause(1500)]);
+  }
   if(server){server.closeAllConnections();await new Promise(done=>server.close(done))}
-  await rm(tmp,{recursive:true,force:true});
+  await rm(tmp,{recursive:true,force:true,maxRetries:8,retryDelay:150});
 }
