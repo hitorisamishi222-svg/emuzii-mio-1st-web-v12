@@ -348,6 +348,22 @@
     {
       "src": "api-activate-attendance.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-deluxe-v21.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-deluxe-v21.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-prize-demo-catalog.json",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-undersea-palace-stage.svg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
