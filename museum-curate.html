@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#07192f">
+<title>翠央記念館｜思い出の展示管理</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at top right,#24518b88,transparent 45%),linear-gradient(155deg,#06162f,#12375e,#071729);color:#f0f8ff;font:16px/1.7 system-ui,-apple-system,"Noto Sans JP",sans-serif}
+main{max-width:840px;padding:22px 16px 90px;margin:auto}
+h1{font-size:clamp(24px,5vw,33px)}h2{font-size:20px;margin:0 0 14px}
+nav{display:flex;flex-wrap:wrap;gap:12px}a{color:#b8e6ff}
+.panel{border:1px solid #9dd1ee8c;background:#0a2c52f0;border-radius:17px;padding:20px;margin:20px 0}
+label{display:block;font-weight:750;margin:13px 0 6px}
+input,textarea,select{width:100%;min-height:48px;border:1px solid #9bcfeb;border-radius:10px;background:#061b36;color:#fff;padding:11px;font:inherit}
+textarea{min-height:100px;resize:vertical}
+input[type=checkbox]{width:auto;min-height:auto;accent-color:#e5cb9b;transform:scale(1.15)}
+.check{display:flex;align-items:flex-start;gap:12px;font-weight:650;margin-top:17px}
+.actions{display:flex;flex-wrap:wrap;gap:9px}
+button{cursor:pointer;min-height:48px;padding:11px 15px;border-radius:11px;border:1px solid #a7c9ed;background:#1b4f7e;color:white;font:750 15px system-ui}
+button.primary{background:#f3dfb3;color:#12304e;border-color:#f8e5bd}
+button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #ffe4b0;outline-offset:2px}
+.note{color:#c5dfef;font-size:14px}.alert{color:#ffe2b5}.status{background:#102844;border-radius:11px;border:1px solid #8fbddc77;padding:12px 14px;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+</style></head><body><main>
+<nav aria-label="管理画面への移動"><a href="/gallery-manage.html">← ギャラリー管理</a><a href="/museum-archive.html">思い出の公開展示を確認</a><a href="/museum.html">記念館トップ</a></nav>
+<h1>💎 翠央記念館・思い出展示管理</h1>
+<p class="note">公開用の歴代アイコン、思い出スクショ、イベント記録をひとつの管理画面から扱います。翠央記念館のオーナー権限と承認済み端末が必要です。</p>
+<section class="panel">
+<h2>🔐 管理者・端末確認</h2><p id="authStatus" role="status" aria-live="polite">確認しています…</p>
+<div id="unavailable" hidden class="note">現在この端末からは展示を編集できません。認証状態または展示用データベースの準備を確認してください。</div>
+</section>
+<section id="editor" hidden>
+<div class="panel">
+ <h2>展示作品を選ぶ</h2>
+ <label for="selectExhibit">編集する展示</label>
+ <select id="selectExhibit"><option value="">＋ 新しい思い出を登録</option></select>
+ <button type="button" id="reload">最新の展示を読み直す</button>
+ <p class="note">作成・変更した内容は必ず下書きに戻ります。確認後、別の「公開」操作をしてください。</p>
+</div>
+<div class="panel">
+ <h2 id="editorTitle">新しい展示を登録</h2>
+ <form id="exhibitForm">
+  <label for="kind">展示の種類</label>
+  <select id="kind" required><option value="icons">👑 歴代アイコン</option><option value="moments">📸 思い出アルバム</option><option value="events">🏆 イベントの記録</option></select>
+  <label for="title">展示タイトル</label>
+  <input id="title" maxlength="120" required placeholder="例：初めてのアイコン">
+  <label for="occurredOn">思い出の日付（分かる場合）</label>
+  <input id="occurredOn" type="date">
+  <label for="description">思い出・イベントの説明</label>
+  <textarea id="description" maxlength="2000" placeholder="記録に残したい内容を入力"></textarea>
+  <label for="credit">作品の制作者・クレジット（任意）</label>
+  <input id="credit" maxlength="80" placeholder="掲載許可を得た名前">
+  <label for="imageUrl">公開画像のURL</label>
+  <input id="imageUrl" maxlength="1024" placeholder="/assets/ファイル名.webp">
+  <p class="note">歴代アイコン・スクショには画像が必要です。既存の /assets/ 画像、または運営用のVercel Blob画像URLを使います。画像ファイルのアップロードは今後の段階で対応します。</p>
+  <label for="externalUrl">関連ページ（任意）</label>
+  <input id="externalUrl" maxlength="2048" placeholder="https://...">
+  <label class="check" for="rightsConfirmed"><input id="rightsConfirmed" type="checkbox" required> <span>作品の権利・掲載許可を確認しました。</span></label>
+  <label class="check" for="privacyConfirmed"><input id="privacyConfirmed" type="checkbox" required> <span>スクショに氏名、ID、電話番号、連絡先、非公開チャットなどが映り込んでいないことを確認しました。</span></label>
+  <p class="note">この管理画面では翠央本人だけが見られる宝箱を扱いません。公開用の情報だけを登録してください。</p>
+  <div class="actions">
+   <button type="submit" id="save" class="primary">下書きとして保存</button>
+   <button type="button" id="reset">新しい展示を作る</button>
+  </div>
+ </form>
+ <hr style="margin:25px 0;border:0;border-top:1px solid #9ccbe970">
+ <h2>公開状態を変更</h2>
+ <p id="currentStatus" class="note">まだ作品を選択していません。</p>
+ <div class="actions">
+  <button type="button" id="publish" class="primary" disabled>確認した作品を公開する</button>
+  <button type="button" id="hide" disabled>公開を停止する</button>
+  <button type="button" id="reopen" disabled>下書きに戻す</button>
+ </div>
+ <p class="note">公開停止は表示を取り下げる操作です。実ファイルを削除するものではありません。作品や個人情報の削除依頼には別途対応が必要です。</p>
+ <p id="saveStatus" class="status" role="status" aria-live="polite"></p>
+</div>
+</section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
+let items=[],selected=null,editable=false,busy=false;
+const note=s=>{$('saveStatus').textContent=s;};
+const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開'};
+const asInput=(item,k)=>{
+ const v=item?.[k];
+ return typeof v==='string'?v:'';
+};
+function buttons(){
+ $('save').disabled=busy||!editable;
+ $('publish').disabled=busy||!editable||!selected||selected.status!=='draft';
+ $('hide').disabled=busy||!editable||!selected||selected.status!=='published';
+ $('reopen').disabled=busy||!editable||!selected||selected.status!=='hidden';
+ $('reload').disabled=busy;
+}
+function choose(){
+ selected=items.find(x=>x.id===$('selectExhibit').value)||null;
+ for(const k of keys)$(k).value=asInput(selected,k);
+ if(!selected){$('kind').value='icons';$('exhibitForm').reset();$('kind').value='icons';}
+ $('rightsConfirmed').checked=false;$('privacyConfirmed').checked=false;
+ $('editorTitle').textContent=selected?'展示の内容を編集':'新しい展示を登録';
+ $('currentStatus').textContent=selected?
+   '状態：'+(titleStatus[selected.status]||'要確認')+' ／ 編集番号：'+selected.revision:
+   '新しい展示は下書きとして保存されます。';
+ buttons();
+}
+$('selectExhibit').addEventListener('change',choose);
+$('reset').addEventListener('click',()=>{$('selectExhibit').value='';choose();note('新規登録の入力欄へ戻りました。');});
+async function load(preferredId){
+ if(busy)return;
+ note('展示一覧を確認しています…');
+ try{
+  const response=await fetch('/api/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true||data.authorized!==true)throw Error(data.code||'NOT_AUTHORIZED');
+  editable=data.editable===true;items=Array.isArray(data.items)?data.items:[];
+  const sel=$('selectExhibit');sel.replaceChildren();
+  const fresh=document.createElement('option');fresh.value='';fresh.textContent='＋ 新しい思い出を登録';sel.append(fresh);
+  for(const item of items){
+   const opt=document.createElement('option');opt.value=item.id;opt.textContent='['+(titleStatus[item.status]||'要確認')+'] '+item.title;sel.append(opt);
+  }
+  sel.value=items.some(x=>x.id===preferredId)?preferredId:'';
+  choose();
+  $('editor').hidden=false;$('unavailable').hidden=true;
+  $('authStatus').textContent=editable?'✅ 翠央記念館のオーナー権限を確認しました。':'🔒 オーナー権限は確認しました。現在、展示編集は安全のため停止中です。';
+  note('表示：'+items.length+'件。'+(editable?'編集と公開管理が利用できます。':'編集機能は公開前検証が完了するまで停止しています。'));
+ }catch{
+  $('editor').hidden=true;$('unavailable').hidden=false;
+  $('authStatus').textContent='🔒 展示の管理権限またはデータベースを確認できません。';
+ }
+}
+$('reload').addEventListener('click',()=>load(selected?.id));
+async function submit(action){
+ if(busy||!editable)return;
+ if(action==='create'||action==='update'){
+  if(!$('exhibitForm').reportValidity())return;
+ }
+ if(action==='publish'&&(!$('rightsConfirmed').checked||!$('privacyConfirmed').checked)){
+  note('公開前に作品の権利と個人情報を再確認して、2つのチェックを入れてください。');return;
+ }
+ const words={create:'下書きを作成',update:'変更して下書きへ戻す',publish:'一般公開',hide:'公開停止',reopen:'下書きへ戻す'};
+ if(!confirm('「'+(selected?.title||$('title').value)+'」を'+words[action]+'しますか？'))return;
+ const payload={action};
+ if(selected){payload.id=selected.id;payload.revision=selected.revision;}
+ if(action==='create'||action==='update'){
+  payload.item=Object.fromEntries(keys.map(k=>[k,$(k).value.trim()]));
+  payload.item.rightsConfirmed=$('rightsConfirmed').checked;
+  payload.item.privacyConfirmed=$('privacyConfirmed').checked;
+ }else if(action==='publish'){payload.rightsConfirmed=true;payload.privacyConfirmed=true;}
+ busy=true;buttons();note('変更を確認して保存しています…');
+ try{
+  const response=await fetch('/api/museum/exhibits',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
+  note('✅ 処理が成功しました。');
+  busy=false;await load(data.item.id);
+  note('✅ '+words[action]+'を保存しました。');
+ }catch(e){
+  note('⚠️ 処理に失敗しました。入力内容は残しています。最新状態を読み直してから確認してください（'+e.message+'）。');
+ }finally{busy=false;buttons();}
+}
+$('exhibitForm').addEventListener('submit',event=>{event.preventDefault();submit(selected?'update':'create');});
+for(const action of ['publish','hide','reopen'])$(action).addEventListener('click',()=>submit(action));
+load('');
+</script>
+</body></html>
