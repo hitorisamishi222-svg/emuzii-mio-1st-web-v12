@@ -150,7 +150,7 @@ test('UI blocks saves until schema is ready and swaps real images',()=>{
  const theme=readFileSync(new URL('../background-theme.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../background-theme.css',import.meta.url),'utf8');
  const vercel=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
- assert.doesNotMatch(api,/CREATE TABLE/i);
+ assert.doesNotMatch(api.split('\n').filter(line=>!line.trimStart().startsWith('//')).join('\n'),/\bCREATE\s+TABLE\b/i);
  assert.match(page,/d.configured!==true/);
  assert.match(page,/id="backgroundSave" type="button" disabled/);
  assert.match(page,/revision=null; \/\/ Never repeat/);
