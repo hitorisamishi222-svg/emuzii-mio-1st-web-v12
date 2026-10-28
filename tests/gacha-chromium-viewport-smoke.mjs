@@ -123,6 +123,28 @@ try{
   assert.ok(Math.abs(second.y-before.y)<2,'repeated draw shifted whale');
   assert.equal(second.modalHidden,false);
   await screenshot('04-iphone-second-prize.png');
+  // A second real Chromium device-size validation catches smaller iPhones.
+  // Initial manual navigation is allowed; TAP, prize reveal, CLOSE and repeat
+  // are never allowed to move the viewport.
+  await evaluate("document.querySelector('#mioPrizeClose').click()");
+  await cdp('Emulation.setDeviceMetricsOverride',{width:375,height:812,deviceScaleFactor:3,mobile:true});
+  await pause(180);
+  await evaluate("document.querySelector('#gachaStage').scrollIntoView({block:'center',behavior:'instant'})");
+  await pause(180);
+  const smallBefore=await evaluate(sample);
+  const buttonVisible=await evaluate("(()=>{const b=document.querySelector('.mio-deluxe-demo-actions button').getBoundingClientRect();return b.top>=0&&b.bottom<=innerHeight})()");
+  assert.equal(buttonVisible,true,'draw button and whale should share visible mobile viewport');
+  assert.ok(Math.abs(smallBefore.w-smallBefore.h)<2,'375px viewport whale must remain square');
+  await evaluate("document.querySelector('.mio-deluxe-demo-actions button').click()");
+  await poll(()=>evaluate("document.querySelector('#gachaStage').classList.contains('mio-prize-open')"),11000,'375px prize');
+  const smallOpen=await evaluate(sample);
+  assert.ok(Math.abs(smallOpen.y-smallBefore.y)<2&&Math.abs(smallOpen.scroll-smallBefore.scroll)<2,
+    '375px iPhone prize opening must not move viewport');
+  await evaluate("document.querySelector('#mioPrizeClose').click()");
+  const smallClosed=await evaluate(sample);
+  assert.ok(Math.abs(smallClosed.y-smallBefore.y)<2&&Math.abs(smallClosed.scroll-smallBefore.scroll)<2,
+    '375px iPhone prize closing must not move viewport');
+  console.log('PASS: 375x812 iPhone viewport, button visible, prize open/close no page motion');
   assert.equal(requests.filter(url=>/\/api\/gacha|\/api\/status/.test(url)).length,0,'demo must not request live API');
   console.log('PASS: Chrome 390x844, 27 JPEGs, 2 prize reveals, close, no page motion, no live APIs');
   console.log(JSON.stringify({before,first,closed,second,requests:requests.length}));
