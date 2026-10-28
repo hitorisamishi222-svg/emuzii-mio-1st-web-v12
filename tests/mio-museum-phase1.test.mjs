@@ -34,7 +34,9 @@ test('navigation is public and has no broken local exhibit links',()=>{
   assert.doesNotMatch(page,/href="\/admin-hub.html"|href="\/gallery-manage.html"/);
  }
  assert.match(muse,/歴代アイコン館/);
- assert.match(muse,/展示準備中/);
+ assert.match(muse,/href="\/museum-archive\.html\?kind=icons"/);
+ assert.match(muse,/href="\/museum-archive\.html\?kind=moments"/);
+ assert.match(muse,/href="\/museum-archive\.html\?kind=events"/);
  assert.match(muse,/登録せず/);
 });
 test('existing homepage has a museum entry without losing attendance or gacha links',()=>{
