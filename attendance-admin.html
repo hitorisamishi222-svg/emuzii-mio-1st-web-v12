@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#071b39">
+<title>翠央1周年｜皆勤賞管理（参照専用）</title>
+<style>
+:root{color-scheme:dark;--ink:#eef8ff;--sub:#bfd9f0;--line:#75abce90;--gold:#f0d6a2}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;font:16px/1.7 system-ui,-apple-system,"Noto Sans JP",sans-serif;background:linear-gradient(145deg,#06172e,#103a67 55%,#071b39);color:var(--ink)}
+main{max-width:960px;padding:20px 16px 80px;margin:auto}h1{font-size:clamp(24px,5.5vw,34px)}h2{font-size:20px;margin:0 0 8px}
+.panel{padding:17px;margin:16px 0;border:1px solid var(--line);border-radius:17px;background:#0a2b50ec}
+.note,.hint{color:var(--sub)}a{color:#c8eaff}button,.link{display:inline-block;border:1px solid #a4d9f5;border-radius:11px;background:#143e68;color:#fff;padding:10px 14px;min-height:44px;font:inherit}
+button{cursor:pointer}button:disabled{opacity:.55}input{font:inherit;color:inherit}input[type="search"]{width:100%;max-width:390px;padding:10px;border:1px solid #a4d9f5;border-radius:10px;background:#071f3d}
+input[type="file"]{max-width:100%;padding:12px 0}
+[hidden]{display:none!important}.error{color:#ffd1ce}.success{color:#c4ffdb}
+table{border-collapse:collapse;width:100%;min-width:570px}th,td{padding:11px 9px;border-bottom:1px solid #7a9ab855;text-align:left;vertical-align:top}th{color:#f1dda9;font-weight:700}
+.scroller{overflow:auto}details{margin-top:4px}summary{cursor:pointer;text-decoration:underline;color:#c8eaff}
+.tags{display:flex;gap:5px;flex-wrap:wrap}.tag{padding:1px 6px;border-radius:6px;background:#245b84;font-size:12px}
+.warning{color:#ffd9a9}footer{font-size:12px;color:#b1cce2;margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+<a href="/admin-hub.html">← 管理メニューへ戻る</a>
+<h1>📅 皆勤賞管理（参照専用）</h1>
+<p class="note">既存の「emuzii_皆勤31日」シートから書き出したCSVを端末内で確認する準備画面です。参加者データの変更・登録・付与はできません。</p>
+<section class="panel" aria-labelledby="authTitle">
+<h2 id="authTitle">管理者認証</h2>
+<p id="authStatus" role="status" aria-live="polite">管理者・承認済み端末を確認しています…</p>
+<div id="locked" hidden><a class="link" href="/gallery-passkey-register.html">🔑 管理者認証へ</a></div>
+</section>
+<section id="authorized" hidden>
+<div class="panel">
+<h2>CSVを読み込む</h2>
+<p class="hint">Googleスプレッドシートの「emuzii_皆勤31日」タブのみをCSVで書き出してください。列の対応はA=MIO-ID、B=名前、C〜AG=10月1〜31日、AH=確認済み日数です。ファイルはこのブラウザ内だけで解析し、サーバーに送信・保存しません。</p>
+<label for="csvFile">CSVファイル（最大2MB）</label>
+<div><input type="file" id="csvFile" accept=".csv,text/csv" disabled></div>
+<button type="button" id="clearData" disabled>読み込み内容を消去</button>
+<p id="loadStatus" role="status" aria-live="polite">まだ読み込んでいません。</p>
+</div>
+<div class="panel" id="resultPanel" hidden>
+<h2>皆勤状況</h2>
+<p id="overview"></p>
+<label for="search">MIO-ID／ColorSing名で検索</label>
+<div><input type="search" id="search" placeholder="例：MIO-0003" autocomplete="off"></div>
+<p id="matchCount" class="note"></p>
+<div class="scroller"><table><thead><tr><th>MIO-ID</th><th>名前</th><th>確認済み</th><th>状態・日付</th></tr></thead><tbody id="records"></tbody></table></div>
+<p id="warnings" class="warning" role="status"></p>
+</div>
+</section>
+<footer>次期大型アップデート準備版。ガチャ・ログイン・皆勤の本番データは変更しません。</footer>
+</main>
+<script type="module">
+import {inspectAttendanceCsv} from '/attendance-admin-csv.js';
+const $=id=>document.getElementById(id);
+let snapshot=null;
+const showText=(id,value)=>{$(id).textContent=value;};
+const clear=()=>{
+ snapshot=null;$('csvFile').value='';$('search').value='';
+ $('resultPanel').hidden=true;$('clearData').disabled=true;
+ showText('loadStatus','読み込み内容を消去しました。');$('records').replaceChildren();
+ showText('warnings','');showText('overview','');
+};
+$('clearData').addEventListener('click',clear);
+function render(){
+ if(!snapshot)return;
+ const q=$('search').value.trim().normalize('NFKC').toLowerCase();
+ const found=snapshot.items.filter(x=>x.id.toLowerCase().includes(q)||x.name.normalize('NFKC').toLowerCase().includes(q));
+ const body=$('records');body.replaceChildren();
+ for(const item of found.slice(0,100)){
+  const tr=document.createElement('tr');
+  const a=document.createElement('td');a.textContent=item.id;
+  const b=document.createElement('td');b.textContent=item.name||'（名前なし）';
+  const c=document.createElement('td');c.textContent=`${item.confirmedDays.length} / 31日`;
+  const d=document.createElement('td');
+  const details=document.createElement('details'),summary=document.createElement('summary');
+  summary.textContent=item.issues.length?`要確認：${item.issues.join('／')}`:'確認済み日付を見る';
+  const p=document.createElement('p');
+  p.textContent=`確認済み：${item.confirmedDays.length?item.confirmedDays.map(v=>'10/'+v).join('、'):'なし'}。AH欄：${item.reportedTotal??'未確認'}。原CSV：${item.sourceRow}行。`;
+  details.append(summary,p);d.append(details);
+  tr.append(a,b,c,d);body.append(tr);
+ }
+ showText('matchCount',`${found.length}件表示対象（画面には最大100件。検索で絞れます）`);
+}
+$('search').addEventListener('input',render);
+$('csvFile').addEventListener('change',async()=>{
+ const file=$('csvFile').files?.[0];if(!file)return;
+ clear();$('csvFile').disabled=false;
+ if(file.size>2_000_000){showText('loadStatus','ファイルが2MBを超えています。');return;}
+ try{
+  const value=inspectAttendanceCsv(await file.text());
+  if(!value.items.length)throw Error('有効なMIO-IDの記録がありません。');
+  snapshot=value;$('resultPanel').hidden=false;$('clearData').disabled=false;
+  const attention=value.items.filter(x=>x.issues.length).length;
+  showText('overview',`${value.items.length}人分の行を確認。31日達成：${value.items.filter(x=>x.confirmedDays.length===31).length}件／要確認：${attention}件。`);
+  showText('warnings',value.warnings.length?`CSVの読み込み注意：${value.warnings.slice(0,8).join('。')}${value.warnings.length>8?'（ほかあり）':''}`:'');
+  showText('loadStatus','端末内で読み込みました（サーバー送信なし）。');
+  render();
+ }catch(e){snapshot=null;showText('loadStatus','CSVの形式を確認してください。A〜AHの34列が必要です。読み込みエラー：'+String(e.message||'UNKNOWN'));}
+});
+(async()=>{
+ try{
+  const r=await fetch('/api/gallery/moderate',{method:'GET',credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}});
+  if(!r.ok)throw Error('認証確認失敗');
+  const a=await r.json();
+  if(a.ok!==true||a.authorized!==true||a.authorizedDevice!==true)throw Error('権限なし');
+  $('authorized').hidden=false;$('csvFile').disabled=false;
+  showText('authStatus','✅ 管理者と承認端末を確認しました。');
+ }catch{
+  clear();$('locked').hidden=false;$('authorized').hidden=true;
+  showText('authStatus','🔒 管理者認証を確認できません。');
+ }
+})();
+</script>
+</body></html>
