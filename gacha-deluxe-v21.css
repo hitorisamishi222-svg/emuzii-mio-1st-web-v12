@@ -569,3 +569,103 @@
     max-width:100%!important;
   }
 }
+
+
+/* v2.1.7 — NO AUTO-SLIDE. Tap the buttons while the whale machine is visible.
+   Keep controls attached to the stage and fit the machine + controls within
+   a typical iPhone viewport. Never deform the 900×900 source artwork. */
+.gacha-page #drawPanel .royal-gacha-controls{
+  width:100%;
+  max-width:440px;
+  margin:0 auto 5px!important;
+}
+.gacha-page #drawPanel.mio-deluxe-demo-mode .royal-gacha-controls{
+  display:none!important; /* disabled real buttons only in read-only preview */
+}
+.gacha-page #drawPanel .mio-deluxe-demo{
+  width:100%;
+  max-width:440px;
+  box-sizing:border-box;
+  margin:0 auto 5px!important;
+}
+.gacha-page #drawPanel .mio-deluxe-steps{
+  margin:2px auto 4px!important;
+}
+@media(max-width:430px){
+  .gacha-page #drawPanel{
+    padding:10px 8px!important;
+  }
+  .gacha-page #drawPanel>h2{
+    font-size:16px!important;
+    margin:0 0 3px!important;
+  }
+  .gacha-page #drawRemaining{
+    padding:5px 8px!important;
+    margin:4px 0 5px!important;
+  }
+  .gacha-page #drawPanel .mio-deluxe-masthead{
+    margin:1px auto 4px!important;
+    padding:6px 9px!important;
+    border-radius:12px;
+  }
+  .gacha-page .mio-deluxe-crest,
+  .gacha-page .mio-deluxe-masthead .royal-eyebrow,
+  .gacha-page .mio-deluxe-masthead .royal-sub{
+    display:none!important;
+  }
+  .gacha-page .mio-deluxe-masthead .royal-title{
+    font-size:16px!important;
+    line-height:1.25!important;
+  }
+  .gacha-page #drawPanel .mio-deluxe-steps li{
+    padding:2px 4px!important;
+    font-size:10px;
+  }
+  .gacha-page #drawPanel .mio-deluxe-steps li .step-icon{
+    display:inline!important;
+    font-size:13px;
+    margin:0 3px 0 0;
+  }
+  .gacha-page #drawPanel .royal-gacha-controls .button{
+    min-height:48px!important;
+    padding:7px 4px!important;
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo{
+    padding:7px 8px!important;
+    border-radius:12px;
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo h3{
+    font-size:13px!important;
+    margin:0 0 4px;
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo>p:not(.mio-deluxe-demo-status){
+    display:none; /* preview-only explanation remains in heading and status */
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo label{
+    font-size:11px;
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo select{
+    display:block;
+    width:100%;
+    margin:1px 0 4px!important;
+    min-height:34px;
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo-actions button{
+    min-height:44px!important;
+    padding:6px 4px!important;
+  }
+  .gacha-page #drawPanel .mio-deluxe-demo-status{
+    margin:4px 0 0!important;
+    min-height:0!important;
+    font-size:11px!important;
+    line-height:1.3;
+  }
+  .gacha-page #gachaStage,
+  .gacha-page #gachaStage.mio-scene-blended{
+    width:min(100%,clamp(250px,calc(100svh - 350px),370px))!important;
+    max-width:100%!important;
+    aspect-ratio:1 / 1!important;
+    margin:1px auto 4px!important;
+    height:auto!important;
+  }
+}
