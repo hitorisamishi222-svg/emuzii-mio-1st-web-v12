@@ -1,0 +1,47 @@
+name: Gacha luxury visual-only release
+on:
+  push:
+    branches:
+      - release/gacha-deluxe-ui-only-20261028
+    paths:
+      - 'gacha.html'
+      - 'gacha-page.js'
+      - 'gacha-deluxe-v21.js'
+      - 'gacha-deluxe-v21.css'
+      - 'gacha-effects-v19.js'
+      - 'gacha-prize-demo-catalog.json'
+      - 'assets/mio-undersea-palace-stage.svg'
+      - 'vercel.json'
+      - 'tests/gacha-overlay-flow.test.mjs'
+      - 'tests/gacha-prize-demo-mapping.test.mjs'
+      - 'tests/gacha-release-visual-scope.test.mjs'
+      - '.github/workflows/gacha-luxury-visual-release.yml'
+  pull_request:
+    paths:
+      - 'gacha.html'
+      - 'gacha-page.js'
+      - 'gacha-deluxe-v21.js'
+      - 'gacha-deluxe-v21.css'
+      - 'gacha-effects-v19.js'
+      - 'gacha-prize-demo-catalog.json'
+      - 'assets/mio-undersea-palace-stage.svg'
+      - 'vercel.json'
+      - 'tests/gacha-overlay-flow.test.mjs'
+      - 'tests/gacha-prize-demo-mapping.test.mjs'
+      - 'tests/gacha-release-visual-scope.test.mjs'
+      - '.github/workflows/gacha-luxury-visual-release.yml'
+jobs:
+  visual-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JS syntax
+        run: |
+          node --check gacha-deluxe-v21.js
+          node --check gacha-page.js
+          node --check gacha-effects-v19.js
+      - name: Visual and no-draw test suite
+        run: node --test tests/gacha-overlay-flow.test.mjs tests/gacha-prize-demo-mapping.test.mjs tests/gacha-release-visual-scope.test.mjs
