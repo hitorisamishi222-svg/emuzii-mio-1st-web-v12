@@ -11,6 +11,7 @@ export default async function handler(req,res){
  if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return fail(res,405,'METHOD_NOT_ALLOWED')}
  if(req.headers.host!==HOST||!process.env.GALLERY_DATABASE_URL)return fail(res,503,'SERVICE_UNAVAILABLE');
  if(req.method==='POST'&&(req.headers.origin!=='https://'+HOST||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')||Number(req.headers['content-length']||0)>14000))return fail(res,403,'REQUEST_REJECTED');
+ if(req.method==='POST'&&JSON.stringify(req.body??{}).length>14000)return fail(res,413,'REQUEST_TOO_LARGE');
  const pool=new Pool({connectionString:process.env.GALLERY_DATABASE_URL,max:1,connectionTimeoutMillis:4000});let c;
  try{
   c=await pool.connect();
@@ -35,12 +36,25 @@ export default async function handler(req,res){
    if(typeof b.title!=='string'||typeof b.body!=='string'||!b.title.trim()||!b.body.trim()||b.title.trim().length>120||b.body.trim().length>5000)return fail(res,400,'FIELDS_INVALID');
   }
   if(action!=='create'&&(!/^[1-9][0-9]{0,17}$/.test(String(b.id||''))||!Number.isSafeInteger(b.revision)||b.revision<1))return fail(res,400,'REVISION_INVALID');
+  // Each content change and its audit record must commit or roll back together.
+  await c.query('BEGIN');
+  try{
   let q;
   if(action==='create')q=await c.query('INSERT INTO anniversary_announcements(title,body,updated_by) VALUES($1,$2,$3) RETURNING id,title,body,published,revision,updated_at',[b.title.trim(),b.body.trim(),String(admin.id)]);
   else if(action==='update')q=await c.query('UPDATE anniversary_announcements SET title=$1,body=$2,revision=revision+1,updated_at=now(),updated_by=$3 WHERE id=$4 AND revision=$5 RETURNING id,title,body,published,revision,updated_at',[b.title.trim(),b.body.trim(),String(admin.id),b.id,b.revision]);
   else if(action==='publish'||action==='unpublish')q=await c.query('UPDATE anniversary_announcements SET published=$1,revision=revision+1,updated_at=now(),updated_by=$2 WHERE id=$3 AND revision=$4 RETURNING id,title,body,published,revision,updated_at',[action==='publish',String(admin.id),b.id,b.revision]);
   else q=await c.query('DELETE FROM anniversary_announcements WHERE id=$1 AND revision=$2 RETURNING id,title,body,published,revision,updated_at',[b.id,b.revision]);
-  if(!q.rowCount)return fail(res,409,'ITEM_CHANGED_RELOAD');
+  if(!q.rowCount){
+   await c.query('ROLLBACK');
+   return fail(res,409,'ITEM_CHANGED_RELOAD');
+  }
+  await c.query("INSERT INTO gallery_admin_audit(actor_id,action,target,result) VALUES($1,$2,$3,'success')",
+   [admin.id,'announcement_'+action,String(q.rows[0].id)]);
+  await c.query('COMMIT');
   return res.status(200).json({ok:true,item:row(q.rows[0])});
+  }catch(e){
+   await c.query('ROLLBACK').catch(()=>{});
+   throw e;
+  }
  }catch(e){console.error('announcements:',e?.code||e?.message||'error');return fail(res,503,'ANNOUNCEMENTS_UNAVAILABLE')}finally{c?.release();await pool.end()}
 }
