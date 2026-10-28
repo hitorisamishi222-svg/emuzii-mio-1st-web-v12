@@ -115,3 +115,19 @@ test('read-only pending result recovery never scrolls away to restart the whale 
   assert.equal(h.scrollEvents.some(x=>x.name==='gachaStage'),false);
   assert.deepEqual(h.calls.map(x=>x.action),['recover','catalog','history']);
 });
+
+test('real draw buttons remain disabled while the winner is on the whale machine',async()=>{
+  const h=harness(new Map());
+  const result=h.nodes.get('drawResultCard');
+  result.hidden=false;
+  h.context.fixture=catalog();
+  vm.runInContext('setButtons(fixture)',h.context);
+  assert.equal(h.nodes.get('drawNormal').disabled,true);
+  assert.equal(h.nodes.get('drawFest').disabled,true);
+  await vm.runInContext("start('通常')",h.context);
+  assert.deepEqual(h.calls,[],'no draw or catalog API request can happen before closing prize');
+  assert.match(h.nodes.get('drawMessage').textContent,/閉じる/);
+  result.hidden=true;
+  vm.runInContext('setButtons(fixture)',h.context);
+  assert.equal(h.nodes.get('drawNormal').disabled,false,'safe next-spin button re-enables after close');
+});
