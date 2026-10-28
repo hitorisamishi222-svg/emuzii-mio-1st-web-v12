@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#071b39">
+<title>翠央1周年｜作品応募の審査</title>
+<style>
+:root{color-scheme:dark;--line:#a0ceeb90}*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;font:16px/1.6 system-ui,-apple-system,sans-serif;color:#edf8ff;background:linear-gradient(135deg,#061629,#10416d 60%,#071e38)}
+main{max-width:960px;padding:22px 16px 85px;margin:auto}h1{font-size:clamp(25px,5vw,33px)}h2{font-size:19px}
+.panel{border:1px solid var(--line);border-radius:18px;background:#082b51;margin:18px 0;padding:18px}
+a{color:#cce9ff}.note{color:#c5dff2;font-size:14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:13px}
+.work{border:1px solid #8fc1e6;border-radius:14px;padding:14px;background:#103861}
+small{color:#c9e4f6}h3{margin:3px 0;font-size:17px;overflow-wrap:anywhere}
+p{overflow-wrap:anywhere}button{border:1px solid #a4d9f5;border-radius:10px;background:#17466e;color:#fff;padding:10px 12px;min-height:44px;font:inherit;cursor:pointer;margin:4px 5px 4px 0}
+button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,a:focus-visible{outline:3px solid #ffe5a2;outline-offset:2px}
+[hidden]{display:none!important}.warn{color:#ffdda5}.state{font-weight:700;color:#ffe5af}
+</style></head><body><main>
+<a href="/admin-hub.html">← 管理メニューへ戻る</a>
+<h1>💌 ファンアート・作品応募の審査</h1>
+<p class="note">投稿された作品は管理者が承認するまで公開されません。権利・リンク先・掲載許可を確認してから承認してください。</p>
+<section class="panel"><h2>管理者と端末の認証</h2><p id="authStatus" role="status">確認しています…</p><div id="locked" hidden><a href="/gallery-passkey-register.html">管理者認証へ</a></div></section>
+<section class="panel" id="authorized" hidden>
+<h2>審査一覧</h2>
+<p class="note">承認済み作品の実際の掲載は公開機能の有効化後です。機能を有効化するまでは、承認しても公開ギャラリーに表示されません。最大100件を表示します。</p>
+<button id="refresh" type="button">一覧を更新</button>
+<p id="status" role="status" aria-live="polite"></p>
+<div class="grid" id="items"></div>
+</section>
+<footer class="note">ガチャ・皆勤賞・参加者IDには影響しません。応募者の接続情報は管理画面に表示しません。</footer>
+</main>
+<script type="module">
+const $=id=>document.getElementById(id);
+let busy=false;
+const names={pending:'審査待ち',approved:'承認済み',rejected:'非掲載',hidden:'公開停止'};
+const actions={pending:[['approve','承認'],['reject','掲載しない']],approved:[['hide','一時非公開']],hidden:[['restore','再公開']],rejected:[['reopen','再審査へ戻す']]};
+function line(parent,text,tag='p'){const x=document.createElement(tag);x.textContent=text;parent.append(x);return x;}
+function safeExternal(value){
+ try{const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password?url.href:null}catch{return null;}
+}
+async function fetchList(){
+ if(busy)return;
+ $('status').textContent='応募一覧を確認中…';
+ try{
+  const r=await fetch('/api/gallery/submissions?scope=admin',{credentials:'same-origin',cache:'no-store'});
+  const data=await r.json();
+  if(!r.ok||!data.ok||!Array.isArray(data.items))throw Error(data.code||'一覧を取得できません');
+  const root=$('items');root.replaceChildren();
+  for(const entry of data.items){
+   const card=document.createElement('article');card.className='work';
+   const title=line(card,entry.title,'h3');
+   line(card,`投稿者：${entry.creator} ／ ${entry.category}`,'small');
+   line(card,`状態：${names[entry.status]||'要確認'} ／ 編集版：${entry.revision}`,'p').className='state';
+   if(entry.description)line(card,entry.description);
+   const href=safeExternal(entry.external_url);
+   if(href){const a=document.createElement('a');a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent='作品リンクを別画面で確認';card.append(a);}
+   const date=new Date(entry.created_at);line(card,'応募日時：'+(Number.isNaN(date.getTime())?'不明':date.toLocaleString('ja-JP')),'small');
+   for(const [action,label] of actions[entry.status]||[]){
+    const button=document.createElement('button');button.type='button';button.textContent=label;
+    button.addEventListener('click',()=>moderate(entry,action,label));card.append(button);
+   }
+   root.append(card);
+  }
+  $('status').textContent=`表示件数：${data.items.length}件。表示されない過去の応募は別途確認してください。`;
+ }catch{
+  $('items').replaceChildren();$('status').textContent='⚠️ 一覧を確認できません。再読み込みしてください。';
+ }
+}
+async function moderate(entry,action,label){
+ if(busy||!confirm(`「${entry.title}」を「${label}」にしますか？掲載許可・権利を確認してください。`))return;
+ busy=true;
+ document.querySelectorAll('button').forEach(x=>x.disabled=true);
+ $('status').textContent='審査結果を保存中…';
+ try{
+  const r=await fetch('/api/gallery/submissions',{method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify({action,id:entry.id,revision:entry.revision})});
+  const data=await r.json();
+  if(!r.ok||data.ok!==true)throw Error(data.code||'保存失敗');
+  $('status').textContent='✅ 保存しました。';
+ }catch(e){$('status').textContent='⚠️ 保存できません。権限または最新状態を確認してください（'+e.message+'）。';}
+ finally{busy=false;document.querySelectorAll('button').forEach(x=>x.disabled=false);}
+ await fetchList();
+}
+$('refresh').addEventListener('click',fetchList);
+(async()=>{
+ try{
+  const r=await fetch('/api/gallery/moderate',{credentials:'same-origin',cache:'no-store'});
+  if(!r.ok)throw Error('not authorized');
+  const a=await r.json();
+  if(a.ok!==true||a.authorized!==true||a.authorizedDevice!==true)throw Error('not authorized');
+  $('authorized').hidden=false;$('authStatus').textContent='✅ 管理者と承認端末の認証を確認しました。';
+  await fetchList();
+ }catch{
+  $('authorized').hidden=true;$('locked').hidden=false;$('authStatus').textContent='🔒 管理者認証を確認できません。';
+ }
+})();
+</script></body></html>
