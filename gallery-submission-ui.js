@@ -36,7 +36,7 @@ function formUi(){
  const consent=document.createElement('input');consent.type='checkbox';consent.required=true;
  consentLabel.append(consent,document.createTextNode(' 私は作品の掲載許可を得ており、タイトル・作品URL・掲載名が一般公開されることに同意します。'));form.append(consentLabel);
  const privacy=document.createElement('p');privacy.className='note';
- privacy.textContent='画像や音声ファイルは送信しません。不正な連続応募を防ぐため、接続情報から作成した識別値を一時的な回数制限に利用します。応募内容は運営確認後にのみ公開されます。';
+ privacy.textContent='画像や音声ファイルは送信しません。不正な連続応募を防ぐため、接続情報から作成した識別値を応募管理データに保存します。接続元IPそのものは保存しません。応募内容は運営確認後にのみ公開されます。';
  const send=button('作品を応募する');form.append(send);
  const message=document.createElement('p');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
  section.append(heading,intro,form,privacy,message);
