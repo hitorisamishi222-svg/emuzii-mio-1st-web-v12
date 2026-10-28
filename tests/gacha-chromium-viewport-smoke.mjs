@@ -108,6 +108,7 @@ try{
   await evaluate("document.querySelector('#mioPrizeClose').click()");
   await poll(()=>evaluate("document.querySelector('#drawResultCard').hidden"),3000,'close prize');
   const closed=await evaluate(sample);
+  console.log('SCROLL_DIAGNOSTIC '+JSON.stringify({before,first,closed,deltaScroll:closed.scroll-before.scroll,deltaStage:closed.y-before.y,deltaDoc:closed.docHeight-before.docHeight}));
   assert.ok(Math.abs(closed.scroll-before.scroll)<2,'closing prize moved the page');
   assert.ok(Math.abs(closed.y-before.y)<2,'machine shifted after close');
   await screenshot('03-iphone-prize-closed.png');
