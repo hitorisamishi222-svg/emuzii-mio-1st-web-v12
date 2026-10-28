@@ -782,3 +782,32 @@
     transform:none!important;
   }
 }
+
+
+/* v2.1.9 — stable no-scroll controls: skip/status live below the machine.
+   Nothing above #gachaStage changes its height during a draw or after close. */
+.gacha-page #drawPanel>.mio-deluxe-demo-skip:not([hidden]){
+  display:block!important;
+  width:min(100%,440px);
+  min-height:42px;
+  padding:7px 10px;
+  margin:4px auto 5px;
+  border:1px solid #cce2ff;
+  border-radius:11px;
+  color:#fff7d8;
+  background:#143865;
+  font-weight:800;
+  cursor:pointer;
+}
+.gacha-page #drawPanel>.mio-deluxe-demo-skip[hidden]{display:none!important}
+.gacha-page #drawPanel>.mio-deluxe-demo-status{
+  width:min(100%,440px);
+  box-sizing:border-box;
+  margin:4px auto 7px!important;
+  padding:3px 5px;
+  min-height:1.7em;
+  color:#d1faff!important;
+  text-align:center;
+  font-size:11px;
+  line-height:1.35;
+}
