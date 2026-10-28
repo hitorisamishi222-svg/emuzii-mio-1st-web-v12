@@ -142,7 +142,7 @@
       const r=document.getElementById('drawRarity'),name=document.getElementById('drawPrizeName'),ordinal=document.getElementById('drawOrdinal');
       if(r)r.textContent=rarity+' · DEMO';if(name)name.textContent=prize.name;if(ordinal)ordinal.textContent=prize.id+' · 設定確率 '+prize.odds+'% · 表示見本（当選ではありません）';
     }
-    if(card){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;card.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});}
+    // The result is immediately below the machine; never move the screen automatically.
     status.textContent='表示確認：'+prize.id+' '+prize.name+'。当選処理・残回数・履歴は変わっていません。';
     active=false;normal.disabled=false;fest.disabled=false;select.disabled=false;skipDemo.hidden=true;skipDemo.disabled=true;
   }
@@ -155,10 +155,8 @@
     active=true;normal.disabled=true;fest.disabled=true;select.disabled=true;skipDemo.hidden=false;skipDemo.disabled=false;
     reset();const rarity=prize.rarity;
     stage.classList.toggle('is-fest',mode==='ラキフェス');
-    // Starting a preview gently brings the machine into view, so the
-    // first seconds of the animation are not played off-screen on iPhone.
-    const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;
-    stage.scrollIntoView?.({behavior:reducedMotion?'auto':'smooth',block:'center'});
+    // The control and machine share the same view. Animation starts
+    // immediately at the button tap, never after a screen-slide.
     stage.classList.add('draw-active');
     // Keep preview animation self-contained: the existing live FX listeners
     // also react to mio:gacha-* and would spawn unrelated timers/sounds.
