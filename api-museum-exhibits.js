@@ -50,7 +50,6 @@ export default async function handler(req,res){
  // Admin operations never use preview hosts, even if a preview inherited production secrets.
  if((scope==='admin'||req.method==='POST')&&req.headers.host!==HOST)
   return fail(res,503,'ADMIN_HOST_UNAVAILABLE');
- if(!process.env.GALLERY_DATABASE_URL)return fail(res,503,'MUSEUM_DB_NOT_CONFIGURED');
  if(req.method==='POST'){
   if(req.headers.origin!=='https://'+HOST||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||''))
    return fail(res,403,'ORIGIN_INVALID');
@@ -58,6 +57,7 @@ export default async function handler(req,res){
   try{size=JSON.stringify(req.body??{}).length;}catch{return fail(res,400,'BODY_INVALID');}
   if(size>8000||Number(req.headers['content-length']||0)>9000)return fail(res,413,'REQUEST_TOO_LARGE');
  }
+ if(!process.env.GALLERY_DATABASE_URL)return fail(res,503,'MUSEUM_DB_NOT_CONFIGURED');
  const pool=new Pool({connectionString:process.env.GALLERY_DATABASE_URL,max:1,connectionTimeoutMillis:4000});
  let c;
  try{
