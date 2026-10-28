@@ -17,6 +17,7 @@ on:
       - 'tests/gacha-release-visual-scope.test.mjs'
       - 'tests/gacha-legacy-recovery.test.mjs'
       - 'tests/gacha-chromium-viewport-smoke.mjs'
+      - 'tests/gacha-preview-cdn-smoke.mjs'
       - '.github/workflows/gacha-luxury-visual-release.yml'
   pull_request:
     paths:
@@ -33,6 +34,7 @@ on:
       - 'tests/gacha-release-visual-scope.test.mjs'
       - 'tests/gacha-legacy-recovery.test.mjs'
       - 'tests/gacha-chromium-viewport-smoke.mjs'
+      - 'tests/gacha-preview-cdn-smoke.mjs'
       - '.github/workflows/gacha-luxury-visual-release.yml'
 jobs:
   visual-only:
@@ -49,6 +51,8 @@ jobs:
           node --check gacha-effects-v19.js
       - name: Visual and no-draw test suite
         run: node --test tests/gacha-overlay-flow.test.mjs tests/gacha-prize-demo-mapping.test.mjs tests/gacha-release-visual-scope.test.mjs tests/gacha-legacy-recovery.test.mjs
+      - name: Verify published preview CDN assets (read-only)
+        run: node tests/gacha-preview-cdn-smoke.mjs
       - name: Diagnose previous remote preview response without writing data
         continue-on-error: true
         run: |
