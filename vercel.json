@@ -372,6 +372,18 @@
     {
       "src": "background-theme.css",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-gallery-submissions.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gallery-submission-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gallery-submissions-admin.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -512,6 +524,22 @@
       "dest": "/gallery-items.js",
       "headers": {
         "Cache-Control": "no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/submissions",
+      "dest": "/api-gallery-submissions.js"
+    },
+    {
+      "src": "/gallery-submission-ui.js",
+      "dest": "/gallery-submission-ui.js"
+    },
+    {
+      "src": "/gallery-submissions-admin.html",
+      "dest": "/gallery-submissions-admin.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff"
       }
     },
