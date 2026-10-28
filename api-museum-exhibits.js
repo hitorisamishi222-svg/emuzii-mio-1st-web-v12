@@ -13,7 +13,7 @@ const cookie=(req,key)=>{
  const piece=String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith(key+'='));
  try{return piece?decodeURIComponent(piece.slice(key.length+1)):'';}catch{return '';}
 };
-const sessionAdmin=async(connection,req)=>{
+export const sessionAdmin=async(connection,req)=>{
  const token=cookie(req,'mio_gallery_session'),device=cookie(req,'mio_gallery_device');
  if(!/^[A-Za-z0-9_-]{40,64}$/.test(token)||!/^[A-Za-z0-9_-]{40,64}$/.test(device))return null;
  const q=await connection.query(
