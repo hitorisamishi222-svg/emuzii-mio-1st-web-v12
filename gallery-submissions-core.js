@@ -29,3 +29,14 @@ export function validateGallerySubmission(body){
  if(title===null||creator===null||description===null||!CATEGORIES.has(category)||!url)return null;
  return {title,creator,description,category,url};
 }
+
+const REVIEW_ACTIONS=Object.freeze({
+ approve:Object.freeze(['pending','approved']),
+ reject:Object.freeze(['pending','rejected']),
+ hide:Object.freeze(['approved','hidden']),
+ restore:Object.freeze(['hidden','approved']),
+ reopen:Object.freeze(['rejected','pending'])
+});
+export function reviewTransition(action){
+ return Object.hasOwn(REVIEW_ACTIONS,action)?REVIEW_ACTIONS[action]:null;
+}
