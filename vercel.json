@@ -22,6 +22,18 @@
       "use": "@vercel/static"
     },
     {
+      "src": "admin-hub.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "attendance-admin.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "attendance-admin-csv.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gallery.html",
       "use": "@vercel/static"
     },
@@ -348,9 +360,49 @@
     {
       "src": "api-activate-attendance.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-background.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "background-theme.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "background-theme.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-gallery-submissions.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gallery-submission-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gallery-submissions-admin.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "media-manage.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/api/background",
+      "dest": "/api-background.js"
+    },
+    {
+      "src": "/background-theme.js",
+      "dest": "/background-theme.js"
+    },
+    {
+      "src": "/background-theme.css",
+      "dest": "/background-theme.css"
+    },
     {
       "src": "/join.html",
       "dest": "/join.html"
@@ -428,6 +480,30 @@
       "dest": "/api-gacha.js"
     },
     {
+      "src": "/admin-hub.html",
+      "dest": "/admin-hub.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/attendance-admin.html",
+      "dest": "/attendance-admin.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/attendance-admin-csv.js",
+      "dest": "/attendance-admin-csv.js",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
       "src": "/announcements.html",
       "dest": "/announcements.html"
     },
@@ -452,6 +528,30 @@
       "dest": "/gallery-items.js",
       "headers": {
         "Cache-Control": "no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/submissions",
+      "dest": "/api-gallery-submissions.js"
+    },
+    {
+      "src": "/gallery-submission-ui.js",
+      "dest": "/gallery-submission-ui.js"
+    },
+    {
+      "src": "/gallery-submissions-admin.html",
+      "dest": "/gallery-submissions-admin.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/media-manage.html",
+      "dest": "/media-manage.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff"
       }
     },

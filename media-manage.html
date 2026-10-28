@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#071b39"><title>翠央1周年｜音楽・動画の管理</title>
+<style>
+:root{color-scheme:dark;--ink:#f0f8ff;--sub:#cae1f5;--line:#a4d6ef94}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;font:16px/1.6 system-ui,-apple-system,"Noto Sans JP",sans-serif;color:var(--ink);background:radial-gradient(ellipse at 0% 0%,#2a578d77,transparent 52%),linear-gradient(145deg,#06172d,#0e3762 65%,#07152b)}
+main{max-width:880px;margin:0 auto;padding:20px 16px 90px}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.35}h2{font-size:20px;margin:0 0 10px}
+p{overflow-wrap:anywhere}.note,small{color:var(--sub)}
+.panel{padding:18px;margin:18px 0;border:1px solid var(--line);border-radius:17px;background:#0a2b50ed}
+label{display:grid;gap:5px;margin:12px 0;font-weight:700}
+input,textarea,select{width:100%;font:inherit;padding:11px;min-height:45px;border:1px solid #9acef1;border-radius:10px;background:#061a36;color:var(--ink)}
+input[type="checkbox"]{width:auto;min-height:0;accent-color:#8fcaee}
+textarea{min-height:95px;resize:vertical}
+button,.link{display:inline-flex;justify-content:center;align-items:center;min-height:44px;padding:10px 14px;margin:4px 4px 4px 0;border:1px solid #9acef1;border-radius:11px;background:#175080;color:#fff;text-decoration:none;font:700 15px system-ui;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+a{color:#cce9ff}a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #ffe3a4;outline-offset:2px}
+[hidden]{display:none!important}.warning{color:#ffe2a9}
+.preview{border:1px solid #98c9ea;border-radius:15px;padding:12px;margin-top:12px;background:#082344;overflow-wrap:anywhere}
+.preview strong{display:block;font-size:19px;color:#f8dfab}
+.preview img{width:100%;max-width:260px;max-height:170px;object-fit:contain;border-radius:10px}
+.actions{display:flex;flex-wrap:wrap;gap:6px}
+</style></head>
+<body><main>
+<nav><a href="/admin-hub.html">← 管理メニュー</a>　<a href="/gallery-submissions-admin.html">審査一覧へ</a>　<a href="/gallery.html">公開作品を見る</a></nav>
+<h1>🎵 音楽・動画の管理</h1>
+<p class="note">音楽・動画の作品情報を新規登録・編集します。保存後は必ず審査待ちになり、管理者の承認が必要です。既存の掲載済み作品を直接上書きしません。</p>
+<section class="panel" aria-label="管理者認証"><h2>🔐 管理者認証</h2>
+<p id="authStatus" role="status" aria-live="polite">管理者・承認端末を確認しています…</p>
+<div id="locked" hidden><a class="link" href="/gallery-passkey-register.html">管理者認証を確認する</a></div>
+</section>
+<section id="authorized" hidden>
+<div class="panel"><h2>作品を選ぶ</h2>
+<label for="existing">登録済みの音楽・動画</label>
+<select id="existing"><option value="">＋ 新しい作品を登録</option></select>
+<button id="reload" type="button">一覧を更新</button>
+<p class="note">応募された音楽・動画もここに表示されます。編集すると再審査が必要になります。</p>
+</div>
+<div class="panel"><h2 id="editorTitle">新しい作品を登録</h2>
+<form id="mediaForm">
+<label for="title">作品名<input id="title" maxlength="120" required placeholder="作品名を入力"></label>
+<label for="creator">投稿者・制作者<input id="creator" maxlength="80" required placeholder="掲載する名前"></label>
+<label for="category">カテゴリ<select id="category"><option value="音声・楽曲">🎵 音声・楽曲</option><option value="動画">🎬 動画</option></select></label>
+<label for="url">作品URL（https://）<input id="url" type="url" maxlength="2048" required placeholder="https://..."></label>
+<label for="thumbnail">サムネイル（任意）<input id="thumbnail" maxlength="1024" placeholder="/assets/画像名.webp"></label>
+<p class="note">サムネイルはサイト内の /assets/ 画像、または運営のVercel Blob画像URLのみです。外部SNSの画像URLはそのまま使用できません。</p>
+<label for="description">作品紹介<textarea id="description" maxlength="1000" placeholder="作品の説明や見どころ"></textarea></label>
+<label for="consent" style="display:flex;align-items:start;gap:10px"><input id="consent" type="checkbox" required> <span>作品を掲載する権利・許諾を確認しました。入力した作品情報を公開候補として保存することに同意します。</span></label>
+<div class="actions"><button id="save" type="submit">作品を審査待ちで登録</button><button id="reset" type="button">新規登録に戻す</button></div>
+</form>
+<p id="saveStatus" role="status" aria-live="polite"></p>
+<div class="preview"><h2>掲載イメージ</h2>
+<p id="previewCategory">音声・楽曲</p><strong id="previewTitle">作品名</strong>
+<p id="previewCreator">投稿者・制作者</p><p id="previewDescription"></p>
+<a id="previewUrl" href="/gallery.html" target="_blank" rel="noopener noreferrer" hidden>リンク先を確認</a>
+<p class="note">ここは登録前の表示確認です。保存・承認するまでは公開されません。</p></div>
+</div>
+</section>
+<footer class="note">次期大型アップデート開発版。皆勤賞・ガチャ・参加者登録データを変更しません。</footer>
+</main>
+<script type="module">
+const $=key=>document.getElementById(key);
+const inputNames=['title','creator','category','url','thumbnail','description'];
+let media=[],selected=null,busy=false;
+const setStatus=text=>{$('saveStatus').textContent=text;};
+function preview(){
+ $('previewTitle').textContent=$('title').value.trim()||'作品名';
+ $('previewCreator').textContent=$('creator').value.trim()||'投稿者・制作者';
+ $('previewCategory').textContent=$('category').value;
+ $('previewDescription').textContent=$('description').value.trim();
+ const u=$('url').value.trim();
+ try{
+  const url=new URL(u);
+  if(url.protocol!=='https:'||url.username||url.password)throw Error('url');
+  $('previewUrl').href=url.href;$('previewUrl').hidden=false;
+ }catch{$('previewUrl').hidden=true;$('previewUrl').removeAttribute('href');}
+}
+for(const key of inputNames)$ (key).addEventListener('input',preview);
+function reset(){
+ selected=null;$('mediaForm').reset();$('existing').value='';
+ $('editorTitle').textContent='新しい作品を登録';
+ $('save').textContent='作品を審査待ちで登録';$('consent').checked=false;
+ preview();
+}
+function selectItem(){
+ selected=media.find(x=>x.id===$('existing').value)||null;
+ if(!selected){reset();return;}
+ for(const key of inputNames){
+  const v=key==='url'?selected.external_url:key==='thumbnail'?selected.thumbnail_url:selected[key];
+  $(key).value=typeof v==='string'?v:'';
+ }
+ $('consent').checked=false;
+ $('editorTitle').textContent='作品情報を編集（再審査が必要）';
+ $('save').textContent='編集内容を審査待ちで保存';
+ setStatus('現在の状態：'+(selected.status==='approved'?'承認済み':selected.status==='pending'?'審査待ち':selected.status==='hidden'?'非公開':'非掲載')+' ／ 改訂番号 '+selected.revision);
+ preview();
+}
+$('existing').addEventListener('change',selectItem);
+$('reset').addEventListener('click',()=>{reset();setStatus('新規登録に戻りました。');});
+async function load(prefer){
+ setStatus('登録済み作品を取得中…');
+ try{
+  const response=await fetch('/api/gallery/submissions?scope=admin',{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true||!Array.isArray(data.items))throw Error('LIST_FAILED');
+  media=data.items.filter(x=>x.category==='動画'||x.category==='音声・楽曲');
+  const sel=$('existing');sel.replaceChildren();
+  const fresh=document.createElement('option');fresh.value='';fresh.textContent='＋ 新しい作品を登録';sel.append(fresh);
+  for(const item of media){
+   const opt=document.createElement('option');opt.value=item.id;
+   const state=item.status==='pending'?'審査待ち':item.status==='approved'?'承認済み':item.status==='hidden'?'非公開':'非掲載';
+   opt.textContent='['+state+'] '+item.title;sel.append(opt);
+  }
+  sel.value=media.some(x=>x.id===prefer)?prefer:'';
+  selectItem();setStatus('✅ 作品一覧を更新しました。'+media.length+'件を表示（最新100件の応募から抽出）。');
+ }catch{
+  $('authorized').hidden=true;$('locked').hidden=false;
+  $('authStatus').textContent='⚠️ 作品管理を確認できません。DBと権限を確認してください。';
+ }
+}
+$('reload').addEventListener('click',()=>{if(!busy)load(selected?.id);});
+$('mediaForm').addEventListener('submit',async event=>{
+ event.preventDefault();if(busy||!$('mediaForm').reportValidity())return;
+ if(!confirm('権利確認済みとして、審査待ちの作品情報を保存しますか？'))return;
+ busy=true;$('save').disabled=true;setStatus('作品情報を保存中…');
+ try{
+  const item={};
+  for(const key of inputNames)item[key]=$(key).value.trim();
+  item.consent=$('consent').checked;
+  const payload=selected?{action:'mediaUpdate',id:selected.id,revision:selected.revision,item}:{action:'mediaCreate',item};
+  const response=await fetch('/api/gallery/submissions',{method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
+  await load(data.item.id);
+  setStatus('✅ 審査待ちで保存しました。審査一覧から承認後、公開設定に応じて掲載されます。');
+ }catch(e){setStatus('⚠️ 保存できませんでした。入力・重複URL・権限・改訂番号を確認してください（'+e.message+'）。');}
+ finally{busy=false;$('save').disabled=false;}
+});
+(async()=>{
+ try{
+  const r=await fetch('/api/gallery/moderate',{credentials:'same-origin',cache:'no-store'});
+  const d=await r.json();
+  if(!r.ok||d.ok!==true||d.authorized!==true||d.authorizedDevice!==true)throw Error('unauthorized');
+  $('authStatus').textContent='✅ 管理者と承認端末を確認しました。';
+  $('authorized').hidden=false;
+  await load('');
+ }catch{
+  $('locked').hidden=false;$('authorized').hidden=true;
+  $('authStatus').textContent='🔒 管理者認証が必要です。';
+ }
+})();
+</script></body></html>

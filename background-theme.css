@@ -1,0 +1,14 @@
+/* vNext: visual overrides only for public pages opting in; gacha page excluded. */
+body[data-mio-background="devil"] .hero-picture{background-color:#1b153b}
+body.next-integrated[data-mio-background="devil"]{
+ background:radial-gradient(ellipse at 85% 5%,#602b755c,transparent 38%),linear-gradient(165deg,#120c2c,#211139 50%,#0b142f);
+}
+body[data-mio-background="devil"] .cinematic-hero .hero-shade{
+ background:linear-gradient(90deg,#120924db 0%,#120d3288 44%,#27133318 87%),linear-gradient(0deg,#120b2bd8,transparent 52%);
+}
+body[data-mio-background="devil"] .mio-art-banner{
+ background-image:linear-gradient(180deg,transparent 57%,#150d31 100%),url('/assets/mio-bg-devil.jpg');
+}
+body[data-mio-background="devil"]:has(.mio-art-banner){
+ background:radial-gradient(ellipse at 8% 8%,#5c287350,transparent 48%),linear-gradient(160deg,#0c0b25,#1b1337 50%,#0a112b);
+}
