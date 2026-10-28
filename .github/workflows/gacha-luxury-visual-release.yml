@@ -49,6 +49,20 @@ jobs:
           node --check gacha-effects-v19.js
       - name: Visual and no-draw test suite
         run: node --test tests/gacha-overlay-flow.test.mjs tests/gacha-prize-demo-mapping.test.mjs tests/gacha-release-visual-scope.test.mjs tests/gacha-legacy-recovery.test.mjs
+      - name: Diagnose previous remote preview response without writing data
+        continue-on-error: true
+        run: |
+          url='https://emuzii-mio-1st-web-v12-ao6gup7ge-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1'
+          code=$(curl -sSL --max-time 18 -o /tmp/gacha-preview-response.html -w '%{http_code}' "$url" || true)
+          echo "PREVIEW_RESPONSE_STATUS=$code"
+          if [ -f /tmp/gacha-preview-response.html ]; then
+            wc -c /tmp/gacha-preview-response.html
+            if grep -Eiq 'Authentication Required|VERCEL_AUTH|_vercel_sso_nonce|Deployment Protection' /tmp/gacha-preview-response.html; then
+              echo 'PREVIEW_ACCESS_DIAGNOSTIC=protected-or-auth-wall'
+            else
+              echo 'PREVIEW_ACCESS_DIAGNOSTIC=no-known-auth-wall'
+            fi
+          fi
       - name: Real headless Chrome iPhone viewport, image, overlay, second-spin test
         run: |
           command -v google-chrome || command -v chromium
