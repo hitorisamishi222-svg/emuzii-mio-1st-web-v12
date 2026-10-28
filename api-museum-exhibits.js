@@ -97,7 +97,7 @@ export default async function handler(req,res){
    if(action==='create'){
     q=await c.query(
      `INSERT INTO museum_public_exhibits
-      (kind,title,description,credit,occurred_on::text AS occurred_on,image_url,external_url,
+      (kind,title,description,credit,occurred_on,image_url,external_url,
        status,rights_checked_at,privacy_checked_at,reviewed_by)
       VALUES($1,$2,$3,$4,$5,$6,$7,'draft',now(),now(),$8)
       RETURNING id,status,revision`,
