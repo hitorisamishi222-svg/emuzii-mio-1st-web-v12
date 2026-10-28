@@ -57,3 +57,43 @@ test('luxury rehearsal draws zero prizes and reads only its static local fixture
   assert.doesNotMatch(preview,/action\s*:\s*['"]draw['"]/);
   assert.doesNotMatch(preview,/localStorage\.setItem/);
 });
+
+test('iPhone image sizing retains original whale canvas and landscape prize proportions',()=>{
+  const css=readFileSync(new URL('../gacha-deluxe-v21.css',import.meta.url),'utf8');
+  assert.match(css,/v2\.1\.6 — iPhone visual inspection/);
+  const patch=css.slice(css.indexOf('/* v2.1.6 — iPhone visual inspection'));
+  assert.match(patch,/aspect-ratio:1 \/ 1!important/,'original whale artwork is square');
+  assert.match(patch,/#drawResultImage:not\(\[hidden\]\)/);
+  assert.match(patch,/width:100%!important/,'prize image should use available card width');
+  assert.match(patch,/height:auto!important/,'prize image keeps native ratio');
+  assert.match(patch,/object-fit:contain!important/);
+  // Image geometry is intentional: LF-18 is a wide ticket (535x220), while
+  // the background art is square (900x900). Neither must be distorted.
+  const jpegDimensions=filename=>{
+    const bytes=readFileSync(new URL('../'+filename,import.meta.url));
+    let i=2;
+    while(i+9<bytes.length){
+      if(bytes[i++]!==0xff)continue;
+      while(bytes[i]===0xff)i++;
+      const marker=bytes[i++];
+      if(marker===0xd9||marker===0xda)break;
+      const len=bytes.readUInt16BE(i);
+      if([0xc0,0xc1,0xc2,0xc3].includes(marker))
+        return [bytes.readUInt16BE(i+5),bytes.readUInt16BE(i+3)];
+      if(len<2)break;
+      i+=len;
+    }
+    throw Error('JPEG dimensions unavailable: '+filename);
+  };
+  assert.deepEqual(jpegDimensions('gacha-lf-18.jpg'),[535,220]);
+  assert.deepEqual(jpegDimensions('assets/mio-royal-whale-machine.jpg'),[900,900]);
+});
+
+test('preview buttons are immediately before machine, scrolling into view on a demo tap',()=>{
+  assert.match(js,/stage\.insertAdjacentElement\('beforebegin',demo\)/);
+  assert.match(js,/stage\.scrollIntoView\?\.\(\{behavior:reducedMotion\?'auto':'smooth',block:'center'\}\)/);
+  assert.doesNotMatch(js,/foot\.insertAdjacentElement\('afterend',demo\)/);
+  const page=readFileSync(new URL('../gacha-page.js',import.meta.url),'utf8');
+  assert.match(page,/\$\('gachaStage'\)\.scrollIntoView\?\.\(\{behavior:reduceMotion\?'auto':'smooth',block:'center'\}\)/,
+    'confirmed real draws need the same visibility handling');
+});
