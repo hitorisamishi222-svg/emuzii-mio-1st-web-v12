@@ -41,6 +41,10 @@
   }else stage.insertAdjacentElement('beforebegin',steps);
   const foot=document.createElement('p');foot.className='mio-deluxe-footnote';foot.textContent='光・宝石の表現は演出です。当選内容と残り回数はシステムの確定結果を表示します。';
   stage.insertAdjacentElement('afterend',foot);
+  // Also keep the production skip control BELOW the stage. It becomes
+  // visible during a real draw and must not push the machine down.
+  const liveSkip=document.getElementById('skipDraw');
+  if(liveSkip)stage.insertAdjacentElement('afterend',liveSkip);
   // The winner emerges directly in FRONT of the whale machine without
   // extending the page. Close the prize to return to the identical viewport.
   const resultDock=document.getElementById('drawResultCard');
@@ -133,8 +137,6 @@
   // These controls have changing text/visibility during animations. If they
   // remain ABOVE the stage, Safari/Chrome adjusts the whale's screen position.
   // Put them BELOW the fixed machine, keeping its top edge stable forever.
-  const liveSkip=document.getElementById('skipDraw');
-  if(liveSkip)stage.insertAdjacentElement('afterend',liveSkip);
   stage.insertAdjacentElement('afterend',skipDemo);
   skipDemo.insertAdjacentElement('afterend',status);
   let active=false,activePrize=null,selectedMode='通常',previewPrizes=[];
