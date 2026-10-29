@@ -126,7 +126,15 @@ function gachaRapidApproveAndGrant(req){
       if(wd[10]&&wd[10]!==master&&!(wd[5]==='承認待ち'&&wd[10]===webId))throw new Error('Web統合IDが一致しません');
     }
     var g=gacha.getRange(targetRow,1,1,17).getValues()[0];
-    if(targetId==='NEW'&&(g[0]||g[1]))throw new Error('新規作成先のガチャ行に既存情報があります');
+    if(targetId==='NEW'){
+      // A blank nickname is not proof that the destination is unused. Preserve orphaned data.
+      var leftover=people.getRange(targetRow,3,1,7).getValues()[0];
+      if(leftover.some(function(v){return v!==''&&v!==null&&v!==undefined;}))
+        throw new Error('新規参加者行に過去の記録があります。上書きせず確認してください');
+      var controlled=[2,3,4,6,9,14,15]; // C/D/E, G, J, O/P: purchased, used and bonus rights
+      if(g[0]||g[1]||controlled.some(function(i){return g[i]!==''&&g[i]!==null&&g[i]!==undefined&&Number(g[i])!==0;}))
+        throw new Error('新規作成先のガチャ行に既存の回数・履歴があります');
+    }
     if(targetId!=='NEW'&&(g[0]!==master||g[1]!==name))throw new Error('ガチャ台帳のIDまたは名前が一致しません');
     if(Number(g[2])!==old1||Number(g[3])!==old3)throw new Error('別の管理者が口数を変更しました。再読み込みしてください');
     if(m1<Number(g[2])||m3<Number(g[3]))throw new Error('既存の口数は減らせません');
