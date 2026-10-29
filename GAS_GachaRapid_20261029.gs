@@ -165,6 +165,8 @@ function gachaRapidApproveAndGrant(req){
     var audit=ss.getSheetByName('emuzii_ガチャ緊急操作履歴');
     if(!audit){audit=ss.insertSheet('emuzii_ガチャ緊急操作履歴');audit.getRange(1,1,1,9).setValues([['日時','管理者','Web登録ID','参加者ID','ColorSing名','1ヶ月型(最終累計)','3ヶ月型(最終累計)','新規ID','操作']]);audit.setFrozenRows(1);}
     audit.appendRow([new Date(),actor.email,webId,master,name,m1,m3,targetId==='NEW'?'はい':'いいえ','本人確認・承認・累計口数確認']);
-    return {ok:true,name:name,masterId:master,m1:m1,m3:m3,rights:m1+3*m3,openChanged:false};
+    var finalTotal=Number(gacha.getRange(targetRow,6).getValue());
+    var finalRemaining=Number(gacha.getRange(targetRow,8).getValue());
+    return {ok:true,name:name,masterId:master,m1:m1,m3:m3,rights:m1+3*m3,purchasedDraws:m1+3*m3,totalRights:finalTotal,remaining:finalRemaining,openChanged:false};
   }finally{lock.releaseLock();}
 }
