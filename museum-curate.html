@@ -79,8 +79,10 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
   <button type="button" id="publish" class="primary" disabled>確認した作品を公開する</button>
   <button type="button" id="hide" disabled>公開を停止する</button>
   <button type="button" id="reopen" disabled>下書きに戻す</button>
+  <button type="button" id="trash" disabled>🗑️ ゴミ箱へ移す</button>
+  <button type="button" id="restore" disabled>♻️ ゴミ箱から復元</button>
  </div>
- <p class="note">公開停止は表示を取り下げる操作です。実ファイルを削除するものではありません。作品や個人情報の削除依頼には別途対応が必要です。</p>
+ <p class="note">「公開停止」は展示を隠し、「ゴミ箱」は展示の記録を復元できる状態で保管します。どちらも画像ファイル自体は削除しません。公開用画像のURLが分かれば閲覧できる場合があるため、完全削除が必要な画像は別途安全確認が必要です。</p>
  <p id="saveStatus" class="status" role="status" aria-live="polite"></p>
 </div>
 </section>
@@ -91,7 +93,7 @@ const $=id=>document.getElementById(id);
 const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
 let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null;
 const note=s=>{$('saveStatus').textContent=s;};
-const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開'};
+const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開',trash:'ゴミ箱（復元可能）'};
 const asInput=(item,k)=>{
  const v=item?.[k];
  return typeof v==='string'?v:'';
@@ -103,6 +105,8 @@ function buttons(){
  $('publish').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='draft';
  $('hide').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='published';
  $('reopen').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='hidden';
+ $('trash').disabled=busy||!editable||saveNeedsReview||!selected||selected.status==='trash';
+ $('restore').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='trash';
  $('reload').disabled=busy;
 }
 function clearSelectedImage(){
@@ -175,9 +179,14 @@ async function submit(action){
  if(action==='publish'&&(!$('rightsConfirmed').checked||!$('privacyConfirmed').checked)){
   note('公開前に作品の権利と個人情報を再確認して、2つのチェックを入れてください。');return;
  }
- const words={create:'下書きを作成',update:'変更して下書きへ戻す',publish:'一般公開',hide:'公開停止',reopen:'下書きへ戻す'};
+ const words={create:'下書きを作成',update:'変更して下書きへ戻す',publish:'一般公開',hide:'公開停止',reopen:'下書きへ戻す',trash:'ゴミ箱に移動',restore:'ゴミ箱から下書きに復元'};
+ if(action==='trash'){
+  const entered=prompt('誤操作防止：ゴミ箱に移す展示のタイトルをそのまま入力してください。\n'+selected.title);
+  if(entered!==selected.title){note('展示タイトルが一致しないためゴミ箱への移動を中止しました。');return;}
+ }
  if(!confirm('「'+(selected?.title||$('title').value)+'」を'+words[action]+'しますか？'))return;
  const payload={action};
+ if(action==='trash')payload.confirmedTitle=selected.title;
  if(selected){payload.id=selected.id;payload.revision=selected.revision;}
  if(action==='create'||action==='update'){
   payload.item=Object.fromEntries(keys.map(k=>[k,$(k).value.trim()]));
@@ -212,7 +221,7 @@ async function submit(action){
  }finally{busy=false;buttons();}
 }
 $('exhibitForm').addEventListener('submit',event=>{event.preventDefault();submit(selected?'update':'create');});
-for(const action of ['publish','hide','reopen'])$(action).addEventListener('click',()=>submit(action));
+for(const action of ['publish','hide','reopen','trash','restore'])$(action).addEventListener('click',()=>submit(action));
 load('');
 </script>
 <script defer src="/museum-image-client.js"></script>
