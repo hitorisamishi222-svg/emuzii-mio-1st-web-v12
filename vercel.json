@@ -420,6 +420,14 @@
     {
       "src": "api-museum-assets.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "museum-device-check.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-device-check.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -624,6 +632,23 @@
     {
       "src": "/api/museum/assets",
       "dest": "/api-museum-assets.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-device-check.html",
+      "dest": "/museum-device-check.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer"
+      }
+    },
+    {
+      "src": "/museum-device-check.js",
+      "dest": "/museum-device-check.js",
       "headers": {
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff"
