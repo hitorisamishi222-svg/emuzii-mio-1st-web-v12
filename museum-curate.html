@@ -447,11 +447,20 @@ async function checkPreflight(){
    const p=document.createElement('p');
    const missing=Array.isArray(entry.missing)?entry.missing:[];
    const wrongTypes=Array.isArray(entry.wrongTypes)?entry.wrongTypes:[];
-   const ready=entry.exists===true&&missing.length===0&&wrongTypes.length===0;
+   const wrongNullability=Array.isArray(entry.wrongNullability)?entry.wrongNullability:[];
+   const ready=entry.exists===true&&missing.length===0&&wrongTypes.length===0&&wrongNullability.length===0;
    p.textContent=(ready?'✅ ':'⚠️ ')+captions[entry.table]+
-    (ready?'：構成OK':'：不足 '+missing.length+'項目／型不一致 '+wrongTypes.length+'項目');
+    (ready?'：構成OK':'：不足 '+missing.length+'項目／型不一致 '+wrongTypes.length+
+     '項目／必須設定不一致 '+wrongNullability.length+'項目');
    $('preflightTables').append(p);
   }
+  const relationships=document.createElement('p');
+  const keys=Array.isArray(data.foreignKeys)?data.foreignKeys:[];
+  const missingKeys=keys.filter(x=>x.present!==true).length;
+  relationships.textContent=(data.constraintsReady===true&&missingKeys===0?'✅ ':'⚠️ ')+
+   '管理者・展示の関連制約：'+(data.constraintsReady===true&&missingKeys===0?
+    '確認済み':'未確認・不足 '+missingKeys+'項目');
+  $('preflightTables').append(relationships);
   const optional=document.createElement('p');
   optional.textContent=(data.assetAuditReady===true?'✅ ':'⚠️ ')+
    '画像参照チェック用テーブル：'+(data.assetAuditReady===true?
