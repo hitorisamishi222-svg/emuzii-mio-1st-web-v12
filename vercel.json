@@ -428,6 +428,10 @@
     {
       "src": "museum-device-check.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-museum-preflight.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -575,6 +579,14 @@
       "dest": "/sitemap.xml",
       "headers": {
         "Content-Type": "application/xml; charset=utf-8"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/preflight",
+      "dest": "/api-museum-preflight.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
       }
     },
     {
