@@ -46,6 +46,8 @@ test('markup has unique IDs and each editable input has a matching label',()=>{
  for(const label of html.matchAll(/<label[^>]*\sfor="([^"]+)"/g))
   assert.ok(idSet.has(label[1]),'label points to missing input: '+label[1]);
  assert.equal((html.match(/<details\b/g)||[]).length,(html.match(/<\/details>/g)||[]).length);
+ assert.match(html,/id="resetForm"/);
+ assert.doesNotMatch(html,/id="reset"/,'A form control named reset shadows HTMLFormElement.reset');
 });
 test('inline controller is valid JavaScript, with no HTML string injection',()=>{
  assert.ok(open>0&&close>open);
