@@ -12,7 +12,7 @@ h1{font-size:clamp(24px,5vw,33px)}h2{font-size:20px;margin:0 0 14px}
 nav{display:flex;flex-wrap:wrap;gap:12px}a{color:#b8e6ff}
 .panel{border:1px solid #9dd1ee8c;background:#0a2c52f0;border-radius:17px;padding:20px;margin:20px 0}
 label{display:block;font-weight:750;margin:13px 0 6px}
-input,textarea,select{width:100%;min-height:48px;border:1px solid #9bcfeb;border-radius:10px;background:#061b36;color:#fff;padding:11px;font:inherit}
+input,textarea,select{font-size:16px;width:100%;min-height:48px;border:1px solid #9bcfeb;border-radius:10px;background:#061b36;color:#fff;padding:11px;font:inherit}
 textarea{min-height:100px;resize:vertical}
 input[type=checkbox]{width:auto;min-height:auto;accent-color:#e5cb9b;transform:scale(1.15)}
 .check{display:flex;align-items:flex-start;gap:12px;font-weight:650;margin-top:17px}
@@ -22,9 +22,28 @@ button.primary{background:#f3dfb3;color:#12304e;border-color:#f8e5bd}
 button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #ffe4b0;outline-offset:2px}
 .note{color:#c5dfef;font-size:14px}.alert{color:#ffe2b5}.status{background:#102844;border-radius:11px;border:1px solid #8fbddc77;padding:12px 14px;overflow-wrap:anywhere}
 [hidden]{display:none!important}
+.steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.steps span{font-size:13px;font-weight:800;background:#174971;border:1px solid #9ac6e17e;border-radius:999px;padding:5px 11px}
+.step-heading{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:850;margin:18px 0 5px}
+.step-heading .num{display:inline-grid;place-items:center;flex:none;width:29px;height:29px;border-radius:50%;background:#e9d9ab;color:#163755}
+.action-bar{position:sticky;bottom:0;z-index:3;background:#0b2b4ef2;border:1px solid #8bb8d882;box-shadow:0 -8px 25px #0006;border-radius:14px;padding:12px;margin-top:18px}
+.action-bar .actions button{flex:1 1 180px}
+details.advanced{border:1px solid #75b3da75;border-radius:12px;padding:12px 15px;margin:15px 0;background:#0b2545}
+details.advanced summary{cursor:pointer;font-weight:800;padding:5px 0;min-height:38px}
+details.advanced[open] summary{border-bottom:1px solid #91c2de60;margin-bottom:10px}
+.mini-summary{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.mini-summary span{display:inline-block;border:1px solid #8bb8d580;border-radius:10px;background:#09223e;padding:7px 10px;font-size:13px}
+.preview-box{margin:10px 0;padding:10px;border:1px solid #b3d1ec88;border-radius:12px;background:#071b34}
+.preview-box img{display:block;max-height:310px;max-width:100%;object-fit:contain;margin:auto}
+.preview-box figcaption{font-size:13px;color:#d5e8f5;margin-top:8px;text-align:center}
+@media(max-width:600px){main{padding:13px 12px 70px}.panel{padding:15px;margin:13px 0}.actions button{flex:1 1 100%}
+.action-bar{margin:14px -5px 0;padding:10px}.action-bar .actions button{flex:1 1 45%}.action-bar .actions .primary{flex:1 1 100%}
+h1{line-height:1.45}h2{line-height:1.5}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style></head><body><main>
 <nav aria-label="管理画面への移動"><a href="/gallery-manage.html">← ギャラリー管理</a><a href="/museum-archive.html">思い出の公開展示を確認</a><a href="/museum.html">記念館トップ</a></nav>
-<h1>💎 翠央記念館・思い出展示管理</h1>
+<h1>💎 思い出展示の管理</h1>
+<p class="note">かんたん3ステップ：<strong>①種類を選ぶ → ②写真と内容を確認 → ③下書き保存</strong>。公開は保存後に別のボタンで行います。</p>
 <p class="note">公開用の歴代アイコン、思い出スクショ、イベント記録をひとつの管理画面から扱います。翠央記念館のオーナー権限と承認済み端末が必要です。</p>
 <section class="panel">
 <h2>🔐 管理者・端末確認</h2><p id="authStatus" role="status" aria-live="polite">確認しています…</p>
@@ -32,61 +51,102 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
 </section>
 <section id="editor" hidden>
 <div class="panel">
- <h2>展示作品を選ぶ</h2>
+ <h2>① 新しく作る・作品を選ぶ</h2>
+ <p class="note">新しい思い出を作る場合は「＋新しい思い出」を選択。過去の作品を直す場合は名前で探せます。</p>
+ <div id="exhibitSummary" class="mini-summary" aria-live="polite"></div>
+ <label for="exhibitSearch">作品を名前で探す</label>
+ <input id="exhibitSearch" type="search" placeholder="例：アイコン、イベント">
+ <label for="exhibitFilter">表示する状態</label>
+ <select id="exhibitFilter">
+  <option value="all">すべての状態</option>
+  <option value="draft">下書き</option>
+  <option value="published">公開中</option>
+  <option value="hidden">公開停止中</option>
+  <option value="trash">ゴミ箱</option>
+ </select>
  <label for="selectExhibit">編集する展示</label>
  <select id="selectExhibit"><option value="">＋ 新しい思い出を登録</option></select>
- <button type="button" id="reload">最新の展示を読み直す</button>
+ <div class="actions" style="margin-top:12px">
+  <button type="button" id="newExhibit">＋ 新しい思い出を登録</button>
+  <button type="button" id="reload">最新の展示を読み直す</button>
+ </div>
  <p class="note">作成・変更した内容は必ず下書きに戻ります。確認後、別の「公開」操作をしてください。</p>
 </div>
 <div class="panel">
- <h2 id="editorTitle">新しい展示を登録</h2>
+ <h2 id="editorTitle">② 新しい思い出を登録</h2>
+ <p class="note">よく使う項目だけを上から順番に入力できます。</p>
  <form id="exhibitForm">
+  <div class="step-heading"><span class="num">1</span> 何の思い出？</div>
   <label for="kind">展示の種類</label>
   <select id="kind" required><option value="icons">👑 歴代アイコン</option><option value="moments">📸 思い出アルバム</option><option value="events">🏆 イベントの記録</option></select>
   <label for="title">展示タイトル</label>
   <input id="title" maxlength="120" required placeholder="例：初めてのアイコン">
+  <div class="step-heading"><span class="num">2</span> 写真と思い出の内容</div>
   <label for="occurredOn">思い出の日付（分かる場合）</label>
   <input id="occurredOn" type="date">
   <label for="description">思い出・イベントの説明</label>
   <textarea id="description" maxlength="2000" placeholder="記録に残したい内容を入力"></textarea>
+  <details class="advanced" id="optionalFields">
+   <summary>詳細設定・画像URL・クレジット（必要なときだけ）</summary>
   <label for="credit">作品の制作者・クレジット（任意）</label>
   <input id="credit" maxlength="80" placeholder="掲載許可を得た名前">
   <label for="imageUrl">公開画像のURL</label>
   <input id="imageUrl" maxlength="1024" placeholder="/assets/ファイル名.webp">
   <p class="note">既存画像のURLを入力するか、スマホから写真を選んでください。写真を選んだ場合は、端末内で縮小・位置情報等のメタデータを除いた新しい画像を作って保存します。</p>
+  </details>
   <label for="uploadImage">📸 スマホの写真・スクショを選ぶ（任意）</label>
   <input id="uploadImage" type="file" accept="image/*,.heic,.heif" disabled>
-  <div id="imagePreview" hidden style="margin:12px 0;border:1px solid #b3d1ec88;border-radius:12px;background:#071b34;padding:10px">
-    <img id="imagePreviewImg" alt="登録する画像の確認" style="display:block;max-height:340px;max-width:100%;object-fit:contain;margin:auto">
-  </div>
+  <figure id="imagePreview" class="preview-box" hidden>
+    <img id="imagePreviewImg" alt="新しく登録する画像の確認">
+    <figcaption>今回選んだ写真（まだ送信していません）</figcaption>
+  </figure>
+  <figure id="savedImagePreview" class="preview-box" hidden>
+    <img id="savedImagePreviewImg" alt="選択した展示の保存済み画像" loading="lazy">
+    <figcaption>保存済みの公開用画像。変更する場合は新しい写真を選んでください。</figcaption>
+  </figure>
   <button id="clearImage" type="button" disabled>写真の選択を取り消す</button>
   <p id="imageHelp" class="note">画像登録機能はまだ停止中です。安全確認後に利用可能になります。</p>
   <p class="alert" style="font-weight:700">⚠️ この展示は一般公開用です。下書きの段階でも、保存した画像はURLを知っている人が閲覧できる公開ストレージに置かれます。非公開のスクショ・個人情報・他人の顔や名前がある画像はアップロードしないでください。宝箱用画像もここでは扱いません。</p>
-  <label for="externalUrl">関連ページ（任意）</label>
-  <input id="externalUrl" maxlength="2048" placeholder="https://...">
+  <details class="advanced" id="extraLinks">
+   <summary>関連ページのURL（任意）</summary>
+   <label for="externalUrl">関連ページ</label>
+   <input id="externalUrl" maxlength="2048" placeholder="https://...">
+  </details>
+  <div class="step-heading"><span class="num">3</span> 公開しても大丈夫か確認</div>
   <label class="check" for="rightsConfirmed"><input id="rightsConfirmed" type="checkbox" required> <span>作品の権利・掲載許可を確認しました。</span></label>
   <label class="check" for="privacyConfirmed"><input id="privacyConfirmed" type="checkbox" required> <span>スクショに氏名、ID、電話番号、連絡先、非公開チャットなどが映り込んでいないことを確認しました。</span></label>
   <p class="note">この管理画面では翠央本人だけが見られる宝箱を扱いません。公開用の情報だけを登録してください。</p>
-  <div class="actions">
-   <button type="submit" id="save" class="primary">下書きとして保存</button>
-   <button type="button" id="reset">新しい展示を作る</button>
+  <div class="action-bar">
+   <p class="note" style="margin:0 0 8px">💎 まず下書き保存。一般公開はその後に確認します。</p>
+   <div class="actions">
+    <button type="submit" id="save" class="primary">💾 下書きとして保存</button>
+    <button type="button" id="reset">入力を新規に戻す</button>
+   </div>
   </div>
  </form>
  <hr style="margin:25px 0;border:0;border-top:1px solid #9ccbe970">
- <h2>公開状態を変更</h2>
+ <h2>③ 公開する・公開を停止する</h2>
  <p id="currentStatus" class="note">まだ作品を選択していません。</p>
  <div class="actions">
   <button type="button" id="publish" class="primary" disabled>確認した作品を公開する</button>
   <button type="button" id="hide" disabled>公開を停止する</button>
   <button type="button" id="reopen" disabled>下書きに戻す</button>
-  <button type="button" id="trash" disabled>🗑️ ゴミ箱へ移す</button>
-  <button type="button" id="restore" disabled>♻️ ゴミ箱から復元</button>
+ </div>
+ <details class="advanced" id="dangerActions">
+  <summary>🗑️ ゴミ箱・復元の操作（必要なときだけ）</summary>
+  <div class="actions">
+   <button type="button" id="trash" disabled>ゴミ箱へ移す（復元可能）</button>
+   <button type="button" id="restore" disabled>ゴミ箱から復元</button>
+  </div>
+ </details>
+ <div hidden>
  </div>
  <p class="note">「公開停止」は展示を隠し、「ゴミ箱」は展示の記録を復元できる状態で保管します。どちらも画像ファイル自体は削除しません。公開用画像のURLが分かれば閲覧できる場合があるため、完全削除が必要な画像は別途安全確認が必要です。</p>
  <p id="saveStatus" class="status" role="status" aria-live="polite"></p>
 </div>
-<div class="panel">
- <h2>🧹 保存画像の参照チェック</h2>
+<details class="panel advanced" id="assetAuditPanel">
+ <summary>🧹 保存画像の参照チェック（管理用）</summary>
+ <h2>画像の利用状況を確認</h2>
  <p class="note">記念館が保存した画像を最大50件ずつ点検します。「現在の展示で使われているか」を調べる機能です。<strong>未参照と表示されても削除してよいとは限りません。</strong> 過去の共有リンクやバックアップも確認が必要です。</p>
  <p class="alert">この画面から画像ファイルを永久削除することはできません。ゴミ箱への移動や公開停止でも、公開Blobの画像URLは失効しません。</p>
  <div class="actions">
@@ -95,7 +155,7 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
  </div>
  <p id="assetStatus" class="status" role="status" aria-live="polite">確認機能は初期状態で停止しています。</p>
  <div id="assetResults" aria-label="画像の参照結果"></div>
-</div>
+</details>
 </section>
 </main>
 <script>
