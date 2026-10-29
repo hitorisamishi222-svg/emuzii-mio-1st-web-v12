@@ -85,6 +85,17 @@ button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-
  <p class="note">「公開停止」は展示を隠し、「ゴミ箱」は展示の記録を復元できる状態で保管します。どちらも画像ファイル自体は削除しません。公開用画像のURLが分かれば閲覧できる場合があるため、完全削除が必要な画像は別途安全確認が必要です。</p>
  <p id="saveStatus" class="status" role="status" aria-live="polite"></p>
 </div>
+<div class="panel">
+ <h2>🧹 保存画像の参照チェック</h2>
+ <p class="note">記念館が保存した画像を最大50件ずつ点検します。「現在の展示で使われているか」を調べる機能です。<strong>未参照と表示されても削除してよいとは限りません。</strong> 過去の共有リンクやバックアップも確認が必要です。</p>
+ <p class="alert">この画面から画像ファイルを永久削除することはできません。ゴミ箱への移動や公開停止でも、公開Blobの画像URLは失効しません。</p>
+ <div class="actions">
+  <button type="button" id="assetRefresh">画像の参照を確認</button>
+  <button type="button" id="assetNext" disabled>次の50件を調べる</button>
+ </div>
+ <p id="assetStatus" class="status" role="status" aria-live="polite">確認機能は初期状態で停止しています。</p>
+ <div id="assetResults" aria-label="画像の参照結果"></div>
+</div>
 </section>
 </main>
 <script>
@@ -222,6 +233,42 @@ async function submit(action){
 }
 $('exhibitForm').addEventListener('submit',event=>{event.preventDefault();submit(selected?'update':'create');});
 for(const action of ['publish','hide','reopen','trash','restore'])$(action).addEventListener('click',()=>submit(action));
+let assetCursor=null,assetBusy=false;
+async function scanAssets(next=false){
+ if(assetBusy)return;
+ assetBusy=true;$('assetRefresh').disabled=true;$('assetNext').disabled=true;
+ $('assetStatus').textContent='画像の参照状況を確認しています…';
+ try{
+  const url='/api/museum/assets'+(next&&assetCursor?'?cursor='+encodeURIComponent(assetCursor):'');
+  const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true||!Array.isArray(data.items))throw Error(data.code||'ASSET_AUDIT_UNAVAILABLE');
+  if(!next)$('assetResults').replaceChildren();
+  for(const file of data.items){
+   const box=document.createElement('div');box.className='status';box.style.margin='10px 0';
+   const title=document.createElement('strong');
+   const ref=file.references||{};
+   const total=(Number(ref.museum)||0)+(Number(ref.gallery)||0);
+   title.textContent=total>0?'✅ 展示で使用中':'⚠️ 現在の参照を確認できません（削除不可）';
+   const p=document.createElement('p');p.className='note';
+   p.textContent='展示の参照：'+(Number(ref.museum)||0)+'件 ／ ギャラリー：'+(Number(ref.gallery)||0)+'件';
+   const link=document.createElement('a');link.href=file.url;link.target='_blank';
+   link.rel='noopener noreferrer';link.textContent='保存画像を確認（公開URL）';
+   box.append(title,p,link);$('assetResults').append(box);
+  }
+  assetCursor=data.hasMore&&typeof data.cursor==='string'?data.cursor:null;
+  $('assetStatus').textContent='確認した画像：'+data.items.length+'件。'+
+    (assetCursor?'さらに確認できます。':'この範囲の確認は終了しました。')+
+    ' 表示は診断結果であり削除許可ではありません。';
+ }catch(e){
+  $('assetStatus').textContent='画像の参照チェックは利用できません（'+e.message+'）。画像や展示は変更していません。';
+  assetCursor=null;
+ }finally{
+  assetBusy=false;$('assetRefresh').disabled=false;$('assetNext').disabled=!assetCursor;
+ }
+}
+$('assetRefresh').addEventListener('click',()=>scanAssets(false));
+$('assetNext').addEventListener('click',()=>scanAssets(true));
 load('');
 </script>
 <script defer src="/museum-image-client.js"></script>
