@@ -101,7 +101,7 @@ function gachaRapidApproveAndGrant(req){
     var targetRow,master;
     if(targetId==='NEW'){
       if(same.length)throw new Error('既存MIO-IDがあるため、新規作成できません');
-      if(wd[7]||wd[10])throw new Error('既存のMIO-ID候補があり、新規作成できません');
+      if(wd[7]||(wd[10]&&wd[10]!==webId))throw new Error('既存のMIO-ID候補があり、新規作成できません');
       for(var i=0;i<rows.length;i++){if(!rows[i][1]){targetRow=i+2;break;}}
       if(!targetRow)throw new Error('参加者台帳に空行がありません');
       var idCell=people.getRange(targetRow,1),gachaId=gacha.getRange(targetRow,1);
@@ -115,7 +115,7 @@ function gachaRapidApproveAndGrant(req){
       if(match.length!==1)throw new Error('登録名とMIO-IDが一致しません。管理者照合が必要です');
       targetRow=match[0].row;
       if(wd[7]&&wd[7]!==master)throw new Error('Web登録に別のMIO-IDが設定されています');
-      if(wd[10]&&wd[10]!==master)throw new Error('Web統合IDが一致しません');
+      if(wd[10]&&wd[10]!==master&&!(wd[5]==='承認待ち'&&wd[10]===webId))throw new Error('Web統合IDが一致しません');
     }
     var g=gacha.getRange(targetRow,1,1,17).getValues()[0];
     if(targetId!=='NEW'&&(g[0]!==master||g[1]!==name))throw new Error('ガチャ台帳のIDまたは名前が一致しません');
