@@ -26,6 +26,16 @@ function fixture(opt={}){
     '承認済み','確認済み','MIO-0022','','','MIO-0022','確認済み']);
   const audit={appendRow(row){audit.events.push(row)},events:[],getRange(){return {setValues(){}}},setFrozenRows(){}};
   let lockCount=0;
+  function readAt(title,row,col){
+    const saved=sheets[title]?.[row-2]?.[col-1]??'';
+    if(saved!==''||row<3)return saved;
+    const person=sheets['emuzii_参加者'][row-2];
+    if(!person?.[1])return saved;
+    if(title==='emuzii_参加者'&&col===1)return 'MIO-'+String(row-1).padStart(4,'0');
+    if(title==='emuzii_ガチャ'&&col===1)return 'MIO-'+String(row-1).padStart(4,'0');
+    if(title==='emuzii_ガチャ'&&col===2)return person[1];
+    return saved;
+  }
   const access=title=>({
     getLastRow:()=>sheets[title].length+1,
     getRange(a,b,c=1,d=1){
@@ -34,10 +44,10 @@ function fixture(opt={}){
         row=Number(found[2]);col=found[1].charCodeAt(0)-64;
       }else{row=a;col=b;}
       return {
-        getValues:()=>Array.from({length:c},(_,i)=>Array.from({length:d},(_,j)=>sheets[title][row-2+i]?.[col-1+j]??'')),
-        getDisplayValues:()=>Array.from({length:c},(_,i)=>Array.from({length:d},(_,j)=>String(sheets[title][row-2+i]?.[col-1+j]??''))),
-        getValue:()=>sheets[title][row-2]?.[col-1]??false,
-        getDisplayValue:()=>String(sheets[title][row-2]?.[col-1]??''),
+        getValues:()=>Array.from({length:c},(_,i)=>Array.from({length:d},(_,j)=>readAt(title,row+i,col+j))),
+        getDisplayValues:()=>Array.from({length:c},(_,i)=>Array.from({length:d},(_,j)=>String(readAt(title,row+i,col+j)))),
+        getValue:()=>readAt(title,row,col)||false,
+        getDisplayValue:()=>String(readAt(title,row,col)),
         getFormula:()=>row>=3?'=MIO_FORMULA()':'',
         setValue(value){if(!sheets[title][row-2])sheets[title][row-2]=[];sheets[title][row-2][col-1]=value}
       };
@@ -104,3 +114,39 @@ rejectsWithoutChanges('fractional entitlement rejected',{}, {m1:2.5},'口数は'
 rejectsWithoutChanges('excessive entitlement rejected',{}, {m1:50,m3:50},'口数が不正');
 rejectsWithoutChanges('rejects unidentified placeholder Web ID',{webName:W,name:W},{},'ColorSing名または端末認証');
 rejectsWithoutChanges('retired device is not silently reapproved',{device:'旧端末'},{},'旧端末の登録');
+
+test('new gacha-only member gets next existing formula-backed MIO-ID once',()=>{
+  const x=fixture({name:'たけ',m1:0,m3:0});
+  x.sheets['emuzii_参加者'][0][1]='既存の参加者';
+  x.sheets['emuzii_ガチャ'][0][1]='既存の参加者';
+  x.sheets['emuzii_参加者'].push(['','']);
+  x.sheets['emuzii_ガチャ'].push(['','',0,0,0,0,0,0,0,0,0,0,'OK','OK']);
+  const out=x.api.approve(x.req({targetId:'NEW',m1:1,m3:0,expectedM1:0,expectedM3:0}));
+  assert.equal(out.masterId,'MIO-0002');
+  assert.equal(out.rights,1);
+  assert.equal(x.sheets['emuzii_参加者'][1][1],'たけ');
+  assert.equal(x.sheets['emuzii_ガチャ'][1][2],1);
+  assert.equal(x.sheets['emuzii_Web登録'][0][7],'MIO-0002');
+  assert.equal(x.sheets['emuzii_Web登録'][0][10],'MIO-0002');
+  assert.equal(x.audit.events.length,1);
+  assert.equal(x.locked(),0);
+  assert.throws(()=>x.api.approve(x.req({targetId:'NEW',m1:1,expectedM1:0})),/承認済みの参加者ID/);
+  assert.equal(x.audit.events.length,1);
+});
+test('visually similar existing name blocks NEW participant ID',()=>{
+  const x=fixture({name:'たけ'});
+  x.sheets['emuzii_参加者'][0][1]='たけ✨';
+  x.sheets['emuzii_ガチャ'][0][1]='たけ✨';
+  const before=JSON.stringify(x.sheets);
+  assert.throws(()=>x.api.approve(x.req({targetId:'NEW'})),/同名・類似名/);
+  assert.equal(JSON.stringify(x.sheets),before);
+});
+test('similarly decorated approved other account blocks transfer',()=>{
+  const x=fixture({name:'たけ'});
+  x.sheets['emuzii_Web登録'].push([
+    'MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa','b'.repeat(64),'たけ🌟','申告なし',new Date(),
+    '承認済み','確認済み','MIO-0044','','','MIO-0044','確認済み']);
+  const before=JSON.stringify(x.sheets);
+  assert.throws(()=>x.api.approve(x.req()),/同名・類似名の別ID/);
+  assert.equal(JSON.stringify(x.sheets),before);
+});
