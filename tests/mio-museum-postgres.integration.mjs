@@ -276,7 +276,7 @@ test('real ephemeral PostgreSQL: schema, owner auth, full museum state cycle and
   assert.equal(noOwner.code,401);
   assert.equal(uploads,uploadsBeforeDenied,'no image upload without a valid owner session');
   assert.equal(media.size,2);
-  assert.equal(originalCount+2,auditedBefore,'only two fixture records were committed');
+  assert.equal(originalCount+1,auditedBefore,'only one additional image exhibit was committed');
   const imageAudits=(await pool.query(
    "SELECT action FROM gallery_admin_audit WHERE actor_id=$1 AND action LIKE 'museum_image_%' ORDER BY occurred_at",
    [ownerId]
