@@ -446,11 +446,17 @@ async function checkPreflight(){
    if(!Object.hasOwn(captions,entry.table))continue;
    const p=document.createElement('p');
    const missing=Array.isArray(entry.missing)?entry.missing:[];
-   const ready=entry.exists===true&&missing.length===0;
+   const wrongTypes=Array.isArray(entry.wrongTypes)?entry.wrongTypes:[];
+   const ready=entry.exists===true&&missing.length===0&&wrongTypes.length===0;
    p.textContent=(ready?'✅ ':'⚠️ ')+captions[entry.table]+
-    (ready?'：構成OK':'：不足あり（'+missing.length+'項目）');
+    (ready?'：構成OK':'：不足 '+missing.length+'項目／型不一致 '+wrongTypes.length+'項目');
    $('preflightTables').append(p);
   }
+  const optional=document.createElement('p');
+  optional.textContent=(data.assetAuditReady===true?'✅ ':'⚠️ ')+
+   '画像参照チェック用テーブル：'+(data.assetAuditReady===true?
+    '構成OK':'未確認・不足あり（一般公開の判定とは別）');
+  $('preflightTables').append(optional);
   const passed=data.allReady===true&&data.mode==='read_only';
   $('preflightStatus').textContent=passed?
    '✅ テーブル構成と接続先照合は合格です。ただし実保存・実機確認前なので公開不可です。':
