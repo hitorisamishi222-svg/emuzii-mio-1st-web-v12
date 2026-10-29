@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS museum_public_exhibits (
  occurred_on date,
  image_url text NOT NULL DEFAULT '' CHECK(char_length(image_url) <= 1024),
  external_url text NOT NULL DEFAULT '' CHECK(char_length(external_url) <= 2048),
- status text NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','hidden')),
+ status text NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','hidden','trash')),
+ trashed_at timestamptz,
  revision integer NOT NULL DEFAULT 0 CHECK(revision >= 0),
  rights_checked_at timestamptz NOT NULL,
  privacy_checked_at timestamptz NOT NULL,
@@ -26,4 +27,5 @@ CREATE INDEX IF NOT EXISTS museum_public_exhibits_published_idx
 CREATE INDEX IF NOT EXISTS museum_public_exhibits_admin_idx
  ON museum_public_exhibits (status,updated_at DESC);
 -- Do not INSERT sample exhibits or owner rows.
+-- Trash keeps the whole exhibit record for owner restoration; no automatic physical deletion.
 -- Existing gallery works are NOT migrated or rewritten by this schema.
