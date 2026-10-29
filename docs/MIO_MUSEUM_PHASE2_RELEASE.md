@@ -115,3 +115,11 @@
 - `tests/mio-museum-device-check.test.mjs` は画面・個人情報非記録・API非利用を検査。Chromiumスモークテストでは 320/375/390/430pxの表示、390pxで自動テストと実際の端末内画像変換を操作する。実際のiPhone/Androidの検査結果とは区別する。
 - 現段階で**実機テストは未実施**。個人の写真・秘密のスクショを添付せず、まず既存公開素材や無関係なテスト画像で確認する。
 - 第1段階PR #47、第2段階PR #48は引き続き未マージ。本番、GAS、ガチャ、皆勤や参加者IDの移行は実施しない。
+
+## 管理者認証経路の修正（2026-10-29）
+- **確認された実装不整合:** 現行パスキー認証 `api-gallery-passkey.js` が発行する `mio_gallery_session` と `mio_gallery_device` のHttpOnly Cookieは `Path=/api/gallery`。記念館管理画面の旧 `/api/museum/*` 呼び出しにはCookieが送信されず、正しい管理者でも認証が通らない。
+- **修正:** 管理者専用の `/api/gallery/museum/exhibits`（管理者一覧・下書き保存・公開操作）、`/api/gallery/museum/image`（画像付き下書き）、`/api/gallery/museum/assets`（画像参照診断）を追加。Vercelで既存の同じ保護済みAPI関数へルーティングし、管理画面の呼出先を統一した。
+- **既存認証を保護:** Cookieの有効範囲を広げない。パスキー・SameSite=Strict・Secure・HttpOnly・承認済み端末のサーバー側照合を変更しない。
+- **一般公開ページ:** `/api/museum/exhibits` の公開済み展示だけのGETは従来どおり利用。公開ページは `credentials:'omit'` のまま、管理者Cookieを送らない。
+- **検証:** `tests/mio-museum-auth-path.test.mjs` でCookie Path／ルート／呼出先の整合を静的検査。ChromiumスモークではローカルfixtureのHttpOnly/Path Cookieを管理者経路にのみ送信し、公開APIには送信しないことを確認する。
+- 本番のCookie発行・DB接続・実際の認証済みiPhone/Androidによるログイン成功は未検証。第2段階PR #48の実機・実DB検証後に公開判断する。
