@@ -168,3 +168,16 @@ test('optional live-overrides table readiness is independent of museum publishin
  assert.equal(partial.assetAuditReady,false);
  assert.ok(partial.optionalTables[0].missing.includes('thumbnail_url'));
 });
+
+test('checked-in manual DB inventory cannot alter any table or participant data',()=>{
+ const sql=readFileSync(new URL('../db/museum-phase2-readonly-inventory.sql',import.meta.url),'utf8');
+ assert.match(sql,/BEGIN TRANSACTION READ ONLY;/i);
+ assert.match(sql,/COMMIT;/i);
+ assert.match(sql,/information_schema\.tables/);
+ assert.match(sql,/information_schema\.columns/);
+ assert.match(sql,/pg_get_constraintdef/);
+ assert.match(sql,/gallery_live_overrides/);
+ const executable=sql.split('\n').filter(line=>!line.trim().startsWith('--')).join('\n');
+ assert.doesNotMatch(executable,/\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE|GRANT|REVOKE)\b/i);
+ assert.doesNotMatch(executable,/https?:\/\/|[a-z0-9.+-]+@[^ /]+:5432/i,'inventory must not include a credential or host');
+});
