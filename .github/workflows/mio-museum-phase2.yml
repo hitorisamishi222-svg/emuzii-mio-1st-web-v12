@@ -7,13 +7,15 @@ on:
       - 'museum*'
       - 'api-museum-exhibits.js'
       - 'api-museum-image.js'
+      - 'api-museum-assets.js'
       - 'db/museum-public-exhibits.sql'
       - 'gallery-manage.html'
       - 'vercel.json'
       - 'robots.txt'
       - 'tests/mio-museum-phase1.test.mjs'
       - 'tests/mio-museum-phase2.test.mjs'
-      - 'tests/mio-museum-image.test.mjs'
+      - 'tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs'
+      - 'tests/mio-museum-trash-audit.test.mjs'
       - '.github/workflows/mio-museum-phase2.yml'
   workflow_dispatch:
 permissions:
@@ -32,6 +34,7 @@ jobs:
         run: |
           node --check api-museum-exhibits.js
           node --check api-museum-image.js
+          node --check api-museum-assets.js
           node --check museum-image-client.js
           node --check museum-exhibits-core.js
           node --check museum-archive.js
