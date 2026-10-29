@@ -43,7 +43,7 @@ server=http.createServer(async(req,res)=>{
       const valid=auth.includes('mio_gallery_session=local-session')&&auth.includes('mio_gallery_device=local-device');
       adminCookieChecks.push(valid);
       if(!valid){res.writeHead(401,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,code:'TEST_COOKIE_MISSING'}));return;}
-      const data={ok:true,authorized:true,editable:true,imageUploadEnabled:true,items:fixtureItems};
+      const data={ok:true,authorized:true,editable:true,publishEnabled:true,imageUploadEnabled:true,items:fixtureItems};
       res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));return;
     }
     if(p==='/api/museum/exhibits'){
