@@ -160,17 +160,57 @@ h1{line-height:1.45}h2{line-height:1.5}}
 'use strict';
 const $=id=>document.getElementById(id);
 const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
-let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null;
+let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null,formDirty=false;
 const note=s=>{$('saveStatus').textContent=s;};
 const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開',trash:'ゴミ箱（復元可能）'};
 const asInput=(item,k)=>{
  const v=item?.[k];
  return typeof v==='string'?v:'';
 };
+// Only preview whitelisted public-image paths; never assign an arbitrary URL to an image.
+function previewAllowed(raw){
+ if(typeof raw!=='string')return false;
+ if(/^\/assets\/[A-Za-z0-9_/-]+\.(?:png|jpe?g|webp|gif)$/i.test(raw)&&!raw.includes('..'))return true;
+ try{
+  const u=new URL(raw);
+  return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&
+   /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(u.hostname)&&
+   /\.(?:png|jpe?g|webp|gif)$/i.test(u.pathname);
+ }catch{return false;}
+}
+function renderSummary(){
+ const counts={draft:0,published:0,hidden:0,trash:0};
+ for(const item of items)if(Object.hasOwn(counts,item.status))counts[item.status]++;
+ const panel=$('exhibitSummary');panel.replaceChildren();
+ for(const [name,key] of [['下書き','draft'],['公開中','published'],['非公開','hidden'],['ゴミ箱','trash']]){
+  const badge=document.createElement('span');badge.textContent=name+' '+counts[key]+'件';panel.append(badge);
+ }
+}
+function filterList(preferredId){
+ const search=$('exhibitSearch').value.trim().toLocaleLowerCase('ja-JP');
+ const state=$('exhibitFilter').value;
+ const active=preferredId??selected?.id??'';
+ const visible=items.filter(item=>(state==='all'||item.status===state)&&
+  (!search||item.title.toLocaleLowerCase('ja-JP').includes(search)));
+ // An already selected exhibit remains selectable even when it doesn't match a filter.
+ const selectedItem=items.find(x=>x.id===active);
+ if(selectedItem&&!visible.includes(selectedItem))visible.unshift(selectedItem);
+ const menu=$('selectExhibit');menu.replaceChildren();
+ const blank=document.createElement('option');blank.value='';blank.textContent='＋ 新しい思い出を登録';menu.append(blank);
+ for(const item of visible){
+  const option=document.createElement('option');option.value=item.id;
+  option.textContent='['+(titleStatus[item.status]||'要確認')+'] '+item.title;
+  menu.append(option);
+ }
+ menu.value=selectedItem?selectedItem.id:'';
+ renderSummary();
+}
+$('exhibitSearch').addEventListener('input',()=>filterList());
+$('exhibitFilter').addEventListener('change',()=>filterList());
 function buttons(){
- $('uploadImage').disabled=busy||!editable||!imageUploadEnabled;
+ $('uploadImage').disabled=busy||!editable||!imageUploadEnabled||selected?.status==='trash';
  $('clearImage').disabled=busy||!$('uploadImage').files?.length;
- $('save').disabled=busy||!editable||saveNeedsReview;
+ $('save').disabled=busy||!editable||saveNeedsReview||selected?.status==='trash';
  $('publish').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='draft';
  $('hide').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='published';
  $('reopen').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='hidden';
@@ -198,17 +238,41 @@ function clearSelectedImage(){
  function choose(){
   clearSelectedImage();
   selected=items.find(x=>x.id===$('selectExhibit').value)||null;
+  formDirty=false;
  for(const k of keys)$(k).value=asInput(selected,k);
  if(!selected){$('kind').value='icons';$('exhibitForm').reset();$('kind').value='icons';}
  $('rightsConfirmed').checked=false;$('privacyConfirmed').checked=false;
- $('editorTitle').textContent=selected?'展示の内容を編集':'新しい展示を登録';
+ $('editorTitle').textContent=selected?'② 展示の内容を編集':'② 新しい思い出を登録';
+ $('savedImagePreview').hidden=true;
+ $('savedImagePreviewImg').removeAttribute('src');
+ if(selected&&previewAllowed(selected.imageUrl)){
+  $('savedImagePreviewImg').src=selected.imageUrl;
+  $('savedImagePreview').hidden=false;
+ }
+ $('optionalFields').open=Boolean(selected?.credit||(selected?.imageUrl&&!previewAllowed(selected.imageUrl)));
+ $('extraLinks').open=Boolean(selected?.externalUrl);
  $('currentStatus').textContent=selected?
    '状態：'+(titleStatus[selected.status]||'要確認')+' ／ 編集番号：'+selected.revision:
    '新しい展示は下書きとして保存されます。';
  buttons();
 }
-$('selectExhibit').addEventListener('change',choose);
-$('reset').addEventListener('click',()=>{$('selectExhibit').value='';choose();note('新規登録の入力欄へ戻りました。');});
+$('selectExhibit').addEventListener('change',()=>{
+ if(formDirty&&!confirm('入力中の内容はまだ保存されていません。別の作品に切り替えますか？')){
+  $('selectExhibit').value=selected?.id||'';return;
+ }
+ choose();
+});
+$('exhibitForm').addEventListener('input',()=>{formDirty=true;});
+$('exhibitForm').addEventListener('change',()=>{formDirty=true;});
+function startNew(){
+ if(formDirty&&!confirm('入力中の内容はまだ保存されていません。新しい展示の入力へ戻りますか？'))return;
+ $('exhibitSearch').value='';$('exhibitFilter').value='all';
+ $('selectExhibit').value='';choose();filterList('');
+ $('editorTitle').scrollIntoView({behavior:'auto',block:'start'});
+ note('新しい展示を入力できます。');
+}
+$('reset').addEventListener('click',startNew);
+$('newExhibit').addEventListener('click',startNew);
 async function load(preferredId){
  if(busy)return;
  note('展示一覧を確認しています…');
@@ -219,12 +283,7 @@ async function load(preferredId){
   saveNeedsReview=false;
   editable=data.editable===true;imageUploadEnabled=data.imageUploadEnabled===true;
   items=Array.isArray(data.items)?data.items:[];
-  const sel=$('selectExhibit');sel.replaceChildren();
-  const fresh=document.createElement('option');fresh.value='';fresh.textContent='＋ 新しい思い出を登録';sel.append(fresh);
-  for(const item of items){
-   const opt=document.createElement('option');opt.value=item.id;opt.textContent='['+(titleStatus[item.status]||'要確認')+'] '+item.title;sel.append(opt);
-  }
-  sel.value=items.some(x=>x.id===preferredId)?preferredId:'';
+  filterList(preferredId||'');
   choose();
   $('imageHelp').textContent=imageUploadEnabled?
    '✅ 写真を選んで下書き保存できます。スマホの画像を端末内で縮小します。':
@@ -237,9 +296,15 @@ async function load(preferredId){
   $('authStatus').textContent='🔒 展示の管理権限またはデータベースを確認できません。';
  }
 }
-$('reload').addEventListener('click',()=>load(selected?.id));
+$('reload').addEventListener('click',()=>{
+ if(formDirty&&!saveNeedsReview&&!confirm('入力中の内容はまだ保存されていません。最新データを読み直しますか？'))return;
+ load(selected?.id);
+});
 async function submit(action){
  if(busy||!editable)return;
+ if(selected?.status==='trash'&&(action==='update'||action==='publish')){
+  note('ゴミ箱内の作品は先に復元してください。');return;
+ }
  if(saveNeedsReview){note('前回の保存結果を確認できません。先に「最新の展示を読み直す」を押してください。');return;}
  if(action==='create'||action==='update'){
   if(!$('exhibitForm').reportValidity())return;
