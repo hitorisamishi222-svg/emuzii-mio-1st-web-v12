@@ -17,6 +17,7 @@ on:
       - 'tests/mio-museum-image.test.mjs'
       - 'tests/mio-museum-trash-audit.test.mjs'
       - 'tests/mio-museum-curate-ux.test.mjs'
+      - 'tests/mio-museum-chromium-smoke.mjs'
       - '.github/workflows/mio-museum-phase2.yml'
   workflow_dispatch:
 permissions:
@@ -41,3 +42,16 @@ jobs:
           node --check museum-archive.js
       - name: Museum phase 1 and 2 contracts
         run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs
+      - name: Real Chromium small-screen and owner interaction test (fixture only)
+        timeout-minutes: 2
+        run: |
+          command -v google-chrome || command -v chromium
+          node tests/mio-museum-chromium-smoke.mjs
+      - name: Save Chrome screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mio-museum-chromium-mobile-evidence
+          path: artifacts/local-museum-*.png
+          if-no-files-found: ignore
+          retention-days: 7
