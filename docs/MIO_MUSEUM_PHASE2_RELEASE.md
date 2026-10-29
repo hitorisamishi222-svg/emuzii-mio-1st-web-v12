@@ -123,3 +123,21 @@
 - **一般公開ページ:** `/api/museum/exhibits` の公開済み展示だけのGETは従来どおり利用。公開ページは `credentials:'omit'` のまま、管理者Cookieを送らない。
 - **検証:** `tests/mio-museum-auth-path.test.mjs` でCookie Path／ルート／呼出先の整合を静的検査。ChromiumスモークではローカルfixtureのHttpOnly/Path Cookieを管理者経路にのみ送信し、公開APIには送信しないことを確認する。
 - 本番のCookie発行・DB接続・実際の認証済みiPhone/Androidによるログイン成功は未検証。第2段階PR #48の実機・実DB検証後に公開判断する。
+
+## DB公開前の読み取り専用チェック（2026-10-29 追加）
+- `api-museum-preflight.js` / `museum-preflight-core.js` を追加。翠央記念館のオーナーが `museum-curate.html` の折りたたみ項目から、**データを変更せず**必要な構成を確認できる。
+- **初期OFF:** `MIO_MUSEUM_PREFLIGHT_ENABLED=true` を設定したときだけ管理者APIを有効化。管理者APIは既存のSecure/HttpOnly Cookieが届く `/api/gallery/museum/preflight` に限定し、承認済み端末・ownerロールをチェックする。
+- 点検内容：`gallery_admin_users`、`gallery_admin_devices`、`gallery_admin_sessions`、`gallery_admin_audit`、`museum_public_exhibits` の**テーブルと必須カラム**、展示の `draft/published/hidden/trash` 状態制約、DB接続先の確認。
+- **接続先の確認が必須:** オーナーが実DBを別途確認した後、`MIO_MUSEUM_EXPECTED_DB_HOST` と `MIO_MUSEUM_EXPECTED_DB_NAME` を設定する。いずれかが未設定・不一致なら `allReady=false`。実DB名称・ホスト・接続文字列・管理者IDなどの秘密をレスポンスに含めない。
+- SQLは `SELECT current_database()`、`information_schema.columns`、`pg_constraint` の読み取りのみ。テーブル作成・UPDATE・INSERT・DELETE・移行実行・フラグONは行わない。構成に不足があれば安全側の不合格とする。
+- **Vercel設定の名称だけを確認（値は非表示）:** 本番/Preview用 `GALLERY_DATABASE_URL` と `BLOB_READ_WRITE_TOKEN` の設定項目は存在する。一方、`MIO_MUSEUM_ARCHIVE_EDIT_ENABLED`、`MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED`、`MIO_MUSEUM_IMAGE_UPLOAD_ENABLED`、`MIO_MUSEUM_PREFLIGHT_ENABLED` はまだ見当たらないため、各機能は既定でOFFとなる。設定を変更・追加していない。
+- `tests/mio-museum-preflight.test.mjs` で、オーナー認証、フラグOFFの安全動作、DB確認の一致・不一致、必須カラム欠落、状態制約、不正Originやホスト、秘密情報の非表示、SQLの読み取り専用性を検査。**63件の記念館自動テスト合格、Chromium操作検証合格**を確認。
+- **重要:** これは公開前の環境・構成確認に過ぎない。実機Safari/Chrome、実DB保存、バックアップ、公開/非公開操作、画像Blob実保存、著作権・肖像権の確認を終えるまで、PR #47/#48はDraftのまま、本番へのマージは禁止。
+
+### この後の公開判定順序
+1. iPhone/Androidで `/museum-device-check.html` の実機画像変換・画面表示を確認（テスト写真のみ）。
+2. 管理者本人・DB管理者が、**既存管理DBの正本・バックアップ・接続先・権限**を確認。関係のないGAS/皆勤/ガチャDBは使わない。
+3. 未適用の `db/museum-public-exhibits.sql` を対象DBと差分照合。必要な移行は別途レビュー・承認のうえで実施。
+4. 読み取り専用DB点検を有効化して結果を確認。その後に検証専用の作品で「下書き→公開→非公開→ゴミ箱→復元」をオーナー承認端末で試す。
+5. 既存ギャラリー・ガチャ・皆勤・ログインの回帰確認をした後、第1段階→第2段階の順に公開承認。
+
