@@ -150,3 +150,15 @@
 - `museum-curate.html` では不足列・型不一致を別件数で表示し、画像参照診断用テーブルの準備状況も独立表示する。
 - **移行方法の注意:** 既存テーブルがある場合、`CREATE TABLE IF NOT EXISTS` を再実行しても既存カラムや `status` のCHECK制約は更新されない。テーブル構成・現在の制約名・バックアップを読み取りで確認し、差分が明確になってから、別途レビュー済みのALTER手順を作る。今回はDDL、バックアップ変更、production環境変数の設定を実施していない。
 - `tests/mio-museum-preflight.test.mjs` には型不一致・任意テーブル欠落・読み取り専用SQLの退行チェックを追加。最後にGitHub Actionsと開発版ビルドを確認し、成功まで本番反映を禁止する。
+
+## 2026-10-29：管理者の外部キー確認＋一時PostgreSQLの統合テスト
+- `museum-preflight-core.js` / `api-museum-preflight.js` の公開判定を強化。名前・型だけでなく、**必須NOT NULL、実際に有効なCHECK制約、所有者・端末・ログイン・操作履歴・展示を結ぶ5つの外部キー**を検査する。欠落・未検証の場合は `schemaReady=false` にする。
+- 構造点検は引き続き `information_schema.columns` と `pg_constraint` の **SELECTだけ**。実接続先・権限・バックアップの管理者確認が欠けていれば `allReady=false` のまま。
+- `museum-curate.html` で「列不足／型不一致／必須設定の不足／外部キー不足」を分けて表示。画像参照診断用の任意テーブルと本体用の必須テーブルも分ける。
+- `tests/mio-museum-preflight.test.mjs` に「NOT NULL欠落」「外部キー欠落」「未検証の外部キーを認めない」の模擬検査を追加。
+- **実PostgreSQL統合試験を追加**：`tests/mio-museum-postgres.integration.mjs` と、`.github/workflows/mio-museum-phase2.yml` の `isolated-postgres-contract` ジョブ。GitHub Actionsで自動生成した `museum_ci_fixture` という一時DBだけを利用する。接続先が `localhost/127.0.0.1` かつDB名が固定値でない場合は一切SQLを実行しない。Vercelの秘密値は注入せず、 `GALLERY_DATABASE_URL` が事前定義されていないことも確認する。
+- 一時DBで、**リポジトリ内の既存管理者スキーマ／セッション移行／ギャラリー変更履歴／記念館SQL**を順に適用し、同じ記念館SQLの2回目の実行も確認。その後、合成した管理者・承認済み端末・ログインだけで「下書き作成→公開→編集時非公開→再公開→公開停止→ゴミ箱→復元」、版数競合拒否、公開データの非公開情報除外、操作履歴の保存を検証した。
+- **実PostgreSQL確認結果：** スキーマ検証OK／外部キー5件／展示操作監査7件／復元後の公開展示0件。既存ギャラリーの公開画像参照との照合も実SQLで成功。ただしBlobの一覧は模擬で、実ファイルは1件もアップロード・削除していない。
+- **検証証跡**：GitHub Actions https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40838635558 — `isolated-postgres-contract` 合格。Chrome小画面検証も合格。
+- **引き続き未完了**：実際の正本DB特定、バックアップと復元可能性の確認、実DBとのスキーマ差分、実端末ログイン、実写真の送信・保存、作品の権利とプライバシー確認。**テストDB成功を本番公開の承認に読み替えない。**
+- 第1段階PR #47、第2段階PR #48はDraft/未マージのまま。本番、GAS、ガチャ、皆勤、参加者ID、Vercel環境変数は変更していない。
