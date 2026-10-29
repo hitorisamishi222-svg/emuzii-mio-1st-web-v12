@@ -92,9 +92,12 @@ function gachaRapidApproveAndGrant(req){
     webs.forEach(function(w,i){if(w[0]===webId)found.push({row:i+2,data:w});});
     if(found.length!==1)throw new Error('Web登録IDが不明または重複しています');
     var wd=found[0].data,webRow=found[0].row,name=String(wd[2]||'');
+    // Stop placeholder Web IDs posing as ColorSing names: these rows are recovery candidates, not verified people.
+    if(/^MIO-(?:W-|\d{4}$)/i.test(name)||!String(wd[1]||'').match(/^[a-f0-9]{64}$/i))throw new Error('ColorSing名または端末認証の登録を確認できません。本人確認してください');
     if(name!==expectedName)throw new Error('登録名が変更されています。再読み込みしてください');
     if(!/^[^=+@-][^\x00-\x1f]{0,39}$/.test(name))throw new Error('登録名の記号を管理者が確認してください');
     if(wd[5]!=='承認待ち'&&wd[5]!=='承認済み')throw new Error('登録状態を確認してください');
+    if(String(wd[16]||'')==='旧端末'||String(wd[13]||'').indexOf('旧端末')>=0)throw new Error('旧端末の登録です。端末切替承認を別途確認してください');
     if(wd[5]==='承認済み'&&String(wd[7]||'')!==targetId)throw new Error('承認済みの参加者IDを変更できません');
     var rows=gachaRapidRows_(people,2,499),same=rows.map(function(r,i){return {row:i+2,id:r[0],name:r[1]};}).filter(function(x){return x.name===name;});
     if(same.length>1)throw new Error('同名参加者が複数います。本人照合後に元台帳で整理してください');
@@ -118,6 +121,7 @@ function gachaRapidApproveAndGrant(req){
       if(wd[10]&&wd[10]!==master&&!(wd[5]==='承認待ち'&&wd[10]===webId))throw new Error('Web統合IDが一致しません');
     }
     var g=gacha.getRange(targetRow,1,1,17).getValues()[0];
+    if(targetId==='NEW'&&(g[0]||g[1]))throw new Error('新規作成先のガチャ行に既存情報があります');
     if(targetId!=='NEW'&&(g[0]!==master||g[1]!==name))throw new Error('ガチャ台帳のIDまたは名前が一致しません');
     if(Number(g[2])!==old1||Number(g[3])!==old3)throw new Error('別の管理者が口数を変更しました。再読み込みしてください');
     if(m1<Number(g[2])||m3<Number(g[3]))throw new Error('既存の口数は減らせません');
