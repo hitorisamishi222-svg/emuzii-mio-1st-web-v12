@@ -29,16 +29,17 @@ export function createMuseumPreflightHandler(deps={}){
    // Queries inspect only system metadata. No DDL, DML or writes.
    const identity=await client.query('SELECT current_database() AS db_name');
    const columns=await client.query(
-    'SELECT table_name,column_name,data_type FROM information_schema.columns '+
+    'SELECT table_name,column_name,data_type,is_nullable FROM information_schema.columns '+
     'WHERE table_schema=current_schema() AND table_name=ANY($1::text[])',
     [[...Object.keys(REQUIRED_MUSEUM_SCHEMA),...Object.keys(OPTIONAL_ASSET_SCHEMA)]]
    );
    const constraints=await client.query(
-    'SELECT pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c '+
+    'SELECT t.relname AS table_name,c.contype,c.convalidated AS validated,pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c '+
     'JOIN pg_class t ON t.oid=c.conrelid '+
     'JOIN pg_namespace n ON n.oid=t.relnamespace '+
-    "WHERE n.nspname=current_schema() AND t.relname='museum_public_exhibits' "+
-    "AND c.contype='c'"
+    "WHERE n.nspname=current_schema() AND t.relname=ANY($1::text[]) "+
+    "AND c.contype IN ('c','f')",
+    [...Object.keys(REQUIRED_MUSEUM_SCHEMA)]
    );
    // Explicit owner-confirmed expected endpoint and DB name must BOTH match.
    // Never return either value or the connection string.
