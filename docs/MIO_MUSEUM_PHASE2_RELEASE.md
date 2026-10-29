@@ -162,3 +162,16 @@
 - **検証証跡**：GitHub Actions https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40838635558 — `isolated-postgres-contract` 合格。Chrome小画面検証も合格。
 - **引き続き未完了**：実際の正本DB特定、バックアップと復元可能性の確認、実DBとのスキーマ差分、実端末ログイン、実写真の送信・保存、作品の権利とプライバシー確認。**テストDB成功を本番公開の承認に読み替えない。**
 - 第1段階PR #47、第2段階PR #48はDraft/未マージのまま。本番、GAS、ガチャ、皆勤、参加者ID、Vercel環境変数は変更していない。
+
+## 2026-10-29：実PostgreSQL＋模擬画像ストレージの保存・失敗復旧テスト
+- `tests/mio-museum-postgres.integration.mjs` を拡張。GitHub Actionsの**ローカル一時PostgreSQL**を利用し、実際の展示・認証・操作監査テーブルで画像付き保存のSQLトランザクションを検証する。
+- Vercel Blobは**メモリ上の模擬アダプター**に差し替えてテスト。外部Blobに画像の実送信や削除は一度も実行していない。
+- 保存・公開の順番：画像付き下書き作成→再審査して公開→画像差し替えで自動的に下書きへ戻す→過去の編集番号からの更新を拒否→ゴミ箱内の差し替えを拒否。
+- 監査履歴の書き込みを実際のPostgreSQL制約でわざと失敗させ、**未コミットの展示行がロールバックされ、新規画像だけが削除され、すでに保存されている元画像が残ること**を実証した。認証Cookieが不正な場合も保存前に拒否。
+- 結果：画像関連の操作履歴2件、模擬Blobアップロード3回、失敗時の新規Blob削除1回、元画像を保護、古い編集番号・ゴミ箱内の更新拒否。SQLの実DB操作以外の外部ストレージ通信は0。
+- **公開許可の分離を修正:** `MIO_MUSEUM_ARCHIVE_EDIT_ENABLED` だけで `publish` 状態へ変更できないようにし、`MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED=true` も必須にした。管理者専用GETは `publishEnabled` を返し、OFF時は公開ボタンを無効化。下書き編集と一般公開を独立管理する。
+- `tests/mio-museum-phase2.test.mjs` に公開スイッチOFFでの書き込み拒否、管理画面への公開許可フラグ返却のテストを追加。ブラウザのローカルfixtureも公開許可の設定を反映。
+- **GitHub Actionsの証跡:** https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/40841059529 — 静的・模擬重点テスト**70/70件PASS**、Chromium小画面操作PASS、独立PostgreSQL統合テストPASS。
+- **未確認の項目:** iPhone/Android実機、承認済みオーナー端末からの実DB接続、実Vercel Blobへの写真保存、実バックアップ/復元、DB正本・権限の最終確認。**本番公開許可ではない。**
+- 第1段階PR #47と第2段階PR #48は未マージのDraftを維持し、本番main・GAS・ガチャ・皆勤・参加者ID・本番環境変数は変更しない。
+
