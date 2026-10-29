@@ -120,7 +120,7 @@ h1{line-height:1.45}h2{line-height:1.5}}
    <p class="note" style="margin:0 0 8px">💎 まず下書き保存。一般公開はその後に確認します。</p>
    <div class="actions">
     <button type="submit" id="save" class="primary">💾 下書きとして保存</button>
-    <button type="button" id="reset">入力を新規に戻す</button>
+    <button type="button" id="resetForm">入力を新規に戻す</button>
    </div>
   </div>
  </form>
@@ -275,7 +275,7 @@ function startNew(){
  $('editorTitle').scrollIntoView({behavior:'auto',block:'start'});
  note('新しい展示を入力できます。');
 }
-$('reset').addEventListener('click',startNew);
+$('resetForm').addEventListener('click',startNew);
 $('newExhibit').addEventListener('click',startNew);
 async function load(preferredId){
  if(busy)return;
