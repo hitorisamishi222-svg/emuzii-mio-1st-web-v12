@@ -141,3 +141,12 @@
 4. 読み取り専用DB点検を有効化して結果を確認。その後に検証専用の作品で「下書き→公開→非公開→ゴミ箱→復元」をオーナー承認端末で試す。
 5. 既存ギャラリー・ガチャ・皆勤・ログインの回帰確認をした後、第1段階→第2段階の順に公開承認。
 
+
+## 2026-10-29: 既存DBとの構造差分・手動移行ゲート
+- ソース定義を比較した結果、`db/gallery-admin-session-migration.sql` の `gallery_admin_sessions` と、`db/gallery-live-overrides.sql` の `gallery_live_overrides.thumbnail_url` は、開発コードが参照する名前と一致する。**ただし本番DBに適用済みという証明ではない。**
+- 読み取り専用の手動確認SQL `db/museum-phase2-readonly-inventory.sql` を追加。接続先のDB名・スキーマ、必須5テーブル、画像参照診断用の任意1テーブル、カラムの型・nullable、展示のチェック制約と関連外部キーを確認できる。トランザクションをREAD ONLYにし、変更系SQLは含めない。**未実行**。
+- `museum-preflight-core.js` を強化し、**同名のカラムでも型が誤っていれば不合格**とする。例えば `revision` がintegerではない、`reviewed_by` がuuidではない場合、公開用DBの構造を合格にしない。
+- `gallery_live_overrides` は**画像参照診断の任意依存**として別に判定。欠落した場合は `assetAuditReady=false` だが、記念館本体の `schemaReady` とは混同しない。実在しなければ画像参照チェックの使用は停止し、未参照画像を削除候補とは見なさない。
+- `museum-curate.html` では不足列・型不一致を別件数で表示し、画像参照診断用テーブルの準備状況も独立表示する。
+- **移行方法の注意:** 既存テーブルがある場合、`CREATE TABLE IF NOT EXISTS` を再実行しても既存カラムや `status` のCHECK制約は更新されない。テーブル構成・現在の制約名・バックアップを読み取りで確認し、差分が明確になってから、別途レビュー済みのALTER手順を作る。今回はDDL、バックアップ変更、production環境変数の設定を実施していない。
+- `tests/mio-museum-preflight.test.mjs` には型不一致・任意テーブル欠落・読み取り専用SQLの退行チェックを追加。最後にGitHub Actionsと開発版ビルドを確認し、成功まで本番反映を禁止する。
