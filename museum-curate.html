@@ -47,7 +47,9 @@ h1{line-height:1.45}h2{line-height:1.5}}
 <p class="note">公開用の歴代アイコン、思い出スクショ、イベント記録をひとつの管理画面から扱います。翠央記念館のオーナー権限と承認済み端末が必要です。</p>
 <section class="panel">
 <h2>🔐 管理者・端末確認</h2><p id="authStatus" role="status" aria-live="polite">確認しています…</p>
-<div id="unavailable" hidden class="note">現在この端末からは展示を編集できません。認証状態または展示用データベースの準備を確認してください。</div>
+<div id="unavailable" hidden class="note">現在この端末からは展示を編集できません。認証状態または展示用データベースの準備を確認してください。
+ <p><button type="button" id="retryLogin">🔄 認証と展示一覧を再確認する</button></p>
+</div>
 </section>
 <section id="editor" hidden>
 <div class="panel">
@@ -278,7 +280,7 @@ function startNew(){
 $('resetForm').addEventListener('click',startNew);
 $('newExhibit').addEventListener('click',startNew);
 async function load(preferredId){
- if(busy)return;
+ if(busy)return false;
  note('展示一覧を確認しています…');
  try{
   const response=await fetch('/api/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
@@ -295,11 +297,14 @@ async function load(preferredId){
   $('editor').hidden=false;$('unavailable').hidden=true;
   $('authStatus').textContent=editable?'✅ 翠央記念館のオーナー権限を確認しました。':'🔒 オーナー権限は確認しました。現在、展示編集は安全のため停止中です。';
   note('表示：'+items.length+'件。'+(editable?'編集と公開管理が利用できます。':'編集機能は公開前検証が完了するまで停止しています。'));
+  return true;
  }catch{
   $('editor').hidden=true;$('unavailable').hidden=false;
   $('authStatus').textContent='🔒 展示の管理権限またはデータベースを確認できません。';
+  return false;
  }
 }
+$('retryLogin').addEventListener('click',()=>load(selected?.id));
 $('reload').addEventListener('click',()=>{
  if(formDirty&&!saveNeedsReview&&!confirm('入力中の内容はまだ保存されていません。最新データを読み直しますか？'))return;
  load(selected?.id);
@@ -341,7 +346,7 @@ async function submit(action){
  }
  if(file&&!imageUploadEnabled){note('画像登録機能はまだ準備中です。画像の選択を取り消すか、公開画像URLをご利用ください。');return;}
  busy=true;buttons();note('変更を確認して保存しています…');
- let imageRequestStarted=false;
+ let writeRequestStarted=false;
  try{
   let endpoint='/api/museum/exhibits';
   if(file){
@@ -353,15 +358,20 @@ async function submit(action){
    endpoint='/api/museum/image';
    note('確認済みの画像と下書きをまとめて保存しています…');
   }
-  imageRequestStarted=Boolean(file);
+  writeRequestStarted=true;
   const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await response.json();
   if(!response.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
   note('✅ 処理が成功しました。');
-  busy=false;await load(data.item?.id||data.exhibit?.id);
-  note('✅ '+words[action]+'を保存しました。');
+  busy=false;
+  const refreshed=await load(data.item?.id||data.exhibit?.id);
+  if(refreshed)note('✅ '+words[action]+'を保存しました。');
+  else{
+   saveNeedsReview=true;
+   $('authStatus').textContent='⚠️ 保存は受け付けましたが、一覧を確認できません。認証状態を確認して「再確認」を押してください。';
+  }
  }catch(e){
-  if(imageRequestStarted)saveNeedsReview=true;
+  if(writeRequestStarted)saveNeedsReview=true;
   note('⚠️ 保存結果を確認できません。入力は残していますが、重複保存を防ぐため一覧を読み直してから再操作してください（'+e.message+'）。');
  }finally{busy=false;buttons();}
 }
