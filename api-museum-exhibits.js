@@ -92,6 +92,8 @@ export default async function handler(req,res){
    return fail(res,400,'REVISION_INVALID');
   if(action==='publish'&&(req.body?.rightsConfirmed!==true||req.body?.privacyConfirmed!==true))
    return fail(res,400,'PUBLISH_REVIEW_REQUIRED');
+  // Separately controlled opt-in: editing drafts does not authorize publication.
+  if(action==='publish'&&!publishedOn())return fail(res,503,'ARCHIVE_PUBLISH_CLOSED');
   await c.query('BEGIN');
   try{
    let q;
