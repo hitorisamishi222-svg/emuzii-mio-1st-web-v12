@@ -17,7 +17,7 @@ const response=()=>({code:200,data:null,headers:{},
  setHeader(k,v){this.headers[k]=v;},status(n){this.code=n;return this;},
  json(x){this.data=x;return this;}});
 const req=(method='POST',body={},query={})=>({
- method,body,query,headers:{host,origin:'https://'+host,'content-type':'application/json'}
+ method,body,query,headers:{host,origin:'https://'+host,'content-type':'application/json',cookie:'mio_gallery_session='+('Z'.repeat(43))+'; mio_gallery_device='+('Y'.repeat(43))}
 });
 function db(query){
  return class Pool{
@@ -26,13 +26,14 @@ function db(query){
  };
 }
 const envKeys=['GALLERY_DATABASE_URL','BLOB_READ_WRITE_TOKEN',
- 'MIO_MUSEUM_ARCHIVE_EDIT_ENABLED','MIO_MUSEUM_ASSET_REVIEW_ENABLED'];
+ 'MIO_MUSEUM_ARCHIVE_EDIT_ENABLED','MIO_MUSEUM_ASSET_REVIEW_ENABLED','MIO_MUSEUM_IMAGE_UPLOAD_ENABLED'];
 async function env(fn){
  const old=Object.fromEntries(envKeys.map(k=>[k,process.env[k]]));
  process.env.GALLERY_DATABASE_URL='postgres://unused/test';
  process.env.BLOB_READ_WRITE_TOKEN='mock';
  process.env.MIO_MUSEUM_ARCHIVE_EDIT_ENABLED='true';
  process.env.MIO_MUSEUM_ASSET_REVIEW_ENABLED='true';
+ process.env.MIO_MUSEUM_IMAGE_UPLOAD_ENABLED='true';
  try{await fn();}finally{
   for(const k of envKeys){if(old[k]===undefined)delete process.env[k];else process.env[k]=old[k];}
  }
