@@ -65,8 +65,8 @@ export function createImageHandler(deps={}){
    await c.query('BEGIN');
    try{
     if(action==='imageUpdate'){
-     const current=await c.query('SELECT revision FROM museum_public_exhibits WHERE id=$1 FOR UPDATE',[id]);
-     if(!current.rowCount||Number(current.rows[0].revision)!==revision){
+     const current=await c.query('SELECT revision,status FROM museum_public_exhibits WHERE id=$1 FOR UPDATE',[id]);
+     if(!current.rowCount||current.rows[0].status==='trash'||Number(current.rows[0].revision)!==revision){
       await c.query('ROLLBACK');return say(res,409,'EXHIBIT_CHANGED_RELOAD');
      }
     }
@@ -93,7 +93,7 @@ export function createImageHandler(deps={}){
        kind=$1,title=$2,description=$3,credit=$4,occurred_on=$5,image_url=$6,external_url=$7,
        status='draft',revision=revision+1,rights_checked_at=now(),
        privacy_checked_at=now(),reviewed_by=$8,published_at=NULL,updated_at=now()
-       WHERE id=$9 AND revision=$10 RETURNING id,status,revision`,
+       WHERE id=$9 AND revision=$10 AND status<>'trash' RETURNING id,status,revision`,
       [item.kind,item.title,item.description,item.credit,item.occurredOn,
        createdUrl,item.externalUrl,admin.id,id,revision]
      );
