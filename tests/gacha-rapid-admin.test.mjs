@@ -108,7 +108,7 @@ rejectsWithoutChanges('rejects concurrent updates',{m1:3},{expectedM1:2},'別の
 rejectsWithoutChanges('rejects altered ColorSing name',{webName:'別人'}, {},'登録名が変更');
 rejectsWithoutChanges('cannot allocate NEW identity over existing one',{}, {targetId:'NEW'},'既存MIO-ID');
 rejectsWithoutChanges('cannot reassign another identity',{}, {targetId:'MIO-0044'},'登録名とMIO-ID');
-rejectsWithoutChanges('rejects conflicting approved device',{conflictingWeb:true},{},'同名の別ID');
+rejectsWithoutChanges('rejects conflicting approved device',{conflictingWeb:true},{},'同名・類似名の別ID');
 rejectsWithoutChanges('rights cannot decrease',{}, {m1:1},'付与数の減少');
 rejectsWithoutChanges('fractional entitlement rejected',{}, {m1:2.5},'口数は');
 rejectsWithoutChanges('excessive entitlement rejected',{}, {m1:50,m3:50},'口数が不正');
