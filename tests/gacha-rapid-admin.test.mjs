@@ -173,3 +173,16 @@ test('gacha bonus on unassigned row prevents NEW participant overwrite',()=>{
   assert.equal(JSON.stringify(x.sheets),before);
   assert.equal(x.audit.events.length,0);
 });
+
+test('purchase draw count and total rights remain distinct when bonuses exist',()=>{
+  const x=fixture();
+  x.sheets['emuzii_ガチャ'][0][5]=22;
+  x.sheets['emuzii_ガチャ'][0][7]=22;
+  const result=x.api.approve(x.req());
+  assert.equal(result.purchasedDraws,2);
+  assert.equal(result.totalRights,22);
+  assert.equal(result.remaining,22);
+  assert.equal(result.rights,2);
+  assert.equal(x.sheets['emuzii_ガチャ'][0][5],22);
+  assert.equal(x.audit.events.length,1);
+});
