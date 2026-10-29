@@ -18,6 +18,7 @@ on:
       - 'tests/mio-museum-trash-audit.test.mjs'
       - 'tests/mio-museum-curate-ux.test.mjs'
       - 'tests/mio-museum-device-check.test.mjs'
+      - 'tests/mio-museum-auth-path.test.mjs'
       - 'tests/mio-museum-chromium-smoke.mjs'
       - '.github/workflows/mio-museum-phase2.yml'
   workflow_dispatch:
@@ -43,7 +44,7 @@ jobs:
           node --check museum-exhibits-core.js
           node --check museum-archive.js
       - name: Museum phase 1 and 2 contracts
-        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs tests/mio-museum-device-check.test.mjs
+        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs tests/mio-museum-device-check.test.mjs tests/mio-museum-auth-path.test.mjs
       - name: Real Chromium small-screen and owner interaction test (fixture only)
         timeout-minutes: 2
         run: |
