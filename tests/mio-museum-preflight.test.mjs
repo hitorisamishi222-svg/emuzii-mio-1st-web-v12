@@ -2,13 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
-import {REQUIRED_MUSEUM_SCHEMA,museumSchemaReport} from '../museum-preflight-core.js';
+import {REQUIRED_MUSEUM_SCHEMA,OPTIONAL_ASSET_SCHEMA,REQUIRED_COLUMN_TYPES,museumSchemaReport} from '../museum-preflight-core.js';
 import {createMuseumPreflightHandler} from '../api-museum-preflight.js';
 
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const expected='museum_safe_test';
 const schemaRows=Object.entries(REQUIRED_MUSEUM_SCHEMA).flatMap(([table_name,fields])=>
- fields.map(column_name=>({table_name,column_name})));
+ fields.map(column_name=>({table_name,column_name,data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text'})));
+const optionalRows=Object.entries(OPTIONAL_ASSET_SCHEMA).flatMap(([table_name,fields])=>
+ fields.map(column_name=>({table_name,column_name,data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text'})));
 const statusCheck=[{definition:"CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'hidden'::text, 'trash'::text])))"}];
 const reply=()=>({code:200,data:null,headers:{},
  setHeader(k,v){this.headers[k]=v;},
@@ -37,8 +39,8 @@ const mockQueries=(names=[])=>async(sql,args)=>{
  names.push(sql);
  if(sql==='SELECT current_database() AS db_name')return {rows:[{db_name:expected}]};
  if(sql.includes('information_schema.columns')){
-  assert.deepEqual(args,[Object.keys(REQUIRED_MUSEUM_SCHEMA)]);
-  return {rows:schemaRows};
+  assert.deepEqual(args,[[...Object.keys(REQUIRED_MUSEUM_SCHEMA),...Object.keys(OPTIONAL_ASSET_SCHEMA)]]);
+  return {rows:[...schemaRows,...optionalRows]};
  }
  if(sql.includes('pg_constraint'))return {rows:statusCheck};
  throw Error('Unexpected or mutating SQL:'+sql);
@@ -50,7 +52,8 @@ test('schema report detects all five required tables, columns and trash status',
  assert.equal(result.tables.length,5);
  assert.equal(result.allReady,true);
  assert.equal(result.statusConstraintComplete,true);
- assert.equal(result.tables.every(x=>x.exists&&x.missing.length===0),true);
+ assert.equal(result.tables.every(x=>x.exists&&x.missing.length===0&&x.wrongTypes.length===0),true);
+ assert.equal(result.assetAuditReady,false,'optional override table not implied by museum readiness');
 });
 test('schema report fails closed on missing column, constraint and identity',()=>{
  const noTrash=schemaRows.filter(x=>x.column_name!=='trashed_at');
@@ -85,6 +88,7 @@ test('owner-authenticated preflight only reads system catalog metadata',async()=
   await handler(mockQueries(q))(request(),out);
   assert.equal(out.code,200);
   assert.equal(out.data.ok,true);assert.equal(out.data.allReady,true);
+  assert.equal(out.data.assetAuditReady,true);
   assert.equal(out.data.mode,'read_only');
   assert.equal(q.length,3);
   assert.ok(q.every(sql=>/^\s*SELECT\b/i.test(sql)),'all SQL must be read-only');
@@ -140,4 +144,27 @@ test('owner view has one-tap read-only readiness and authenticated route',()=>{
  assert.ok(vercel.builds.some(x=>x.src==='api-museum-preflight.js'&&x.use==='@vercel/node'));
  const start=page.indexOf('<script>'),end=page.indexOf('</script>',start);
  assert.doesNotThrow(()=>new Script(page.slice(start+8,end)));
+});
+
+test('wrong PostgreSQL column types fail closed even when names match',()=>{
+ const corrupted=schemaRows.map(row=>row.table_name==='museum_public_exhibits'&&row.column_name==='revision'?
+  {...row,data_type:'text'}:row);
+ const report=museumSchemaReport({columns:corrupted,constraints:statusCheck,identityVerified:true});
+ assert.equal(report.schemaReady,false);
+ assert.ok(report.tables.find(x=>x.table==='museum_public_exhibits').wrongTypes.includes('revision'));
+ const missingType=schemaRows.map(row=>row.table_name==='museum_public_exhibits'&&row.column_name==='status'?
+  {...row,data_type:undefined}:row);
+ assert.equal(museumSchemaReport({columns:missingType,constraints:statusCheck,identityVerified:true}).allReady,false);
+});
+test('optional live-overrides table readiness is independent of museum publishing readiness',()=>{
+ const baseline=museumSchemaReport({columns:schemaRows,constraints:statusCheck,identityVerified:true});
+ assert.equal(baseline.allReady,true);
+ assert.equal(baseline.assetAuditReady,false);
+ const full=museumSchemaReport({columns:[...schemaRows,...optionalRows],constraints:statusCheck,identityVerified:true});
+ assert.equal(full.allReady,true);
+ assert.equal(full.assetAuditReady,true);
+ const partial=museumSchemaReport({columns:[...schemaRows,...optionalRows.filter(x=>x.column_name!=='thumbnail_url')],constraints:statusCheck,identityVerified:true});
+ assert.equal(partial.allReady,true);
+ assert.equal(partial.assetAuditReady,false);
+ assert.ok(partial.optionalTables[0].missing.includes('thumbnail_url'));
 });
