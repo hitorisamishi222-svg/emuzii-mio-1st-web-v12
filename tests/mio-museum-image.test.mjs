@@ -121,7 +121,7 @@ test('stale revision never uploads and rolls back',async()=>{
   const handler=createImageHandler({
    PoolClass:fakePool(async sql=>{
     calls.push(sql);
-    if(sql.startsWith('SELECT revision FROM museum_public_exhibits'))return {rowCount:1,rows:[{revision:5}]};
+    if(sql.startsWith('SELECT revision,status FROM museum_public_exhibits'))return {rowCount:1,rows:[{revision:5}]};
     return {rowCount:1,rows:[]};
    }),verifyAdmin:async()=>({id:UID,role:'owner'}),
    putBlob:async()=>{blobCalls++;throw Error('Unexpected upload');}
@@ -156,7 +156,7 @@ test('photo replacement returns exhibit to draft and keeps old Blob for recovery
   const handler=createImageHandler({
    PoolClass:fakePool(async(sql,args)=>{
     calls.push(sql);
-    if(sql.startsWith('SELECT revision FROM museum_public_exhibits'))
+    if(sql.startsWith('SELECT revision,status FROM museum_public_exhibits'))
      return {rowCount:1,rows:[{revision:3}]};
     if(sql.startsWith('UPDATE museum_public_exhibits')){
      assert.match(sql,/status='draft'/);
