@@ -8,6 +8,7 @@ import pg from 'pg';
 import museumHandler from '../api-museum-exhibits.js';
 import preflightHandler from '../api-museum-preflight.js';
 import {createMuseumAssetReviewHandler} from '../api-museum-assets.js';
+import {createImageHandler} from '../api-museum-image.js';
 
 const {Pool}=pg;
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
@@ -53,6 +54,7 @@ test('real ephemeral PostgreSQL: schema, owner auth, full museum state cycle and
  process.env.MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED='true';
  process.env.MIO_MUSEUM_ASSET_REVIEW_ENABLED='true';
  process.env.BLOB_READ_WRITE_TOKEN='LOCAL_TEST_ONLY_NO_BLOB_CALL';
+ process.env.MIO_MUSEUM_IMAGE_UPLOAD_ENABLED='true';
  const pool=new Pool({connectionString:poolURL,max:2});
  try{
   assert.equal((await pool.query('SELECT current_database() AS name')).rows[0].name,TEST_DB);
@@ -172,9 +174,122 @@ test('real ephemeral PostgreSQL: schema, owner auth, full museum state cycle and
   assert.equal(images.data.items[0].references.museum,1);
   assert.equal(images.data.items[0].references.gallery,1);
   assert.equal(images.data.deletionEnabled,false);
+
+  // Exercise the REAL PostgreSQL transaction and audit tables with a fake in-memory
+  // Blob adapter. Never contact the real @vercel/blob service.
+  const rawWebp=Buffer.alloc(64);
+  rawWebp.write('RIFF',0);rawWebp.writeUInt32LE(56,4);rawWebp.write('WEBP',8);
+  const encoded={format:'webp',base64:rawWebp.toString('base64')};
+  const media=new Map(),deletedMedia=[];
+  let uploads=0;
+  const picture=createImageHandler({
+   putBlob:async(path,bytes,opts)=>{
+    assert.ok(path.startsWith('mio-museum/'));
+    assert.deepEqual(bytes,rawWebp);
+    assert.equal(opts.access,'public');
+    assert.equal(opts.contentType,'image/webp');
+    const url='https://ci-only.public.blob.vercel-storage.com/'+path;
+    media.set(url,Buffer.from(bytes));uploads++;
+    return {url};
+   },
+   delBlob:async url=>{
+    assert.ok(media.has(url),'only this fixture-created image may be deleted');
+    deletedMedia.push(url);
+    media.delete(url);
+   }
+  });
+  const originalCount=Number((await pool.query(
+   'SELECT count(*) AS count FROM museum_public_exhibits')).rows[0].count);
+  const makeImage=(action,extra={})=>({action,item:{
+   ...approvedItem,title:'CI用の画像下書き',imageUrl:''
+  },image:encoded,...extra});
+  const imCreate=await call(picture,'POST',makeImage('imageCreate'));
+  assert.equal(imCreate.code,200,JSON.stringify(imCreate.data));
+  const imId=imCreate.data.exhibit.id;
+  let imRev=imCreate.data.exhibit.revision;
+  const originalUrl=imCreate.data.exhibit.imageUrl;
+  assert.equal(media.size,1);
+  assert.equal((await pool.query(
+   'SELECT status FROM museum_public_exhibits WHERE id=$1',[imId]
+  )).rows[0].status,'draft');
+  assert.deepEqual((await call(museumHandler,'GET')).data.items,[],
+   'image upload must never publish the record');
+
+  const photoPublish=await call(museumHandler,'POST',{
+   action:'publish',id:imId,revision:imRev,rightsConfirmed:true,privacyConfirmed:true
+  },{scope:'admin'});
+  assert.equal(photoPublish.code,200);
+  assert.equal(photoPublish.data.item.status,'published');
+  imRev=photoPublish.data.item.revision;
+  assert.equal((await call(museumHandler,'GET')).data.items.length,1);
+  const replace=await call(picture,'POST',makeImage('imageUpdate',{id:imId,revision:imRev}));
+  assert.equal(replace.code,200,JSON.stringify(replace.data));
+  assert.equal(replace.data.exhibit.status,'draft');
+  assert.notEqual(replace.data.exhibit.imageUrl,originalUrl);
+  assert.ok(media.has(originalUrl),'old image kept for history and recovery');
+  assert.ok(media.has(replace.data.exhibit.imageUrl));
+  assert.equal(media.size,2);
+  assert.deepEqual((await call(museumHandler,'GET')).data.items,[],
+   'replacing a published image must immediately unpublish the exhibit');
+
+  const beforeStale=uploads;
+  const stalePicture=await call(picture,'POST',makeImage('imageUpdate',{id:imId,revision:imRev}));
+  assert.equal(stalePicture.code,409,'stale image update must be refused');
+  assert.equal(uploads,beforeStale,'stale revision must not upload anything');
+
+  imRev=replace.data.exhibit.revision;
+  const inTrash=await call(museumHandler,'POST',{
+   action:'trash',id:imId,revision:imRev,confirmedTitle:'CI用の画像下書き'
+  },{scope:'admin'});
+  assert.equal(inTrash.code,200);
+  const trashedPhoto=await call(picture,'POST',makeImage('imageUpdate',{
+   id:imId,revision:inTrash.data.item.revision
+  }));
+  assert.equal(trashedPhoto.code,409);
+  assert.equal(uploads,beforeStale,'trash must prevent replacement upload');
+
+  // Force an AUDIT INSERT failure using a real PostgreSQL constraint, not
+  // a stubbed query, then verify both DB rollback and new Blob cleanup.
+  await pool.query(
+   "ALTER TABLE gallery_admin_audit ADD CONSTRAINT ci_no_new_image_audit CHECK (action <> 'museum_image_created')"
+  );
+  const existingMedia=new Set(media.keys());
+  const auditedBefore=Number((await pool.query(
+   'SELECT count(*) AS count FROM museum_public_exhibits'
+  )).rows[0].count);
+  const badAudit=await call(picture,'POST',makeImage('imageCreate'));
+  assert.equal(badAudit.code,503);
+  assert.equal(badAudit.data.code,'MUSEUM_IMAGE_SAVE_FAILED');
+  assert.equal(Number((await pool.query(
+   'SELECT count(*) AS count FROM museum_public_exhibits'
+  )).rows[0].count),auditedBefore,'failed audit must roll back the exhibit row');
+  assert.deepEqual(new Set(media.keys()),existingMedia,
+   'failed audit must clean only the newly uploaded image');
+  assert.equal(deletedMedia.length,1);
+  assert.equal(media.has(originalUrl),true,'old Blob must never be deleted');
+
+  const badCookie=request('POST',makeImage('imageCreate'));
+  badCookie.headers.cookie='mio_gallery_session=invalid; mio_gallery_device=invalid';
+  const noOwner=res();
+  const uploadsBeforeDenied=uploads;
+  await picture(badCookie,noOwner);
+  assert.equal(noOwner.code,401);
+  assert.equal(uploads,uploadsBeforeDenied,'no image upload without a valid owner session');
+  assert.equal(media.size,2);
+  assert.equal(originalCount+2,auditedBefore,'only two fixture records were committed');
+  const imageAudits=(await pool.query(
+   "SELECT action FROM gallery_admin_audit WHERE actor_id=$1 AND action LIKE 'museum_image_%' ORDER BY occurred_at",
+   [ownerId]
+  )).rows.map(x=>x.action);
+  assert.deepEqual(imageAudits,['museum_image_created','museum_image_replaced']);
+  console.log('MUSEUM_IMAGE_POSTGRES_PASS '+JSON.stringify({
+   imageAudits:imageAudits.length,blobUploads:uploads,blobCleanup:deletedMedia.length,
+   originalImagePreserved:media.has(originalUrl),staleAndTrashBlocked:true,realBlobCalls:0
+  }));
+
   console.log('MUSEUM_EPHEMERAL_POSTGRES_PASS '+JSON.stringify({
    schemaReady:ready.data.allReady,foreignKeys:ready.data.foreignKeys.length,
-   auditRows:audit.rowCount,publicItemsAfterRestore:0,blobWrites:0
+   auditRows:audit.rowCount,publicItemsAfterRestore:0,realBlobWrites:0
   }));
  }finally{
   await pool.end();
@@ -182,7 +297,7 @@ test('real ephemeral PostgreSQL: schema, owner auth, full museum state cycle and
    'GALLERY_DATABASE_URL','MIO_MUSEUM_PREFLIGHT_ENABLED','MIO_MUSEUM_EXPECTED_DB_HOST',
    'MIO_MUSEUM_EXPECTED_DB_NAME','MIO_MUSEUM_ARCHIVE_EDIT_ENABLED',
    'MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED','MIO_MUSEUM_ASSET_REVIEW_ENABLED',
-   'BLOB_READ_WRITE_TOKEN'
+   'BLOB_READ_WRITE_TOKEN','MIO_MUSEUM_IMAGE_UPLOAD_ENABLED'
   ])delete process.env[k];
  }
 });
