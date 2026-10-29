@@ -16,6 +16,7 @@ on:
       - 'tests/mio-museum-phase2.test.mjs'
       - 'tests/mio-museum-image.test.mjs'
       - 'tests/mio-museum-trash-audit.test.mjs'
+      - 'tests/mio-museum-curate-ux.test.mjs'
       - '.github/workflows/mio-museum-phase2.yml'
   workflow_dispatch:
 permissions:
@@ -39,4 +40,4 @@ jobs:
           node --check museum-exhibits-core.js
           node --check museum-archive.js
       - name: Museum phase 1 and 2 contracts
-        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs
+        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs
