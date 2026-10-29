@@ -43,6 +43,10 @@ function gachaRapidOpen(){
   var html=HtmlService.createHtmlOutputFromFile('GachaRapidUI').setWidth(1100).setHeight(680);
   SpreadsheetApp.getUi().showModelessDialog(html,'🐳 10/30 ガチャ緊急管理');
 }
+function gachaRapidNameKey_(value){
+  // A weaker visual variation is not proof of a second person. Stop, never auto-link.
+  return String(value||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+}
 function gachaRapidRows_(sheet,columns,limit){
   if(!sheet)throw new Error('必要な管理タブがありません');
   var count=Math.min(Math.max(0,sheet.getLastRow()-1),limit);
@@ -103,7 +107,8 @@ function gachaRapidApproveAndGrant(req){
     if(same.length>1)throw new Error('同名参加者が複数います。本人照合後に元台帳で整理してください');
     var targetRow,master;
     if(targetId==='NEW'){
-      if(same.length)throw new Error('既存MIO-IDがあるため、新規作成できません');
+      if(rows.some(function(r){return r[1]&&gachaRapidNameKey_(r[1])===gachaRapidNameKey_(name);}))
+        throw new Error('同名・類似名の既存MIO-ID候補があります。新規発行せず本人確認してください');
       if(wd[7]||(wd[10]&&wd[10]!==webId))throw new Error('既存のMIO-ID候補があり、新規作成できません');
       for(var i=0;i<rows.length;i++){if(!rows[i][1]){targetRow=i+2;break;}}
       if(!targetRow)throw new Error('参加者台帳に空行がありません');
@@ -125,7 +130,7 @@ function gachaRapidApproveAndGrant(req){
     if(targetId!=='NEW'&&(g[0]!==master||g[1]!==name))throw new Error('ガチャ台帳のIDまたは名前が一致しません');
     if(Number(g[2])!==old1||Number(g[3])!==old3)throw new Error('別の管理者が口数を変更しました。再読み込みしてください');
     if(m1<Number(g[2])||m3<Number(g[3]))throw new Error('既存の口数は減らせません');
-    if(webs.some(function(w){return w[0]!==webId&&w[2]===name&&w[5]==='承認済み'&&w[7]&&w[7]!==master;}))throw new Error('同名の別IDが承認済みです。本人確認をやり直してください');
+    if(webs.some(function(w){return w[0]!==webId&&gachaRapidNameKey_(w[2])===gachaRapidNameKey_(name)&&w[5]==='承認済み'&&w[7]&&w[7]!==master;}))throw new Error('同名・類似名の別IDが承認済みです。本人確認をやり直してください');
     // All safety checks complete. Keep prizes, draws, participation and check-in data untouched.
     if(targetId==='NEW'){
       people.getRange(targetRow,2).setValue(name);
