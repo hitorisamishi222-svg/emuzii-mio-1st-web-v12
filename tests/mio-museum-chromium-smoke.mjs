@@ -175,6 +175,27 @@ try{
   assert.ok(!news.includes('下書き秘密のお知らせ'),'private announcement leaked');
   assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth+2"),true,'museum homepage horizontal overflow');
   await screenshot('museum-home-390.png');
+  // Run local-only mobile device readiness page through real Chromium.
+  for(const width of [320,375,390,430]){
+    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+    await navigate('/museum-device-check.html');
+    const metrics=await evaluate("(()=>({doc:document.documentElement.scrollWidth,button:document.querySelector('#runAuto').getBoundingClientRect().height,font:parseFloat(getComputedStyle(document.querySelector('#localPhoto')).fontSize)}))()");
+    assert.ok(metrics.doc<=width+2,'device check horizontal overflow '+width);
+    assert.ok(metrics.button>=48&&metrics.font>=16,'touch targets too small '+width);
+    if(width===390){
+      await evaluate("document.querySelector('#runAuto').click()");
+      await poll(()=>evaluate("document.querySelector('#autoStatus').textContent.includes('合格しました')"),15000,'local device auto check');
+      assert.equal(await evaluate("document.querySelector('#autoDetails').hidden"),false,'local results not shown');
+      const localPhoto=await evaluate("(async()=>{const b=await(await fetch('/assets/mio-bg-princess.jpg')).blob();const f=new File([b],'device-test.jpg',{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(f);const input=document.querySelector('#localPhoto');input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#tryPhoto').click();return true;})()");
+      assert.equal(localPhoto,true);
+      await poll(()=>evaluate("document.querySelector('#photoStatus').textContent.includes('成功しました')"),15000,'local photo conversion');
+      assert.equal(await evaluate("document.querySelector('#photoPreview').naturalWidth>0"),true,'photo conversion not previewed');
+      await screenshot('museum-device-check-390.png');
+      await evaluate("document.querySelector('#clearPhoto').click()");
+      assert.equal(await evaluate("document.querySelector('#photoPreview').hidden"),true,'device preview not cleared');
+      assert.equal(await evaluate("document.querySelector('#localPhoto').files.length"),0,'device photo selection not cleared');
+    }
+  }
   assert.deepEqual(browserWrites,[],'real mutations must never happen in browser smoke');
   assert.equal(requests.filter(x=>/\/api\/(?:gacha|attendance|checkin|status)/.test(x)).length,0,'do not access live participant or gacha API');
   console.log('MUSEUM_CHROME_PASS '+JSON.stringify({viewports:seen,readonly:true}));
