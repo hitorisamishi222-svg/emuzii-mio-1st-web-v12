@@ -52,16 +52,7 @@ server=http.createServer(async(req,res)=>{
     if(p.startsWith('/api/')){res.writeHead(404);res.end('No live API');return;}
     const file=resolve(cwd,p.replace(/^\/+/,'')||'index.html');
     if(!file.startsWith(cwd+sep))throw Error('path traversal');
-    let data=await readFile(file);
-    if(p==='/museum-curate.html'){
-      // Test-only instrumentation: reveal why owner UI initialization was rejected.
-      let html=data.toString('utf8');
-      const old=" }catch{\\n  $('editor').hidden=true;";
-      const changed=" }catch(error){\\n  document.body.dataset.mockLoadError=String(error?.message||error);\\n  $('editor').hidden=true;";
-      if(html.includes(old.replaceAll('\\n','\n')))
-        html=html.replace(old.replaceAll('\\n','\n'),changed.replaceAll('\\n','\n'));
-      data=Buffer.from(html,'utf8');
-    }
+    const data=await readFile(file);
     res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});
     res.end(data);
   }catch{res.writeHead(404);res.end('Not found')}
@@ -135,7 +126,7 @@ try{
     await navigate('/museum-curate.html');
     await poll(()=>evaluate("document.querySelector('#editor')?.hidden===false"),12000,'owner fixture')
       .catch(async e=>{
-        const state=await evaluate("(()=>({path:location.pathname,ready:document.readyState,auth:document.querySelector('#authStatus')?.textContent,unavailable:document.querySelector('#unavailable')?.hidden,editor:document.querySelector('#editor')?.hidden,buttons:!!document.querySelector('#save'),cause:document.body.dataset.mockLoadError||''}))()");
+        const state=await evaluate("(()=>({path:location.pathname,ready:document.readyState,auth:document.querySelector('#authStatus')?.textContent,unavailable:document.querySelector('#unavailable')?.hidden,editor:document.querySelector('#editor')?.hidden,buttons:!!document.querySelector('#save')}))()");
         throw Error(e.message+'; state='+JSON.stringify(state)+'; exceptions='+JSON.stringify(browserExceptions.slice(0,3)));
       });
     const state=await evaluate("(()=>{const b=document.querySelector('#save').getBoundingClientRect();return {width:innerWidth,doc:document.documentElement.scrollWidth,buttonWidth:b.width,buttonHeight:b.height,enabled:!document.querySelector('#save').disabled,detailsClosed:['optionalFields','extraLinks','dangerActions','assetAuditPanel'].every(id=>!document.getElementById(id).open),fontSize:parseFloat(getComputedStyle(document.querySelector('#title')).fontSize)}})()");
