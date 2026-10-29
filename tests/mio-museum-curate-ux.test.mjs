@@ -105,7 +105,10 @@ test('changing content cannot silently publish edits that were never saved',()=>
  assert.match(js,/if\(action==='publish'&&contentDirty\)/);
  assert.match(js,/入力内容に未保存の変更があります/);
  assert.match(js,/rightsConfirmed','privacyConfirmed/);
- assert.match(js,/if\(imageRequestStarted\)saveNeedsReview=true/);
+ assert.match(js,/if\(writeRequestStarted\)saveNeedsReview=true/);
  assert.match(js,/saveNeedsReview=false/);
+ assert.match(js,/writeRequestStarted=true/);
+ assert.match(js,/const refreshed=await load\(/);
+ assert.match(html,/id="retryLogin"/);
  assert.match(js,/selected\?\.status==='trash'/);
 });
