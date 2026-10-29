@@ -144,6 +144,14 @@ h1{line-height:1.45}h2{line-height:1.5}}
  <p class="note">「公開停止」は展示を隠し、「ゴミ箱」は展示の記録を復元できる状態で保管します。どちらも画像ファイル自体は削除しません。公開用画像のURLが分かれば閲覧できる場合があるため、完全削除が必要な画像は別途安全確認が必要です。</p>
  <p id="saveStatus" class="status" role="status" aria-live="polite"></p>
 </div>
+<details class="panel advanced" id="preflightPanel">
+ <summary>🔍 公開前のDB安全チェック（読み取りのみ）</summary>
+ <p class="note">翠央記念館を公開する前に、専用の管理者DBを確認します。接続情報は表示せず、DBを変更しません。</p>
+ <button type="button" id="runPreflight">DBと展示用テーブルを確認する</button>
+ <p id="preflightStatus" class="status" role="status" aria-live="polite">安全点検はまだ実行していません。</p>
+ <div id="preflightTables" class="note" aria-label="必要テーブルの確認結果"></div>
+ <p class="alert">このチェックだけでは本番公開できません。DB接続先・バックアップの管理者確認、実機・実保存試験が別途必要です。</p>
+</details>
 <details class="panel advanced" id="assetAuditPanel">
  <summary>🧹 保存画像の参照チェック（管理用）</summary>
  <h2>画像の利用状況を確認</h2>
@@ -411,6 +419,49 @@ async function scanAssets(next=false){
   assetBusy=false;$('assetRefresh').disabled=false;$('assetNext').disabled=!assetCursor;
  }
 }
+async function checkPreflight(){
+ const button=$('runPreflight');button.disabled=true;
+ $('preflightStatus').textContent='データの変更なしで確認しています…';
+ $('preflightTables').replaceChildren();
+ try{
+  const response=await fetch('/api/gallery/museum/preflight',{
+   method:'GET',credentials:'same-origin',cache:'no-store'
+  });
+  const data=await response.json();
+  if(!response.ok||data.ok!==true){
+   const code=data.code||'UNAVAILABLE';
+   if(code==='PREFLIGHT_CLOSED')throw Error('点検は現在停止中です。安全確認後に設定します。');
+   if(code==='ADMIN_LOGIN_REQUIRED'||code==='MUSEUM_OWNER_ONLY')throw Error('管理者の認証・端末承認が必要です。');
+   throw Error('DB点検を完了できませんでした（'+code+'）。');
+  }
+  if(!Array.isArray(data.tables))throw Error('点検結果の形式を確認できません。');
+  const captions={
+   gallery_admin_users:'管理者',
+   gallery_admin_devices:'承認端末',
+   gallery_admin_sessions:'ログイン',
+   gallery_admin_audit:'操作履歴',
+   museum_public_exhibits:'思い出展示'
+  };
+  for(const entry of data.tables){
+   if(!Object.hasOwn(captions,entry.table))continue;
+   const p=document.createElement('p');
+   const missing=Array.isArray(entry.missing)?entry.missing:[];
+   const ready=entry.exists===true&&missing.length===0;
+   p.textContent=(ready?'✅ ':'⚠️ ')+captions[entry.table]+
+    (ready?'：構成OK':'：不足あり（'+missing.length+'項目）');
+   $('preflightTables').append(p);
+  }
+  const passed=data.allReady===true&&data.mode==='read_only';
+  $('preflightStatus').textContent=passed?
+   '✅ テーブル構成と接続先照合は合格です。ただし実保存・実機確認前なので公開不可です。':
+   '⚠️ まだ公開できません。テーブル構成：'+(data.schemaReady?'確認済み':'未完了')+
+   ' ／ 接続先照合：'+(data.identityVerified?'確認済み':'未確認')+
+   ' ／ 公開状態の制約：'+(data.statusConstraintComplete?'確認済み':'未確認');
+ }catch(e){
+  $('preflightStatus').textContent='⚠️ '+e.message;
+ }finally{button.disabled=false;}
+}
+$('runPreflight').addEventListener('click',checkPreflight);
 $('assetRefresh').addEventListener('click',()=>scanAssets(false));
 $('assetNext').addEventListener('click',()=>scanAssets(true));
 load('');
