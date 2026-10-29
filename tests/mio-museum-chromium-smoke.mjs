@@ -151,6 +151,8 @@ try{
   await poll(()=>evaluate("document.querySelector('#editor')?.hidden===false"),15000,'owner controls');
   await evaluate("(()=>{const s=document.querySelector('#selectExhibit');s.value='"+fixtureId+"';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
   assert.equal(await evaluate("document.querySelector('#title').value"),'翠央 初期アイコン');
+  // The saved image is lazily loaded; scroll it into view before checking decode.
+  await evaluate("document.querySelector('#savedImagePreview').scrollIntoView({block:'center',behavior:'instant'})");
   await poll(()=>evaluate("!document.querySelector('#savedImagePreview').hidden&&document.querySelector('#savedImagePreviewImg').naturalWidth>0"),15000,'saved image preview');
   await evaluate("(()=>{const search=document.querySelector('#exhibitSearch');search.value='翠央';search.dispatchEvent(new Event('input',{bubbles:true}));const filter=document.querySelector('#exhibitFilter');filter.value='published';filter.dispatchEvent(new Event('change',{bubbles:true}));})()");
   assert.equal(await evaluate("document.querySelector('#selectExhibit').value"),fixtureId,'filter lost selected item');
