@@ -2,16 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {Script} from 'node:vm';
-import {REQUIRED_MUSEUM_SCHEMA,OPTIONAL_ASSET_SCHEMA,REQUIRED_COLUMN_TYPES,museumSchemaReport} from '../museum-preflight-core.js';
+import {REQUIRED_MUSEUM_SCHEMA,OPTIONAL_ASSET_SCHEMA,REQUIRED_COLUMN_TYPES,REQUIRED_NOT_NULL,REQUIRED_FOREIGN_KEYS,museumSchemaReport} from '../museum-preflight-core.js';
 import {createMuseumPreflightHandler} from '../api-museum-preflight.js';
 
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const expected='museum_safe_test';
 const schemaRows=Object.entries(REQUIRED_MUSEUM_SCHEMA).flatMap(([table_name,fields])=>
- fields.map(column_name=>({table_name,column_name,data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text'})));
+ fields.map(column_name=>({table_name,column_name,data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text',is_nullable:(REQUIRED_NOT_NULL[table_name]||[]).includes(column_name)?'NO':'YES'})));
 const optionalRows=Object.entries(OPTIONAL_ASSET_SCHEMA).flatMap(([table_name,fields])=>
  fields.map(column_name=>({table_name,column_name,data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text'})));
-const statusCheck=[{definition:"CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'hidden'::text, 'trash'::text])))"}];
+const statusCheck=[{table_name:'museum_public_exhibits',contype:'c',validated:true,definition:"CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'hidden'::text, 'trash'::text])))"}];
+const fkChecks=REQUIRED_FOREIGN_KEYS.map(([table,column,refTable,refColumn])=>({
+ table_name:table,contype:'f',validated:true,definition:'FOREIGN KEY ('+column+') REFERENCES '+refTable+'('+refColumn+')'
+}));
+const allChecks=[...statusCheck,...fkChecks];
 const reply=()=>({code:200,data:null,headers:{},
  setHeader(k,v){this.headers[k]=v;},
  status(n){this.code=n;return this;},
@@ -42,25 +46,25 @@ const mockQueries=(names=[])=>async(sql,args)=>{
   assert.deepEqual(args,[[...Object.keys(REQUIRED_MUSEUM_SCHEMA),...Object.keys(OPTIONAL_ASSET_SCHEMA)]]);
   return {rows:[...schemaRows,...optionalRows]};
  }
- if(sql.includes('pg_constraint'))return {rows:statusCheck};
+ if(sql.includes('pg_constraint')){assert.deepEqual(args,[Object.keys(REQUIRED_MUSEUM_SCHEMA)]);return {rows:allChecks};}
  throw Error('Unexpected or mutating SQL:'+sql);
 };
 const handler=(query,verify=async()=>({id:'test-id',role:'owner'}))=>
  createMuseumPreflightHandler({PoolClass:fakePool(query),verifyAdmin:verify});
 test('schema report detects all five required tables, columns and trash status',()=>{
- const result=museumSchemaReport({columns:schemaRows,constraints:statusCheck,identityVerified:true});
+ const result=museumSchemaReport({columns:schemaRows,constraints:allChecks,identityVerified:true});
  assert.equal(result.tables.length,5);
  assert.equal(result.allReady,true);
  assert.equal(result.statusConstraintComplete,true);
- assert.equal(result.tables.every(x=>x.exists&&x.missing.length===0&&x.wrongTypes.length===0),true);
+ assert.equal(result.tables.every(x=>x.exists&&x.missing.length===0&&x.wrongTypes.length===0&&x.wrongNullability.length===0),true);
  assert.equal(result.assetAuditReady,false,'optional override table not implied by museum readiness');
 });
 test('schema report fails closed on missing column, constraint and identity',()=>{
  const noTrash=schemaRows.filter(x=>x.column_name!=='trashed_at');
- assert.equal(museumSchemaReport({columns:noTrash,constraints:statusCheck,identityVerified:true}).schemaReady,false);
+ assert.equal(museumSchemaReport({columns:noTrash,constraints:allChecks,identityVerified:true}).schemaReady,false);
  assert.equal(museumSchemaReport({columns:schemaRows,constraints:[],identityVerified:true}).allReady,false);
- assert.equal(museumSchemaReport({columns:schemaRows,constraints:statusCheck,identityVerified:false}).allReady,false);
- assert.equal(museumSchemaReport({columns:schemaRows,constraints:[{definition:"CHECK (description <> 'draft' AND title <> 'trash' AND credit <> 'hidden' AND kind <> 'published')"}],identityVerified:true}).statusConstraintComplete,false);
+ assert.equal(museumSchemaReport({columns:schemaRows,constraints:allChecks,identityVerified:false}).allReady,false);
+ assert.equal(museumSchemaReport({columns:schemaRows,constraints:[...fkChecks,{table_name:'museum_public_exhibits',contype:'c',validated:true,definition:"CHECK (description <> 'draft' AND title <> 'trash' AND credit <> 'hidden' AND kind <> 'published')"}],identityVerified:true}).statusConstraintComplete,false);
  assert.throws(()=>museumSchemaReport({columns:null,constraints:[],identityVerified:true}),TypeError);
 });
 test('readiness endpoint is opt-in; closed by default with no DB connection',async()=>{
@@ -149,21 +153,21 @@ test('owner view has one-tap read-only readiness and authenticated route',()=>{
 test('wrong PostgreSQL column types fail closed even when names match',()=>{
  const corrupted=schemaRows.map(row=>row.table_name==='museum_public_exhibits'&&row.column_name==='revision'?
   {...row,data_type:'text'}:row);
- const report=museumSchemaReport({columns:corrupted,constraints:statusCheck,identityVerified:true});
+ const report=museumSchemaReport({columns:corrupted,constraints:allChecks,identityVerified:true});
  assert.equal(report.schemaReady,false);
  assert.ok(report.tables.find(x=>x.table==='museum_public_exhibits').wrongTypes.includes('revision'));
  const missingType=schemaRows.map(row=>row.table_name==='museum_public_exhibits'&&row.column_name==='status'?
   {...row,data_type:undefined}:row);
- assert.equal(museumSchemaReport({columns:missingType,constraints:statusCheck,identityVerified:true}).allReady,false);
+ assert.equal(museumSchemaReport({columns:missingType,constraints:allChecks,identityVerified:true}).allReady,false);
 });
 test('optional live-overrides table readiness is independent of museum publishing readiness',()=>{
- const baseline=museumSchemaReport({columns:schemaRows,constraints:statusCheck,identityVerified:true});
+ const baseline=museumSchemaReport({columns:schemaRows,constraints:allChecks,identityVerified:true});
  assert.equal(baseline.allReady,true);
  assert.equal(baseline.assetAuditReady,false);
- const full=museumSchemaReport({columns:[...schemaRows,...optionalRows],constraints:statusCheck,identityVerified:true});
+ const full=museumSchemaReport({columns:[...schemaRows,...optionalRows],constraints:allChecks,identityVerified:true});
  assert.equal(full.allReady,true);
  assert.equal(full.assetAuditReady,true);
- const partial=museumSchemaReport({columns:[...schemaRows,...optionalRows.filter(x=>x.column_name!=='thumbnail_url')],constraints:statusCheck,identityVerified:true});
+ const partial=museumSchemaReport({columns:[...schemaRows,...optionalRows.filter(x=>x.column_name!=='thumbnail_url')],constraints:allChecks,identityVerified:true});
  assert.equal(partial.allReady,true);
  assert.equal(partial.assetAuditReady,false);
  assert.ok(partial.optionalTables[0].missing.includes('thumbnail_url'));
@@ -180,4 +184,24 @@ test('checked-in manual DB inventory cannot alter any table or participant data'
  const executable=sql.split('\n').filter(line=>!line.trim().startsWith('--')).join('\n');
  assert.doesNotMatch(executable,/\b(?:INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE|GRANT|REVOKE)\b/i);
  assert.doesNotMatch(executable,/https?:\/\/|[a-z0-9.+-]+@[^ /]+:5432/i,'inventory must not include a credential or host');
+});
+
+test('missing owner foreign key blocks release even when columns and status CHECK match',()=>{
+ const withoutFK=allChecks.filter(x=>!x.definition.includes('FOREIGN KEY (reviewed_by)'));
+ const result=museumSchemaReport({columns:schemaRows,constraints:withoutFK,identityVerified:true});
+ assert.equal(result.schemaReady,false);
+ assert.equal(result.constraintsReady,false);
+ assert.equal(result.foreignKeys.find(x=>x.column==='reviewed_by').present,false);
+});
+test('nullable owner/device columns or unvalidated FK never pass readiness',()=>{
+ const nullable=schemaRows.map(row=>row.table_name==='gallery_admin_sessions'&&row.column_name==='token_hash'?
+  {...row,is_nullable:'YES'}:row);
+ const result=museumSchemaReport({columns:nullable,constraints:allChecks,identityVerified:true});
+ assert.equal(result.allReady,false);
+ assert.ok(result.tables.find(x=>x.table==='gallery_admin_sessions').wrongNullability.includes('token_hash'));
+ const unvalidated=allChecks.map(row=>row.contype==='f'?{...row,validated:false}:row);
+ assert.equal(museumSchemaReport({columns:schemaRows,constraints:unvalidated,identityVerified:true}).constraintsReady,false);
+ const noMeta=schemaRows.map(row=>row.table_name==='museum_public_exhibits'&&row.column_name==='reviewed_by'?
+  {...row,is_nullable:undefined}:row);
+ assert.equal(museumSchemaReport({columns:noMeta,constraints:allChecks,identityVerified:true}).allReady,false);
 });
