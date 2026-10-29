@@ -251,7 +251,7 @@ test('real ephemeral PostgreSQL: schema, owner auth, full museum state cycle and
   // Force an AUDIT INSERT failure using a real PostgreSQL constraint, not
   // a stubbed query, then verify both DB rollback and new Blob cleanup.
   await pool.query(
-   "ALTER TABLE gallery_admin_audit ADD CONSTRAINT ci_no_new_image_audit CHECK (action <> 'museum_image_created')"
+   "ALTER TABLE gallery_admin_audit ADD CONSTRAINT ci_no_new_image_audit CHECK (action <> 'museum_image_created') NOT VALID"
   );
   const existingMedia=new Set(media.keys());
   const auditedBefore=Number((await pool.query(
