@@ -81,6 +81,12 @@ try{
     socket.addEventListener('error',fail,{once:true});
   });
   const waiting=new Map();let nextId=0;const requests=[];
+  const browserExceptions=[];
+  socket.addEventListener('message',event=>{
+    const msg=JSON.parse(event.data);
+    if(msg.method==='Runtime.exceptionThrown')
+      browserExceptions.push(msg.params.exceptionDetails?.exception?.description||msg.params.exceptionDetails?.text||'Browser exception');
+  });
   socket.addEventListener('message',event=>{
     const msg=JSON.parse(event.data);
     if(msg.method==='Network.requestWillBeSent')requests.push(msg.params.request.url);
@@ -118,7 +124,11 @@ try{
   for(const width of [320,375,390,430]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
     await navigate('/museum-curate.html');
-    await poll(()=>evaluate("document.querySelector('#editor')?.hidden===false"),15000,'owner fixture');
+    await poll(()=>evaluate("document.querySelector('#editor')?.hidden===false"),12000,'owner fixture')
+      .catch(async e=>{
+        const state=await evaluate("(()=>({path:location.pathname,ready:document.readyState,auth:document.querySelector('#authStatus')?.textContent,unavailable:document.querySelector('#unavailable')?.hidden,editor:document.querySelector('#editor')?.hidden,buttons:!!document.querySelector('#save')}))()");
+        throw Error(e.message+'; state='+JSON.stringify(state)+'; exceptions='+JSON.stringify(browserExceptions.slice(0,3)));
+      });
     const state=await evaluate("(()=>{const b=document.querySelector('#save').getBoundingClientRect();return {width:innerWidth,doc:document.documentElement.scrollWidth,buttonWidth:b.width,buttonHeight:b.height,enabled:!document.querySelector('#save').disabled,detailsClosed:['optionalFields','extraLinks','dangerActions','assetAuditPanel'].every(id=>!document.getElementById(id).open),fontSize:parseFloat(getComputedStyle(document.querySelector('#title')).fontSize)}})()");
     assert.ok(state.doc<=width+2,'horizontal overflow at '+width+': '+JSON.stringify(state));
     assert.ok(state.enabled&&state.buttonWidth>=100&&state.buttonHeight>=45,'save button usability at '+width);
