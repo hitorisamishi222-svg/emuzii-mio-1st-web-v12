@@ -578,6 +578,30 @@
       }
     },
     {
+      "src": "/api/gallery/museum/exhibits",
+      "dest": "/api-museum-exhibits.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/image",
+      "dest": "/api-museum-image.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/assets",
+      "dest": "/api-museum-assets.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
       "src": "/api/museum/exhibits",
       "dest": "/api-museum-exhibits.js",
       "headers": {
