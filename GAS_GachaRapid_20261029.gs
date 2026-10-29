@@ -141,6 +141,7 @@ function gachaRapidApproveAndGrant(req){
     web.getRange(webRow,12).setValue('確認済み');
     web.getRange(webRow,13).setValue(new Date());
     web.getRange(webRow,7).setValue('確認済み'); // G: membership confirmed
+    if(String(wd[16]||'')!=='使用中')web.getRange(webRow,17).setValue('使用中'); // Q: verified active browser
     web.getRange(webRow,6).setValue('承認済み'); // F: approval
     SpreadsheetApp.flush();
     var a=web.getRange(webRow,1,1,20).getDisplayValues()[0];
