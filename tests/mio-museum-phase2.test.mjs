@@ -196,6 +196,23 @@ test('draft editing alone can never mark an exhibit published',async()=>{
  });
  assert.equal(sqlCalls.some(x=>/^BEGIN|^UPDATE|^INSERT/.test(x)),false);
 });
+test('owner UI receives a separate publish toggle from the server',async()=>{
+ await withDB(async(sql,args)=>{
+  const owner=identity(sql,args);if(owner)return owner;
+  if(sql.includes('FROM museum_public_exhibits'))return {rows:[],rowCount:0};
+  throw Error('Unrelated query attempted');
+ },async()=>{
+  process.env.MIO_MUSEUM_ARCHIVE_EDIT_ENABLED='true';
+  delete process.env.MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED;
+  const closed=reply();await handler(request('GET',undefined,{scope:'admin'}),closed);
+  assert.equal(closed.code,200);
+  assert.equal(closed.data.editable,true);
+  assert.equal(closed.data.publishEnabled,false);
+  process.env.MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED='true';
+  const open=reply();await handler(request('GET',undefined,{scope:'admin'}),open);
+  assert.equal(open.code,200);assert.equal(open.data.publishEnabled,true);
+ });
+});
 test('archive pages are linked, responsive and search-safe',()=>{
  const base=new URL('../',import.meta.url);
  const read=name=>readFileSync(new URL(name,base),'utf8');
