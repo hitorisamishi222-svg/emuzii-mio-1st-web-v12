@@ -388,6 +388,50 @@
     {
       "src": "sitemap.xml",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-curate.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-museum-exhibits.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "museum-image-client.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-museum-image.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-museum-assets.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "museum-device-check.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-device-check.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-museum-preflight.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -535,6 +579,115 @@
       "dest": "/sitemap.xml",
       "headers": {
         "Content-Type": "application/xml; charset=utf-8"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/preflight",
+      "dest": "/api-museum-preflight.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/exhibits",
+      "dest": "/api-museum-exhibits.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/image",
+      "dest": "/api-museum-image.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/gallery/museum/assets",
+      "dest": "/api-museum-assets.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/museum/exhibits",
+      "dest": "/api-museum-exhibits.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.html",
+      "dest": "/museum-archive.html",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.css",
+      "dest": "/museum-archive.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.js",
+      "dest": "/museum-archive.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-curate.html",
+      "dest": "/museum-curate.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-image-client.js",
+      "dest": "/museum-image-client.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/museum/image",
+      "dest": "/api-museum-image.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/museum/assets",
+      "dest": "/api-museum-assets.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-device-check.html",
+      "dest": "/museum-device-check.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer"
+      }
+    },
+    {
+      "src": "/museum-device-check.js",
+      "dest": "/museum-device-check.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
       }
     },
     {

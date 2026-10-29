@@ -26,7 +26,7 @@ test('public museum and profile have titles, canonical URLs and Japanese content
 });
 test('navigation is public and has no broken local exhibit links',()=>{
  const pathRegexp=/<a\b[^>]*\bhref="(\/[^"#?]*)(?:[?#][^"]*)?"/g;
- const publicRoutes=new Set(['/','/museum.html','/mio-profile.html','/gallery.html','/announcements.html']);
+ const publicRoutes=new Set(['/','/museum.html','/mio-profile.html','/museum-archive.html','/gallery.html','/announcements.html']);
  for(const page of [muse,profile]){
   for(const match of page.matchAll(pathRegexp)){
    assert.ok(publicRoutes.has(match[1]),'unexpected or private link '+match[1]);
@@ -34,7 +34,9 @@ test('navigation is public and has no broken local exhibit links',()=>{
   assert.doesNotMatch(page,/href="\/admin-hub.html"|href="\/gallery-manage.html"/);
  }
  assert.match(muse,/歴代アイコン館/);
- assert.match(muse,/展示準備中/);
+ assert.match(muse,/href="\/museum-archive\.html\?kind=icons"/);
+ assert.match(muse,/href="\/museum-archive\.html\?kind=moments"/);
+ assert.match(muse,/href="\/museum-archive\.html\?kind=events"/);
  assert.match(muse,/登録せず/);
 });
 test('existing homepage has a museum entry without losing attendance or gacha links',()=>{

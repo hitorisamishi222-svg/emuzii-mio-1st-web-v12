@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#07192f">
+<title>翠央記念館｜思い出の展示管理</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at top right,#24518b88,transparent 45%),linear-gradient(155deg,#06162f,#12375e,#071729);color:#f0f8ff;font:16px/1.7 system-ui,-apple-system,"Noto Sans JP",sans-serif}
+main{max-width:840px;padding:22px 16px 90px;margin:auto}
+h1{font-size:clamp(24px,5vw,33px)}h2{font-size:20px;margin:0 0 14px}
+nav{display:flex;flex-wrap:wrap;gap:12px}a{color:#b8e6ff}
+.panel{border:1px solid #9dd1ee8c;background:#0a2c52f0;border-radius:17px;padding:20px;margin:20px 0}
+label{display:block;font-weight:750;margin:13px 0 6px}
+input,textarea,select{font-size:16px;width:100%;min-height:48px;border:1px solid #9bcfeb;border-radius:10px;background:#061b36;color:#fff;padding:11px;font:inherit}
+textarea{min-height:100px;resize:vertical}
+input[type=checkbox]{width:auto;min-height:auto;accent-color:#e5cb9b;transform:scale(1.15)}
+.check{display:flex;align-items:flex-start;gap:12px;font-weight:650;margin-top:17px}
+.actions{display:flex;flex-wrap:wrap;gap:9px}
+button{cursor:pointer;min-height:48px;padding:11px 15px;border-radius:11px;border:1px solid #a7c9ed;background:#1b4f7e;color:white;font:750 15px system-ui}
+button.primary{background:#f3dfb3;color:#12304e;border-color:#f8e5bd}
+button:disabled{opacity:.45;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #ffe4b0;outline-offset:2px}
+.note{color:#c5dfef;font-size:14px}.alert{color:#ffe2b5}.status{background:#102844;border-radius:11px;border:1px solid #8fbddc77;padding:12px 14px;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+.steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+.steps span{font-size:13px;font-weight:800;background:#174971;border:1px solid #9ac6e17e;border-radius:999px;padding:5px 11px}
+.step-heading{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:850;margin:18px 0 5px}
+.step-heading .num{display:inline-grid;place-items:center;flex:none;width:29px;height:29px;border-radius:50%;background:#e9d9ab;color:#163755}
+.action-bar{position:sticky;bottom:0;z-index:3;background:#0b2b4ef2;border:1px solid #8bb8d882;box-shadow:0 -8px 25px #0006;border-radius:14px;padding:12px;margin-top:18px}
+.action-bar .actions button{flex:1 1 180px}
+details.advanced{border:1px solid #75b3da75;border-radius:12px;padding:12px 15px;margin:15px 0;background:#0b2545}
+details.advanced summary{cursor:pointer;font-weight:800;padding:5px 0;min-height:38px}
+details.advanced[open] summary{border-bottom:1px solid #91c2de60;margin-bottom:10px}
+.mini-summary{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.mini-summary span{display:inline-block;border:1px solid #8bb8d580;border-radius:10px;background:#09223e;padding:7px 10px;font-size:13px}
+.preview-box{margin:10px 0;padding:10px;border:1px solid #b3d1ec88;border-radius:12px;background:#071b34}
+.preview-box img{display:block;max-height:310px;max-width:100%;object-fit:contain;margin:auto}
+.preview-box figcaption{font-size:13px;color:#d5e8f5;margin-top:8px;text-align:center}
+@media(max-width:600px){main{padding:13px 12px 70px}.panel{padding:15px;margin:13px 0}.actions button{flex:1 1 100%}
+.action-bar{margin:14px -5px 0;padding:10px}.action-bar .actions button{flex:1 1 45%}.action-bar .actions .primary{flex:1 1 100%}
+h1{line-height:1.45}h2{line-height:1.5}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style></head><body><main>
+<nav aria-label="管理画面への移動"><a href="/gallery-manage.html">← ギャラリー管理</a><a href="/museum-archive.html">思い出の公開展示を確認</a><a href="/museum.html">記念館トップ</a><a href="/museum-device-check.html">📱 スマホ動作チェック</a></nav>
+<h1>💎 思い出展示の管理</h1>
+<p class="note">かんたん3ステップ：<strong>①種類を選ぶ → ②写真と内容を確認 → ③下書き保存</strong>。公開は保存後に別のボタンで行います。</p>
+<p class="note">公開用の歴代アイコン、思い出スクショ、イベント記録をひとつの管理画面から扱います。翠央記念館のオーナー権限と承認済み端末が必要です。</p>
+<section class="panel">
+<h2>🔐 管理者・端末確認</h2><p id="authStatus" role="status" aria-live="polite">確認しています…</p>
+<div id="unavailable" hidden class="note">現在この端末からは展示を編集できません。認証状態または展示用データベースの準備を確認してください。
+ <p><button type="button" id="retryLogin">🔄 認証と展示一覧を再確認する</button></p>
+</div>
+</section>
+<section id="editor" hidden>
+<div class="panel">
+ <h2>① 新しく作る・作品を選ぶ</h2>
+ <p class="note">新しい思い出を作る場合は「＋新しい思い出」を選択。過去の作品を直す場合は名前で探せます。</p>
+ <div id="exhibitSummary" class="mini-summary" aria-live="polite"></div>
+ <label for="exhibitSearch">作品を名前で探す</label>
+ <input id="exhibitSearch" type="search" placeholder="例：アイコン、イベント">
+ <label for="exhibitFilter">表示する状態</label>
+ <select id="exhibitFilter">
+  <option value="all">すべての状態</option>
+  <option value="draft">下書き</option>
+  <option value="published">公開中</option>
+  <option value="hidden">公開停止中</option>
+  <option value="trash">ゴミ箱</option>
+ </select>
+ <label for="selectExhibit">編集する展示</label>
+ <select id="selectExhibit"><option value="">＋ 新しい思い出を登録</option></select>
+ <div class="actions" style="margin-top:12px">
+  <button type="button" id="newExhibit">＋ 新しい思い出を登録</button>
+  <button type="button" id="reload">最新の展示を読み直す</button>
+ </div>
+ <p class="note">作成・変更した内容は必ず下書きに戻ります。確認後、別の「公開」操作をしてください。</p>
+</div>
+<div class="panel">
+ <h2 id="editorTitle">② 新しい思い出を登録</h2>
+ <p class="note">よく使う項目だけを上から順番に入力できます。</p>
+ <form id="exhibitForm">
+  <div class="step-heading"><span class="num">1</span> 何の思い出？</div>
+  <label for="kind">展示の種類</label>
+  <select id="kind" required><option value="icons">👑 歴代アイコン</option><option value="moments">📸 思い出アルバム</option><option value="events">🏆 イベントの記録</option></select>
+  <label for="title">展示タイトル</label>
+  <input id="title" maxlength="120" required placeholder="例：初めてのアイコン">
+  <div class="step-heading"><span class="num">2</span> 写真と思い出の内容</div>
+  <label for="occurredOn">思い出の日付（分かる場合）</label>
+  <input id="occurredOn" type="date">
+  <label for="description">思い出・イベントの説明</label>
+  <textarea id="description" maxlength="2000" placeholder="記録に残したい内容を入力"></textarea>
+  <details class="advanced" id="optionalFields">
+   <summary>詳細設定・画像URL・クレジット（必要なときだけ）</summary>
+  <label for="credit">作品の制作者・クレジット（任意）</label>
+  <input id="credit" maxlength="80" placeholder="掲載許可を得た名前">
+  <label for="imageUrl">公開画像のURL</label>
+  <input id="imageUrl" maxlength="1024" placeholder="/assets/ファイル名.webp">
+  <p class="note">既存画像のURLを入力するか、スマホから写真を選んでください。写真を選んだ場合は、端末内で縮小・位置情報等のメタデータを除いた新しい画像を作って保存します。</p>
+  </details>
+  <label for="uploadImage">📸 スマホの写真・スクショを選ぶ（任意）</label>
+  <input id="uploadImage" type="file" accept="image/*,.heic,.heif" disabled>
+  <figure id="imagePreview" class="preview-box" hidden>
+    <img id="imagePreviewImg" alt="新しく登録する画像の確認">
+    <figcaption>今回選んだ写真（まだ送信していません）</figcaption>
+  </figure>
+  <figure id="savedImagePreview" class="preview-box" hidden>
+    <img id="savedImagePreviewImg" alt="選択した展示の保存済み画像" loading="lazy">
+    <figcaption>保存済みの公開用画像。変更する場合は新しい写真を選んでください。</figcaption>
+  </figure>
+  <button id="clearImage" type="button" disabled>写真の選択を取り消す</button>
+  <p id="imageHelp" class="note">画像登録機能はまだ停止中です。安全確認後に利用可能になります。</p>
+  <p class="alert" style="font-weight:700">⚠️ この展示は一般公開用です。下書きの段階でも、保存した画像はURLを知っている人が閲覧できる公開ストレージに置かれます。非公開のスクショ・個人情報・他人の顔や名前がある画像はアップロードしないでください。宝箱用画像もここでは扱いません。</p>
+  <details class="advanced" id="extraLinks">
+   <summary>関連ページのURL（任意）</summary>
+   <label for="externalUrl">関連ページ</label>
+   <input id="externalUrl" maxlength="2048" placeholder="https://...">
+  </details>
+  <div class="step-heading"><span class="num">3</span> 公開しても大丈夫か確認</div>
+  <label class="check" for="rightsConfirmed"><input id="rightsConfirmed" type="checkbox" required> <span>作品の権利・掲載許可を確認しました。</span></label>
+  <label class="check" for="privacyConfirmed"><input id="privacyConfirmed" type="checkbox" required> <span>スクショに氏名、ID、電話番号、連絡先、非公開チャットなどが映り込んでいないことを確認しました。</span></label>
+  <p class="note">この管理画面では翠央本人だけが見られる宝箱を扱いません。公開用の情報だけを登録してください。</p>
+  <div class="action-bar">
+   <p class="note" style="margin:0 0 8px">💎 まず下書き保存。一般公開はその後に確認します。</p>
+   <div class="actions">
+    <button type="submit" id="save" class="primary">💾 下書きとして保存</button>
+    <button type="button" id="resetForm">入力を新規に戻す</button>
+   </div>
+  </div>
+ </form>
+ <hr style="margin:25px 0;border:0;border-top:1px solid #9ccbe970">
+ <h2>③ 公開する・公開を停止する</h2>
+ <p id="currentStatus" class="note">まだ作品を選択していません。</p>
+ <div class="actions">
+  <button type="button" id="publish" class="primary" disabled>確認した作品を公開する</button>
+  <button type="button" id="hide" disabled>公開を停止する</button>
+  <button type="button" id="reopen" disabled>下書きに戻す</button>
+ </div>
+ <details class="advanced" id="dangerActions">
+  <summary>🗑️ ゴミ箱・復元の操作（必要なときだけ）</summary>
+  <div class="actions">
+   <button type="button" id="trash" disabled>ゴミ箱へ移す（復元可能）</button>
+   <button type="button" id="restore" disabled>ゴミ箱から復元</button>
+  </div>
+ </details>
+ <p class="note">「公開停止」は展示を隠し、「ゴミ箱」は展示の記録を復元できる状態で保管します。どちらも画像ファイル自体は削除しません。公開用画像のURLが分かれば閲覧できる場合があるため、完全削除が必要な画像は別途安全確認が必要です。</p>
+ <p id="saveStatus" class="status" role="status" aria-live="polite"></p>
+</div>
+<details class="panel advanced" id="preflightPanel">
+ <summary>🔍 公開前のDB安全チェック（読み取りのみ）</summary>
+ <p class="note">翠央記念館を公開する前に、専用の管理者DBを確認します。接続情報は表示せず、DBを変更しません。</p>
+ <button type="button" id="runPreflight">DBと展示用テーブルを確認する</button>
+ <p id="preflightStatus" class="status" role="status" aria-live="polite">安全点検はまだ実行していません。</p>
+ <div id="preflightTables" class="note" aria-label="必要テーブルの確認結果"></div>
+ <p class="alert">このチェックだけでは本番公開できません。DB接続先・バックアップの管理者確認、実機・実保存試験が別途必要です。</p>
+</details>
+<details class="panel advanced" id="assetAuditPanel">
+ <summary>🧹 保存画像の参照チェック（管理用）</summary>
+ <h2>画像の利用状況を確認</h2>
+ <p class="note">記念館が保存した画像を最大50件ずつ点検します。「現在の展示で使われているか」を調べる機能です。<strong>未参照と表示されても削除してよいとは限りません。</strong> 過去の共有リンクやバックアップも確認が必要です。</p>
+ <p class="alert">この画面から画像ファイルを永久削除することはできません。ゴミ箱への移動や公開停止でも、公開Blobの画像URLは失効しません。</p>
+ <div class="actions">
+  <button type="button" id="assetRefresh">画像の参照を確認</button>
+  <button type="button" id="assetNext" disabled>次の50件を調べる</button>
+ </div>
+ <p id="assetStatus" class="status" role="status" aria-live="polite">確認機能は初期状態で停止しています。</p>
+ <div id="assetResults" aria-label="画像の参照結果"></div>
+</details>
+</section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
+let items=[],selected=null,editable=false,imageUploadEnabled=false,publishEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null,formDirty=false,contentDirty=false;
+const note=s=>{$('saveStatus').textContent=s;};
+const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開',trash:'ゴミ箱（復元可能）'};
+const asInput=(item,k)=>{
+ const v=item?.[k];
+ return typeof v==='string'?v:'';
+};
+// Only preview whitelisted public-image paths; never assign an arbitrary URL to an image.
+function previewAllowed(raw){
+ if(typeof raw!=='string')return false;
+ if(/^\/assets\/[A-Za-z0-9_/-]+\.(?:png|jpe?g|webp|gif)$/i.test(raw)&&!raw.includes('..'))return true;
+ try{
+  const u=new URL(raw);
+  return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&
+   /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(u.hostname)&&
+   /\.(?:png|jpe?g|webp|gif)$/i.test(u.pathname);
+ }catch{return false;}
+}
+function renderSummary(){
+ const counts={draft:0,published:0,hidden:0,trash:0};
+ for(const item of items)if(Object.hasOwn(counts,item.status))counts[item.status]++;
+ const panel=$('exhibitSummary');panel.replaceChildren();
+ for(const [name,key] of [['下書き','draft'],['公開中','published'],['非公開','hidden'],['ゴミ箱','trash']]){
+  const badge=document.createElement('span');badge.textContent=name+' '+counts[key]+'件';panel.append(badge);
+ }
+}
+function filterList(preferredId){
+ const search=$('exhibitSearch').value.trim().toLocaleLowerCase('ja-JP');
+ const state=$('exhibitFilter').value;
+ const active=preferredId??selected?.id??'';
+ const visible=items.filter(item=>(state==='all'||item.status===state)&&
+  (!search||item.title.toLocaleLowerCase('ja-JP').includes(search)));
+ // An already selected exhibit remains selectable even when it doesn't match a filter.
+ const selectedItem=items.find(x=>x.id===active);
+ if(selectedItem&&!visible.includes(selectedItem))visible.unshift(selectedItem);
+ const menu=$('selectExhibit');menu.replaceChildren();
+ const blank=document.createElement('option');blank.value='';blank.textContent='＋ 新しい思い出を登録';menu.append(blank);
+ for(const item of visible){
+  const option=document.createElement('option');option.value=item.id;
+  option.textContent='['+(titleStatus[item.status]||'要確認')+'] '+item.title;
+  menu.append(option);
+ }
+ menu.value=selectedItem?selectedItem.id:'';
+ renderSummary();
+}
+$('exhibitSearch').addEventListener('input',()=>filterList());
+$('exhibitFilter').addEventListener('change',()=>filterList());
+function buttons(){
+ $('uploadImage').disabled=busy||!editable||!imageUploadEnabled||selected?.status==='trash';
+ $('clearImage').disabled=busy||!$('uploadImage').files?.length;
+ $('save').disabled=busy||!editable||saveNeedsReview||selected?.status==='trash';
+ $('publish').disabled=busy||!editable||!publishEnabled||saveNeedsReview||!selected||selected.status!=='draft';
+ $('hide').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='published';
+ $('reopen').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='hidden';
+ $('trash').disabled=busy||!editable||saveNeedsReview||!selected||selected.status==='trash';
+ $('restore').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='trash';
+ $('reload').disabled=busy;
+}
+function clearSelectedImage(){
+  if(previewObjectUrl){URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=null;}
+  $('uploadImage').value='';$('imagePreview').hidden=true;
+  $('imagePreviewImg').removeAttribute('src');buttons();
+ }
+ $('uploadImage').addEventListener('change',()=>{
+  if(previewObjectUrl){URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=null;}
+  const file=$('uploadImage').files?.[0];
+  if(!file){$('imagePreview').hidden=true;$('imagePreviewImg').removeAttribute('src');buttons();return;}
+  if(file.size>12*1024*1024){note('12MB以内の画像を選んでください。');clearSelectedImage();return;}
+  previewObjectUrl=URL.createObjectURL(file);
+  $('imagePreviewImg').src=previewObjectUrl;
+  $('imagePreview').hidden=false;
+  note('この画像に個人情報などが映り込んでいないか確認してください。保存ボタンを押すまで送信されません。');
+  buttons();
+ });
+ $('clearImage').addEventListener('click',()=>{clearSelectedImage();note('選択した写真を取り消しました。');});
+ function choose(){
+  clearSelectedImage();
+  selected=items.find(x=>x.id===$('selectExhibit').value)||null;
+  formDirty=false;contentDirty=false;
+ for(const k of keys)$(k).value=asInput(selected,k);
+ if(!selected){$('kind').value='icons';$('exhibitForm').reset();$('kind').value='icons';}
+ $('rightsConfirmed').checked=false;$('privacyConfirmed').checked=false;
+ $('editorTitle').textContent=selected?'② 展示の内容を編集':'② 新しい思い出を登録';
+ $('savedImagePreview').hidden=true;
+ $('savedImagePreviewImg').removeAttribute('src');
+ if(selected&&previewAllowed(selected.imageUrl)){
+  $('savedImagePreviewImg').src=selected.imageUrl;
+  $('savedImagePreview').hidden=false;
+ }
+ $('optionalFields').open=Boolean(selected?.credit||(selected?.imageUrl&&!previewAllowed(selected.imageUrl)));
+ $('extraLinks').open=Boolean(selected?.externalUrl);
+ $('currentStatus').textContent=selected?
+   '状態：'+(titleStatus[selected.status]||'要確認')+' ／ 編集番号：'+selected.revision:
+   '新しい展示は下書きとして保存されます。';
+ buttons();
+}
+$('selectExhibit').addEventListener('change',()=>{
+ if(formDirty&&!confirm('入力中の内容はまだ保存されていません。別の作品に切り替えますか？')){
+  $('selectExhibit').value=selected?.id||'';return;
+ }
+ choose();
+});
+function markDirty(event){
+ formDirty=true;
+ if(!['rightsConfirmed','privacyConfirmed'].includes(event.target?.id))contentDirty=true;
+}
+$('exhibitForm').addEventListener('input',markDirty);
+$('exhibitForm').addEventListener('change',markDirty);
+function startNew(){
+ if(formDirty&&!confirm('入力中の内容はまだ保存されていません。新しい展示の入力へ戻りますか？'))return;
+ $('exhibitSearch').value='';$('exhibitFilter').value='all';
+ $('selectExhibit').value='';choose();filterList('');
+ $('editorTitle').scrollIntoView({behavior:'auto',block:'start'});
+ note('新しい展示を入力できます。');
+}
+$('resetForm').addEventListener('click',startNew);
+$('newExhibit').addEventListener('click',startNew);
+async function load(preferredId){
+ if(busy)return false;
+ note('展示一覧を確認しています…');
+ try{
+  const response=await fetch('/api/gallery/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true||data.authorized!==true)throw Error(data.code||'NOT_AUTHORIZED');
+  saveNeedsReview=false;
+  editable=data.editable===true;imageUploadEnabled=data.imageUploadEnabled===true;publishEnabled=data.publishEnabled===true;
+  items=Array.isArray(data.items)?data.items:[];
+  filterList(preferredId||'');
+  choose();
+  $('imageHelp').textContent=imageUploadEnabled?
+   '✅ 写真を選んで下書き保存できます。スマホの画像を端末内で縮小します。':
+   '🔒 写真のアップロードは現在停止中です。既存画像URLの登録は下書き保存できます。';
+  $('editor').hidden=false;$('unavailable').hidden=true;
+  $('authStatus').textContent=editable?'✅ 翠央記念館のオーナー権限を確認しました。':'🔒 オーナー権限は確認しました。現在、展示編集は安全のため停止中です。';
+  note('表示：'+items.length+'件。'+(editable?(publishEnabled?'下書き編集と公開管理が利用できます。':'下書き編集は利用できます。一般公開は安全確認まで停止しています。'):'編集機能は公開前検証が完了するまで停止しています。'));
+  return true;
+ }catch{
+  $('editor').hidden=true;$('unavailable').hidden=false;
+  $('authStatus').textContent='🔒 展示の管理権限またはデータベースを確認できません。';
+  return false;
+ }
+}
+$('retryLogin').addEventListener('click',()=>load(selected?.id));
+$('reload').addEventListener('click',()=>{
+ if(formDirty&&!saveNeedsReview&&!confirm('入力中の内容はまだ保存されていません。最新データを読み直しますか？'))return;
+ load(selected?.id);
+});
+async function submit(action){
+ if(busy||!editable)return;
+ if(action==='publish'&&!publishEnabled){note('一般公開機能はまだ停止中です。下書きは保存できます。');return;}
+ if(selected?.status==='trash'&&(action==='update'||action==='publish')){
+  note('ゴミ箱内の作品は先に復元してください。');return;
+ }
+ if(saveNeedsReview){note('前回の保存結果を確認できません。先に「最新の展示を読み直す」を押してください。');return;}
+ if(action==='create'||action==='update'){
+  if(!$('exhibitForm').reportValidity())return;
+ }
+ if(action==='publish'&&contentDirty){
+  note('入力内容に未保存の変更があります。先に下書き保存し、読み直してから公開してください。');return;
+ }
+ if(action==='publish'&&$('uploadImage').files?.length){note('新しい写真を選んでいます。先に画像付きの下書きを保存し、改めて公開してください。');return;}
+ if(action==='publish'&&(!$('rightsConfirmed').checked||!$('privacyConfirmed').checked)){
+  note('公開前に作品の権利と個人情報を再確認して、2つのチェックを入れてください。');return;
+ }
+ const words={create:'下書きを作成',update:'変更して下書きへ戻す',publish:'一般公開',hide:'公開停止',reopen:'下書きへ戻す',trash:'ゴミ箱に移動',restore:'ゴミ箱から下書きに復元'};
+ if(action==='trash'){
+  const entered=prompt('誤操作防止：ゴミ箱に移す展示のタイトルをそのまま入力してください。\n'+selected.title);
+  if(entered!==selected.title){note('展示タイトルが一致しないためゴミ箱への移動を中止しました。');return;}
+ }
+ if(!confirm('「'+(selected?.title||$('title').value)+'」を'+words[action]+'しますか？'))return;
+ const payload={action};
+ if(action==='trash')payload.confirmedTitle=selected.title;
+ if(selected){payload.id=selected.id;payload.revision=selected.revision;}
+ if(action==='create'||action==='update'){
+  payload.item=Object.fromEntries(keys.map(k=>[k,$(k).value.trim()]));
+  payload.item.rightsConfirmed=$('rightsConfirmed').checked;
+  payload.item.privacyConfirmed=$('privacyConfirmed').checked;
+ }else if(action==='publish'){payload.rightsConfirmed=true;payload.privacyConfirmed=true;}
+ const file=(action==='create'||action==='update')?$('uploadImage').files?.[0]:null;
+ if((action==='create'||action==='update')&&
+  ['icons','moments'].includes($('kind').value)&&!file&&!previewAllowed($('imageUrl').value.trim())){
+  note('歴代アイコン・思い出アルバムには画像が必要です。写真を選ぶか、詳細設定に画像URLを入力してください。');return;
+ }
+ if(file&&!imageUploadEnabled){note('画像登録機能はまだ準備中です。画像の選択を取り消すか、公開画像URLをご利用ください。');return;}
+ busy=true;buttons();note('変更を確認して保存しています…');
+ let writeRequestStarted=false;
+ try{
+  let endpoint='/api/gallery/museum/exhibits';
+  if(file){
+   if(!window.MioMuseumImage?.encode)throw Error('IMAGE_ENCODER_UNAVAILABLE');
+   note('端末内で写真を軽量化しています。写真はまだ公開されていません。');
+   const encoded=await window.MioMuseumImage.encode(file);
+   payload.action=action==='create'?'imageCreate':'imageUpdate';
+   payload.image={base64:encoded.base64,format:encoded.format};
+   endpoint='/api/gallery/museum/image';
+   note('確認済みの画像と下書きをまとめて保存しています…');
+  }
+  writeRequestStarted=true;
+  const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true)throw Error(data.code||'SAVE_FAILED');
+  note('✅ 処理が成功しました。');
+  busy=false;
+  const refreshed=await load(data.item?.id||data.exhibit?.id);
+  if(refreshed)note('✅ '+words[action]+'を保存しました。');
+  else{
+   saveNeedsReview=true;
+   $('authStatus').textContent='⚠️ 保存は受け付けましたが、一覧を確認できません。認証状態を確認して「再確認」を押してください。';
+  }
+ }catch(e){
+  if(writeRequestStarted)saveNeedsReview=true;
+  note('⚠️ 保存結果を確認できません。入力は残していますが、重複保存を防ぐため一覧を読み直してから再操作してください（'+e.message+'）。');
+ }finally{busy=false;buttons();}
+}
+$('exhibitForm').addEventListener('submit',event=>{event.preventDefault();submit(selected?'update':'create');});
+for(const action of ['publish','hide','reopen','trash','restore'])$(action).addEventListener('click',()=>submit(action));
+let assetCursor=null,assetBusy=false;
+async function scanAssets(next=false){
+ if(assetBusy)return;
+ assetBusy=true;$('assetRefresh').disabled=true;$('assetNext').disabled=true;
+ $('assetStatus').textContent='画像の参照状況を確認しています…';
+ try{
+  const url='/api/gallery/museum/assets'+(next&&assetCursor?'?cursor='+encodeURIComponent(assetCursor):'');
+  const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true||!Array.isArray(data.items))throw Error(data.code||'ASSET_AUDIT_UNAVAILABLE');
+  if(!next)$('assetResults').replaceChildren();
+  for(const file of data.items){
+   const box=document.createElement('div');box.className='status';box.style.margin='10px 0';
+   const title=document.createElement('strong');
+   const ref=file.references||{};
+   const total=(Number(ref.museum)||0)+(Number(ref.gallery)||0);
+   title.textContent=total>0?'✅ 展示で使用中':'⚠️ 現在の参照を確認できません（削除不可）';
+   const p=document.createElement('p');p.className='note';
+   p.textContent='展示の参照：'+(Number(ref.museum)||0)+'件 ／ ギャラリー：'+(Number(ref.gallery)||0)+'件';
+   const link=document.createElement('a');link.href=file.url;link.target='_blank';
+   link.rel='noopener noreferrer';link.textContent='保存画像を確認（公開URL）';
+   box.append(title,p,link);$('assetResults').append(box);
+  }
+  assetCursor=data.hasMore&&typeof data.cursor==='string'?data.cursor:null;
+  $('assetStatus').textContent='確認した画像：'+data.items.length+'件。'+
+    (assetCursor?'さらに確認できます。':'この範囲の確認は終了しました。')+
+    ' 表示は診断結果であり削除許可ではありません。';
+ }catch(e){
+  $('assetStatus').textContent='画像の参照チェックは利用できません（'+e.message+'）。画像や展示は変更していません。';
+  assetCursor=null;
+ }finally{
+  assetBusy=false;$('assetRefresh').disabled=false;$('assetNext').disabled=!assetCursor;
+ }
+}
+async function checkPreflight(){
+ const button=$('runPreflight');button.disabled=true;
+ $('preflightStatus').textContent='データの変更なしで確認しています…';
+ $('preflightTables').replaceChildren();
+ try{
+  const response=await fetch('/api/gallery/museum/preflight',{
+   method:'GET',credentials:'same-origin',cache:'no-store'
+  });
+  const data=await response.json();
+  if(!response.ok||data.ok!==true){
+   const code=data.code||'UNAVAILABLE';
+   if(code==='PREFLIGHT_CLOSED')throw Error('点検は現在停止中です。安全確認後に設定します。');
+   if(code==='ADMIN_LOGIN_REQUIRED'||code==='MUSEUM_OWNER_ONLY')throw Error('管理者の認証・端末承認が必要です。');
+   throw Error('DB点検を完了できませんでした（'+code+'）。');
+  }
+  if(!Array.isArray(data.tables))throw Error('点検結果の形式を確認できません。');
+  const captions={
+   gallery_admin_users:'管理者',
+   gallery_admin_devices:'承認端末',
+   gallery_admin_sessions:'ログイン',
+   gallery_admin_audit:'操作履歴',
+   museum_public_exhibits:'思い出展示'
+  };
+  for(const entry of data.tables){
+   if(!Object.hasOwn(captions,entry.table))continue;
+   const p=document.createElement('p');
+   const missing=Array.isArray(entry.missing)?entry.missing:[];
+   const wrongTypes=Array.isArray(entry.wrongTypes)?entry.wrongTypes:[];
+   const wrongNullability=Array.isArray(entry.wrongNullability)?entry.wrongNullability:[];
+   const ready=entry.exists===true&&missing.length===0&&wrongTypes.length===0&&wrongNullability.length===0;
+   p.textContent=(ready?'✅ ':'⚠️ ')+captions[entry.table]+
+    (ready?'：構成OK':'：不足 '+missing.length+'項目／型不一致 '+wrongTypes.length+
+     '項目／必須設定不一致 '+wrongNullability.length+'項目');
+   $('preflightTables').append(p);
+  }
+  const relationships=document.createElement('p');
+  const keys=Array.isArray(data.foreignKeys)?data.foreignKeys:[];
+  const missingKeys=keys.filter(x=>x.present!==true).length;
+  relationships.textContent=(data.constraintsReady===true&&missingKeys===0?'✅ ':'⚠️ ')+
+   '管理者・展示の関連制約：'+(data.constraintsReady===true&&missingKeys===0?
+    '確認済み':'未確認・不足 '+missingKeys+'項目');
+  $('preflightTables').append(relationships);
+  const optional=document.createElement('p');
+  optional.textContent=(data.assetAuditReady===true?'✅ ':'⚠️ ')+
+   '画像参照チェック用テーブル：'+(data.assetAuditReady===true?
+    '構成OK':'未確認・不足あり（一般公開の判定とは別）');
+  $('preflightTables').append(optional);
+  const passed=data.allReady===true&&data.mode==='read_only';
+  $('preflightStatus').textContent=passed?
+   '✅ テーブル構成と接続先照合は合格です。ただし実保存・実機確認前なので公開不可です。':
+   '⚠️ まだ公開できません。テーブル構成：'+(data.schemaReady?'確認済み':'未完了')+
+   ' ／ 接続先照合：'+(data.identityVerified?'確認済み':'未確認')+
+   ' ／ 公開状態の制約：'+(data.statusConstraintComplete?'確認済み':'未確認');
+ }catch(e){
+  $('preflightStatus').textContent='⚠️ '+e.message;
+ }finally{button.disabled=false;}
+}
+$('runPreflight').addEventListener('click',checkPreflight);
+$('assetRefresh').addEventListener('click',()=>scanAssets(false));
+$('assetNext').addEventListener('click',()=>scanAssets(true));
+load('');
+</script>
+<script defer src="/museum-image-client.js"></script>
+</body></html>

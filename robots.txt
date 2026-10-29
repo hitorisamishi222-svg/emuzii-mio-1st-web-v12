@@ -9,4 +9,6 @@ Disallow: /gallery-moderation.html
 Disallow: /gallery-passkey-register.html
 Disallow: /gallery-submissions-admin.html
 Disallow: /media-manage.html
+Disallow: /museum-curate.html
+Disallow: /museum-device-check.html
 Sitemap: https://emuzii-mio-1st-web-v12.vercel.app/sitemap.xml

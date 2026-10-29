@@ -1,0 +1,98 @@
+name: Museum phase 2 scoped validation
+on:
+  pull_request:
+    branches:
+      - release/mio-museum-phase1-20261028
+    paths:
+      - 'museum*'
+      - 'api-museum-exhibits.js'
+      - 'api-museum-image.js'
+      - 'api-museum-assets.js'
+      - 'api-museum-preflight.js'
+      - 'museum-preflight-core.js'
+      - 'db/museum-public-exhibits.sql'
+      - 'db/gallery-admin-schema.sql'
+      - 'db/gallery-admin-session-migration.sql'
+      - 'db/gallery-live-overrides.sql'
+      - 'tests/mio-museum-postgres.integration.mjs'
+      - 'gallery-manage.html'
+      - 'vercel.json'
+      - 'robots.txt'
+      - 'tests/mio-museum-phase1.test.mjs'
+      - 'tests/mio-museum-phase2.test.mjs'
+      - 'tests/mio-museum-image.test.mjs'
+      - 'tests/mio-museum-trash-audit.test.mjs'
+      - 'tests/mio-museum-curate-ux.test.mjs'
+      - 'tests/mio-museum-device-check.test.mjs'
+      - 'tests/mio-museum-auth-path.test.mjs'
+      - 'tests/mio-museum-preflight.test.mjs'
+      - 'tests/mio-museum-chromium-smoke.mjs'
+      - '.github/workflows/mio-museum-phase2.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scoped-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+      - name: Syntax checks
+        run: |
+          node --check api-museum-exhibits.js
+          node --check api-museum-image.js
+          node --check api-museum-assets.js
+          node --check api-museum-preflight.js
+          node --check museum-preflight-core.js
+          node --check museum-image-client.js
+          node --check museum-device-check.js
+          node --check museum-exhibits-core.js
+          node --check museum-archive.js
+      - name: Museum phase 1 and 2 contracts
+        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs tests/mio-museum-device-check.test.mjs tests/mio-museum-auth-path.test.mjs tests/mio-museum-preflight.test.mjs
+      - name: Real Chromium small-screen and owner interaction test (fixture only)
+        timeout-minutes: 2
+        run: |
+          command -v google-chrome || command -v chromium
+          node tests/mio-museum-chromium-smoke.mjs
+      - name: Save Chrome screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mio-museum-chromium-mobile-evidence
+          path: artifacts/local-museum-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+  isolated-postgres-contract:
+    name: Real SQL on ephemeral PostgreSQL (no production secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: museum_ci
+          POSTGRES_PASSWORD: museum_ci_only
+          POSTGRES_DB: museum_ci_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U museum_ci -d museum_ci_fixture"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      MUSEUM_EPHEMERAL_TEST_DATABASE_URL: postgres://museum_ci:museum_ci_only@127.0.0.1:5432/museum_ci_fixture
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-package-lock --no-audit --no-fund
+      - name: Check and apply exact SQL to isolated test DB
+        run: node --test tests/mio-museum-postgres.integration.mjs
