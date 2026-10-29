@@ -150,3 +150,26 @@ test('similarly decorated approved other account blocks transfer',()=>{
   assert.throws(()=>x.api.approve(x.req()),/同名・類似名の別ID/);
   assert.equal(JSON.stringify(x.sheets),before);
 });
+
+test('empty nickname row with orphaned personal data is not overwritten',()=>{
+  const x=fixture({name:'たけ',m1:0,m3:0});
+  x.sheets['emuzii_参加者'][0][1]='既存の参加者';
+  x.sheets['emuzii_ガチャ'][0][1]='既存の参加者';
+  x.sheets['emuzii_参加者'].push(['','','過去の非表示データ']);
+  x.sheets['emuzii_ガチャ'].push(['','',0,0,0,0,0,0,0,0,0,0,'OK','OK']);
+  const before=JSON.stringify(x.sheets);
+  assert.throws(()=>x.api.approve(x.req({targetId:'NEW',m1:1,expectedM1:0})),/過去の記録/);
+  assert.equal(JSON.stringify(x.sheets),before);
+  assert.equal(x.audit.events.length,0);
+});
+test('gacha bonus on unassigned row prevents NEW participant overwrite',()=>{
+  const x=fixture({name:'たけ',m1:0,m3:0});
+  x.sheets['emuzii_参加者'][0][1]='既存の参加者';
+  x.sheets['emuzii_ガチャ'][0][1]='既存の参加者';
+  x.sheets['emuzii_参加者'].push(['','']);
+  x.sheets['emuzii_ガチャ'].push(['','',0,0,0,0,0,0,0,0,0,0,'OK','OK',3,0,0]);
+  const before=JSON.stringify(x.sheets);
+  assert.throws(()=>x.api.approve(x.req({targetId:'NEW',m1:1,expectedM1:0})),/既存の回数・履歴/);
+  assert.equal(JSON.stringify(x.sheets),before);
+  assert.equal(x.audit.events.length,0);
+});
