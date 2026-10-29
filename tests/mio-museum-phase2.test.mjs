@@ -173,11 +173,28 @@ test('stale publication revision is refused without committing',async()=>{
   return {rows:[],rowCount:1};
  },async()=>{
   process.env.MIO_MUSEUM_ARCHIVE_EDIT_ENABLED='true';
+  process.env.MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED='true';
   const out=reply();await handler(request('POST',{action:'publish',id,revision:8,rightsConfirmed:true,privacyConfirmed:true}),out);
   assert.equal(out.code,409);
  });
  assert.ok(statements.includes('ROLLBACK'));assert.equal(statements.includes('COMMIT'),false);
  assert.ok(!statements.some(x=>x.includes('gallery_admin_audit')));
+});
+test('draft editing alone can never mark an exhibit published',async()=>{
+ const sqlCalls=[];
+ await withDB(async(sql,args)=>{
+  sqlCalls.push(sql);
+  const a=identity(sql,args);if(a)return a;
+  throw Error('Publication may not write without its separate switch');
+ },async()=>{
+  process.env.MIO_MUSEUM_ARCHIVE_EDIT_ENABLED='true';
+  delete process.env.MIO_MUSEUM_ARCHIVE_PUBLISH_ENABLED;
+  const out=reply();
+  await handler(request('POST',{action:'publish',id,revision:0,rightsConfirmed:true,privacyConfirmed:true}),out);
+  assert.equal(out.code,503);
+  assert.equal(out.data.code,'ARCHIVE_PUBLISH_CLOSED');
+ });
+ assert.equal(sqlCalls.some(x=>/^BEGIN|^UPDATE|^INSERT/.test(x)),false);
 });
 test('archive pages are linked, responsive and search-safe',()=>{
  const base=new URL('../',import.meta.url);
