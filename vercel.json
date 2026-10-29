@@ -416,6 +416,10 @@
     {
       "src": "api-museum-image.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api-museum-assets.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -612,6 +616,14 @@
     {
       "src": "/api/museum/image",
       "dest": "/api-museum-image.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/api/museum/assets",
+      "dest": "/api-museum-assets.js",
       "headers": {
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff"
