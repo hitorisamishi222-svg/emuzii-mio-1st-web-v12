@@ -1,7 +1,7 @@
 // Museum release gate. Read-only SQL metadata; never tests writes or exposes credentials.
 import pg from 'pg';
 import {sessionAdmin} from './api-museum-exhibits.js';
-import {museumSchemaReport,REQUIRED_MUSEUM_SCHEMA} from './museum-preflight-core.js';
+import {museumSchemaReport,REQUIRED_MUSEUM_SCHEMA,OPTIONAL_ASSET_SCHEMA} from './museum-preflight-core.js';
 const {Pool}=pg;
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const fail=(res,status,code)=>res.status(status).json({ok:false,code});
@@ -29,9 +29,9 @@ export function createMuseumPreflightHandler(deps={}){
    // Queries inspect only system metadata. No DDL, DML or writes.
    const identity=await client.query('SELECT current_database() AS db_name');
    const columns=await client.query(
-    'SELECT table_name,column_name FROM information_schema.columns '+
+    'SELECT table_name,column_name,data_type FROM information_schema.columns '+
     'WHERE table_schema=current_schema() AND table_name=ANY($1::text[])',
-    [Object.keys(REQUIRED_MUSEUM_SCHEMA)]
+    [[...Object.keys(REQUIRED_MUSEUM_SCHEMA),...Object.keys(OPTIONAL_ASSET_SCHEMA)]]
    );
    const constraints=await client.query(
     'SELECT pg_get_constraintdef(c.oid) AS definition FROM pg_constraint c '+
