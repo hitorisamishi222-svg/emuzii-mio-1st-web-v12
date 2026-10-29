@@ -170,7 +170,7 @@ h1{line-height:1.45}h2{line-height:1.5}}
 'use strict';
 const $=id=>document.getElementById(id);
 const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
-let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null,formDirty=false,contentDirty=false;
+let items=[],selected=null,editable=false,imageUploadEnabled=false,publishEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null,formDirty=false,contentDirty=false;
 const note=s=>{$('saveStatus').textContent=s;};
 const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開',trash:'ゴミ箱（復元可能）'};
 const asInput=(item,k)=>{
@@ -221,7 +221,7 @@ function buttons(){
  $('uploadImage').disabled=busy||!editable||!imageUploadEnabled||selected?.status==='trash';
  $('clearImage').disabled=busy||!$('uploadImage').files?.length;
  $('save').disabled=busy||!editable||saveNeedsReview||selected?.status==='trash';
- $('publish').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='draft';
+ $('publish').disabled=busy||!editable||!publishEnabled||saveNeedsReview||!selected||selected.status!=='draft';
  $('hide').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='published';
  $('reopen').disabled=busy||!editable||saveNeedsReview||!selected||selected.status!=='hidden';
  $('trash').disabled=busy||!editable||saveNeedsReview||!selected||selected.status==='trash';
@@ -295,7 +295,7 @@ async function load(preferredId){
   const data=await response.json();
   if(!response.ok||data.ok!==true||data.authorized!==true)throw Error(data.code||'NOT_AUTHORIZED');
   saveNeedsReview=false;
-  editable=data.editable===true;imageUploadEnabled=data.imageUploadEnabled===true;
+  editable=data.editable===true;imageUploadEnabled=data.imageUploadEnabled===true;publishEnabled=data.publishEnabled===true;
   items=Array.isArray(data.items)?data.items:[];
   filterList(preferredId||'');
   choose();
@@ -304,7 +304,7 @@ async function load(preferredId){
    '🔒 写真のアップロードは現在停止中です。既存画像URLの登録は下書き保存できます。';
   $('editor').hidden=false;$('unavailable').hidden=true;
   $('authStatus').textContent=editable?'✅ 翠央記念館のオーナー権限を確認しました。':'🔒 オーナー権限は確認しました。現在、展示編集は安全のため停止中です。';
-  note('表示：'+items.length+'件。'+(editable?'編集と公開管理が利用できます。':'編集機能は公開前検証が完了するまで停止しています。'));
+  note('表示：'+items.length+'件。'+(editable?(publishEnabled?'下書き編集と公開管理が利用できます。':'下書き編集は利用できます。一般公開は安全確認まで停止しています。'):'編集機能は公開前検証が完了するまで停止しています。'));
   return true;
  }catch{
   $('editor').hidden=true;$('unavailable').hidden=false;
@@ -319,6 +319,7 @@ $('reload').addEventListener('click',()=>{
 });
 async function submit(action){
  if(busy||!editable)return;
+ if(action==='publish'&&!publishEnabled){note('一般公開機能はまだ停止中です。下書きは保存できます。');return;}
  if(selected?.status==='trash'&&(action==='update'||action==='publish')){
   note('ゴミ箱内の作品は先に復元してください。');return;
  }
