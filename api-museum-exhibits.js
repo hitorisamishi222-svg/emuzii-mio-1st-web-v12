@@ -36,7 +36,7 @@ const publicRow=row=>({
 const adminRow=row=>({
  ...publicRow(row),id:String(row.id),status:row.status,
  revision:Number(row.revision),createdAt:row.created_at,updatedAt:row.updated_at,
- publishedAt:row.published_at
+ publishedAt:row.published_at,trashedAt:row.trashed_at
 });
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export default async function handler(req,res){
@@ -76,7 +76,7 @@ export default async function handler(req,res){
   if(req.method==='GET'){
    const q=await c.query(
     `SELECT id,kind,title,description,credit,occurred_on::text AS occurred_on,image_url,external_url,
-     status,revision,created_at,updated_at,published_at
+     status,revision,created_at,updated_at,published_at,trashed_at
      FROM museum_public_exhibits
      ORDER BY updated_at DESC,id DESC LIMIT 250`
    );
@@ -84,7 +84,7 @@ export default async function handler(req,res){
   }
   if(!editingOn())return fail(res,503,'ARCHIVE_EDIT_CLOSED');
   const action=req.body?.action;
-  if(!['create','update','publish','hide','reopen'].includes(action))return fail(res,400,'ACTION_INVALID');
+  if(!['create','update','publish','hide','reopen','trash','restore'].includes(action))return fail(res,400,'ACTION_INVALID');
   const item=(action==='create'||action==='update')?validateArchiveExhibit(req.body?.item):null;
   if((action==='create'||action==='update')&&!item)return fail(res,400,'EXHIBIT_INVALID');
   const id=req.body?.id,revision=req.body?.revision;
@@ -112,10 +112,33 @@ export default async function handler(req,res){
       kind=$1,title=$2,description=$3,credit=$4,occurred_on=$5,image_url=$6,external_url=$7,
       status='draft',revision=revision+1,rights_checked_at=now(),
       privacy_checked_at=now(),reviewed_by=$8,published_at=NULL,updated_at=now()
-      WHERE id=$9 AND revision=$10
+      WHERE id=$9 AND revision=$10 AND status<>'trash'
       RETURNING id,status,revision`,
      [item.kind,item.title,item.description,item.credit,item.occurredOn,
       item.imageUrl,item.externalUrl,admin.id,id,revision]
+    );
+   }else if(action==='trash'){
+    // Typed exhibit title + optimistic revision guard prevents accidental removal.
+    const confirmed=req.body?.confirmedTitle;
+    if(typeof confirmed!=='string'||!confirmed||confirmed.length>120){
+     await c.query('ROLLBACK');return fail(res,400,'TRASH_CONFIRMATION_REQUIRED');
+    }
+    q=await c.query(
+     `UPDATE museum_public_exhibits SET status='trash',trashed_at=now(),
+      published_at=NULL,revision=revision+1,reviewed_by=$1,updated_at=now()
+      WHERE id=$2 AND revision=$3 AND title=$4
+      AND status IN ('draft','published','hidden')
+      RETURNING id,status,revision`,
+     [admin.id,id,revision,confirmed]
+    );
+   }else if(action==='restore'){
+    // Restored exhibits require a new explicit publish approval.
+    q=await c.query(
+     `UPDATE museum_public_exhibits SET status='draft',trashed_at=NULL,
+      published_at=NULL,revision=revision+1,reviewed_by=$1,updated_at=now()
+      WHERE id=$2 AND revision=$3 AND status='trash'
+      RETURNING id,status,revision`,
+     [admin.id,id,revision]
     );
    }else{
     const transition={publish:['draft','published'],hide:['published','hidden'],reopen:['hidden','draft']}[action];
