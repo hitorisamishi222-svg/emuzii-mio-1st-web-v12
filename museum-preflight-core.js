@@ -26,7 +26,7 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
   return {table,exists:found.size>0,missing:required.filter(field=>!found.has(field))};
  });
  const checks=constraints.map(row=>String(row?.definition||''));
- const statusesOk=REQUIRED_STATUS.every(v=>checks.some(s=>s.includes("'"+v+"'")));
+ const statusesOk=checks.some(s=>/\bstatus\b/i.test(s)&&REQUIRED_STATUS.every(v=>s.includes("'"+v+"'")));
  const schemaReady=tables.every(x=>x.exists&&x.missing.length===0)&&statusesOk;
  return {
   identityVerified:identityVerified===true,
