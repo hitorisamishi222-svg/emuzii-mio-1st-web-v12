@@ -39,7 +39,7 @@ export function createMuseumPreflightHandler(deps={}){
     'JOIN pg_namespace n ON n.oid=t.relnamespace '+
     "WHERE n.nspname=current_schema() AND t.relname=ANY($1::text[]) "+
     "AND c.contype IN ('c','f')",
-    [...Object.keys(REQUIRED_MUSEUM_SCHEMA)]
+    [Object.keys(REQUIRED_MUSEUM_SCHEMA)]
    );
    // Explicit owner-confirmed expected endpoint and DB name must BOTH match.
    // Never return either value or the connection string.
