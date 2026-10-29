@@ -28,6 +28,11 @@ function fixture(opt={}){
   let lockCount=0;
   function readAt(title,row,col){
     const saved=sheets[title]?.[row-2]?.[col-1]??'';
+    if(opt.preserveFormulaCheck&&title==='emuzii_Web登録'){
+      const w=sheets[title]?.[row-2];
+      if(w&&col===11)return w[7]||W; // K: formula derived from linked MIO-ID, otherwise Web ID
+      if(w&&col===12)return w[5]==='承認済み'?'確認済み':'確認待ち'; // L: formula
+    }
     if(saved!==''||row<3)return saved;
     const person=sheets['emuzii_参加者'][row-2];
     if(!person?.[1])return saved;
@@ -48,8 +53,11 @@ function fixture(opt={}){
         getDisplayValues:()=>Array.from({length:c},(_,i)=>Array.from({length:d},(_,j)=>String(readAt(title,row+i,col+j)))),
         getValue:()=>readAt(title,row,col)||false,
         getDisplayValue:()=>String(readAt(title,row,col)),
-        getFormula:()=>row>=3?'=MIO_FORMULA()':'',
-        setValue(value){if(!sheets[title][row-2])sheets[title][row-2]=[];sheets[title][row-2][col-1]=value}
+        getFormula:()=>opt.preserveFormulaCheck&&title==='emuzii_Web登録'&&[11,12].includes(col)?'=SAFE_LIVE_FORMULA()':row>=3?'=MIO_FORMULA()':'',
+        setValue(value){
+          if(opt.preserveFormulaCheck&&title==='emuzii_Web登録'&&[11,12,17].includes(col))
+            throw Error('Web登録のK/L/Qを書き換えてはいけません');
+          if(!sheets[title][row-2])sheets[title][row-2]=[];sheets[title][row-2][col-1]=value}
       };
     }
   });
@@ -185,4 +193,16 @@ test('purchase draw count and total rights remain distinct when bonuses exist',(
   assert.equal(result.rights,2);
   assert.equal(x.sheets['emuzii_ガチャ'][0][5],22);
   assert.equal(x.audit.events.length,1);
+});
+
+test('live Web registry formula columns K/L and operator override Q are never overwritten',()=>{
+  const x=fixture({preserveFormulaCheck:true});
+  const out=x.api.approve(x.req({m1:3}));
+  assert.equal(out.ok,true);
+  assert.equal(x.sheets['emuzii_Web登録'][0][10],W); // mock holds formula-managed source, not replaced
+  assert.equal(x.sheets['emuzii_Web登録'][0][11],'確認待ち');
+  assert.equal(x.sheets['emuzii_Web登録'][0][16],'');
+  assert.equal(x.sheets['emuzii_Web登録'][0][5],'承認済み');
+  assert.equal(x.sheets['emuzii_Web登録'][0][7],'MIO-0017');
+  assert.equal(x.sheets['emuzii_ガチャ'][0][2],3);
 });
