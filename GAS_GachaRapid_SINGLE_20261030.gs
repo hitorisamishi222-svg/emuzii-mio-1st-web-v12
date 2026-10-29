@@ -152,11 +152,15 @@ function gachaRapidApproveAndGrant(req){
     if(m1!==old1)gacha.getRange(targetRow,3).setValue(m1);
     if(m3!==old3)gacha.getRange(targetRow,4).setValue(m3);
     web.getRange(webRow,8).setValue(master); // H: participant ID
-    web.getRange(webRow,11).setValue(master); // K: unified participant ID
-    web.getRange(webRow,12).setValue('確認済み');
+    // On the live register some K/L rows contain calculated formulas. Preserve them.
+    // On older/manual rows without formulas, write the verified values as before.
+    var unifiedCell=web.getRange(webRow,11),identityCell=web.getRange(webRow,12);
+    if(!unifiedCell.getFormula())unifiedCell.setValue(master); // K: unified participant ID
+    if(!identityCell.getFormula())identityCell.setValue('確認済み'); // L: verification
     web.getRange(webRow,13).setValue(new Date());
     web.getRange(webRow,7).setValue('確認済み'); // G: membership confirmed
-    if(String(wd[16]||'')!=='使用中')web.getRange(webRow,17).setValue('使用中'); // Q: verified active browser
+    // Q is 「運営端末指定」, not the active-device status. Do not overwrite it.
+    // N (端末状態) is derived from the register's approval and recovery fields.
     web.getRange(webRow,6).setValue('承認済み'); // F: approval
     SpreadsheetApp.flush();
     var a=web.getRange(webRow,1,1,20).getDisplayValues()[0];
