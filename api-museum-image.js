@@ -10,7 +10,7 @@ const {Pool}=pg;
 const MAX_BYTES=750_000;
 const ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const say=(res,status,code)=>res.status(status).json({ok:false,code});
-const ownedBlob=value=>{
+export const ownedBlob=value=>{
  try{
   const u=new URL(value);
   return u.protocol==='https:'&&u.username===''&&u.password===''&&u.search===''&&u.hash===''&&
