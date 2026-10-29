@@ -68,7 +68,7 @@ $('approve').onclick=()=>{
  if(!confirm(selected.name+' さんを本人確認済みとして承認し、1ヶ月型'+m1+'口・3ヶ月型'+m3+'口（累計）にしますか？'))return;
  busy=true;$('approve').disabled=true;
  google.script.run.withSuccessHandler(result=>{
-  busy=false;say('✅ '+result.name+' さんの承認と累計'+result.rights+'回分の確認が完了しました。ガチャ公開設定は変更していません。');
+  busy=false;say('✅ '+result.name+' さんの承認が完了。購入分累計'+result.purchasedDraws+'回換算／ボーナス含む総権利'+result.totalRights+'回／残り'+result.remaining+'回。ガチャ公開設定は変更していません。');
   $('verified').checked=false;load();
  }).withFailureHandler(e=>{
    busy=false;$('approve').disabled=false;
