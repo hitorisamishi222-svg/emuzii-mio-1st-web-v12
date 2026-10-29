@@ -15,6 +15,8 @@ const fixtureItems=[
  {id:'ccddaabb-1234-4000-8000-112233445566',kind:'events',title:'イベントの記録',description:'非公開の記録',credit:'',occurredOn:'2026-10-27',imageUrl:'',externalUrl:'',status:'trash',revision:2}
 ];
 const browserWrites=[];
+const adminCookieChecks=[];
+const publicCookieChecks=[];
 const cwd=process.cwd();
 const tmp=await mkdtemp(join(tmpdir(),'mio-gacha-browser-'));
 const browsers=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
@@ -36,11 +38,19 @@ server=http.createServer(async(req,res)=>{
       browserWrites.push(p);
       res.writeHead(405);res.end('No writes in museum test');return;
     }
-    if(p==='/api/museum/exhibits'){
-      const admin=requestUrl.searchParams.get('scope')==='admin';
-      const items=admin?fixtureItems:fixtureItems.filter(x=>x.status==='published').map(({id,status,revision,...publicItem})=>publicItem);
-      const data=admin?{ok:true,authorized:true,editable:true,imageUploadEnabled:true,items}:{ok:true,open:true,items};
+    if(p==='/api/gallery/museum/exhibits'){
+      const auth=String(req.headers.cookie||'');
+      const valid=auth.includes('mio_gallery_session=local-session')&&auth.includes('mio_gallery_device=local-device');
+      adminCookieChecks.push(valid);
+      if(!valid){res.writeHead(401,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:false,code:'TEST_COOKIE_MISSING'}));return;}
+      const data={ok:true,authorized:true,editable:true,imageUploadEnabled:true,items:fixtureItems};
       res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));return;
+    }
+    if(p==='/api/museum/exhibits'){
+      publicCookieChecks.push(Boolean(req.headers.cookie));
+      const items=fixtureItems.filter(x=>x.status==='published').map(({id,status,revision,...publicItem})=>publicItem);
+      res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
+      res.end(JSON.stringify({ok:true,open:true,items}));return;
     }
     if(p==='/api/announcements'){
       const items=[
@@ -53,7 +63,13 @@ server=http.createServer(async(req,res)=>{
     const file=resolve(cwd,p.replace(/^\/+/,'')||'index.html');
     if(!file.startsWith(cwd+sep))throw Error('path traversal');
     const data=await readFile(file);
-    res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'});
+    // Local fixture mirrors the actual HttpOnly cookie path without relaxing the production code.
+    const headers={'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-store'};
+    if(p==='/museum-curate.html')headers['Set-Cookie']=[
+      'mio_gallery_session=local-session; HttpOnly; SameSite=Strict; Path=/api/gallery',
+      'mio_gallery_device=local-device; HttpOnly; SameSite=Strict; Path=/api/gallery'
+    ];
+    res.writeHead(200,headers);
     res.end(data);
   }catch{res.writeHead(404);res.end('Not found')}
 });
@@ -196,6 +212,10 @@ try{
       assert.equal(await evaluate("document.querySelector('#localPhoto').files.length"),0,'device photo selection not cleared');
     }
   }
+  assert.ok(adminCookieChecks.length>=5,'owner login path was not called');
+  assert.ok(adminCookieChecks.every(Boolean),'HttpOnly scoped gallery cookie missing on owner endpoint');
+  assert.ok(publicCookieChecks.length>=1,'public museum endpoint was not exercised');
+  assert.ok(publicCookieChecks.every(x=>x===false),'owner cookie leaked to the public museum API');
   assert.deepEqual(browserWrites,[],'real mutations must never happen in browser smoke');
   assert.equal(requests.filter(x=>/\/api\/(?:gacha|attendance|checkin|status)/.test(x)).length,0,'do not access live participant or gacha API');
   console.log('MUSEUM_CHROME_PASS '+JSON.stringify({viewports:seen,readonly:true}));
