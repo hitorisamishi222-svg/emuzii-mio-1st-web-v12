@@ -283,7 +283,7 @@ async function load(preferredId){
  if(busy)return false;
  note('展示一覧を確認しています…');
  try{
-  const response=await fetch('/api/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
+  const response=await fetch('/api/gallery/museum/exhibits?scope=admin',{credentials:'same-origin',cache:'no-store'});
   const data=await response.json();
   if(!response.ok||data.ok!==true||data.authorized!==true)throw Error(data.code||'NOT_AUTHORIZED');
   saveNeedsReview=false;
@@ -348,14 +348,14 @@ async function submit(action){
  busy=true;buttons();note('変更を確認して保存しています…');
  let writeRequestStarted=false;
  try{
-  let endpoint='/api/museum/exhibits';
+  let endpoint='/api/gallery/museum/exhibits';
   if(file){
    if(!window.MioMuseumImage?.encode)throw Error('IMAGE_ENCODER_UNAVAILABLE');
    note('端末内で写真を軽量化しています。写真はまだ公開されていません。');
    const encoded=await window.MioMuseumImage.encode(file);
    payload.action=action==='create'?'imageCreate':'imageUpdate';
    payload.image={base64:encoded.base64,format:encoded.format};
-   endpoint='/api/museum/image';
+   endpoint='/api/gallery/museum/image';
    note('確認済みの画像と下書きをまとめて保存しています…');
   }
   writeRequestStarted=true;
@@ -383,7 +383,7 @@ async function scanAssets(next=false){
  assetBusy=true;$('assetRefresh').disabled=true;$('assetNext').disabled=true;
  $('assetStatus').textContent='画像の参照状況を確認しています…';
  try{
-  const url='/api/museum/assets'+(next&&assetCursor?'?cursor='+encodeURIComponent(assetCursor):'');
+  const url='/api/gallery/museum/assets'+(next&&assetCursor?'?cursor='+encodeURIComponent(assetCursor):'');
   const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
   const data=await response.json();
   if(!response.ok||data.ok!==true||!Array.isArray(data.items))throw Error(data.code||'ASSET_AUDIT_UNAVAILABLE');
