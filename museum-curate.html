@@ -160,7 +160,7 @@ h1{line-height:1.45}h2{line-height:1.5}}
 'use strict';
 const $=id=>document.getElementById(id);
 const keys=['kind','title','occurredOn','description','credit','imageUrl','externalUrl'];
-let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null,formDirty=false;
+let items=[],selected=null,editable=false,imageUploadEnabled=false,busy=false,saveNeedsReview=false,previewObjectUrl=null,formDirty=false,contentDirty=false;
 const note=s=>{$('saveStatus').textContent=s;};
 const titleStatus={draft:'下書き（未公開）',published:'公開中',hidden:'非公開',trash:'ゴミ箱（復元可能）'};
 const asInput=(item,k)=>{
@@ -238,7 +238,7 @@ function clearSelectedImage(){
  function choose(){
   clearSelectedImage();
   selected=items.find(x=>x.id===$('selectExhibit').value)||null;
-  formDirty=false;
+  formDirty=false;contentDirty=false;
  for(const k of keys)$(k).value=asInput(selected,k);
  if(!selected){$('kind').value='icons';$('exhibitForm').reset();$('kind').value='icons';}
  $('rightsConfirmed').checked=false;$('privacyConfirmed').checked=false;
@@ -262,8 +262,12 @@ $('selectExhibit').addEventListener('change',()=>{
  }
  choose();
 });
-$('exhibitForm').addEventListener('input',()=>{formDirty=true;});
-$('exhibitForm').addEventListener('change',()=>{formDirty=true;});
+function markDirty(event){
+ formDirty=true;
+ if(!['rightsConfirmed','privacyConfirmed'].includes(event.target?.id))contentDirty=true;
+}
+$('exhibitForm').addEventListener('input',markDirty);
+$('exhibitForm').addEventListener('change',markDirty);
 function startNew(){
  if(formDirty&&!confirm('入力中の内容はまだ保存されていません。新しい展示の入力へ戻りますか？'))return;
  $('exhibitSearch').value='';$('exhibitFilter').value='all';
@@ -309,6 +313,9 @@ async function submit(action){
  if(action==='create'||action==='update'){
   if(!$('exhibitForm').reportValidity())return;
  }
+ if(action==='publish'&&contentDirty){
+  note('入力内容に未保存の変更があります。先に下書き保存し、読み直してから公開してください。');return;
+ }
  if(action==='publish'&&$('uploadImage').files?.length){note('新しい写真を選んでいます。先に画像付きの下書きを保存し、改めて公開してください。');return;}
  if(action==='publish'&&(!$('rightsConfirmed').checked||!$('privacyConfirmed').checked)){
   note('公開前に作品の権利と個人情報を再確認して、2つのチェックを入れてください。');return;
@@ -328,6 +335,10 @@ async function submit(action){
   payload.item.privacyConfirmed=$('privacyConfirmed').checked;
  }else if(action==='publish'){payload.rightsConfirmed=true;payload.privacyConfirmed=true;}
  const file=(action==='create'||action==='update')?$('uploadImage').files?.[0]:null;
+ if((action==='create'||action==='update')&&
+  ['icons','moments'].includes($('kind').value)&&!file&&!previewAllowed($('imageUrl').value.trim())){
+  note('歴代アイコン・思い出アルバムには画像が必要です。写真を選ぶか、詳細設定に画像URLを入力してください。');return;
+ }
  if(file&&!imageUploadEnabled){note('画像登録機能はまだ準備中です。画像の選択を取り消すか、公開画像URLをご利用ください。');return;}
  busy=true;buttons();note('変更を確認して保存しています…');
  let imageRequestStarted=false;
