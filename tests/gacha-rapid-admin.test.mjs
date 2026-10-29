@@ -201,7 +201,7 @@ test('live Web registry formula columns K/L and operator override Q are never ov
   assert.equal(out.ok,true);
   assert.equal(x.sheets['emuzii_Web登録'][0][10],W); // mock holds formula-managed source, not replaced
   assert.equal(x.sheets['emuzii_Web登録'][0][11],'確認待ち');
-  assert.equal(x.sheets['emuzii_Web登録'][0][16],'');
+  assert.equal(x.sheets['emuzii_Web登録'][0][16],'未指定');
   assert.equal(x.sheets['emuzii_Web登録'][0][5],'承認済み');
   assert.equal(x.sheets['emuzii_Web登録'][0][7],'MIO-0017');
   assert.equal(x.sheets['emuzii_ガチャ'][0][2],3);
