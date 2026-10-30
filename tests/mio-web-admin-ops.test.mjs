@@ -67,7 +67,7 @@ test('approval requires exact name and linked MIO ID, preserves token',()=>{
  assert.equal(x.exec(d).replayed,true);
  const other=sandbox();
  other.rows['emuzii_参加者'][1][1]='別人';
- assert.throws(()=>other.exec(d),/名前が一致しません/);
+ assert.throws(()=>other.exec(d),/参加者名が一致しません/);
  assert.equal(other.rows['emuzii_Web登録'][1][5],'承認待ち');
 });
 test('simple intake review is not registration approval',()=>{
