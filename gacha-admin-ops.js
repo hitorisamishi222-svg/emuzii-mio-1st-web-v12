@@ -51,6 +51,7 @@ el('opsIntakeCreate').addEventListener('click',async()=>{
 function render(){
  el('opsPending').replaceChildren();
  el('opsSimple').replaceChildren();
+ el('opsGrants').replaceChildren();
  renderRoster();
  if(!state){
   el('opsCount').textContent='未接続';
@@ -58,6 +59,13 @@ function render(){
   el('opsSimple').append(node('p','接続すると簡易受付の一覧が表示されます。'));
   return;
  }
+ for(const g of (state.grants||[]).slice(0,30)){
+  const item=node('div',undefined,'ops-item');
+  item.append(node('strong',g.name+' / '+g.mioId+' +'+g.count+'回'));
+  item.append(node('small',g.reason));
+  el('opsGrants').append(item);
+ }
+ if(!(state.grants||[]).length)el('opsGrants').append(node('p','付与履歴はありません。'));
  el('opsCount').textContent='要確認 '+state.totalPending+' 件';
  const items=state.pending||[];
  if(!items.length)el('opsPending').append(node('p','承認待ちはありません。'));
