@@ -14,7 +14,7 @@ function node(tag,text,cls){
  return e;
 }
 function button(label,handler){
- const b=node('button',label,'ops-action');b.type='button';b.addEventListener('click',handler);return b;
+ const b=node('button',label,'ops-action');b.type='button';b.disabled=!state?.writeEnabled;b.addEventListener('click',handler);return b;
 }
 function ready(){return snapshot&&typeof snapshot.normalOpen==='boolean'}
 function request(action,values={}){
@@ -29,7 +29,7 @@ function request(action,values={}){
  });
 }
 function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('')}
-function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v}
+function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!state?.writeEnabled||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v||!state?.writeEnabled}
 async function refresh(){
  if(processing)return;
  blocked(true);
@@ -37,7 +37,7 @@ async function refresh(){
  try{
   state=await request('read');
   render();
-  notice('最新の受付情報を読み込みました。');
+  notice(state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
  }catch(e){state=null;render();notice(e.message,true)}
  finally{blocked(false)}
 }
@@ -128,7 +128,7 @@ function renderRoster(){
     const g=item.gacha;
     el('opsPerson').textContent=item.name+' / '+item.mioId+
       (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認');
-    el('opsGrant').disabled=processing||!g||!g.checked;
+    el('opsGrant').disabled=processing||!state?.writeEnabled||!g||!g.checked;
   }));
  }
  if(!all.length)div.append(node('p','該当者がいません。'));
@@ -138,7 +138,7 @@ function renderRoster(){
   if(selected?.gacha)el('opsPerson').textContent=selected.name+' / '+selected.mioId+
     '　総権利 '+selected.gacha.total+' / 残り '+selected.gacha.remaining+' / 特別付与 '+selected.gacha.special;
  }else el('opsPerson').textContent='参加者を選択してください';
- el('opsGrant').disabled=processing||!selected?.gacha?.checked;
+ el('opsGrant').disabled=processing||!state?.writeEnabled||!selected?.gacha?.checked;
 }
 el('opsSearch').addEventListener('input',renderRoster);
 async function mutate(action,payload){
