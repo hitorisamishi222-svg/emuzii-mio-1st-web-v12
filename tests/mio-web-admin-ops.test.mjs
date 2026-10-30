@@ -271,3 +271,33 @@ test('review cannot finalize when registered status changed externally',()=>{
  assert.throws(()=>x.exec(d),/簡易登録の変更状態/);
  assert.equal(log[7],'処理中');
 });
+
+test('actual 38 approved, 1 pending, 2 rejected never inflates approval queue to three',()=>{
+ const x=sandbox();
+ const web=x.rows['emuzii_Web登録'];
+ const original=web[1];
+ for(let i=0;i<38;i++){
+  const row=[...original];
+  row[0]='MIO-W-'+(i+1000).toString(16).padStart(24,'0');
+  row[5]='承認済み';row[11]='確認済み';
+  web.push(row);
+ }
+ for(let i=0;i<2;i++){
+  const row=[...original];row[0]='MIO-W-'+(i+2000).toString(16).padStart(24,'0');
+  row[5]='却下';row[11]='確認待ち';web.push(row);
+ }
+ const view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.totalPending,1);
+ assert.equal(view.rejectedCount,2);
+ assert.equal(view.pending.length,1);
+ assert.equal(view.pending[0].status,'承認待ち');
+});
+test('approved accounts with incomplete identity verification are still shown for review',()=>{
+ const x=sandbox();
+ x.rows['emuzii_Web登録'][1][5]='承認済み';
+ x.rows['emuzii_Web登録'][1][11]='確認待ち';
+ const view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.totalPending,1);
+ assert.equal(view.rejectedCount,0);
+ assert.equal(view.pending[0].status,'承認済み');
+});
