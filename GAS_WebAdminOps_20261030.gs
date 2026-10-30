@@ -130,15 +130,25 @@ function mioAdminOpsApprove_(ss,d){
  if(mioAdminOpsName_(w.c[2])!==mioAdminOpsName_(person.c[1]))throw new Error('参加者名が一致しません。別人を承認できません');
  if(w.c[7]&&mioAdminOpsStr_(w.c[7])!==id)throw new Error('別の参加者IDに紐付いています');
  if(w.c[15]&&mioAdminOpsStr_(w.c[15])!==id)throw new Error('端末復旧先IDと一致しません');
+ if(String(w.c[16]||'')==='旧端末')throw new Error('旧端末の再承認は禁止です');
+ if(mioAdminOpsValues_(web,21).some(function(r){return r[0]!==wid&&r[7]===id&&r[5]==='承認済み';}))
+   throw new Error('このMIO-IDはすでに承認済みです。別端末復旧の本人確認が必要です');
  var row=mioAdminOpsWriteLog_(log,op,'承認',wid,id,'承認待ち','承認済み',d.memberConfirmed?'メンシプ確認済み':'メンシプ未確認',mioAdminOpsStr_(w.c[2]));
- if(!w.c[7])web.getRange(w.row,8).setValue(id);
- web.getRange(w.row,7).setValue(d.memberConfirmed?'確認済み':'未確認');
- web.getRange(w.row,6).setValue('承認済み');
+ if(!w.c[7])web.getRange(w.row,8).setValue(id); // H existing MIO-ID
+ web.getRange(w.row,11).setValue(id); // K integrated MIO-ID
+ web.getRange(w.row,12).setValue('確認済み'); // L identity confirmation
+ web.getRange(w.row,7).setValue(d.memberConfirmed?'確認済み':'未確認'); // G member
+ web.getRange(w.row,13).setValue(new Date());
+ ensureWebDerivedRow_(web,w.row); // preserve N/O/P/T integrity formulas
  SpreadsheetApp.flush();
- var confirmed=web.getRange(w.row,6,1,7).getValues()[0];
- if(confirmed[0]!=='承認済み'||mioAdminOpsStr_(confirmed[2])!==id)throw new Error('承認結果を確認できません');
+ web.getRange(w.row,6).setValue('承認済み'); // F LAST
+ SpreadsheetApp.flush();
+ var confirmed=web.getRange(w.row,1,1,21).getValues()[0];
+ if(confirmed[5]!=='承認済み'||confirmed[7]!==id||confirmed[10]!==id||
+    confirmed[11]!=='確認済み'||!webIntegrityOk_(confirmed))
+   throw new Error('承認結果の本人整合を確認できません');
  log.getRange(row,8).setValue('確定');
- return {ok:true,mioId:id,status:'承認済み',member:confirmed[1]};
+ return {ok:true,mioId:id,status:'承認済み',member:confirmed[6]};
 }
 function mioAdminOpsGrant_(ss,d){
  var op=mioAdminOpsRequest_(d),id=mioAdminOpsStr_(d.mioId),count=d.count,expected=d.expectedSpecial;
