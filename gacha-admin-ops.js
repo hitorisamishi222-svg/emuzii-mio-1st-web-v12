@@ -174,17 +174,48 @@ function renderRoster(){
  el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;
 }
 el('opsSearch').addEventListener('input',renderRoster);
+async function verifyPending(){
+ if(processing||!pending)return;
+ const attempted=pending;
+ blocked(true);
+ notice('前回と同じ操作IDで台帳への反映を確認中…');
+ try{
+  const result=await request(attempted.action,attempted);
+  // The GAS operation ID is confirmed. Even if the following read fails,
+  // the mutation must never be reissued with a new operation ID.
+  storePending(null);
+  selected=null;
+  try{
+   state=await request('read');render();
+   notice(result.result?.replayed?'同じ操作は処理済みでした。二重更新はありません。':'操作を確定しました。最新の状態を読み込みました。');
+  }catch(e){
+   state=null;render();notice('操作は確定しましたが一覧の再読込が失敗しました。受付情報を読み直してください。',true);
+  }
+ }catch(e){
+  if([400,401,403,405,413,415,503].includes(e.httpStatus)){
+   // These responses reject the request before forwarding it to GAS.
+   storePending(null);state=null;render();
+   notice('操作は受け付けられませんでした。'+e.message,true);
+  }else{
+   // Timeout, disconnected network, and 409 may follow a partial GAS write.
+   // Keep the exact ID and payload for a safe, explicit retry.
+   state=null;render();
+   notice('操作結果が未確認です。別の操作IDでやり直さず「同じIDで再確認」を押してください。'+e.message,true);
+  }
+ }finally{blocked(false)}
+}
+el('opsRetry').addEventListener('click',()=>{
+ if(!pending||processing)return;
+ const label=pending.action==='grant'?pending.mioId+' に '+pending.count+'回付与'
+   :pending.action==='approve'?pending.webId+' の登録承認':'管理操作 '+pending.action;
+ if(window.confirm(label+' の結果を、前回と同じ操作IDで確認しますか？\n新しい付与や承認を作らず、既存の操作を照合します。'))
+  void verifyPending();
+});
 async function mutate(action,payload){
  if(processing)return;
- const operationId=uuid();
- blocked(true);notice('台帳の更新を確認中…');
- try{
-  const result=await request(action,{...payload,operationId});
-  const replay=result.result?.replayed;
-  notice(replay?'同じ操作は処理済みです。二重更新はありません。':'更新を確認しました。最新の状態を取得します。');
-  state=await request('read');selected=null;render();
- }catch(e){state=null;render();notice(e.message+'。再読込して状態を確認してください。',true)}
- finally{blocked(false)}
+ if(pending){notice('前回の操作結果が未確認です。先に同じ操作IDで再確認してください。',true);return}
+ storePending({action,...payload,operationId:uuid()});
+ await verifyPending();
 }
 el('opsGrant').addEventListener('click',async()=>{
  const g=selected?.gacha,count=Number(el('opsQuantity').value),reason=el('opsReason').value.trim();
@@ -195,4 +226,5 @@ el('opsGrant').addEventListener('click',async()=>{
  await mutate('grant',{mioId:selected.mioId,count,expectedSpecial:g.special,reason});
 });
 el('opsRoster').append(node('p','管理者コードで接続後に検索できます。'));
+renderPending();
 })();
