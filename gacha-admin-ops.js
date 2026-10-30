@@ -4,6 +4,25 @@
 'use strict';
 const el=id=>document.getElementById(id);
 let state=null,selected=null,processing=false;
+const PENDING_KEY='mio_web_admin_pending_operation_v1';
+let pending=null;
+try{
+ const saved=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');
+ if(saved&&['approve','grant','create','intake','review'].includes(saved.action)&&
+    typeof saved.operationId==='string'&&/^[a-f0-9]{32}$/.test(saved.operationId))
+  pending=saved;
+}catch{}
+function storePending(value){
+ pending=value;
+ try{if(value)sessionStorage.setItem(PENDING_KEY,JSON.stringify(value));
+     else sessionStorage.removeItem(PENDING_KEY)}catch{}
+ renderPending();
+}
+function renderPending(){
+ const button=el('opsRetry'),info=el('opsRetryInfo');
+ button.hidden=!pending;button.disabled=!pending||processing||!ready();
+ info.textContent=pending?'⚠️ 前回の操作結果が未確認です。新しい操作は行わず、同じ操作IDで再確認してください。':'';
+}
 const opsStatus=el('opsStatus');
 const dispatchCode="if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))\\n  return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));".replace('\\n','\n');
 el('opsCopyDispatch').addEventListener('click',async()=>{
@@ -27,7 +46,7 @@ function node(tag,text,cls){
  return e;
 }
 function button(label,handler){
- const b=node('button',label,'ops-action');b.type='button';b.disabled=!state?.writeEnabled;b.addEventListener('click',handler);return b;
+ const b=node('button',label,'ops-action');b.type='button';b.disabled=!state?.writeEnabled||!!pending||processing;b.addEventListener('click',handler);return b;
 }
 function ready(){return snapshot&&typeof snapshot.normalOpen==='boolean'}
 function request(action,values={}){
@@ -37,12 +56,12 @@ function request(action,values={}){
   credentials:'same-origin',cache:'no-store',body:JSON.stringify({code,action,...values})
  }).then(async r=>{
   const json=await r.json().catch(()=>({}));
-  if(!r.ok||json.ok!==true){const error=Error(json.error||'管理データと接続できません');error.code=json.code||'';throw error;}
+  if(!r.ok||json.ok!==true){const error=Error(json.error||'管理データと接続できません');error.code=json.code||'';error.httpStatus=r.status;throw error;}
   return json;
  });
 }
 function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('')}
-function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!state?.writeEnabled||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v||!state?.writeEnabled}
+function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
 async function refresh(){
  if(processing)return;
  blocked(true);
@@ -51,7 +70,7 @@ async function refresh(){
   state=await request('read');
   el('opsInstallGuide').hidden=true;
   render();
-  notice(state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
+  notice(pending?'未確定の操作があります。再確認ボタンから同じIDで照合してください。':state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
  }catch(e){state=null;render();el('opsInstallGuide').hidden=e.code!=='GAS_UPDATE_REQUIRED';notice(e.message,true)}
  finally{blocked(false)}
 }
@@ -142,7 +161,7 @@ function renderRoster(){
     const g=item.gacha;
     el('opsPerson').textContent=item.name+' / '+item.mioId+
       (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認');
-    el('opsGrant').disabled=processing||!state?.writeEnabled||!g||!g.checked;
+    el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!g||!g.checked;
   }));
  }
  if(!all.length)div.append(node('p','該当者がいません。'));
@@ -152,7 +171,7 @@ function renderRoster(){
   if(selected?.gacha)el('opsPerson').textContent=selected.name+' / '+selected.mioId+
     '　総権利 '+selected.gacha.total+' / 残り '+selected.gacha.remaining+' / 特別付与 '+selected.gacha.special;
  }else el('opsPerson').textContent='参加者を選択してください';
- el('opsGrant').disabled=processing||!state?.writeEnabled||!selected?.gacha?.checked;
+ el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;
 }
 el('opsSearch').addEventListener('input',renderRoster);
 async function mutate(action,payload){
