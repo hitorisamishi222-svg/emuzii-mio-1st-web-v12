@@ -16,7 +16,7 @@ function node(tag,text,cls){
 function button(label,handler){
  const b=node('button',label,'ops-action');b.type='button';b.addEventListener('click',handler);return b;
 }
-function ready(){return typeof code==='string'&&code.length>=20&&snapshot&&typeof snapshot.normalOpen==='boolean'}
+function ready(){return snapshot&&typeof snapshot.normalOpen==='boolean'}
 function request(action,values={}){
  if(!ready())throw Error('先に管理者コードで受付管理へ接続してください');
  return fetch('/api/gacha-admin-ops',{
