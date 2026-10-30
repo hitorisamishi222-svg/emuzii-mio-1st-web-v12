@@ -255,11 +255,26 @@ function mioAdminOpsReview_(ss,d){
  var sheet=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
  var data=sheet.getRange(row,1,1,6).getValues()[0];
  var name=mioAdminOpsStr_(data[1]),actual=mioAdminOpsStr_(data[4])||'未確認';
- if(!name||actual!==status)throw new Error('簡易登録状態が変更されています');
- if(actual==='確認済み')return {ok:true,replayed:true};
+ if(!name)throw new Error('簡易登録の対象名がありません');
  var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
- if(old){if(old.c[7]==='確定'&&old.c[2]==='簡易確認')return {ok:true,replayed:true};throw new Error('操作履歴を確認してください');}
- var lrow=mioAdminOpsWriteLog_(log,op,'簡易確認','','',actual,'確認済み','Web受付状況確認',name);
+ if(old){
+   // Store the exact intake row in audit column D so that an interrupted
+   // review cannot accidentally confirm a different person at a later row.
+   var target='簡易受付:'+row;
+   if(old.c[2]!=='簡易確認'||mioAdminOpsStr_(old.c[3])!==target||
+      mioAdminOpsStr_(old.c[5])!==status||mioAdminOpsStr_(old.c[6])!=='確認済み'||
+      mioAdminOpsName_(old.c[9])!==mioAdminOpsName_(name))
+     throw new Error('操作IDの再利用は禁止です');
+   if(actual!=='確認済み')throw new Error('簡易登録の変更状態を確認してください');
+   if(old.c[7]!=='確定'){
+     if(old.c[7]!=='処理中')throw new Error('操作履歴を確認してください');
+     log.getRange(old.row,8).setValue('確定');
+   }
+   return {ok:true,replayed:true,status:'確認済み'};
+ }
+ if(actual!==status)throw new Error('簡易登録状態が変更されています');
+ if(actual==='確認済み')return {ok:true,replayed:true};
+ var lrow=mioAdminOpsWriteLog_(log,op,'簡易確認','簡易受付:'+row,'',actual,'確認済み','Web受付状況確認',name);
  sheet.getRange(row,5).setValue('確認済み');
  SpreadsheetApp.flush();
  if(sheet.getRange(row,5).getValue()!=='確認済み')throw new Error('確認結果が一致しません');
