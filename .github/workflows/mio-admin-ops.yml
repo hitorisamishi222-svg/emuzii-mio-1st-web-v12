@@ -1,0 +1,30 @@
+name: MIO Web Admin Ops staging
+on:
+  push:
+    branches:
+      - feature/mio-gacha-admin-web-ops-20261030
+  pull_request:
+    paths:
+      - 'GAS_WebAdminOps_20261030.gs'
+      - 'api-gacha-admin-ops.js'
+      - 'gacha-admin-ops.js'
+      - 'gacha-web-gate.html'
+      - 'vercel.json'
+      - 'tests/mio-web-admin-ops.test.mjs'
+      - '.github/workflows/mio-admin-ops.yml'
+jobs:
+  isolated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript syntax
+        run: |
+          node --check api-gacha-admin-ops.js
+          node --check gacha-admin-ops.js
+          cp GAS_WebAdminOps_20261030.gs /tmp/mio-admin-ops.js
+          node --check /tmp/mio-admin-ops.js
+      - name: Mock spreadsheet and idempotency behavior
+        run: node --test tests/mio-web-admin-ops.test.mjs
