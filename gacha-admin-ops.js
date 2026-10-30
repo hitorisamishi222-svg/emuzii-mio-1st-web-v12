@@ -42,6 +42,12 @@ async function refresh(){
  finally{blocked(false)}
 }
 el('opsReload').addEventListener('click',refresh);
+el('opsIntakeCreate').addEventListener('click',async()=>{
+ const name=el('opsNewName').value.trim(),note=el('opsNewNote').value.trim();
+ if(!name||name.length>40||note.length>120){notice('初訪問者名・メモを確認してください',true);return}
+ if(!window.confirm(name+' の初訪問を受付記録へ追加しますか？\n※この操作だけでは参加者承認になりません。'))return;
+ await mutate('intake',{name,note});
+});
 function render(){
  el('opsPending').replaceChildren();
  el('opsSimple').replaceChildren();
