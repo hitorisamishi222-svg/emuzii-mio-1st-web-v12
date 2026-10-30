@@ -235,3 +235,39 @@ test('uncertain receipt rejects ambiguous duplicate same-name same-note entries'
  assert.equal(log[7],'処理中');
  assert.equal(x.rows['emuzii_新規簡易登録'].length,4);
 });
+
+test('review receipt can be recovered after status changed but audit left pending',()=>{
+ const x=sandbox();
+ const d={action:'webAdminOpsReview',operationId:'4'.repeat(32),row:2,expectedStatus:'未確認'};
+ assert.equal(x.exec(d).status,'確認済み');
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ assert.equal(log[3],'簡易受付:2');
+ log[7]='処理中';
+ const replay=x.exec(d);
+ assert.equal(replay.replayed,true);
+ assert.equal(log[7],'確定');
+ assert.equal(x.rows['emuzii_新規簡易登録'][1][4],'確認済み');
+ assert.equal(x.rows['emuzii_新規簡易登録'].length,2);
+});
+test('review operation ID may not be reused against another row or person',()=>{
+ const x=sandbox();
+ const d={action:'webAdminOpsReview',operationId:'5'.repeat(32),row:2,expectedStatus:'未確認'};
+ x.exec(d);
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中';
+ x.rows['emuzii_新規簡易登録'].push(['','別の受付者','','登録','確認済み','']);
+ assert.throws(()=>x.exec({...d,row:3}),/操作IDの再利用/);
+ assert.equal(log[7],'処理中');
+ assert.throws(()=>x.exec({...d,expectedStatus:'管理確認待ち'}),/操作IDの再利用/);
+ assert.equal(log[7],'処理中');
+});
+test('review cannot finalize when registered status changed externally',()=>{
+ const x=sandbox();
+ const d={action:'webAdminOpsReview',operationId:'6'.repeat(32),row:2,expectedStatus:'未確認'};
+ x.exec(d);
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中';
+ x.rows['emuzii_新規簡易登録'][1][4]='却下';
+ assert.throws(()=>x.exec(d),/簡易登録の変更状態/);
+ assert.equal(log[7],'処理中');
+});
