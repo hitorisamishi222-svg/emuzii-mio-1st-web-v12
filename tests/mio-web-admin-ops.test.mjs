@@ -200,3 +200,38 @@ test('interrupted approval does not finalize an inconsistent Web registration',(
  assert.throws(()=>x.exec(d),/前の処理を管理者が確認中/);
  assert.equal(log[7],'処理中');
 });
+
+test('first-visit receipt survives lost response and same-ID retry without duplicate row',()=>{
+ const x=sandbox(),d={action:'webAdminOpsIntake',operationId:'1'.repeat(32),name:'到着者A',note:'ガチャのみ'};
+ const result=x.exec(d);
+ assert.equal(result.status,'管理確認待ち');
+ const receiptCount=x.rows['emuzii_新規簡易登録'].length;
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中';
+ const retry=x.exec(d);
+ assert.equal(retry.replayed,true);
+ assert.equal(log[7],'確定');
+ assert.equal(x.rows['emuzii_新規簡易登録'].length,receiptCount);
+ assert.throws(()=>x.exec({...d,note:'別の内容'}),/操作IDの再利用/);
+});
+test('uncertain receipt remains pending if matching row was modified',()=>{
+ const x=sandbox(),d={action:'webAdminOpsIntake',operationId:'2'.repeat(32),name:'到着者B',note:'受付中'};
+ x.exec(d);
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中';
+ const receipt=x.rows['emuzii_新規簡易登録'].at(-1);
+ receipt[5]='違う備考';
+ assert.throws(()=>x.exec(d),/同じ操作の受付状態を確認/);
+ assert.equal(log[7],'処理中');
+ assert.equal(x.rows['emuzii_新規簡易登録'].length,3);
+});
+test('uncertain receipt rejects ambiguous duplicate same-name same-note entries',()=>{
+ const x=sandbox(),d={action:'webAdminOpsIntake',operationId:'3'.repeat(32),name:'到着者C',note:'同じ内容'};
+ x.exec(d);
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中';
+ x.rows['emuzii_新規簡易登録'].push([...x.rows['emuzii_新規簡易登録'].at(-1)]);
+ assert.throws(()=>x.exec(d),/同じ操作の受付状態を確認/);
+ assert.equal(log[7],'処理中');
+ assert.equal(x.rows['emuzii_新規簡易登録'].length,4);
+});

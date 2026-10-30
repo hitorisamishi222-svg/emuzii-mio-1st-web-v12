@@ -273,8 +273,28 @@ function mioAdminOpsIntake_(ss,d){
    throw new Error('受付名・メモを確認してください');
  var history=mioAdminOpsLog_(ss),past=mioAdminOpsExisting_(history,id);
  if(past){
-   if(past.c[2]==='初訪問受付'&&mioAdminOpsName_(past.c[9])===mioAdminOpsName_(name)&&past.c[7]==='確定')
-     return {ok:true,replayed:true};
+   if(past.c[2]!=='初訪問受付'||mioAdminOpsName_(past.c[9])!==mioAdminOpsName_(name)||
+      mioAdminOpsStr_(past.c[8])!==note)
+     throw new Error('操作IDの再利用は禁止です');
+   if(past.c[7]==='確定')return {ok:true,replayed:true};
+   if(past.c[7]!=='処理中')throw new Error('同じ操作の受付状態を確認してください');
+   // If the first attempt wrote the intake row but lost its response, do not
+   // append another record. Match the unique Web-created row and audit time.
+   var pendingSheet=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
+   var started=Date.parse(past.c[0]);
+   if(!Number.isFinite(started))throw new Error('受付履歴の日時を確認してください');
+   var matching=mioAdminOpsValues_(pendingSheet,6).filter(function(r){
+     var when=Date.parse(r[0]),status=mioAdminOpsStr_(r[4]);
+     return mioAdminOpsName_(r[1])===mioAdminOpsName_(name)&&
+       mioAdminOpsStr_(r[2])===''&&mioAdminOpsStr_(r[3])==='Web運営受付'&&
+       (status==='管理確認待ち'||status==='確認済み')&&
+       mioAdminOpsStr_(r[5])===note&&
+       Number.isFinite(when)&&when>=started-5000&&when<=started+900000;
+   });
+   if(matching.length===1){
+     history.getRange(past.row,8).setValue('確定');
+     return {ok:true,replayed:true,status:mioAdminOpsStr_(matching[0][4])};
+   }
    throw new Error('同じ操作の受付状態を確認してください');
  }
  var sh=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
