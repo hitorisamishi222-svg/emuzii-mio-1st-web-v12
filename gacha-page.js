@@ -107,29 +107,41 @@ async function recoverPrevious(p){
     return;
   }
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;
-  let recovered=false;
-  note('当選履歴から前回の結果を確認中です。新しい抽選はしません。');
+  let recovered=false,resume=false;
+  note('当選履歴から前回の結果を確認中です。新しい抽選IDは作りません。');
   try{
     const history=await post('/api/gacha',{action:'history'});
     if(history.participantId!==participant||!Array.isArray(history.history))throw Error('当選履歴の本人確認に失敗しました');
     const rows=history.history.filter(x=>x.drawId===p.drawId);
-    if(rows.length!==1||rows[0].mode!==p.mode||typeof rows[0].prize!=='string'||!rows[0].prize.trim()||
-      !Number.isSafeInteger(Number(rows[0].ordinal))||Number(rows[0].ordinal)<1){
-      throw Error('確定した前回の当選結果が見つかりません');
+    if(rows.length===0){
+      // No committed result for this exact ID. Reusing this ID is idempotent on
+      // the GAS backend (ScriptLock + drawId lookup before an append).
+      // Require an explicit second confirmation before spending a right.
+      const c=await post('/api/gacha',{action:'catalog'});
+      if(c.participantId!==participant||c.confirmed!==true||
+         !Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<1||
+         !Number.isSafeInteger(Number(c.used))||Number(c.used)<0)
+        throw Error('前回の抽選と残り回数を運営が確認中です');
+      resume=window.confirm('前回の抽選IDの確定結果はまだ見つかりません。\n同じ抽選IDで処理を再開します。\nすでに確定済みなら同じ結果を表示し、未確定ならガチャ権利を1回使って抽選します。\n続行しますか？');
+      if(!resume)note('抽選IDと残り回数を保持しました。再開する場合は「前回の抽選結果を確認」を押してください。');
+    }else if(rows.length===1&&rows[0].mode===p.mode&&typeof rows[0].prize==='string'&&rows[0].prize.trim()&&
+      Number.isSafeInteger(Number(rows[0].ordinal))&&Number(rows[0].ordinal)>=1){
+      const x=rows[0];
+      renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
+        prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
+        image:String(x.image||''),replayed:true});
+      forget();recovered=true;
+      note('保存済みの抽選結果を確認しました。もう一度引くには景品の「閉じる」を押してください。');
+    }else{
+      throw Error('前回の抽選履歴に不整合があります');
     }
-    const x=rows[0];
-    renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
-      prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
-      image:String(x.image||''),replayed:true});
-    forget();
-    recovered=true;
-    note('保存済みの抽選結果を確認しました。もう一度引くには景品の「閉じる」を押してください。');
   }catch(e){
     $('retryDraw').hidden=false;
-    note((e?.message||'当選結果を確認できませんでした')+'。同じ抽選IDを保持しています。再抽選せず運営へご連絡ください。');
+    note((e?.message||'当選結果を確認できませんでした')+'。同じ抽選IDを保持しています。運営へご連絡ください。');
   }finally{
     busy=false;$('retryDraw').disabled=false;
     if(recovered)void loadCatalog();
+    else if(resume)void execute(p);
     else if(lastCatalog)setButtons(lastCatalog);
   }
 }
