@@ -24,6 +24,14 @@ function renderPending(){
  info.textContent=pending?'⚠️ 前回の操作結果が未確認です。新しい操作は行わず、同じ操作IDで再確認してください。':'';
 }
 const opsStatus=el('opsStatus');
+const opsGuide=el('opsInstallGuide');
+const setupToggle=el('opsSetupToggle');
+function showGuide(visible){
+ opsGuide.hidden=!visible;
+ setupToggle.setAttribute('aria-expanded',String(visible));
+ setupToggle.textContent=visible?'接続手順を閉じる':'既存GASへの追加手順を開く';
+}
+setupToggle.addEventListener('click',()=>showGuide(opsGuide.hidden));
 const dispatchCode="if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))\\n  return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));".replace('\\n','\n');
 el('opsCopyDispatch').addEventListener('click',async()=>{
  const feedback=el('opsDispatchStatus');
@@ -68,10 +76,10 @@ async function refresh(){
  notice('管理台帳から最新の受付情報を取得中…');
  try{
   state=await request('read');
-  el('opsInstallGuide').hidden=true;
+  showGuide(false);
   render();
   notice(pending?'未確定の操作があります。再確認ボタンから同じIDで照合してください。':state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
- }catch(e){state=null;render();el('opsInstallGuide').hidden=e.code!=='GAS_UPDATE_REQUIRED';notice(e.message,true)}
+ }catch(e){state=null;render();showGuide(e.code==='GAS_UPDATE_REQUIRED');notice(e.message,true)}
  finally{blocked(false)}
 }
 el('opsReload').addEventListener('click',refresh);
