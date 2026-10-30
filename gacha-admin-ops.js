@@ -99,7 +99,7 @@ function render(){
   el('opsGrants').append(item);
  }
  if(!(state.grants||[]).length)el('opsGrants').append(node('p','付与履歴はありません。'));
- el('opsCount').textContent='要確認 '+state.totalPending+' 件';
+ el('opsCount').textContent='要確認 '+state.totalPending+' 件'+(state.rejectedCount?' / 却下済み '+state.rejectedCount+' 件':'');
  const items=state.pending||[];
  if(!items.length)el('opsPending').append(node('p','承認待ちはありません。'));
  for(const item of items){
