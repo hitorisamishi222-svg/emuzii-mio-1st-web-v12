@@ -24,7 +24,7 @@ function request(action,values={}){
   credentials:'same-origin',cache:'no-store',body:JSON.stringify({code,action,...values})
  }).then(async r=>{
   const json=await r.json().catch(()=>({}));
-  if(!r.ok||json.ok!==true)throw Error(json.error||'管理データと接続できません');
+  if(!r.ok||json.ok!==true){const error=Error(json.error||'管理データと接続できません');error.code=json.code||'';throw error;}
   return json;
  });
 }
@@ -36,9 +36,10 @@ async function refresh(){
  notice('管理台帳から最新の受付情報を取得中…');
  try{
   state=await request('read');
+  el('opsInstallGuide').hidden=true;
   render();
   notice(state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
- }catch(e){state=null;render();notice(e.message,true)}
+ }catch(e){state=null;render();el('opsInstallGuide').hidden=e.code!=='GAS_UPDATE_REQUIRED';notice(e.message,true)}
  finally{blocked(false)}
 }
 el('opsReload').addEventListener('click',refresh);
