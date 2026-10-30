@@ -1,0 +1,34 @@
+name: Gacha invite-only safety
+on:
+  pull_request:
+    paths:
+      - 'api-gacha-invite.js'
+      - 'gacha-invite.html'
+      - 'GAS_GachaInvite_20261030.gs'
+      - 'tests/gacha-invite-only.test.mjs'
+      - 'vercel.json'
+      - '.github/workflows/gacha-invite-only.yml'
+  push:
+    branches:
+      - 'feature/mio-gacha-invite-only-20261030'
+    paths:
+      - 'api-gacha-invite.js'
+      - 'gacha-invite.html'
+      - 'GAS_GachaInvite_20261030.gs'
+      - 'tests/gacha-invite-only.test.mjs'
+      - 'vercel.json'
+      - '.github/workflows/gacha-invite-only.yml'
+jobs:
+  invite-only-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Focused invite-only tests
+        run: node --test tests/gacha-invite-only.test.mjs
+      - name: Shared admin ledger regression
+        run: node --test tests/gacha-rapid-admin.test.mjs tests/gacha-rapid-single-file.test.mjs
