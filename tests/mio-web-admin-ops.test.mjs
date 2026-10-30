@@ -29,7 +29,7 @@ function sandbox(){
    setFrozenRows(){}
   };
  }
- const context={SpreadsheetApp:{flush(){}},console,Date};
+ const context={SpreadsheetApp:{flush(){}},console,Date,ensureWebDerivedRow_(){},webIntegrityOk_(r){return r[5]==='承認済み'&&r[7]===r[10]&&r[11]==='確認済み'}};
  vm.runInNewContext(source,context);
  return {rows,write,ss,exec:d=>context.mioAdminOps_(ss,d)};
 }
