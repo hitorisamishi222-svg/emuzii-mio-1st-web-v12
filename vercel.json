@@ -1,8 +1,22 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
-    { "src": "gacha-join.html", "use": "@vercel/static" },
-    { "src": "gacha-admin-fast.html", "use": "@vercel/static" },
+    {
+      "src": "api-gacha-invite.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-invite.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-join.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-admin-fast.html",
+      "use": "@vercel/static"
+    },
     {
       "src": "api-register.js",
       "use": "@vercel/node"
@@ -369,8 +383,22 @@
     }
   ],
   "routes": [
-    { "src": "/gacha-join.html", "dest": "/gacha-join.html" },
-    { "src": "/gacha-admin-fast.html", "dest": "/gacha-admin-fast.html" },
+    {
+      "src": "/api/gacha-invite",
+      "dest": "/api-gacha-invite.js"
+    },
+    {
+      "src": "/gacha-invite.html",
+      "dest": "/gacha-invite.html"
+    },
+    {
+      "src": "/gacha-join.html",
+      "dest": "/gacha-join.html"
+    },
+    {
+      "src": "/gacha-admin-fast.html",
+      "dest": "/gacha-admin-fast.html"
+    },
     {
       "src": "/join.html",
       "dest": "/join.html"
