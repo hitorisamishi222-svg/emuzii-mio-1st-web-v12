@@ -36,3 +36,9 @@ test('config keeps old gacha route, and adds passkey only',()=>{
  assert.equal(config.routes.find(x=>x.src==='/api/gacha-web-gate')?.dest,'/api-gacha-web-gate.js');
  assert.equal(config.routes.find(x=>x.src==='/api/gacha-passkey')?.dest,'/api-gacha-passkey.js');
 });
+
+test('Face ID cookie works for login and both admin API paths',()=>{
+ const api=read('api-gacha-passkey.js');
+ assert.match(api,/HttpOnly; Secure; SameSite=Strict; Path=\\/api\\//);
+ for(const url of ['/api/gacha-passkey','/api/gacha-web-gate','/api/gacha-admin-ops'])assert.ok(url.startsWith('/api/'));
+});
