@@ -79,6 +79,12 @@ function render(){
     await mutate('approve',{webId:item.webId,mioId:id,memberConfirmed:member.value==='yes',expectedStatus:'承認待ち'});
    });
    wrap.append(grant);
+   if(!item.mioId){
+     wrap.append(button('初訪問者のMIO-IDを新規作成',async()=>{
+       if(!window.confirm(item.name+' に新しい参加者IDを作成しますか？\n既存登録がある場合は作成されません。'))return;
+       await mutate('create',{webId:item.webId,expectedStatus:'承認待ち'});
+     }));
+   }
   }
   el('opsPending').append(wrap);
  }
