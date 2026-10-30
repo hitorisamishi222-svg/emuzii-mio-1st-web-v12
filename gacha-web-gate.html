@@ -15,13 +15,62 @@ button:disabled{opacity:.55;cursor:not-allowed}
 small{color:#bbd8ed}
 #status{white-space:pre-wrap;word-break:break-word;border-radius:14px;background:#112a49;padding:13px;min-height:54px}
 #status.error{background:#542922;border:1px solid #f69e87}
+
+/* Operator panels: consistent with original on/off design */
+.ops-tab{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.ops-tab a{border:1px solid #84b6d5;padding:10px 12px;border-radius:10px;color:#f6ddaf;text-decoration:none;font-weight:700}
+.ops-item{background:#12385f;border:1px solid #426b91;border-radius:14px;padding:12px;margin:10px 0}
+.ops-item p{margin:6px 0;overflow-wrap:anywhere;font-size:14px}
+.ops-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ops-head small{max-width:230px}
+.ops-select{margin:10px 0;min-height:46px}
+.ops-action{width:100%;min-height:48px;margin:7px 0;color:#0e2b45;background:#d1eafa}
+.ops-error{color:#ffc3b8}.ops-ok{color:#bff5d4}
+.ops-muted{color:#d6ebfa;font-size:13px}
+.ops-fields{display:grid;grid-template-columns:120px 1fr;gap:10px;margin:12px 0}
+.ops-fields label{font-weight:600;font-size:14px}
+.ops-fields input{min-height:44px}
+#opsRoster{max-height:210px;overflow:auto;margin:10px 0}
+#opsRoster .ops-action{min-height:45px;text-align:left}
+#opsPending,#opsSimple{max-height:420px;overflow:auto}
+#opsStatus{padding:10px 0;min-height:36px}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
-<section><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
+<section id="switches"><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
 <section class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
 <section class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
 <p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
 <p><small>変更はGoogle管理台帳の実際の受付設定に反映します。利用者のガチャ回数・当選履歴は変更しません。</small></p>
+
+<nav class="ops-tab" aria-label="管理画面内の移動"><a href="#switches">受付ON/OFF</a><a href="#ops">登録承認・回数付与</a></nav>
+<section id="ops">
+<h2>👑 運営管理</h2>
+<p class="ops-muted">同じ管理者コードで使います。受付確認に接続した後、管理データを読み込んでください。</p>
+<button id="opsReload" type="button">受付・参加者情報を読み込む</button>
+<p id="opsStatus" role="status">この管理機能は本番接続検証前です。</p>
+</section>
+<section id="ops-approval">
+<h2>📝 登録承認 <small id="opsCount">未接続</small></h2>
+<p class="ops-muted">本人確認後、Web登録IDとMIO-IDを照合して承認します。既存登録を勝手に上書きしません。</p>
+<div id="opsPending" aria-live="polite"></div>
+</section>
+<section id="ops-grant">
+<h2>🎁 ガチャ回数付与</h2>
+<label for="opsSearch">参加者を検索（名前・MIO-ID）</label>
+<input id="opsSearch" type="search" placeholder="参加者名またはMIO-ID">
+<div id="opsRoster"></div>
+<p id="opsPerson">参加者を選択してください。</p>
+<div class="ops-fields"><label for="opsQuantity">付与回数</label><input id="opsQuantity" type="number" min="1" max="50" step="1" value="1">
+<label for="opsReason">付与理由</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント特別付与"></div>
+<button id="opsGrant" type="button" disabled>確認して回数を付与</button>
+<p class="ops-muted">参加者に確認してから操作。二重付与防止と操作履歴記録を行います。</p>
+</section>
+<section id="ops-simple">
+<h2>🚪 初訪問・簡易受付</h2>
+<p class="ops-muted">受付情報の確認と対応済み記録。参加者承認・ガチャ付与はそれぞれ専用操作で行います。</p>
+<div id="opsSimple" aria-live="polite"></div>
+</section>
+<script src="/gacha-admin-ops.js" defer></script>
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);
