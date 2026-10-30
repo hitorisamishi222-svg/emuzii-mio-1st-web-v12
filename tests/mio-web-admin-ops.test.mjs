@@ -176,3 +176,27 @@ test('unexpectedly oversized Web table fails closed, never quietly omits users',
  assert.throws(()=>x.exec({action:'webAdminOpsRead'}),/検証上限/);
  assert.equal(x.write.length,0);
 });
+
+test('interrupted approval finalizes only after matching confirmed identity and member verification',()=>{
+ const x=sandbox();
+ const op='9'.repeat(32);
+ const d={action:'webAdminOpsApprove',operationId:op,webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',memberConfirmed:true,expectedStatus:'承認待ち'};
+ assert.equal(x.exec(d).status,'承認済み');
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中'; // response lost immediately before final audit commit
+ const res=x.exec(d);
+ assert.equal(res.replayed,true);
+ assert.equal(log[7],'確定');
+ assert.equal(x.rows['emuzii_Web登録'][1][7],'MIO-0001');
+ assert.equal(x.rows['emuzii_Web登録'][1][5],'承認済み');
+ assert.throws(()=>x.exec({...d,memberConfirmed:false}),/操作IDの再利用/);
+});
+test('interrupted approval does not finalize an inconsistent Web registration',()=>{
+ const x=sandbox(),d={action:'webAdminOpsApprove',operationId:'6'.repeat(32),webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',memberConfirmed:true,expectedStatus:'承認待ち'};
+ x.exec(d);
+ const log=x.rows['emuzii_Web管理操作履歴'][1];
+ log[7]='処理中';
+ x.rows['emuzii_Web登録'][1][11]='確認待ち';
+ assert.throws(()=>x.exec(d),/前の処理を管理者が確認中/);
+ assert.equal(log[7],'処理中');
+});
