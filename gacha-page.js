@@ -79,13 +79,14 @@ async function loadCatalog(includeHistory=true){
       if(image){const img=document.createElement('img');img.src=image;img.alt='';img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});li.append(img)}
       const text=document.createElement('span'),title=document.createElement('strong'),sub=document.createElement('small');
       title.textContent=x.prize;sub.textContent=`${x.ordinal}回目 · ${x.mode}${x.rarity?' · '+x.rarity:''}${x.date?' · '+fmtDate(x.date):''}`;
+      text.append(title,sub);
       if(x.historyKind==='error_redraw'){
         const mark=document.createElement('span');mark.textContent='🔁 エラーで再抽選';
         mark.className='gacha-error-redraw-mark';
         mark.style.cssText='display:inline-block;margin-top:5px;padding:3px 9px;border:1px solid #ffd38a;border-radius:9px;color:#ffe2a3;font-weight:800;font-size:13px';
         text.append(mark);
       }
-      text.append(title,sub);li.append(text);$('drawHistory').append(li)
+      li.append(text);$('drawHistory').append(li)
     }
     return true
   }catch(e){
