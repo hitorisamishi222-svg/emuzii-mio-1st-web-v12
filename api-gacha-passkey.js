@@ -4,7 +4,7 @@ import {generateRegistrationOptions,verifyRegistrationResponse,generateAuthentic
 import {HOST,READY,COOKIE,hash,random,hostOK,cookie,pool,sessionOK} from './gacha-passkey-auth.js';
 import {authorizedCode} from './api-gacha-web-gate.js';
 const deny=(res,status,error)=>res.status(status).json({ok:false,error});
-const opts='HttpOnly; Secure; SameSite=Strict; Path=/api/gacha';
+const opts='HttpOnly; Secure; SameSite=Strict; Path=/api/';
 function setCookie(res,name,value,age){
  const current=res.getHeader('Set-Cookie')||[];
  res.setHeader('Set-Cookie',[...(Array.isArray(current)?current:[current]),name+'='+encodeURIComponent(value)+'; '+opts+'; Max-Age='+age]);
