@@ -3,6 +3,7 @@
 // Feature disabled until existing GAS module and owner verification are complete.
 import {authorizedCode} from './api-gacha-web-gate.js';
 import {prepare,bridge} from './bridge.js';
+import {sessionOK} from './gacha-passkey-auth.js';
 const SITE='emuzii-mio-1st-web-v12.vercel.app';
 const RELEASE='verified-existing-gas-ops-20261030';
 const reply=(res,status,message)=>res.status(status).json({ok:false,error:message});
@@ -19,7 +20,8 @@ export default async function handler(req,res){
  if(Number(req.headers['content-length']||0)>2048)return reply(res,413,'入力が長すぎます');
  let d;try{d=typeof req.body==='string'?JSON.parse(req.body):req.body}catch{return reply(res,400,'不正なJSONです')}
  if(!d||typeof d!=='object'||Array.isArray(d))return reply(res,400,'操作内容が不正です');
- if(!authorizedCode(d.code,process.env.MIO_GACHA_WEB_KEY_SHA256))return reply(res,403,'管理者コードを確認してください');
+ if(!authorizedCode(d.code,process.env.MIO_GACHA_WEB_KEY_SHA256)&&!(await sessionOK(req)))
+   return reply(res,403,'管理者コードまたはFace IDの認証を確認してください');
  if(!Object.hasOwn(operations,d.action))return reply(res,400,'この操作は使用できません');
  const data={};
  if(d.action==='approve'){
