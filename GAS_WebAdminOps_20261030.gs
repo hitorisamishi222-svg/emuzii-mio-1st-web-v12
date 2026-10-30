@@ -10,6 +10,7 @@ function mioAdminOps_(ss,d){
  if(action==='webAdminOpsRead')return mioAdminOpsRead_(ss,d);
  if(action==='webAdminOpsApprove')return mioAdminOpsApprove_(ss,d);
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
+ if(action==='webAdminOpsCreate')return mioAdminOpsCreate_(ss,d);
  if(action==='webAdminOpsReview')return mioAdminOpsReview_(ss,d);
  throw new Error('未対応の管理操作です');
 }
@@ -66,6 +67,58 @@ function mioAdminOpsWriteLog_(log,requestId,kind,webId,mioId,oldV,newV,note,name
  log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',note,name]]);
  SpreadsheetApp.flush();return row;
 }
+
+/* Create a new participant only after a human has confirmed an unlinked Web registration.
+   Existing participant IDs and rows are never moved or rewritten. */
+function mioAdminOpsCreate_(ss,d){
+ var op=mioAdminOpsRequest_(d),wid=mioAdminOpsStr_(d.webId);
+ if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||d.expectedStatus!=='承認待ち')
+   throw new Error('新規受付の指定が不正です');
+ var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21),w=mioAdminOpsOne_(all,0,wid),name=mioAdminOpsStr_(w.c[2]);
+ if(!name||name.length>40||mioAdminOpsStr_(w.c[5])!=='承認待ち'||mioAdminOpsStr_(w.c[7]))
+   throw new Error('既存の登録先があります。新規MIO-IDを作成できません');
+ var matched=all.filter(function(r){return mioAdminOpsName_(r[2])===mioAdminOpsName_(name)});
+ if(matched.length!==1)throw new Error('同名のWeb登録が複数あります。本人確認が必要です');
+ var people=mioAdminOpsSheet_(ss,'emuzii_参加者'),values=mioAdminOpsValues_(people,10);
+ if(values.some(function(x){return mioAdminOpsName_(x[1])===mioAdminOpsName_(name)}))
+   throw new Error('既存の参加者名です。参加者IDの照合をしてください');
+ var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
+ if(old){
+  if(old.c[2]!=='新規MIO-ID'||old.c[3]!==wid)throw new Error('操作IDの再利用は禁止です');
+  var oldId=mioAdminOpsStr_(old.c[4]);
+  if(old.c[7]==='確定')return {ok:true,replayed:true,mioId:oldId};
+  var saved=values.filter(function(x){return x[0]===oldId&&mioAdminOpsName_(x[1])===mioAdminOpsName_(name)});
+  if(saved.length===1){log.getRange(old.row,8).setValue('確定');return {ok:true,replayed:true,mioId:oldId};}
+  throw new Error('保留中の新規登録を確認してください');
+ }
+ var drawing=mioAdminOpsSheet_(ss,'emuzii_当選履歴'),drawCount=drawing.getLastRow()-1;
+ if(drawCount>20000)throw new Error('過去抽選履歴の照合対象が多すぎます');
+ var usedDraw=drawCount>0?drawing.getRange(2,3,drawCount,1).getValues().map(function(x){return mioAdminOpsStr_(x[0]);}):[];
+ var grants=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴'),grantCount=grants.getLastRow()-1;
+ if(grantCount>20000)throw new Error('過去付与履歴の照合対象が多すぎます');
+ var usedGrant=grantCount>0?grants.getRange(2,2,grantCount,1).getValues().map(function(x){return mioAdminOpsStr_(x[0]);}):[];
+ var activeIds=all.map(function(x){return mioAdminOpsStr_(x[7]);});
+ var slot=0,id='';
+ for(var i=0;i<values.length;i++){
+  var row=i+2,c=values[i];
+  if(mioAdminOpsStr_(c[1])||c.slice(2).some(function(v){return v!==''&&v!==null;}))continue;
+  var next='MIO-'+('0000'+(row-1)).slice(-4);
+  if(usedDraw.indexOf(next)>=0||usedGrant.indexOf(next)>=0||activeIds.indexOf(next)>=0)continue;
+  var formula=people.getRange(row,1).getFormula();
+  if(typeof formula!=='string'||formula.indexOf('MIO-')<0)continue;
+  if(people.getRange(row,2).getFormula())continue;
+  slot=row;id=next;break;
+ }
+ if(!slot)throw new Error('安全に利用できる新規参加者行がありません');
+ var logRow=mioAdminOpsWriteLog_(log,op,'新規MIO-ID',wid,id,'未登録',id,'本人確認後の参加者作成',name);
+ people.getRange(slot,2).setValue(safeText_(name));
+ SpreadsheetApp.flush();
+ if(mioAdminOpsStr_(people.getRange(slot,1).getValue())!==id||mioAdminOpsName_(people.getRange(slot,2).getValue())!==mioAdminOpsName_(name))
+   throw new Error('新規参加者IDの確認に失敗しました');
+ log.getRange(logRow,8).setValue('確定');
+ return {ok:true,mioId:id,name:name};
+}
+
 function mioAdminOpsApprove_(ss,d){
  var op=mioAdminOpsRequest_(d),wid=mioAdminOpsStr_(d.webId),id=mioAdminOpsStr_(d.mioId);
  if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||!/^MIO-\d{4}$/.test(id)||typeof d.memberConfirmed!=='boolean'||d.expectedStatus!=='承認待ち')
