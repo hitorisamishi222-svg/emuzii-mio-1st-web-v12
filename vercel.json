@@ -2,6 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "api-gacha-web-gate.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-web-gate.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "api-register.js",
       "use": "@vercel/node"
     },
@@ -367,6 +375,14 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/gacha-web-gate",
+      "dest": "/api-gacha-web-gate.js"
+    },
+    {
+      "src": "/gacha-web-gate.html",
+      "dest": "/gacha-web-gate.html"
+    },
     {
       "src": "/join.html",
       "dest": "/join.html"
