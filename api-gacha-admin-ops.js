@@ -58,7 +58,7 @@ export default async function handler(req,res){
   if(d.action==='read'){
    if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||!Array.isArray(result.simple))
      throw Error('受付状態を読み取れません');
-   return res.status(200).json({ok:true,pending:result.pending,roster:result.roster,simple:result.simple,totalPending:result.totalPending||0});
+   return res.status(200).json({ok:true,pending:result.pending,roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0});
   }
   return res.status(200).json({ok:true,result:{replayed:!!result.replayed,mioId:result.mioId||null,status:result.status||null,granted:result.granted||null,special:result.special??null,member:result.member||null}});
  }catch(e){
