@@ -11,7 +11,8 @@ import {hash,bridge,sessionCookie} from './bridge.js';
 
 const TARGETS=Object.freeze({
   'MIO-W-e1a31c322e98578b68f9b31c':Object.freeze({masterId:'MIO-0010',name:'まーくん💎🐳ྀི🎃🎁✨️',allowReviewed:false}),
-  'MIO-W-741785c3fb78c7be6f0bbbd3':Object.freeze({masterId:'MIO-0018',name:'サスケ',allowReviewed:true})
+  'MIO-W-741785c3fb78c7be6f0bbbd3':Object.freeze({masterId:'MIO-0018',name:'サスケ',allowReviewed:true}),
+  'MIO-W-1b85de069bf677d2affca3c5':Object.freeze({masterId:'MIO-0003',name:'えむじー🐱',allowReviewed:true,gasAlreadyApproved:true})
 });
 
 export async function recoverFromAdminApprovedLightCookie({req,res,config,dependencies={}}){
@@ -36,6 +37,24 @@ export async function recoverFromAdminApprovedLightCookie({req,res,config,depend
   }else if(light.pendingReview!==false||light.status!=='承認済み'||
       light.attendanceGrantVerified!==true||light.integratedParticipantId!==approved.masterId){
     return {status:'neon-approval-mismatch'};
+  }
+  // Only this admin-confirmed device already has an independently verified
+  // approved GAS row. The signed light cookie and exact GAS tokenHash must
+  // both match; never grant a session from a name, Neon review, or IP alone.
+  if(approved.gasAlreadyApproved){
+    const identity={participantId:session.id,tokenHash};
+    let status;
+    try{status=await callGAS('status',identity)}
+    catch{return {status:'gas-unavailable'}}
+    if(!status||status.ok!==true||status.participantId!==session.id||
+       status.status!=='承認済み'||status.name!==approved.name||
+       !status.progress||!Array.isArray(status.progress.attendanceConfirmedDays)||
+       !Array.isArray(status.progress.attendanceLockedDays))
+       return {status:'gas-status-failed'};
+    if(typeof config.APPS_SCRIPT_SECRET!=='string'||config.APPS_SCRIPT_SECRET.length<32)
+       return {status:'missing-session-secret'};
+    res.setHeader('Set-Cookie',signSession(session.id,session.token,config.APPS_SCRIPT_SECRET));
+    return {status:'recovered',data:status};
   }
   // Do not re-register by name: v1.9.6 deliberately marks duplicates pending.
   // This separate GAS action is guarded by an exact two-browser allowlist,
