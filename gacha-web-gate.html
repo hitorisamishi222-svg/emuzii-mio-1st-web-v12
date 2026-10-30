@@ -1,0 +1,72 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>みお｜ガチャ受付ON/OFF</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,#153c73,#06162e 72%);font:16px/1.6 system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#f0f7ff;min-height:100dvh}
+main{max-width:530px;margin:auto;padding:28px 18px 70px}
+h1{font-size:27px;margin:8px 0 20px}h2{font-size:20px;margin:0}
+section{border:1px solid #558dc2;border-radius:18px;background:#0e294c;padding:20px 16px;margin:18px 0}
+p{margin:12px 0}label{display:block;margin-bottom:8px;font-weight:700}
+input,button{font:inherit}
+input{width:100%;padding:13px;border:1px solid #90bddd;border-radius:12px;background:white;color:#06162e}
+button{border:0;min-height:62px;width:100%;border-radius:12px;font-weight:800;padding:12px;color:#082745;background:#e3bd79;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.switch button{max-width:150px}
+.switch button.on{background:#9fe1b6}.switch button.off{background:#f5caab}
+small{color:#bbd8ed}
+#status{white-space:pre-wrap;word-break:break-word;border-radius:14px;background:#112a49;padding:13px;min-height:54px}
+#status.error{background:#542922;border:1px solid #f69e87}
+</style></head><body><main>
+<h1>🐳 ガチャ受付管理</h1>
+<section><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
+<section class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
+<section class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
+<p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
+<p><small>変更はGoogle管理台帳の実際の受付設定に反映します。利用者のガチャ回数・当選履歴は変更しません。</small></p>
+</main><script>
+'use strict';
+const $=id=>document.getElementById(id);
+let snapshot=null,busy=false,code='';
+function say(t,error=false){$('status').textContent=t;$('status').classList.toggle('error',error)}
+function redraw(){
+ $('connect').disabled=busy;
+ for(const [id,key] of [['normal','normalOpen'],['fest','festOpen']]){
+  const button=$(id),enabled=snapshot?.[key]===true;
+  button.disabled=busy||!snapshot;
+  button.textContent=!snapshot?'未接続':enabled?'ON → OFFにする':'OFF → ONにする';
+  button.className=!snapshot?'':enabled?'on':'off';
+  $(id+'Status').textContent=!snapshot?'未確認':enabled?'現在 ON':'現在 OFF';
+ }
+}
+async function request(payload){
+ const r=await fetch('/api/gacha-web-gate',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify({code,...payload})});
+ const d=await r.json().catch(()=>({}));
+ if(!r.ok||d.ok!==true)throw Error(d.error||'管理画面に接続できません');
+ return d;
+}
+$('connect').onclick=async()=>{
+ if(busy)return;
+ code=$('code').value;
+ busy=true;redraw();say('実際の受付設定を確認しています…');
+ try{
+  snapshot=await request({action:'read'});
+  $('code').value='';
+  say('✅ 管理シートの実際の設定と一致しました。');
+ }catch(e){snapshot=null;code='';say(e.message,true)}
+ finally{busy=false;redraw()}
+};
+async function change(mode){
+ if(!snapshot||busy)return;
+ const key=mode==='通常'?'normalOpen':'festOpen',expected=snapshot[key],enabled=!expected;
+ if(!confirm(mode+'ガチャを'+(enabled?'ON（受付開始）':'OFF（受付停止）')+'にしますか？'))return;
+ busy=true;redraw();say('管理台帳へ反映しています…');
+ try{
+  const result=await request({action:'set',mode,enabled,expected});
+  snapshot=result;
+  say('✅ '+mode+'ガチャを'+(enabled?'ON':'OFF')+'に変更し、実際の受付設定まで確認しました。');
+ }catch(e){snapshot=null;say('⚠️ '+e.message+'。再接続して現在の設定を確認してください。',true)}
+ finally{busy=false;redraw()}
+}
+$('normal').onclick=()=>change('通常');
+$('fest').onclick=()=>change('ラキフェス');
+redraw();
+</script></body></html>
