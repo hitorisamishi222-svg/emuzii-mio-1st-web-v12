@@ -3,7 +3,24 @@ let participant='',busy=false,confirming=false,lastCatalog=null,lastResult=null,
 const pendingKey=()=>`mio_pending_draw_${participant||'unknown'}`;
 const isPreview=location.hostname!=='emuzii-mio-1st-web-v12.vercel.app';
 function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,error:'応答を確認できませんでした'}}}
-async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});const d=parse(await r.text());if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}return d}
+// Retry only authenticated read requests. Never automatically retry a draw/spend.
+async function post(path,body={}){
+  const retryableRead=path==='/api/status'||(path==='/api/gacha'&&['catalog','history'].includes(body.action));
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});
+      const d=parse(await r.text());
+      if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}
+      return d
+    }catch(e){
+      const transient=e.status===502||e.status===504||
+        (e.status===409&&/処理中|連携先に接続できません|連携処理を完了できませんでした|タイムアウト/.test(String(e.message||'')))||
+        (e.status==null&&e instanceof TypeError);
+      if(!retryableRead||!transient||attempt===2)throw e;
+      await new Promise(resolve=>setTimeout(resolve,1800*(attempt+1)+Math.random()*2200));
+    }
+  }
+}
 function note(t){$('drawMessage').textContent=t||''}
 function remember(){try{return JSON.parse(localStorage.getItem(pendingKey())||'null')}catch{return null}}
 function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
