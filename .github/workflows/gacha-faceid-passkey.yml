@@ -1,0 +1,29 @@
+name: Gacha Face ID passkey checks
+on:
+  push:
+    branches:
+      - feature/mio-gacha-admin-web-ops-20261030
+  pull_request:
+    paths:
+      - api-gacha-passkey.js
+      - gacha-passkey-auth.js
+      - gacha-passkey-ui.js
+      - gacha-web-gate.html
+      - api-gacha-web-gate.js
+      - sql/gacha-admin-passkey-isolated.sql
+      - tests/mio-gacha-faceid-passkey.test.mjs
+      - vercel.json
+      - .github/workflows/gacha-faceid-passkey.yml
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check api-gacha-passkey.js
+      - run: node --check gacha-passkey-auth.js
+      - run: node --check gacha-passkey-ui.js
+      - run: node --check api-gacha-web-gate.js
+      - run: node --test tests/mio-gacha-faceid-passkey.test.mjs
