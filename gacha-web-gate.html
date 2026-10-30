@@ -49,6 +49,8 @@ small{color:#bbd8ed}
 <p class="ops-muted">同じ管理者コードで使います。受付確認に接続した後、管理データを読み込んでください。</p>
 <button id="opsReload" type="button">受付・参加者情報を読み込む</button>
 <p id="opsStatus" role="status">管理台帳への接続確認が必要です。</p>
+<button id="opsRetry" type="button" class="ops-action" hidden disabled>未確定の操作を同じIDで再確認</button>
+<p id="opsRetryInfo" class="ops-muted" aria-live="polite"></p>
 <div id="opsInstallGuide" hidden style="border:1px solid #88b2d0;border-radius:12px;padding:12px;margin-top:10px">
  <strong>Web管理の初回接続（既存GASへ追加）</strong>
  <p class="ops-muted">既存の Code.gs は丸ごと置き換えません。登録・ガチャの既存処理を維持します。</p>
