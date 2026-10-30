@@ -8,6 +8,8 @@ function sandbox(){
   'emuzii_Web登録':[['Web参加ID'],['MIO-W-1234567890abcdef12345678','token','新しい人','',new Date(),'承認待ち','未確認','MIO-0001','','','','確認待ち',...Array(9).fill('')]],
   'emuzii_参加者':[['参加者ID'],['MIO-0001','新しい人']],
   'emuzii_ガチャ':[['参加者ID'],['MIO-0001','新しい人',0,0,0,2,0,2,0,0,0,'','OK','OK',2,0,'解放']],
+  'emuzii_ガチャ付与履歴':[['日時']],
+  'emuzii_当選履歴':[['抽選ID']],
   'emuzii_新規簡易登録':[['登録日時'],['','初訪問者','MIO-W-222222222222222222222222','登録','未確認','']]
  };
  const write=[];
@@ -21,7 +23,8 @@ function sandbox(){
    getRange(row,col,rs=1,cs=1){
     return {
      getValues(){return Array.from({length:rs},(_,ri)=>Array.from({length:cs},(_,ci)=>rows[name][row+ri-1]?.[col+ci-1]??''))},
-     getValue(){return rows[name][row-1]?.[col-1]??''},
+     getValue(){if(name==='emuzii_参加者'&&col===1&&row===3&&rows[name][2]?.[1])return 'MIO-0002';return rows[name][row-1]?.[col-1]??''},
+     getFormula(){return name==='emuzii_参加者'&&col===1&&row===3?'=IF(B3="","","MIO-"&TEXT(ROW()-1,"0000"))':''},
      setValue(v){if(!rows[name][row-1])rows[name][row-1]=[];rows[name][row-1][col-1]=v;write.push({name,row,col,v});return this},
      setValues(matrix){for(let ri=0;ri<matrix.length;ri++)for(let ci=0;ci<matrix[ri].length;ci++){if(!rows[name][row+ri-1])rows[name][row+ri-1]=[];rows[name][row+ri-1][col+ci-1]=matrix[ri][ci];write.push({name,row:row+ri,col:col+ci+0,v:matrix[ri][ci]})}return this}
     };
@@ -29,7 +32,7 @@ function sandbox(){
    setFrozenRows(){}
   };
  }
- const context={SpreadsheetApp:{flush(){}},console,Date,ensureWebDerivedRow_(){},webIntegrityOk_(r){return r[5]==='承認済み'&&r[7]===r[10]&&r[11]==='確認済み'}};
+ const context={SpreadsheetApp:{flush(){}},console,Date,ensureWebDerivedRow_(){},webIntegrityOk_(r){return r[5]==='承認済み'&&r[7]===r[10]&&r[11]==='確認済み'},safeText_(v){return v}};
  vm.runInNewContext(source,context);
  return {rows,write,ss,exec:d=>context.mioAdminOps_(ss,d)};
 }
@@ -85,4 +88,16 @@ test('preview assets add independent API, keep current draw route',()=>{
  assert.match(api,/MIO_GACHA_ADMIN_OPS_RELEASE/);
  const html=readFileSync(new URL('../gacha-web-gate.html',import.meta.url),'utf8');
  for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','normal','fest'])assert.ok(html.includes('id="'+id+'"'));
+});
+
+test('new visitor MIO-ID is created only after exact unlinked registration check',()=>{
+ const x=sandbox(),webId='MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa';
+ x.rows['emuzii_参加者'].push(Array(10).fill(''));
+ x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),'承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+ const d={action:'webAdminOpsCreate',operationId:'c'.repeat(32),webId,expectedStatus:'承認待ち'};
+ const first=x.exec(d);
+ assert.equal(first.mioId,'MIO-0002');
+ assert.equal(x.rows['emuzii_参加者'][2][1],'初訪問者');
+ assert.equal(x.rows['emuzii_参加者'][1][1],'新しい人');
+ assert.equal(x.exec(d).replayed,true);
 });
