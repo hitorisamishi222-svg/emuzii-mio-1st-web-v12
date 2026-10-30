@@ -1,0 +1,22 @@
+name: Gacha Web ON OFF focus
+on:
+  push:
+    branches:
+      - fix/mio-gacha-web-toggle-only-20261030
+  pull_request:
+    paths:
+      - gacha-web-gate.html
+      - api-gacha-web-gate.js
+      - GAS_WebGateOnly_20261030.gs
+      - tests/gacha-web-live-switch.test.mjs
+      - .github/workflows/gacha-web-switch.yml
+jobs:
+  switch-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --check api-gacha-web-gate.js
+      - run: node --test tests/gacha-web-live-switch.test.mjs
