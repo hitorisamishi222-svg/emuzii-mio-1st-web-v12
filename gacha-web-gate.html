@@ -68,6 +68,9 @@ small{color:#bbd8ed}
 <section id="ops-simple">
 <h2>🚪 初訪問・簡易受付</h2>
 <p class="ops-muted">受付情報の確認と対応済み記録。参加者承認・ガチャ付与はそれぞれ専用操作で行います。</p>
+<label for="opsNewName">初訪問者のColorSing名</label><input id="opsNewName" type="text" maxlength="40" placeholder="初訪問者名">
+<label for="opsNewNote">受付メモ</label><input id="opsNewNote" type="text" maxlength="120" placeholder="ガチャだけ参加など">
+<button id="opsIntakeCreate" type="button">受付を登録する</button>
 <div id="opsSimple" aria-live="polite"></div>
 </section>
 <script src="/gacha-admin-ops.js" defer></script>
