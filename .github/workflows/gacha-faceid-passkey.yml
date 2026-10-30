@@ -27,3 +27,18 @@ jobs:
       - run: node --check gacha-passkey-ui.js
       - run: node --check api-gacha-web-gate.js
       - run: node --test tests/mio-gacha-faceid-passkey.test.mjs
+      - name: Check deployed Face ID readiness without login credentials
+        run: |
+          node --input-type=module - <<'NODE'
+          const origin='https://emuzii-mio-1st-web-v12.vercel.app';
+          const response=await fetch(origin+'/api/gacha-passkey',{
+            method:'POST',
+            headers:{Origin:origin,'Content-Type':'application/json'},
+            body:JSON.stringify({action:'status'}),
+            signal:AbortSignal.timeout(15000)
+          });
+          const result=await response.json().catch(()=>({}));
+          console.log('Production passkey readiness:',response.status,'ok:',result.ok===true,'authenticated:',result.authenticated===true);
+          if(response.status!==200||result.ok!==true||result.authenticated!==false)
+            process.exitCode=1;
+          NODE
