@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>翠央｜招待ガチャだけ参加</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#215aa0 0%,#081c3c 58%,#050c24 100%);color:#fff;font:16px/1.65 system-ui,-apple-system,"Noto Sans JP",sans-serif;min-height:100dvh}
+main{max-width:620px;margin:auto;padding:32px 17px 80px}
+h1{font-size:clamp(26px,6vw,34px);margin:10px 0}h2{font-size:20px;margin:4px 0}
+p{margin:12px 0}a{color:#d7edff}button,input{font:inherit}
+section{background:#102f5bcf;border:1px solid #83b9ee;border-radius:24px;padding:22px;margin:20px 0;box-shadow:0 12px 36px #0004}
+label{display:block;font-weight:750;margin:15px 0 7px}
+input{width:100%;padding:15px;min-height:54px;border:2px solid #9fcaee;border-radius:13px;background:#fff;color:#102b4c;font-size:20px;letter-spacing:.08em;text-transform:uppercase}
+button{min-height:54px;border:0;border-radius:14px;padding:12px 18px;background:linear-gradient(110deg,#fff4b6,#ffc974);color:#182e4b;font-weight:850;cursor:pointer}
+button:disabled{opacity:.48;cursor:not-allowed}
+.wide{display:block;width:100%;margin-top:17px}.sub{background:#174875;border:1px solid #98c7f3;color:white}
+.muted{color:#bfd9f3;font-size:14px}
+header{text-align:center}.whale{font-size:53px;line-height:1.2}.stat{text-align:center;font-size:21px;font-weight:850;padding:18px;border:1px solid #70b8ec;border-radius:16px;background:#082448}
+#modes{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:18px 0}
+#modes button{display:flex;min-height:108px;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+#modes span{font-size:29px}
+#message{white-space:pre-wrap;overflow-wrap:anywhere;padding:13px;background:#092443;border-radius:11px;border:1px solid #417bb0;min-height:55px}
+#message.error{background:#582724;border-color:#fb9c82}
+#prize{text-align:center;min-height:140px}
+#prize img{max-width:100%;max-height:280px;object-fit:contain;border-radius:12px}
+#history{padding-left:22px;margin:12px 0;max-height:280px;overflow:auto}
+#history li{margin:10px 0;padding-bottom:7px;border-bottom:1px solid #ffffff3d}
+[hidden]{display:none!important}
+</style></head>
+<body><main><header><div class="whale">🐳🎁</div><h1>みおの招待ガチャ</h1><p>特設サイトの登録は必要ありません。<br>管理者から届いたコードだけで参加できます。</p></header>
+<section id="entry"><h2>招待コードを入力</h2><p>みお・えむじーからお伝えしたコードを入力してください。</p>
+<form id="codeForm"><label for="code">招待コード</label><input id="code" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="24" placeholder="MI-XXXX-XXXX-XXXX-XXXX" required><button class="wide" id="enter" type="submit">🎁 ガチャへ進む</button></form>
+<p class="muted">コードは1人・1端末につき1回だけ利用できます。翌日に戻るときは、同じブラウザを使ってください。</p></section>
+<section id="play" hidden><h2>ガチャを楽しもう！</h2><p class="stat" id="remaining">残り回数を確認中…</p><p class="muted" id="rules">通常ガチャとラキフェスの開催状況は運営の設定に従います。</p>
+<div id="modes"><button id="normal" disabled><span>💎</span>通常ガチャ</button><button id="fest" disabled><span>✨</span>ラキフェス</button></div>
+<div id="prize" aria-live="polite" hidden><h2 id="prizeName"></h2><p id="prizeMeta"></p><img id="prizeImage" alt="" hidden></div>
+<button class="wide sub" id="refresh" type="button">↻ 残回数・抽選履歴を確認</button>
+<button class="wide sub" id="recover" type="button" hidden>前回の抽選結果を確認</button>
+<h2 style="margin-top:27px">当選履歴</h2><ol id="history"></ol></section>
+<p id="message" role="status" aria-live="polite">ガチャの利用状況を確認しています…</p>
+<footer class="muted">招待ガチャは特典サイトの会員登録ではありません。ガチャ権利と景品履歴は既存の管理台帳と共通です。コード再発行や端末変更は運営へお問い合わせください。</footer></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const endpoint='/api/gacha-invite';
+let current=null,participant=null,busy=false;
+const key=()=> 'mio_invite_pending_draw_'+(participant||'unknown');
+function pending(){try{return JSON.parse(localStorage.getItem(key())||'null')}catch{return null}}
+function tell(text,error=false){$('message').textContent=text;$('message').classList.toggle('error',error)}
+async function post(body){
+ const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});
+ let d;try{d=await r.json()}catch{throw Error('サーバーからの結果を確認できません')}
+ if(!r.ok||d.ok===false)throw Error(d.error||'確認できませんでした');
+ return d;
+}
+function safeImage(src){
+ return typeof src==='string'&&/^https:\/\//i.test(src)&&src.length<=1500?src:null;
+}
+function showPrize(d){
+ $('prize').hidden=false;$('prizeName').textContent='🎊 '+String(d.prize||'景品獲得')+' 🎊';
+ $('prizeMeta').textContent=String(d.mode||'')+' · '+String(d.rarity||'')+' · '+String(d.ordinal||'')+'回目';
+ const src=safeImage(d.image);
+ $('prizeImage').hidden=!src;if(src)$('prizeImage').src=src;else $('prizeImage').removeAttribute('src');
+}
+function buttons(){
+ const p=pending(),c=current;
+ $('normal').disabled=busy||!!p||!c||!c.confirmed||c.remaining<1||c.normalOpen!==true||c.normal?.ready!==true;
+ $('fest').disabled=busy||!!p||!c||!c.confirmed||c.remaining<1||c.festOpen!==true||!c.festUnlocked||c.fest?.ready!==true;
+ $('recover').hidden=!p;
+}
+async function refresh(){
+ if(busy)return;busy=true;buttons();
+ try{
+  const c=await post({action:'catalog'});current=c;participant=c.participantId;
+  $('entry').hidden=true;$('play').hidden=false;
+  $('remaining').textContent='🎟️ ガチャ残り '+Number(c.remaining||0)+' 回';
+  const threshold=Number(c.festAvailableFrom)||5;
+  $('rules').textContent='通常：'+(c.normalOpen?'開催中':'受付停止')+' ／ ラキフェス：'+(c.festOpen?(c.festUnlocked?'利用可能':threshold+'回目から'):'受付停止');
+  const h=await post({action:'history'});$('history').replaceChildren();
+  for(const row of h.history||[]){
+   const li=document.createElement('li');
+   li.textContent=String(row.mode||'')+'｜'+String(row.prize||'')+'｜'+String(row.date||'').slice(0,16);
+   $('history').append(li);
+  }
+  if(!(h.history||[]).length){const li=document.createElement('li');li.textContent='まだ抽選履歴はありません';$('history').append(li)}
+  tell(pending()?'前回の抽選結果を確認してください。':c.remaining>0?'ガチャを選んで楽しんでね！':'ガチャ権利はすべて使用済みです。');
+ }catch(e){
+  if(!current){$('entry').hidden=false;$('play').hidden=true}
+  tell(e.message,true);
+ }finally{busy=false;buttons()}
+}
+$('codeForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(busy)return;busy=true;$('enter').disabled=true;tell('招待コードと管理台帳を確認中…');
+ try{
+  await post({action:'redeem',code:$('code').value});
+  $('code').value='';busy=false;await refresh();
+ }catch(e){tell(e.message,true)}finally{busy=false;$('enter').disabled=false}
+});
+function randomId(){return Array.from(crypto.getRandomValues(new Uint8Array(16)),x=>x.toString(16).padStart(2,'0')).join('')}
+async function draw(mode){
+ if(busy||pending()||!current)return;
+ const c=current;
+ const ready=mode==='通常'?c.normalOpen&&c.normal?.ready:c.festOpen&&c.fest?.ready&&c.festUnlocked;
+ if(!ready||!c.confirmed||c.remaining<1)return;
+ if(!confirm(mode+'ガチャを1回引きます。管理台帳の残回数を1回使います。よろしいですか？'))return;
+ const p={drawId:randomId(),mode};
+ localStorage.setItem(key(),JSON.stringify(p));busy=true;buttons();
+ $('prize').hidden=true;tell('🐳 ガチャを回しています…');
+ try{
+  const d=await post({action:'draw',...p});
+  localStorage.removeItem(key());showPrize(d);tell('🎉 景品が確定しました！');busy=false;await refresh();
+ }catch(e){tell('抽選の結果が未確認です。二重抽選を防ぐため「前回の抽選結果を確認」を押してください。\n'+e.message,true)}
+ finally{busy=false;buttons()}
+}
+async function recover(){
+ const p=pending();if(!p||busy)return;
+ busy=true;buttons();tell('元の当選履歴から照合中…');
+ try{
+  const h=await post({action:'history'});
+  const found=(h.history||[]).filter(x=>x.drawId===p.drawId&&x.mode===p.mode);
+  if(found.length===1){
+   localStorage.removeItem(key());showPrize(found[0]);tell('✅ 前回の確定済み結果を復元しました。');busy=false;await refresh();
+  }else{tell('まだ確定結果を確認できません。新しく抽選せず、管理者へ連絡してください。',true)}
+ }catch(e){tell(e.message,true)}finally{busy=false;buttons()}
+}
+$('normal').onclick=()=>void draw('通常');$('fest').onclick=()=>void draw('ラキフェス');
+$('refresh').onclick=()=>void refresh();$('recover').onclick=()=>void recover();
+void refresh();
+</script></body></html>
