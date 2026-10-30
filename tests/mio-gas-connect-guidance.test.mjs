@@ -10,13 +10,16 @@ test('old GAS is diagnosed only for authenticated Web admin read',()=>{
  assert.match(s,/code:'GAS_UPDATE_REQUIRED'/);
  assert.match(s,/d\.action!=='read'&&!writeEnabled/);
 });
-test('guide stays hidden until old GAS response, does not leak user data',()=>{
+test('guide starts hidden but can be opened directly without admin login',()=>{
  const html=load('gacha-web-gate.html'),js=load('gacha-admin-ops.js');
  assert.match(html,/id="opsInstallGuide" hidden/);
  assert.match(html,/blob\/main\/GAS_WebAdminOps_20261030\.gs/);
  assert.match(html,/id="opsCopyDispatch"/);
  assert.match(html,/デプロイを管理/);
- assert.match(js,/e\.code!=='GAS_UPDATE_REQUIRED'/);
+ assert.match(html,/id="opsSetupToggle"/);
+ assert.match(js,/setupToggle\.addEventListener\('click'/);
+ assert.match(js,/showGuide\(opsGuide\.hidden\)/);
+ assert.match(js,/showGuide\(e\.code==='GAS_UPDATE_REQUIRED'\)/);
  assert.match(js,/error\.code=json\.code/);
 });
 test('original gacha switch remains wired; write gate remains closed',()=>{
@@ -25,4 +28,14 @@ test('original gacha switch remains wired; write gate remains closed',()=>{
  assert.equal(config.routes.find(x=>x.src==='/api/gacha-web-gate')?.dest,'/api-gacha-web-gate.js');
  assert.match(load('gacha-web-gate.html'),/id="normal"/);
  assert.match(load('gacha-web-gate.html'),/id="fest"/);
+});
+
+test('unauthenticated guide does not expose keys or modify operational APIs',()=>{
+ const html=load('gacha-web-gate.html');
+ assert.match(html,/既存GASへの追加手順を開く/);
+ assert.match(html,/aria-controls="opsInstallGuide"/);
+ assert.match(html,/id="opsInstallGuide" hidden/);
+ assert.doesNotMatch(html,/MIO_GACHA_WEB_KEY_SHA256\s*=|APPS_SCRIPT_SECRET\s*=/);
+ const api=load('api-gacha-admin-ops.js');
+ assert.match(api,/d\.action!=='read'&&!writeEnabled/);
 });
