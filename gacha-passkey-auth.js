@@ -17,7 +17,7 @@ export async function sessionOK(req){
  const t=cookie(req);if(!/^[\w-]{40,60}$/.test(t))return false;
  const p=pool();
  try{
-  const r=await p.query('SELECT 1 FROM mio_gacha_admin_sessions WHERE token_hash=$1 AND revoked_at IS NULL AND expires_at>now() LIMIT 1',[hash(t)]);
+  const r=await p.query('SELECT 1 FROM mio_gacha_admin_sessions s JOIN mio_gacha_admin_credentials k ON k.credential_id=s.credential_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() AND k.revoked_at IS NULL LIMIT 1',[hash(t)]);
   return r.rowCount===1;
  }catch{return false}finally{await p.end()}
 }
