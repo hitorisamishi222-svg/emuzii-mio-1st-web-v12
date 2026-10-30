@@ -12,7 +12,8 @@ import {hash,bridge,sessionCookie} from './bridge.js';
 const TARGETS=Object.freeze({
   'MIO-W-e1a31c322e98578b68f9b31c':Object.freeze({masterId:'MIO-0010',name:'まーくん💎🐳ྀི🎃🎁✨️',allowReviewed:false}),
   'MIO-W-741785c3fb78c7be6f0bbbd3':Object.freeze({masterId:'MIO-0018',name:'サスケ',allowReviewed:true}),
-  'MIO-W-1b85de069bf677d2affca3c5':Object.freeze({masterId:'MIO-0003',name:'えむじー🐱',allowReviewed:true,gasAlreadyApproved:true})
+  'MIO-W-1b85de069bf677d2affca3c5':Object.freeze({masterId:'MIO-0003',name:'えむじー🐱',allowReviewed:true,gasAlreadyApproved:true}),
+  'MIO-W-e56d635f98eaca299d52b4ba':Object.freeze({masterId:'MIO-0047',name:'かんちゃん💖2次審査通過thx✨️',allowReviewed:false,gasAlreadyApproved:true})
 });
 
 export async function recoverFromAdminApprovedLightCookie({req,res,config,dependencies={}}){
