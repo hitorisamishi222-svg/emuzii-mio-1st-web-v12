@@ -36,6 +36,7 @@ small{color:#bbd8ed}
 #opsStatus{padding:10px 0;min-height:36px}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
+<section><h2>🔑 Face ID・パスキー</h2><p><small>初回だけ管理者コードで登録。次からはFace IDでログインできます。</small></p><button id="passkeyLogin" disabled>Face IDでログイン</button><button id="passkeyRegister" disabled style="margin-top:10px;background:#184d71;color:#f3f9ff;border:1px solid #83afce">この端末のFace IDを登録</button><p id="passkeyStatus" role="status" aria-live="polite">Face IDの利用状況を確認しています…</p></section>
 <section id="switches"><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
 <section class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
 <section class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
@@ -122,4 +123,4 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script></body></html>
