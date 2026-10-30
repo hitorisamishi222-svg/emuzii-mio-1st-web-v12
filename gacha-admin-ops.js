@@ -29,22 +29,9 @@ const setupToggle=el('opsSetupToggle');
 function showGuide(visible){
  opsGuide.hidden=!visible;
  setupToggle.setAttribute('aria-expanded',String(visible));
- setupToggle.textContent=visible?'接続手順を閉じる':'既存GASへの追加手順を開く';
+ setupToggle.textContent=visible?'接続手順を閉じる' :'Code.gs全貼り付け手順を開く';
 }
 setupToggle.addEventListener('click',()=>showGuide(opsGuide.hidden));
-const dispatchCode="if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))\\n  return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));".replace('\\n','\n');
-el('opsCopyDispatch').addEventListener('click',async()=>{
- const feedback=el('opsDispatchStatus');
- try{
-  await navigator.clipboard.writeText(dispatchCode);
-  feedback.textContent='✅ 追加する2行をコピーしました。既存Code.gsのdoPost(e)内に貼り付けてください。';
- }catch{
-  const field=document.createElement('textarea');
-  field.readOnly=true;field.value=dispatchCode;field.style.cssText='width:100%;min-height:95px';
-  feedback.replaceChildren(document.createTextNode('下の2行を選択してコピーしてください。'),field);
-  field.focus();field.select();
- }
-});
 function notice(t,bad=false){opsStatus.textContent=t;opsStatus.className=bad?'ops-error':'ops-ok'}
 function safe(t){return String(t??'')}
 function node(tag,text,cls){
