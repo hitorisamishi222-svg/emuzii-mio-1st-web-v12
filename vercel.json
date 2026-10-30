@@ -2,6 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "gacha-passkey-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-gacha-passkey.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api-gacha-web-gate.js",
       "use": "@vercel/node"
     },
@@ -375,6 +383,14 @@
     }
   ],
   "routes": [
+    {
+      "src": "/gacha-passkey-ui.js",
+      "dest": "/gacha-passkey-ui.js"
+    },
+    {
+      "src": "/api/gacha-passkey",
+      "dest": "/api-gacha-passkey.js"
+    },
     {
       "src": "/api/gacha-web-gate",
       "dest": "/api-gacha-web-gate.js"
