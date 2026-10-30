@@ -1,7 +1,7 @@
 /**
  * MIO Web operator service. Add to EXISTING Apps Script; DO NOT run setup.
  * Dispatcher in existing doPost AFTER BRIDGE_SECRET comparison, inside ScriptLock:
- *   if(/^webAdminOps(?:Read|Approve|Grant|Review|Create)$/.test(d.action))
+ *   if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))
  *     return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
  * This file never changes check-in or draw logic.
  */
