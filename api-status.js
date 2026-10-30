@@ -34,6 +34,6 @@ export default async function handler(req,res){
       recovery={status:'failed'};
     }
     if(recovery.status==='recovered')return res.status(200).json(recovery.data);
-    return res.status(502).json({ok:false,error:'参加状況を取得できませんでした。以前の情報は現在値として表示しません。'});
+    return res.status(502).json({ok:false,error:'⚠️ 一時的な通信エラーの可能性があります。ページを再読み込みして、もう一度お試しください。再登録は不要です。登録情報・ガチャ回数・当選履歴は、この再確認操作では変更されません。改善しない場合は管理者にご連絡ください。'});
   }
 }
