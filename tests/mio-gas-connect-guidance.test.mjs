@@ -13,7 +13,8 @@ test('old GAS is diagnosed only for authenticated Web admin read',()=>{
 test('guide stays hidden until old GAS response, does not leak user data',()=>{
  const html=load('gacha-web-gate.html'),js=load('gacha-admin-ops.js');
  assert.match(html,/id="opsInstallGuide" hidden/);
- assert.match(html,/blob\/main\/GAS_Code_FULL_WEB_OPS_20261030\.gs/);
+ assert.match(html,/blob\/main\/GAS_WebAdminOps_20261030\.gs/);
+ assert.match(html,/id="opsCopyDispatch"/);
  assert.match(html,/デプロイを管理/);
  assert.match(js,/e\.code!=='GAS_UPDATE_REQUIRED'/);
  assert.match(js,/error\.code=json\.code/);
