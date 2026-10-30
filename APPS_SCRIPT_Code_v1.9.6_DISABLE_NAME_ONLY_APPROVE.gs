@@ -581,6 +581,36 @@ function catalog_(ss,mode){
   return {ready:valid&&!exhausted,message:!valid?'景品と確率を設定中です（有効な景品の確率合計は100％）':exhausted?'数量上限に達した景品があります。運営の設定更新をお待ちください':'抽選できます',total:total/100,prizes:prizes};
 }
 
+/**
+ * Emergency gate reader (2026-10-30).
+ * Always read the actual checkbox values from the existing management sheet
+ * on every catalog/draw request; never use a mirrored UI field or a cached flag.
+ * Fail closed on missing labels, duplicates, or invalid checkbox values.
+ */
+function gachaReadLiveGate_(ss) {
+  try {
+    var sheet=ss.getSheetByName('emuzii_管理画面');
+    if(!sheet)return {normalOpen:false,festOpen:false,configured:false};
+    var n=Math.min(sheet.getLastRow(),300);
+    if(n<2)return {normalOpen:false,festOpen:false,configured:false};
+    var labels=sheet.getRange(1,1,n,1).getDisplayValues(),normal=[],fest=[];
+    for(var i=0;i<labels.length;i++){
+      var key=String(labels[i][0]||'').trim();
+      if(key==='メンシプガチャ受付')normal.push(i+1);
+      if(key==='ラキフェス受付')fest.push(i+1);
+    }
+    if(normal.length!==1||fest.length!==1)return {normalOpen:false,festOpen:false,configured:false};
+    var nValue=sheet.getRange(normal[0],2).getValue();
+    var fValue=sheet.getRange(fest[0],2).getValue();
+    if(typeof nValue!=='boolean'||typeof fValue!=='boolean')
+      return {normalOpen:false,festOpen:false,configured:false};
+    return {normalOpen:nValue===true,festOpen:fValue===true,configured:true};
+  }catch(err){
+    console.error('gachaReadLiveGate_: failed to read existing switches',err);
+    return {normalOpen:false,festOpen:false,configured:false};
+  }
+}
+
 function gachaAction_(ss,r,d){
   if(r[5]!=='承認済み')return {ok:false,error:'運営の登録承認をお待ちください'};
 
@@ -612,11 +642,11 @@ function gachaAction_(ss,r,d){
 
   var festEntitled=total>=festAvailableFrom;
   var festUnlocked=festEntitled&&history.length>=festAvailableFrom-1&&remaining>0;
-  var gate=typeof gachaOpenState_==='function'?gachaOpenState_(ss):{normalOpen:false,festOpen:false};
+  var gate=gachaReadLiveGate_(ss);
   var wonKeys=wonDuplicateKeys_(ss,id);
   var participantNormal=participantCatalog_(normal,wonKeys),participantFest=participantCatalog_(fest,wonKeys);
 
-  if(d.action==='catalog')return {ok:true,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normalOpen:gate.normalOpen,festOpen:gate.festOpen,normal:participantNormal,fest:participantFest};
+  if(d.action==='catalog')return {ok:true,gateConfigured:gate.configured,participantId:r[0],confirmed:confirmed,remaining:confirmed?remaining:0,used:used,nextOrdinal:used+1,festEntitled:festEntitled,festUnlocked:festUnlocked,festAvailableFrom:festAvailableFrom,webDrawsUsed:history.length,normalOpen:gate.normalOpen,festOpen:gate.festOpen,normal:participantNormal,fest:participantFest};
 
   if(!/^[a-f0-9]{32}$/.test(d.drawId||'')||['通常','ラキフェス'].indexOf(d.mode)<0)return {ok:false,error:'抽選要求が不正です'};
 
@@ -627,6 +657,7 @@ function gachaAction_(ss,r,d){
     return {ok:true,participantId:r[0],drawId:old[0],prize:old[6],mode:old[4],ordinal:old[9],rarity:String(old[11]||''),image:String(old[12]||''),remaining:Math.max(total-(manual+history.length),0),replayed:true};
   }
 
+  if(!gate.configured)return {ok:false,error:'管理画面のガチャ受付スイッチを確認できません'};
   if(d.mode==='通常'&&!gate.normalOpen)return {ok:false,error:'メンシプガチャは現在停止中です'};
   if(d.mode==='ラキフェス'&&!gate.festOpen)return {ok:false,error:'ラキフェスガチャは現在停止中です'};
   if(!confirmed)return {ok:false,error:'メンシプ購入の確認をお待ちください'};
