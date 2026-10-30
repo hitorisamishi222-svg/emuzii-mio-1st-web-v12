@@ -29,8 +29,39 @@ export async function recoverFromAdminApprovedLightCookie({req,res,config,depend
   const session=readLight(req.headers.cookie,config.MIO_LIGHT_SESSION_SECRET);
   if(!session)return {status:'no-light-cookie'};
   const approved=TARGETS[session.id];
-  if(!approved)return {status:'not-approved-browser'};
   if(!/^[a-f0-9]{64}$/.test(String(session.token||'')))return {status:'invalid-light-token'};
+
+  // An administrator-approved, positively linked light registration with a
+  // verified GAS entitlement can recover its *own* original browser session.
+  // A name match, Neon approval alone, or an unknown browser never suffices.
+  // Keep the special two-browser recovery allowlist below unchanged.
+  if(!approved){
+    const tokenHash=digest(session.token);
+    let light;
+    try{light=await getLight(session.id,tokenHash)}
+    catch{return {status:'neon-proof-failed'}}
+    if(!light||light.ok!==true||light.participantId!==session.id||
+       light.pendingReview!==false||light.status!=='承認済み'||
+       light.attendanceGrantVerified!==true||
+       !/^MIO-[0-9]{4}$/.test(String(light.integratedParticipantId||'')))
+      return {status:'not-admin-approved-for-gacha'};
+    let verified;
+    try{verified=await callGAS('status',{participantId:session.id,tokenHash})}
+    catch{return {status:'gas-unavailable'}}
+    const gacha=verified?.progress?.gacha;
+    if(!verified||verified.ok!==true||verified.participantId!==session.id||
+       verified.name!==light.name||verified.status!=='承認済み'||
+       !verified.progress||!Array.isArray(verified.progress.attendanceConfirmedDays)||
+       !Array.isArray(verified.progress.attendanceLockedDays)||
+       gacha?.confirmed!==true||
+       !Number.isSafeInteger(Number(gacha.total))||Number(gacha.total)<1||
+       !Number.isSafeInteger(Number(gacha.remaining))||Number(gacha.remaining)<0)
+      return {status:'gas-gacha-entitlement-not-verified'};
+    if(typeof config.APPS_SCRIPT_SECRET!=='string'||config.APPS_SCRIPT_SECRET.length<32)
+      return {status:'missing-session-secret'};
+    res.setHeader('Set-Cookie',signSession(session.id,session.token,config.APPS_SCRIPT_SECRET));
+    return {status:'recovered',data:verified};
+  }
   const tokenHash=digest(session.token);
   let light;
   try{light=await getLight(session.id,tokenHash)}catch{return {status:'neon-proof-failed'}}
