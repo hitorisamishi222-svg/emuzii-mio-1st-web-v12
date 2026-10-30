@@ -13,6 +13,7 @@ on:
       - 'gacha-web-gate.html'
       - 'vercel.json'
       - 'tests/mio-web-admin-ops.test.mjs'
+      - 'tests/mio-admin-readonly.test.mjs'
       - '.github/workflows/mio-admin-ops.yml'
 jobs:
   isolated:
@@ -31,4 +32,4 @@ jobs:
           node --check /tmp/mio-full-ops.js
           node --check /tmp/mio-admin-ops.js
       - name: Mock spreadsheet and idempotency behavior
-        run: node --test tests/mio-web-admin-ops.test.mjs tests/mio-gas-full-code.test.mjs
+        run: node --test tests/mio-web-admin-ops.test.mjs tests/mio-gas-full-code.test.mjs tests/mio-admin-readonly.test.mjs
