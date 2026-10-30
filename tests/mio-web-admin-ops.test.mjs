@@ -20,6 +20,7 @@ function sandbox(){
  function sheet(name){
   return {
    getLastRow(){return rows[name].length},
+   getMaxRows(){return 1000},
    getRange(row,col,rs=1,cs=1){
     return {
      getValues(){return Array.from({length:rs},(_,ri)=>Array.from({length:cs},(_,ci)=>rows[name][row+ri-1]?.[col+ci-1]??''))},
@@ -32,7 +33,7 @@ function sandbox(){
    setFrozenRows(){}
   };
  }
- const context={SpreadsheetApp:{flush(){}},console,Date,ensureWebDerivedRow_(){},webIntegrityOk_(r){return r[5]==='承認済み'&&r[7]===r[10]&&r[11]==='確認済み'},safeText_(v){return v}};
+ const context={SpreadsheetApp:{flush(){}},console,Date,safeText_(x){return String(x)},ensureWebDerivedRow_(){},webIntegrityOk_(r){return r[5]==='承認済み'&&r[7]===r[10]&&r[11]==='確認済み'},safeText_(v){return v}};
  vm.runInNewContext(source,context);
  return {rows,write,ss,exec:d=>context.mioAdminOps_(ss,d)};
 }
@@ -100,4 +101,15 @@ test('new visitor MIO-ID is created only after exact unlinked registration check
  assert.equal(x.rows['emuzii_参加者'][2][1],'初訪問者');
  assert.equal(x.rows['emuzii_参加者'][1][1],'新しい人');
  assert.equal(x.exec(d).replayed,true);
+});
+
+test('first-visit entry logs receipt only; never approves a browser or adds gacha credits',()=>{
+ const x=sandbox(),op='c'.repeat(32);
+ const item={action:'webAdminOpsIntake',operationId:op,name:'来場テスト',note:'確認中'};
+ assert.equal(x.exec(item).status,'管理確認待ち');
+ assert.equal(x.exec(item).replayed,true);
+ assert.equal(x.rows['emuzii_新規簡易登録'].length,3);
+ assert.equal(x.rows['emuzii_Web登録'][1][5],'承認待ち');
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],2);
+ assert.throws(()=>x.exec({...item,operationId:'d'.repeat(32)}),/同名/);
 });
