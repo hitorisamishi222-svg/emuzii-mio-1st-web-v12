@@ -51,19 +51,19 @@ small{color:#bbd8ed}
 <p id="opsStatus" role="status">管理台帳への接続確認が必要です。</p>
 <button id="opsRetry" type="button" class="ops-action" hidden disabled>未確定の操作を同じIDで再確認</button>
 <p id="opsRetryInfo" class="ops-muted" aria-live="polite"></p>
-<button id="opsSetupToggle" type="button" class="ops-action" aria-controls="opsInstallGuide" aria-expanded="false">既存GASへの追加手順を開く</button>
+<button id="opsSetupToggle" type="button" class="ops-action" aria-controls="opsInstallGuide" aria-expanded="false">Code.gs全貼り付け手順を開く</button>
 <div id="opsInstallGuide" hidden style="border:1px solid #88b2d0;border-radius:12px;padding:12px;margin-top:10px">
- <strong>Web管理の初回接続（既存GASへ追加）</strong>
- <p class="ops-muted">既存の Code.gs は丸ごと置き換えません。登録・ガチャの既存処理を維持します。</p>
+ <strong>既存GAS更新｜Code.gs を全貼り付け（部分追加なし）</strong>
+ <p class="ops-muted">追加ファイル・部分修正は不要です。現在の Code.gs 全文を1つの統合版コードに置き換えます。</p>
  <ol style="padding-left:22px">
- <li><a style="color:#e7d29e" href="https://docs.google.com/spreadsheets/d/1WqkXSV_UehRdpO9VVqRAL9ZTVXwD_GxlH3Ey50uX3PM/edit" target="_blank" rel="noopener noreferrer">既存の管理シート</a> →「拡張機能」→「Apps Script」。先に Code.gs をバックアップ</li>
- <li>「＋」→「スクリプト」で <strong>WebAdminOps.gs</strong> を追加し、<a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_WebAdminOps_20261030.gs" target="_blank" rel="noopener noreferrer">管理機能の追加コード</a>を全文貼り付けて保存</li>
- <li>既存 Code.gs の doPost(e) 内、BRIDGE_SECRET の検証より後・participantId の検査より前に、次の2行だけ追加</li>
+ <li><a style="color:#e7d29e" href="https://docs.google.com/spreadsheets/d/1WqkXSV_UehRdpO9VVqRAL9ZTVXwD_GxlH3Ey50uX3PM/edit" target="_blank" rel="noopener noreferrer">既存の管理シート</a> →「拡張機能」→「Apps Script」を開く。まず現在の Code.gs 全文をバックアップ</li>
+ <li><a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_Code_FULL_WEB_OPS_20261030.gs" target="_blank" rel="noopener noreferrer">全貼り付け用の統合版 Code.gs</a>を開き、中身を<strong>すべてコピー</strong></li>
+ <li>既存 Apps Script の <strong>Code.gs</strong> を開き、中身をすべて選択して<strong>統合版全文に置き換え</strong>、保存。追加の .gs ファイルは作らない</li>
+ <li>「デプロイ → デプロイを管理」から既存Webアプリを編集し「新バージョン」を選んで更新</li>
+ <li>この画面に戻って「受付・参加者情報を読み込む」で動作確認。実データは変えない</li>
  </ol>
- <button id="opsCopyDispatch" type="button" class="ops-action">doPostへの追加2行をコピー</button>
- <p id="opsDispatchStatus" role="status" class="ops-muted"></p>
- <p class="ops-muted">保存後「デプロイ → デプロイを管理」から<strong>既存Webアプリ</strong>を新バージョンで更新。新規プロジェクト・新規URLは作らないでください。</p>
- <p><a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/docs/MIO_GAS_SAFE_ADDITIVE_SETUP.md" target="_blank" rel="noopener noreferrer">詳しい接続手順</a></p>
+ <p class="ops-muted">既存のApps Scriptプロジェクト・シート・WebアプリURLはそのまま。setup() は実行しないでください。</p>
+ <p><a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/docs/MIO_GAS_FULL_REPLACE_SETUP.md" target="_blank" rel="noopener noreferrer">全貼り付けの詳しい手順</a></p>
 </div>
 </section>
 <section id="ops-approval">
