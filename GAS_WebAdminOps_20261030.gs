@@ -40,7 +40,11 @@ function mioAdminOpsSummary_(ss,webRows){
 }
 function mioAdminOpsRead_(ss,d){
  var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
- return mioAdminOpsSummary_(ss,all);
+ var result=mioAdminOpsSummary_(ss,all);
+ var grants=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴'),9);
+ result.grants=grants.filter(function(r){return /^MIO-\d{4}$/.test(mioAdminOpsStr_(r[1]))})
+   .slice(-30).reverse().map(function(r){return {mioId:mioAdminOpsStr_(r[1]),name:mioAdminOpsStr_(r[2]),count:Number(r[3]),reason:mioAdminOpsStr_(r[4])};});
+ return result;
 }
 function mioAdminOpsRequest_(d){
  var req=mioAdminOpsStr_(d.operationId);
