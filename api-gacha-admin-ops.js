@@ -14,8 +14,7 @@ export default async function handler(req,res){
  res.setHeader('Vary','Origin');
  if(req.headers.host!==SITE||req.headers.origin!=='https://'+SITE)
    return reply(res,403,'管理サイトから操作してください');
- if(process.env.MIO_GACHA_ADMIN_OPS_RELEASE!==RELEASE)
-   return reply(res,503,'Web受付・回数管理は接続検証中です');
+ const writeEnabled=process.env.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE;
  if(!/^application\/json(?:;|$)/i.test(req.headers['content-type']||''))return reply(res,415,'操作形式が不正です');
  if(Number(req.headers['content-length']||0)>2048)return reply(res,413,'入力が長すぎます');
  let d;try{d=typeof req.body==='string'?JSON.parse(req.body):req.body}catch{return reply(res,400,'不正なJSONです')}
@@ -23,6 +22,8 @@ export default async function handler(req,res){
  if(!authorizedCode(d.code,process.env.MIO_GACHA_WEB_KEY_SHA256)&&!(await sessionOK(req)))
    return reply(res,403,'管理者コードまたはFace IDの認証を確認してください');
  if(!Object.hasOwn(operations,d.action))return reply(res,400,'この操作は使用できません');
+ if(d.action!=='read'&&!writeEnabled)
+   return reply(res,503,'Web管理の書き込みはGAS確認まで停止中です');
  const data={};
  if(d.action==='approve'){
   if(typeof d.webId!=='string'||!/^MIO-W-[a-f0-9]{24}$/.test(d.webId)||
@@ -60,7 +61,7 @@ export default async function handler(req,res){
   if(d.action==='read'){
    if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||!Array.isArray(result.simple))
      throw Error('受付状態を読み取れません');
-   return res.status(200).json({ok:true,pending:result.pending,roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0});
+   return res.status(200).json({ok:true,writeEnabled,pending:result.pending,roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0});
   }
   return res.status(200).json({ok:true,result:{replayed:!!result.replayed,mioId:result.mioId||null,status:result.status||null,granted:result.granted||null,special:result.special??null,member:result.member||null}});
  }catch(e){
