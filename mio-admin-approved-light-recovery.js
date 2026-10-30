@@ -13,7 +13,10 @@ const TARGETS=Object.freeze({
   'MIO-W-e1a31c322e98578b68f9b31c':Object.freeze({masterId:'MIO-0010',name:'まーくん💎🐳ྀི🎃🎁✨️',allowReviewed:false}),
   'MIO-W-741785c3fb78c7be6f0bbbd3':Object.freeze({masterId:'MIO-0018',name:'サスケ',allowReviewed:true}),
   'MIO-W-1b85de069bf677d2affca3c5':Object.freeze({masterId:'MIO-0003',name:'えむじー🐱',allowReviewed:true,gasAlreadyApproved:true}),
-  'MIO-W-e56d635f98eaca299d52b4ba':Object.freeze({masterId:'MIO-0047',name:'かんちゃん💖2次審査通過thx✨️',allowReviewed:false,gasAlreadyApproved:true})
+  'MIO-W-e56d635f98eaca299d52b4ba':Object.freeze({masterId:'MIO-0047',name:'かんちゃん💖2次審査通過thx✨️',allowReviewed:false,gasAlreadyApproved:true}),
+  // GAS-approved browser identities; each must pass independent signed light-cookie, Neon and GAS checks.
+  'MIO-W-02b0b54017117513ac5afead':Object.freeze({masterId:'MIO-0045',name:'緋彩',allowReviewed:false,gasAlreadyApproved:true}),
+  'MIO-W-245392b5c4debaa22d221a96':Object.freeze({masterId:'MIO-0049',name:'カドミン',allowReviewed:false,gasAlreadyApproved:true})
 });
 
 export async function recoverFromAdminApprovedLightCookie({req,res,config,dependencies={}}){
