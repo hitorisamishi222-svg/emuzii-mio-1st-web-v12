@@ -22,6 +22,8 @@ function challengeOf(response){
  return c.challenge;
 }
 async function rememberChallenge(c,challenge,kind,deviceID){
+ const recent=await c.query("SELECT count(*)::int AS n FROM mio_gacha_admin_challenges WHERE device_hash=$1 AND created_at > now()-interval '1 minute'",[hash(deviceID)]);
+ if(Number(recent.rows[0]?.n||0)>=6)throw Error('too many attempts');
  await c.query("INSERT INTO mio_gacha_admin_challenges(challenge_hash,device_hash,kind,expires_at) VALUES($1,$2,$3,now()+interval '3 minutes')",
  [hash(challenge),hash(deviceID),kind]);
 }
@@ -69,6 +71,11 @@ export default async function handler(req,res){
    const dev=device(req,res);
    if(d.action==='registerOptions'){
     const previous=await c.query('SELECT credential_id,transports FROM mio_gacha_admin_credentials WHERE revoked_at IS NULL LIMIT 80');
+    // A shared operator code may bootstrap two administrators.
+    // Adding more credentials requires an already authenticated administrator.
+    if(previous.rowCount>=2&&!(await sessionOK(req)))
+      return deny(res,403,'追加のFace ID登録には登録済み端末での認証が必要です');
+    if(previous.rowCount>=20)return deny(res,409,'登録数の上限です');
     const options=await generateRegistrationOptions({
      rpName:'みおガチャ Web管理',rpID:HOST,userName:'mio-admin',
      userDisplayName:'みおガチャ管理者',
@@ -89,6 +96,10 @@ export default async function handler(req,res){
     return res.status(200).json({ok:true,options});
    }
    if(d.action==='registerVerify'){
+    const existing=await c.query('SELECT count(*)::int AS n FROM mio_gacha_admin_credentials WHERE revoked_at IS NULL');
+    if(Number(existing.rows[0]?.n||0)>=2&&!(await sessionOK(req)))
+      return deny(res,403,'追加登録には既存管理者の認証が必要です');
+    if(Number(existing.rows[0]?.n||0)>=20)return deny(res,409,'登録上限に達しました');
     const ch=await getChallenge(c,d.credential,'register',dev);
     const v=await verifyRegistrationResponse({response:d.credential,expectedChallenge:ch.value,
       expectedOrigin:'https://'+HOST,expectedRPID:HOST,requireUserVerification:true});
