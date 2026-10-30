@@ -48,7 +48,18 @@ small{color:#bbd8ed}
 <h2>👑 運営管理</h2>
 <p class="ops-muted">同じ管理者コードで使います。受付確認に接続した後、管理データを読み込んでください。</p>
 <button id="opsReload" type="button">受付・参加者情報を読み込む</button>
-<p id="opsStatus" role="status">この管理機能は本番接続検証前です。</p>
+<p id="opsStatus" role="status">管理台帳への接続確認が必要です。</p>
+<div id="opsInstallGuide" hidden style="border:1px solid #88b2d0;border-radius:12px;padding:12px;margin-top:10px">
+ <strong>管理機能の初回接続（1回だけ）</strong>
+ <p class="ops-muted">既存のApps Scriptを更新します。新しいプロジェクトは作りません。</p>
+ <ol style="padding-left:22px">
+ <li><a style="color:#e7d29e" href="https://docs.google.com/spreadsheets/d/1WqkXSV_UehRdpO9VVqRAL9ZTVXwD_GxlH3Ey50uX3PM/edit" target="_blank" rel="noopener noreferrer">既存の管理シート</a>を開き「拡張機能 → Apps Script」へ</li>
+ <li>現在のCode.gsをバックアップ後、<a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_Code_FULL_WEB_OPS_20261030.gs" target="_blank" rel="noopener noreferrer">統合修正版コード</a>をコピーして既存のCode.gsに貼り付けて保存</li>
+ <li>「デプロイ → デプロイを管理」で現在のWebアプリを編集し、新バージョンで更新</li>
+ <li>この画面へ戻り「受付・参加者情報を読み込む」で再確認</li>
+ </ol>
+ <p class="ops-muted">既存のスプレッドシート・デプロイURLは維持してください。新規デプロイは不要です。</p>
+</div>
 </section>
 <section id="ops-approval">
 <h2>📝 登録承認 <small id="opsCount">未接続</small></h2>
