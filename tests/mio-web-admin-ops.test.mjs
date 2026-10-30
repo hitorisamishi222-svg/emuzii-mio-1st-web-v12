@@ -58,6 +58,10 @@ test('grant updates only special count and writes idempotent audit',()=>{
  assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
  assert.equal(x.exec(grant).replayed,true);
  assert.equal(x.rows['emuzii_Web管理操作履歴'].length,2);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,2);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'][1][1],'MIO-0001');
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'][1][3],2);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'][1][9],op);
  assert.throws(()=>x.exec({...grant,operationId:'f'.repeat(32),expectedSpecial:2}),/変更されています/);
  assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
  assert.equal(x.write.some(x=>x.name==='emuzii_当選履歴'),false);
@@ -112,4 +116,18 @@ test('first-visit entry logs receipt only; never approves a browser or adds gach
  assert.equal(x.rows['emuzii_Web登録'][1][5],'承認待ち');
  assert.equal(x.rows['emuzii_ガチャ'][1][14],2);
  assert.throws(()=>x.exec({...item,operationId:'d'.repeat(32)}),/同名/);
+});
+
+test('grant retry with pending audit repairs missing grant history without re-credit',()=>{
+ const x=sandbox(),op='a'.repeat(32),data={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'イベントWeb特典'};
+ const result=x.exec(data);
+ assert.equal(result.special,3);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ x.rows['emuzii_ガチャ付与履歴'].pop();
+ const retry=x.exec(data);
+ assert.equal(retry.replayed,true);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],3);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,2);
+ assert.equal(x.exec(data).replayed,true);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,2);
 });
