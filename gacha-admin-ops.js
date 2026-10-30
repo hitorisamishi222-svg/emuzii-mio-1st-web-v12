@@ -46,7 +46,7 @@ function node(tag,text,cls){
  return e;
 }
 function button(label,handler){
- const b=node('button',label,'ops-action');b.type='button';b.disabled=!state?.writeEnabled||!!pending||processing;b.addEventListener('click',handler);return b;
+ const b=node('button',label,'ops-action');b.type='button';b.disabled=!state?.writeEnabled||!!pending;b.addEventListener('click',handler);return b;
 }
 function ready(){return snapshot&&typeof snapshot.normalOpen==='boolean'}
 function request(action,values={}){
