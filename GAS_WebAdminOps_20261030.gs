@@ -155,6 +155,34 @@ function mioAdminOpsApprove_(ss,d){
  log.getRange(row,8).setValue('確定');
  return {ok:true,mioId:id,status:'承認済み',member:confirmed[6]};
 }
+function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
+ var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
+ if(!mioAdminOpsStr_(sh.getRange(1,10).getValue()))sh.getRange(1,10).setValue('Web操作ID');
+ var items=mioAdminOpsValues_(sh,10),matches=[];
+ for(var i=0;i<items.length;i++)if(mioAdminOpsStr_(items[i][9])===op)matches.push(items[i]);
+ if(matches.length>1)throw new Error('付与履歴の操作IDが重複しています');
+ if(matches.length===1){
+  var h=matches[0];
+  if(mioAdminOpsStr_(h[1])!==id||Number(h[3])!==count||
+     Number(h[5])!==before||Number(h[6])!==after)
+    throw new Error('既存の付与履歴と操作内容が一致しません');
+  return true;
+ }
+ var row=sh.getLastRow()+1;
+ if(row>sh.getMaxRows())throw new Error('ガチャ付与履歴の行数が上限です');
+ // H: total entitled, I: remaining are taken from live gacha formulas.
+ var gacha=mioAdminOpsSheet_(ss,'emuzii_ガチャ');
+ var g=mioAdminOpsOne_(mioAdminOpsValues_(gacha,17),0,id);
+ var values=gacha.getRange(g.row,6,1,3).getValues()[0];
+ sh.getRange(row,1,1,10).setValues([[new Date(),id,name,count,reason,before,after,
+   Number(values[0]),Number(values[2]),op]]);
+ SpreadsheetApp.flush();
+ var check=sh.getRange(row,2,1,9).getValues()[0];
+ if(mioAdminOpsStr_(check[0])!==id||Number(check[2])!==count||mioAdminOpsStr_(check[8])!==op)
+   throw new Error('ガチャ付与履歴を確認できません');
+ return true;
+}
+
 function mioAdminOpsGrant_(ss,d){
  var op=mioAdminOpsRequest_(d),id=mioAdminOpsStr_(d.mioId),count=d.count,expected=d.expectedSpecial;
  var reason=mioAdminOpsStr_(d.reason);
@@ -168,12 +196,13 @@ function mioAdminOpsGrant_(ss,d){
    if(prev.c[2]!=='付与'||prev.c[4]!==id||Number(prev.c[6])!==expected+count)throw new Error('操作IDの再利用は禁止です');
    if(prev.c[7]==='確定')return {ok:true,replayed:true,mioId:id};
    var current=Number(sheet.getRange(g.row,15).getValue());
-   if(current===expected+count){log.getRange(prev.row,8).setValue('確定');return {ok:true,replayed:true,mioId:id};}
+   if(current===expected+count){mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count);log.getRange(prev.row,8).setValue('確定');return {ok:true,replayed:true,mioId:id};}
    if(current!==expected)throw new Error('保留中の付与記録を手動確認してください');
    // Retry the logged intent once, under the existing ScriptLock.
    sheet.getRange(g.row,15).setValue(expected+count);
    SpreadsheetApp.flush();
    if(Number(sheet.getRange(g.row,15).getValue())!==expected+count)throw new Error('付与結果が一致しません');
+   mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count);
    log.getRange(prev.row,8).setValue('確定');
    return {ok:true,replayed:true,mioId:id};
  }
@@ -183,6 +212,7 @@ function mioAdminOpsGrant_(ss,d){
  sheet.getRange(g.row,15).setValue(old+count);
  SpreadsheetApp.flush();
  if(Number(sheet.getRange(g.row,15).getValue())!==old+count)throw new Error('付与結果が一致しません');
+ mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,old,old+count);
  log.getRange(row,8).setValue('確定');
  return {ok:true,mioId:id,granted:count,special:old+count};
 }
