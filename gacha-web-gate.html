@@ -50,15 +50,17 @@ small{color:#bbd8ed}
 <button id="opsReload" type="button">受付・参加者情報を読み込む</button>
 <p id="opsStatus" role="status">管理台帳への接続確認が必要です。</p>
 <div id="opsInstallGuide" hidden style="border:1px solid #88b2d0;border-radius:12px;padding:12px;margin-top:10px">
- <strong>管理機能の初回接続（1回だけ）</strong>
- <p class="ops-muted">既存のApps Scriptを更新します。新しいプロジェクトは作りません。</p>
+ <strong>Web管理の初回接続（既存GASへ追加）</strong>
+ <p class="ops-muted">既存の Code.gs は丸ごと置き換えません。登録・ガチャの既存処理を維持します。</p>
  <ol style="padding-left:22px">
- <li><a style="color:#e7d29e" href="https://docs.google.com/spreadsheets/d/1WqkXSV_UehRdpO9VVqRAL9ZTVXwD_GxlH3Ey50uX3PM/edit" target="_blank" rel="noopener noreferrer">既存の管理シート</a>を開き「拡張機能 → Apps Script」へ</li>
- <li>現在のCode.gsをバックアップ後、<a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_Code_FULL_WEB_OPS_20261030.gs" target="_blank" rel="noopener noreferrer">統合修正版コード</a>をコピーして既存のCode.gsに貼り付けて保存</li>
- <li>「デプロイ → デプロイを管理」で現在のWebアプリを編集し、新バージョンで更新</li>
- <li>この画面へ戻り「受付・参加者情報を読み込む」で再確認</li>
+ <li><a style="color:#e7d29e" href="https://docs.google.com/spreadsheets/d/1WqkXSV_UehRdpO9VVqRAL9ZTVXwD_GxlH3Ey50uX3PM/edit" target="_blank" rel="noopener noreferrer">既存の管理シート</a> →「拡張機能」→「Apps Script」。先に Code.gs をバックアップ</li>
+ <li>「＋」→「スクリプト」で <strong>WebAdminOps.gs</strong> を追加し、<a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_WebAdminOps_20261030.gs" target="_blank" rel="noopener noreferrer">管理機能の追加コード</a>を全文貼り付けて保存</li>
+ <li>既存 Code.gs の doPost(e) 内、BRIDGE_SECRET の検証より後・participantId の検査より前に、次の2行だけ追加</li>
  </ol>
- <p class="ops-muted">既存のスプレッドシート・デプロイURLは維持してください。新規デプロイは不要です。</p>
+ <button id="opsCopyDispatch" type="button" class="ops-action">doPostへの追加2行をコピー</button>
+ <p id="opsDispatchStatus" role="status" class="ops-muted"></p>
+ <p class="ops-muted">保存後「デプロイ → デプロイを管理」から<strong>既存Webアプリ</strong>を新バージョンで更新。新規プロジェクト・新規URLは作らないでください。</p>
+ <p><a style="color:#e7d29e" href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/docs/MIO_GAS_SAFE_ADDITIVE_SETUP.md" target="_blank" rel="noopener noreferrer">詳しい接続手順</a></p>
 </div>
 </section>
 <section id="ops-approval">
