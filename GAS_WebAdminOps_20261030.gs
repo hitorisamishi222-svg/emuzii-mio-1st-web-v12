@@ -1,7 +1,7 @@
 /**
  * MIO Web operator service. Add to EXISTING Apps Script; DO NOT run setup.
  * Dispatcher in existing doPost AFTER BRIDGE_SECRET comparison, inside ScriptLock:
- *   if(/^webAdminOps(?:Read|Approve|Grant|Review)$/.test(d.action))
+ *   if(/^webAdminOps(?:Read|Approve|Grant|Review|Create)$/.test(d.action))
  *     return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
  * This file never changes check-in or draw logic.
  */
@@ -85,8 +85,6 @@ function mioAdminOpsCreate_(ss,d){
  var matched=all.filter(function(r){return mioAdminOpsName_(r[2])===mioAdminOpsName_(name)});
  if(matched.length!==1)throw new Error('同名のWeb登録が複数あります。本人確認が必要です');
  var people=mioAdminOpsSheet_(ss,'emuzii_参加者'),values=mioAdminOpsValues_(people,10);
- if(values.some(function(x){return mioAdminOpsName_(x[1])===mioAdminOpsName_(name)}))
-   throw new Error('既存の参加者名です。参加者IDの照合をしてください');
  var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
  if(old){
   if(old.c[2]!=='新規MIO-ID'||old.c[3]!==wid)throw new Error('操作IDの再利用は禁止です');
@@ -96,6 +94,8 @@ function mioAdminOpsCreate_(ss,d){
   if(saved.length===1){log.getRange(old.row,8).setValue('確定');return {ok:true,replayed:true,mioId:oldId};}
   throw new Error('保留中の新規登録を確認してください');
  }
+ if(values.some(function(x){return mioAdminOpsName_(x[1])===mioAdminOpsName_(name)}))
+   throw new Error('既存の参加者名です。参加者IDの照合をしてください');
  var drawing=mioAdminOpsSheet_(ss,'emuzii_当選履歴'),drawCount=drawing.getLastRow()-1;
  if(drawCount>20000)throw new Error('過去抽選履歴の照合対象が多すぎます');
  var usedDraw=drawCount>0?drawing.getRange(2,3,drawCount,1).getValues().map(function(x){return mioAdminOpsStr_(x[0]);}):[];
