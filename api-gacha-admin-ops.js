@@ -65,7 +65,10 @@ export default async function handler(req,res){
   }
   return res.status(200).json({ok:true,result:{replayed:!!result.replayed,mioId:result.mioId||null,status:result.status||null,granted:result.granted||null,special:result.special??null,member:result.member||null}});
  }catch(e){
-  console.error('gacha web admin ops failure',d.action,String(e?.message||e));
-  return reply(res,409,'操作を確定できません。状態を再読み込みして確認してください');
+  const message=String(e?.message||e);
+  console.error('gacha web admin ops failure',d.action,message);
+  if(d.action==='read'&&/invalid identity|unknown action|未対応の管理操作/i.test(message))
+    return res.status(424).json({ok:false,code:'GAS_UPDATE_REQUIRED',error:'既存GASの運営管理連携が未更新です。接続手順を確認してください'});
+  return reply(res,409,d.action==='read'?'管理台帳に接続できませんでした。接続状態を確認してください':'操作を確定できません。状態を再読み込みして確認してください');
  }
 }
