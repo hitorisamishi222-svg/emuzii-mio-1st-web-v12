@@ -42,3 +42,17 @@ jobs:
           if(response.status!==200||result.ok!==true||result.authenticated!==false)
             process.exitCode=1;
           NODE
+      - name: Verify deployed Face ID database is connected
+        run: |
+          node --input-type=module - <<'NODE'
+          const origin='https://emuzii-mio-1st-web-v12.vercel.app';
+          const response=await fetch(origin+'/api/gacha-passkey',{
+            method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},
+            body:JSON.stringify({action:'loginOptions'}),
+            signal:AbortSignal.timeout(15000)
+          });
+          const result=await response.json().catch(()=>({}));
+          console.log('Live passkey DB check:',response.status,'register-first:',result.error==='Face IDを先に登録してください');
+          if(response.status!==409||result.error!=='Face IDを先に登録してください')
+            process.exitCode=1;
+          NODE
