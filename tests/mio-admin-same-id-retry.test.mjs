@@ -80,5 +80,7 @@ test('uncertain Web grant keeps the exact operation ID across explicit retry',as
  assert.equal(serverSpecial,3,'retry cannot add a second gacha credit');
  assert.equal(saved.size,0,'confirmed operation cleared from session');
  assert.equal(get('opsRetry').hidden,true);
+ const restored=get('opsRoster').children.find(x=>x.tag==='button');
+ assert.equal(restored?.disabled,false,'roster actions should be usable after a resolved retry');
  assert.ok(confirmCalls>=2);
 });
