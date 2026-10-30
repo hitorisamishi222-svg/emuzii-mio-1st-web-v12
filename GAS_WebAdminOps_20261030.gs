@@ -12,6 +12,7 @@ function mioAdminOps_(ss,d){
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
  if(action==='webAdminOpsCreate')return mioAdminOpsCreate_(ss,d);
  if(action==='webAdminOpsReview')return mioAdminOpsReview_(ss,d);
+ if(action==='webAdminOpsIntake')return mioAdminOpsIntake_(ss,d);
  throw new Error('未対応の管理操作です');
 }
 function mioAdminOpsStr_(x){return String(x===null||x===undefined?'':x).trim()}
@@ -197,4 +198,30 @@ function mioAdminOpsReview_(ss,d){
  if(sheet.getRange(row,5).getValue()!=='確認済み')throw new Error('確認結果が一致しません');
  log.getRange(lrow,8).setValue('確定');
  return {ok:true,status:'確認済み'};
+}
+
+function mioAdminOpsIntake_(ss,d){
+ var id=mioAdminOpsRequest_(d),name=mioAdminOpsStr_(d.name),note=mioAdminOpsStr_(d.note);
+ if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name))
+   throw new Error('受付名・メモを確認してください');
+ var history=mioAdminOpsLog_(ss),past=mioAdminOpsExisting_(history,id);
+ if(past){
+   if(past.c[2]==='初訪問受付'&&mioAdminOpsName_(past.c[9])===mioAdminOpsName_(name)&&past.c[7]==='確定')
+     return {ok:true,replayed:true};
+   throw new Error('同じ操作の受付状態を確認してください');
+ }
+ var sh=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
+ var existing=mioAdminOpsValues_(sh,6).filter(function(r){
+  return mioAdminOpsName_(r[1])===mioAdminOpsName_(name)&&mioAdminOpsStr_(r[4])!=='却下';
+ });
+ if(existing.length)throw new Error('同名の受付があるため、先に重複確認してください');
+ var next=sh.getLastRow()+1;
+ if(next>sh.getMaxRows())throw new Error('受付欄がいっぱいです');
+ var audit=mioAdminOpsWriteLog_(history,id,'初訪問受付','','','','受付済み',note,name);
+ sh.getRange(next,1,1,6).setValues([[new Date().toISOString(),safeText_(name),'','Web運営受付','管理確認待ち',safeText_(note)]]);
+ SpreadsheetApp.flush();
+ if(mioAdminOpsName_(sh.getRange(next,2).getValue())!==mioAdminOpsName_(name))
+   throw new Error('受付の保存確認ができません');
+ history.getRange(audit,8).setValue('確定');
+ return {ok:true,status:'管理確認待ち'};
 }
