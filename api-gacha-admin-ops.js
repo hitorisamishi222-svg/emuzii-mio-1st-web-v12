@@ -6,7 +6,7 @@ import {prepare,bridge} from './bridge.js';
 const SITE='emuzii-mio-1st-web-v12.vercel.app';
 const RELEASE='verified-existing-gas-ops-20261030';
 const reply=(res,status,message)=>res.status(status).json({ok:false,error:message});
-const operations={read:'webAdminOpsRead',approve:'webAdminOpsApprove',grant:'webAdminOpsGrant',review:'webAdminOpsReview',create:'webAdminOpsCreate'};
+const operations={read:'webAdminOpsRead',approve:'webAdminOpsApprove',grant:'webAdminOpsGrant',review:'webAdminOpsReview',intake:'webAdminOpsIntake',create:'webAdminOpsCreate'};
 const ID=/^[a-f0-9]{32}$/;
 export default async function handler(req,res){
  if(!prepare(req,res))return;
@@ -41,6 +41,11 @@ export default async function handler(req,res){
      d.expectedStatus!=='承認待ち'||!ID.test(d.operationId||''))
      return reply(res,400,'新規受付内容が不正です');
   Object.assign(data,{webId:d.webId,expectedStatus:d.expectedStatus,operationId:d.operationId});
+ }else if(d.action==='intake'){
+  if(typeof d.name!=='string'||!d.name.trim()||d.name.trim().length>40||
+     typeof d.note!=='string'||d.note.length>120||!ID.test(d.operationId||''))
+     return reply(res,400,'初訪問受付の入力を確認してください');
+  Object.assign(data,{name:d.name.trim(),note:d.note.trim(),operationId:d.operationId});
  }else if(d.action==='review'){
   if(!Number.isInteger(d.row)||d.row<2||d.row>1000||
      typeof d.expectedStatus!=='string'||d.expectedStatus.length>60||!ID.test(d.operationId||''))
