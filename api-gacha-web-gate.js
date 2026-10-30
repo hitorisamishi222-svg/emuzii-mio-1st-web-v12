@@ -2,6 +2,7 @@
 // Disabled until existing GAS is patched, tested and operator secret is installed.
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {prepare,bridge} from './bridge.js';
+import {sessionOK} from './gacha-passkey-auth.js';
 const HOST='emuzii-mio-1st-web-v12.vercel.app';
 const RELEASE='verified-gas-gate-20261030';
 const fail=(res,status,message)=>res.status(status).json({ok:false,error:message});
@@ -24,8 +25,10 @@ export default async function handler(req,res){
  if(Number(req.headers['content-length']||0)>1024)
    return fail(res,413,'入力が長すぎます');
  let d;try{d=typeof req.body==='string'?JSON.parse(req.body):req.body}catch{return fail(res,400,'入力を確認してください')}
- if(!d||Array.isArray(d)||typeof d!=='object'||!authorizedCode(d.code,process.env.MIO_GACHA_WEB_KEY_SHA256))
-   return fail(res,403,'管理者コードを確認してください');
+ if(!d||Array.isArray(d)||typeof d!=='object')return fail(res,400,'入力を確認してください');
+ const codeAllowed=authorizedCode(d.code,process.env.MIO_GACHA_WEB_KEY_SHA256);
+ if(!codeAllowed&&!(await sessionOK(req)))
+   return fail(res,403,'管理者コードまたはFace IDの認証を確認してください');
  if(!['read','set'].includes(d.action))return fail(res,400,'不明な操作です');
  if(d.action==='set'&&(!['通常','ラキフェス'].includes(d.mode)||
     typeof d.enabled!=='boolean'||typeof d.expected!=='boolean'))
