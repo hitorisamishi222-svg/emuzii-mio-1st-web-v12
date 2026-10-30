@@ -99,13 +99,25 @@ function display(d){
   message(d.status==='承認済み'?'最新の参加状況を表示しています。':'登録は保存済みです。管理者の照合・承認をお待ちください。');
 }
 
+// Retry transient status reads only. Never re-register or change an attendance/gacha write.
+async function readCurrentStatus(){
+  for(let attempt=0;attempt<3;attempt++){
+    try{return await post('/api/status')}
+    catch(error){
+      const retryable=[502,504].includes(error?.status) ||
+        (error?.status==null && /通信|タイムアウト|接続|network|fetch/i.test(String(error?.message||'')));
+      if(!retryable||attempt===2)throw error;
+      await new Promise(resolve=>setTimeout(resolve,1800*(attempt+1)+Math.random()*2000));
+    }
+  }
+}
 async function refresh(){
   const hadValidStatus=registered;
   message('参加状況を確認しています…');
   if($('counts'))$('counts').hidden=true;
   if($('gachaDetail'))$('gachaDetail').textContent='';
   if($('refresh'))$('refresh').disabled=true;
-  try{display(await post('/api/status'));return true}
+  try{display(await readCurrentStatus());return true}
   catch(e){
     // A transient status failure must not turn a known existing session back
     // into a new registration request. Only HTTP 401 confirms no session.
