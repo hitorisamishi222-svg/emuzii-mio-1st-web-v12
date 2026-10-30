@@ -14,6 +14,14 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api-gacha-admin-ops.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-admin-ops.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gacha-web-gate.html",
       "use": "@vercel/static"
     },
@@ -394,6 +402,14 @@
     {
       "src": "/api/gacha-web-gate",
       "dest": "/api-gacha-web-gate.js"
+    },
+    {
+      "src": "/api/gacha-admin-ops",
+      "dest": "/api-gacha-admin-ops.js"
+    },
+    {
+      "src": "/gacha-admin-ops.js",
+      "dest": "/gacha-admin-ops.js"
     },
     {
       "src": "/gacha-web-gate.html",
