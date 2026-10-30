@@ -2,7 +2,7 @@ name: Gacha Face ID passkey checks
 on:
   push:
     branches:
-      - feature/mio-gacha-admin-web-ops-20261030
+      - feature/mio-gacha-faceid-passkey-20261030
   pull_request:
     paths:
       - api-gacha-passkey.js
