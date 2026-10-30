@@ -131,3 +131,19 @@ test('grant retry with pending audit repairs missing grant history without re-cr
  assert.equal(x.exec(data).replayed,true);
  assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,2);
 });
+
+test('after 500 existing grant history rows, repeat operation cannot create another history entry',()=>{
+ const x=sandbox(),op='7'.repeat(32),history=x.rows['emuzii_ガチャ付与履歴'];
+ for(let i=0;i<520;i++)history.push([new Date(),'MIO-0001','新しい人',1,'古い付与',0,1,1,1,'old-'+i]);
+ const data={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'最新イベントWeb付与'};
+ assert.equal(x.exec(data).special,3);
+ assert.equal(history.length,522);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ assert.equal(x.exec(data).replayed,true);
+ assert.equal(history.length,522);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],3);
+ const latest=x.exec({action:'webAdminOpsRead'});
+ assert.equal(latest.grants[0].reason,'最新イベントWeb付与');
+ assert.equal(latest.grants[0].count,1);
+ assert.equal(latest.grants.length,30);
+});

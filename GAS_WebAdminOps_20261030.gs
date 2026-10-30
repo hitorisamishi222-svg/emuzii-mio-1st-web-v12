@@ -41,7 +41,10 @@ function mioAdminOpsSummary_(ss,webRows){
 function mioAdminOpsRead_(ss,d){
  var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
  var result=mioAdminOpsSummary_(ss,all);
- var grants=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴'),9);
+ var grantSheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
+ var end=grantSheet.getLastRow();
+ var start=Math.max(2,end-99),n=Math.max(0,end-start+1);
+ var grants=n?grantSheet.getRange(start,1,n,9).getValues():[];
  result.grants=grants.filter(function(r){return /^MIO-\d{4}$/.test(mioAdminOpsStr_(r[1]))})
    .slice(-30).reverse().map(function(r){return {mioId:mioAdminOpsStr_(r[1]),name:mioAdminOpsStr_(r[2]),count:Number(r[3]),reason:mioAdminOpsStr_(r[4])};});
  return result;
@@ -158,8 +161,14 @@ function mioAdminOpsApprove_(ss,d){
 function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
  if(!mioAdminOpsStr_(sh.getRange(1,10).getValue()))sh.getRange(1,10).setValue('Web操作ID');
- var items=mioAdminOpsValues_(sh,10),matches=[];
- for(var i=0;i<items.length;i++)if(mioAdminOpsStr_(items[i][9])===op)matches.push(items[i]);
+ // Scan the *entire* operation-id column, not only the first 499 records.
+ var historyCount=Math.max(0,sh.getLastRow()-1),matches=[];
+ if(historyCount>50000)throw new Error('付与履歴が照合上限です。管理者に確認してください');
+ if(historyCount){
+  var ids=sh.getRange(2,10,historyCount,1).getValues();
+  for(var i=0;i<ids.length;i++)if(mioAdminOpsStr_(ids[i][0])===op)
+    matches.push(sh.getRange(i+2,1,1,10).getValues()[0]);
+ }
  if(matches.length>1)throw new Error('付与履歴の操作IDが重複しています');
  if(matches.length===1){
   var h=matches[0];
