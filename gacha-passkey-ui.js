@@ -26,8 +26,9 @@
   return data;
  }
  async function refreshGate(){
+  code='';
   snapshot=await request({action:'read'});
-  code='';$('code').value='';redraw();
+  $('code').value='';redraw();
   say('✅ Face IDで管理者としてログインしました。');
  }
  function buttons(disabled){loginBtn.disabled=disabled;registerBtn.disabled=disabled}
