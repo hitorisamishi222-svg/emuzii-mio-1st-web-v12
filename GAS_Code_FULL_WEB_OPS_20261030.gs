@@ -885,7 +885,27 @@ function mioAdminOpsApprove_(ss,d){
  if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||!/^MIO-\d{4}$/.test(id)||typeof d.memberConfirmed!=='boolean'||d.expectedStatus!=='承認待ち')
    throw new Error('承認条件を確認してください');
  var log=mioAdminOpsLog_(ss),previous=mioAdminOpsExisting_(log,op);
- if(previous){if(previous.c[2]!=='承認'||previous.c[3]!==wid||previous.c[4]!==id)throw new Error('操作IDの再利用は禁止です');if(previous.c[7]==='確定')return {ok:true,replayed:true};throw new Error('前の処理を管理者が確認中です');}
+ if(previous){
+  var note=d.memberConfirmed?'メンシプ確認済み':'メンシプ未確認';
+  if(previous.c[2]!=='承認'||previous.c[3]!==wid||previous.c[4]!==id||
+     mioAdminOpsStr_(previous.c[8])!==note)
+    throw new Error('操作IDの再利用は禁止です');
+  if(previous.c[7]==='確定')return {ok:true,replayed:true};
+  // A network error may occur after F=承認済み but before the audit is finalized.
+  // Verify the same browser, ID, identity, and member state before closing it.
+  var retryWeb=mioAdminOpsSheet_(ss,'emuzii_Web登録');
+  var retryRows=mioAdminOpsValues_(retryWeb,21);
+  var confirmed=mioAdminOpsOne_(retryRows,0,wid).c;
+  if(confirmed[5]==='承認済み'&&mioAdminOpsStr_(confirmed[7])===id&&
+     mioAdminOpsStr_(confirmed[10])===id&&confirmed[11]==='確認済み'&&
+     confirmed[6]===(d.memberConfirmed?'確認済み':'未確認')&&
+     confirmed[16]!=='旧端末'&&webIntegrityOk_(confirmed)&&
+     !retryRows.some(function(r){return r[0]!==wid&&r[7]===id&&r[5]==='承認済み'})){
+    log.getRange(previous.row,8).setValue('確定');
+    return {ok:true,replayed:true,mioId:id,status:'承認済み',member:confirmed[6]};
+  }
+  throw new Error('前の処理を管理者が確認中です');
+ }
  var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),w=mioAdminOpsOne_(mioAdminOpsValues_(web,21),0,wid),person=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id);
  if(w.c[5]!=='承認待ち')throw new Error('承認状態が変更されています');
  if(mioAdminOpsName_(w.c[2])!==mioAdminOpsName_(person.c[1]))throw new Error('参加者名が一致しません。別人を承認できません');
