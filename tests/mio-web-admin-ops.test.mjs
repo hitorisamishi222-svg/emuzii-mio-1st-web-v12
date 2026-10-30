@@ -147,3 +147,32 @@ test('after 500 existing grant history rows, repeat operation cannot create anot
  assert.equal(latest.grants[0].count,1);
  assert.equal(latest.grants.length,30);
 });
+
+test('Web admin reads pending registrations after the 500th row without leaking tokens',()=>{
+ const x=sandbox();
+ for(let i=0;i<540;i++){
+  const id='MIO-W-'+i.toString(16).padStart(24,'0');
+  x.rows['emuzii_Web登録'].push([id,'sensitive-token-'+i,'user'+i,'',new Date(),'承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+ }
+ const last=x.rows['emuzii_Web登録'].at(-1);
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.totalPending,541);
+ assert.equal(out.pending[0].webId,last[0]);
+ assert.equal(out.pending[0].name,last[2]);
+ assert.equal(JSON.stringify(out).includes('sensitive-token-'),false);
+});
+test('Web admin catches duplicate first-visit intake beyond the 500th record',()=>{
+ const x=sandbox(),intake=x.rows['emuzii_新規簡易登録'];
+ for(let i=0;i<540;i++)intake.push(['','visitor'+i,'','登録','管理確認待ち','']);
+ intake.push(['','後方の来場者','','登録','管理確認待ち','']);
+ assert.throws(()=>x.exec({action:'webAdminOpsIntake',operationId:'b'.repeat(32),name:'後方の来場者',note:'再受付'}),/同名/);
+ assert.equal(intake.length,543);
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.simple[0].name,'後方の来場者');
+});
+test('unexpectedly oversized Web table fails closed, never quietly omits users',()=>{
+ const x=sandbox(),web=x.rows['emuzii_Web登録'];
+ for(let i=0;i<1000;i++)web.push(['MIO-W-'+i.toString(16).padStart(24,'0')]);
+ assert.throws(()=>x.exec({action:'webAdminOpsRead'}),/検証上限/);
+ assert.equal(x.write.length,0);
+});
