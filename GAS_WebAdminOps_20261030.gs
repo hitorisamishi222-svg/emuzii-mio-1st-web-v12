@@ -162,10 +162,10 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
  if(!mioAdminOpsStr_(sh.getRange(1,10).getValue()))sh.getRange(1,10).setValue('Web操作ID');
  // Scan the *entire* operation-id column, not only the first 499 records.
- var count=Math.max(0,sh.getLastRow()-1),matches=[];
- if(count>50000)throw new Error('付与履歴が照合上限です。管理者に確認してください');
- if(count){
-  var ids=sh.getRange(2,10,count,1).getValues();
+ var historyCount=Math.max(0,sh.getLastRow()-1),matches=[];
+ if(historyCount>50000)throw new Error('付与履歴が照合上限です。管理者に確認してください');
+ if(historyCount){
+  var ids=sh.getRange(2,10,historyCount,1).getValues();
   for(var i=0;i<ids.length;i++)if(mioAdminOpsStr_(ids[i][0])===op)
     matches.push(sh.getRange(i+2,1,1,10).getValues()[0]);
  }
