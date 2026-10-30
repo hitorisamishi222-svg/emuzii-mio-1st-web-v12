@@ -29,7 +29,7 @@ function request(action,values={}){
  });
 }
 function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('')}
-function blocked(v){el('opsReload').disabled=v;el('opsGrant').disabled=v;processing=v}
+function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v}
 async function refresh(){
  if(processing)return;
  blocked(true);
