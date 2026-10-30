@@ -36,13 +36,13 @@ function setButtons(c){
   if(confirming){note('抽選の確認画面で操作を完了してください。');return;}
   const pending=remember(),start=Number(c.festAvailableFrom)||5,normalOpen=c.normalOpen===true,festOpen=c.festOpen===true;
   // Always explain why a button is locked, including on iOS where disabled taps do nothing.
-  const reason=!c.confirmed?'管理者の承認待ち':Number(c.remaining)<1?'残り回数がありません':pending?'前回の抽選結果を確認してください':!normalOpen&&!festOpen?'管理画面で受付停止中':!c.normal?.ready&&!c.fest?.ready?'景品が未設定':'';
+  const reason=!c.confirmed?'管理者の承認待ち':Number(c.remaining)<1?'残り回数がありません':pending?'前回のガチャを再開してください':!normalOpen&&!festOpen?'管理画面で受付停止中':!c.normal?.ready&&!c.fest?.ready?'景品が未設定':'';
   for(const id of ['drawNormal','drawFest']){$(id).setAttribute('aria-description',reason||'抽選できます');$(id).title=reason||'';}
   $('drawNormal').disabled=!!pending||!normalOpen||!c.confirmed||c.remaining<1||!c.normal.ready;
   $('drawFest').disabled=!!pending||!festOpen||!c.confirmed||c.remaining<1||!c.festUnlocked||!c.fest.ready;
   $('drawNormal').textContent=normalOpen?'メンシプガチャを引く':'メンシプガチャ（停止中）';
   $('drawFest').textContent=!festOpen?'ラキフェス（停止中）':c.festUnlocked?'ラキフェスを引く':`${start}回目から解放`;
-  $('retryDraw').hidden=!pending
+  $('retryDraw').hidden=!pending;$('retryDraw').textContent='▶ 前回のガチャを再開する'
 }
 function statusText(c){if(c.gateConfigured===false)return '管理者のガチャ公開設定が接続されていません。運営に連絡してください。';const start=Number(c.festAvailableFrom)||5,next=Number(c.nextOrdinal)||1;if(!c.confirmed)return 'メンシプ購入の確認をお待ちください。';if(c.remaining<1)return 'ガチャ権利をすべて使用済みです。';if(!c.normalOpen&&!c.festOpen)return 'メンシプガチャ／ラキフェスは現在停止中です。';if(!c.normal.ready&&!c.fest.ready)return '景品設定中です。';if(!c.festEntitled)return c.normalOpen?`メンシプガチャを利用できます。総ガチャ権利${start}回以上でラキフェス対象になります。`:'メンシプガチャは現在停止中です。';if(!c.festUnlocked)return c.normalOpen?`ラキフェス対象です。あと${Math.max(0,start-next)}回メンシプガチャを引くと、${start}回目からラキフェスを選べます。`:'メンシプガチャは現在停止中です。';if(c.normalOpen&&c.festOpen)return `${start}回目以降です。メンシプガチャ／ラキフェスを選んで抽選できます。`;if(c.festOpen)return 'ラキフェスのみ受付中です。';return 'メンシプガチャのみ受付中です。'}
 async function loadCatalog(includeHistory=true){
@@ -55,7 +55,7 @@ async function loadCatalog(includeHistory=true){
     renderCatalog($('normalPrizes'),c.normal);renderCatalog($('festPrizes'),c.fest);
     setButtons(c);
     const pending=remember();
-    note(pending?'前回の抽選結果が未確認です。「前回の抽選結果を確認」を押してください。':statusText(c));
+    note(pending?'前回のガチャが途中で止まっています。下の「前回のガチャを再開する」を押してね。':statusText(c));
     if(!includeHistory)return true;
     const h=await post('/api/gacha',{action:'history'});
     // A completed draw may have reached GAS even when its browser reply failed.
@@ -114,12 +114,12 @@ async function execute(pending){
 async function recoverPrevious(p){
   if(isPreview||busy)return;
   if(!p||!/^[a-f0-9]{32}$/.test(p.drawId)||!['通常','ラキフェス'].includes(p.mode)){
-    note('前回の抽選IDを確認できません。再抽選せず、運営にご連絡ください。');
+    note('前回のガチャの記録を確認できませんでした。何度も押さず、運営に画面を見せてください。');
     return;
   }
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;
   let recovered=false,resume=false;
-  note('当選履歴から前回の結果を確認中です。新しい抽選IDは作りません。');
+  note('前回のガチャの結果を確認しています。');
   try{
     const history=await post('/api/gacha',{action:'history'});
     if(history.participantId!==participant||!Array.isArray(history.history))throw Error('当選履歴の本人確認に失敗しました');
@@ -133,8 +133,8 @@ async function recoverPrevious(p){
          !Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<1||
          !Number.isSafeInteger(Number(c.used))||Number(c.used)<0)
         throw Error('前回の抽選と残り回数を運営が確認中です');
-      resume=window.confirm('前回の抽選IDの確定結果はまだ見つかりません。\n同じ抽選IDで処理を再開します。\nすでに確定済みなら同じ結果を表示し、未確定ならガチャ権利を1回使って抽選します。\n続行しますか？');
-      if(!resume)note('抽選IDと残り回数を保持しました。再開する場合は「前回の抽選結果を確認」を押してください。');
+      resume=window.confirm('前回のガチャの続きを再開します。\n\nすでに当選していれば、同じ結果を表示します。\nまだ当選が決まっていなければ、ガチャ券を1回使って抽選します。\n\n続けますか？');
+      if(!resume)note('今回は再開せずに保留しました。続けるときは「前回のガチャを再開する」を押してね。');
     }else if(rows.length===1&&rows[0].mode===p.mode&&typeof rows[0].prize==='string'&&rows[0].prize.trim()&&
       Number.isSafeInteger(Number(rows[0].ordinal))&&Number(rows[0].ordinal)>=1){
       const x=rows[0];
@@ -142,7 +142,7 @@ async function recoverPrevious(p){
         prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
         image:String(x.image||''),replayed:true});
       forget();recovered=true;
-      note('保存済みの抽選結果を確認しました。もう一度引くには景品の「閉じる」を押してください。');
+      note('前回の当選結果を確認できたよ！景品を閉じると次のガチャに進めます。');
     }else{
       throw Error('前回の抽選履歴に不整合があります');
     }
@@ -201,7 +201,7 @@ async function start(mode){
   if(busy){note('ガチャ情報を更新中です。完了後にもう一度押してください。');return;}
   if(confirming){note('抽選確認画面の操作を完了してください。');return;}
   if(!participant||!lastCatalog){note('参加情報を読み込み中です。再読み込みしてください。');return;}
-  if(remember()){note('前回の抽選結果を確認してください。');return;}
+  if(remember()){note('「前回のガチャを再開する」から続きを確認してください。');return;}
   $('drawNormal').disabled=true;$('drawFest').disabled=true;
   note('管理画面の受付と残り回数を確認しています…');
   // loadCatalog sets busy while fetching; avoid leaving buttons disabled after a failed refresh.
@@ -225,6 +225,20 @@ async function start(mode){
   }
   void execute(p)
 }
+
+// Place recovery action directly below its explanation, above the long catalog.
+const recoveryButton=$('retryDraw');
+$('drawMessage').after(recoveryButton);
+recoveryButton.style.width='100%';
+recoveryButton.style.minHeight='58px';
+recoveryButton.style.margin='12px 0 18px';
+recoveryButton.style.padding='14px 12px';
+recoveryButton.style.borderRadius='15px';
+recoveryButton.style.fontSize='17px';
+recoveryButton.style.fontWeight='800';
+recoveryButton.style.background='#d5f2ff';
+recoveryButton.style.color='#092044';
+
 $('skipDraw').addEventListener('click',()=>{if(!busy)return;skipRequested=true;$('skipDraw').disabled=true;$('skipDraw').hidden=true;if(skipWaitResolve)skipWaitResolve();note('演出をスキップしました。確定した抽選結果を確認しています…')});
 $('drawNormal').addEventListener('click',()=>void start('通常'));$('drawFest').addEventListener('click',()=>void start('ラキフェス'));$('retryDraw').addEventListener('click',()=>{const p=remember();if(p)void recoverPrevious(p)});$('reloadGacha').addEventListener('click',()=>void loadCatalog());
 let lastBackgroundRefresh=0;
