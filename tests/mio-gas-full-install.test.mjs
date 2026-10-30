@@ -6,7 +6,7 @@ test('single-file GAS contains all operational entrypoints and no duplicate doPo
  const code=load('GAS_Code_FULL_WEB_OPS_20261030.gs');
  assert.equal((code.match(/function doPost\(/g)||[]).length,1);
  for(const name of ['mioAdminOps_','mioAdminOpsGrant_','mioAdminOpsRead_','gachaWebGateActionInline1030_','gachaAction_']){
-  assert.equal((code.match(new RegExp('function '+name+'\\\\(','g'))||[]).length,1,name);
+  assert.equal(code.split('function '+name+'(').length-1,1,name);
  }
  assert.match(code,/LOGIN_ID_COL\s*=\s*21/);
 });
@@ -16,7 +16,7 @@ test('production guidance says full paste only and preserves existing GAS deploy
  const guide=load('docs/MIO_GAS_FULL_REPLACE_SETUP.md');
  assert.match(page,/GAS_Code_FULL_WEB_OPS_20261030\.gs/);
  assert.match(page,/全貼り付け（部分追加なし）/);
- assert.match(page,/既存の Code\.gs/);
+ assert.match(page,/統合版全文に置き換え/);
  assert.match(page,/新バージョン/);
  assert.doesNotMatch(page,/opsCopyDispatch|WebAdminOps\.gs|追加コード|追加2行/);
  assert.doesNotMatch(js,/opsCopyDispatch|dispatchCode/);
