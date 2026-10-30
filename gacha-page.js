@@ -58,6 +58,17 @@ async function loadCatalog(includeHistory=true){
     note(pending?'前回の抽選結果が未確認です。「前回の抽選結果を確認」を押してください。':statusText(c));
     if(!includeHistory)return true;
     const h=await post('/api/gacha',{action:'history'});
+    // A completed draw may have reached GAS even when its browser reply failed.
+    // Only release the device-local pending lock after confirming the SAME
+    // draw ID and mode in this authenticated user's committed history.
+    if(pending&&h.participantId===participant&&Array.isArray(h.history)){
+      const matching=h.history.filter(x=>x.drawId===pending.drawId&&x.mode===pending.mode&&
+        typeof x.prize==='string'&&x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0);
+      if(matching.length===1){
+        forget();
+        note('前回の当選結果を確認できました。当選履歴に保存済みです。通常のガチャに戻れます。');
+      }
+    }
     $('drawHistory').replaceChildren();
     if(!h.history?.length){
       const li=document.createElement('li');li.className='muted';li.textContent='まだ当選履歴はありません。';$('drawHistory').append(li)
