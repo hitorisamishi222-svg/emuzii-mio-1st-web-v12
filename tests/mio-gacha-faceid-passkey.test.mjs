@@ -42,3 +42,12 @@ test('Face ID cookie works for login and both admin API paths',()=>{
  assert.ok(api.includes('HttpOnly; Secure; SameSite=Strict; Path=/api/'));
  for(const url of ['/api/gacha-passkey','/api/gacha-web-gate','/api/gacha-admin-ops'])assert.ok(url.startsWith('/api/'));
 });
+
+test('passkey registration requires owner session after two credentials and limits challenges',()=>{
+ const api=read('api-gacha-passkey.js');
+ assert.match(api,/previous\.rowCount>=2/);
+ assert.match(api,/existing\.rows\[0\]/);
+ assert.match(api,/sessionOK\(req\)/);
+ assert.match(api,/too many attempts/);
+ assert.match(api,/rate limit|created_at > now\(\)-interval/);
+});
