@@ -19,8 +19,12 @@ function mioAdminOpsStr_(x){return String(x===null||x===undefined?'':x).trim()}
 function mioAdminOpsName_(s){return mioAdminOpsStr_(s).normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase()}
 function mioAdminOpsSheet_(ss,name){var sh=ss.getSheetByName(name);if(!sh)throw new Error('必要な管理シートがありません');return sh}
 function mioAdminOpsValues_(sh,lastCol){
- var n=Math.min(sh.getLastRow(),500)-1;
- return n>0?sh.getRange(2,1,n,lastCol).getValues():[];
+ var n=sh.getLastRow()-1;
+ if(n<1)return [];
+ // Existing Web registration and simple intake each have up to 1000 rows.
+ // Reject an unexpectedly larger table instead of silently dropping users.
+ if(n>999||n*lastCol>25000)throw new Error('管理台帳の行数が検証上限です');
+ return sh.getRange(2,1,n,lastCol).getValues();
 }
 function mioAdminOpsOne_(items,idx,value){
  var out=[];for(var i=0;i<items.length;i++)if(mioAdminOpsStr_(items[i][idx])===value)out.push({row:i+2,c:items[i]});
