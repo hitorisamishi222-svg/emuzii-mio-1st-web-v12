@@ -21,5 +21,11 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install declared test dependencies
+        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - name: Test signed cookie retention and old API compatibility
         run: node --test release-prep/session-cookie-rolling-v198.test.mjs
