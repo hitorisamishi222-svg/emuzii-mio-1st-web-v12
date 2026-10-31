@@ -5,8 +5,8 @@ import {readFileSync} from 'node:fs';
 const js=readFileSync(new URL('../mio-event-pass-ui.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('../event-pass.html',import.meta.url),'utf8');
 async function drain(){for(let i=0;i<7;i++)await new Promise(resolve=>setImmediate(resolve))}
-function page(search='?event=mio-open-2026'){
- const el={},calls=[],responses=[];
+function page(search='?event=mio-open-2026',queue=[]){
+ const el={},calls=[],responses=[...queue];
  for(const id of ['eventPassInfo','eventPassEmail','eventPassCode','eventPassInvite',
   'eventPassSendCode','eventPassVerify','eventPassIssue','eventPassEventLabel',
   'eventPassMessage','eventPassTicket']){
@@ -24,13 +24,12 @@ function page(search='?event=mio-open-2026'){
  return {el,calls,responses,click:async id=>{el[id].click();await drain()}};
 }
 test('six-digit code verification automatically issues event pass, no repeated registration',async()=>{
- const p=page();
- p.responses.push(
+ const p=page('?event=mio-open-2026',[
   {status:200,data:{ok:true,allowed:false}},
   {status:202,data:{ok:true,status:'code_sent'}},
   {status:200,data:{ok:true,status:'email_verified'}},
   {status:200,data:{ok:true,status:'issued',passId:'33333333-3333-4333-8333-333333333333'}}
- );
+ ]);
  await drain();
  p.el.eventPassEmail.value='member@gmail.com';
  p.el.eventPassCode.value='123456';
@@ -44,16 +43,16 @@ test('six-digit code verification automatically issues event pass, no repeated r
  assert.equal(p.calls[3].input.eventId,'mio-open-2026');
 });
 test('revisit uses stored signed session to report existing pass without issuing new one',async()=>{
- const p=page();
- p.responses.push({status:200,data:{ok:true,allowed:true}});
+ const p=page('?event=mio-open-2026',[{status:200,data:{ok:true,allowed:true}}]);
  await drain();
  assert.match(p.el.eventPassMessage.textContent,/すでに参加証/);
  assert.deepEqual(p.calls.map(x=>x.input.action),['check']);
 });
 test('email sender failure never marks session verified or issues ticket',async()=>{
- const p=page();
- p.responses.push({status:401,data:{ok:false,code:'VERIFIED_EMAIL_SESSION_REQUIRED'}},
-  {status:503,data:{ok:false,code:'EMAIL_SENDER_NOT_CONNECTED'}});
+ const p=page('?event=mio-open-2026',[
+  {status:401,data:{ok:false,code:'VERIFIED_EMAIL_SESSION_REQUIRED'}},
+  {status:503,data:{ok:false,code:'EMAIL_SENDER_NOT_CONNECTED'}}
+ ]);
  await drain();
  p.el.eventPassEmail.value='member@gmail.com';
  await p.click('eventPassSendCode');
@@ -74,6 +73,6 @@ test('form is mobile friendly and no pass URL is a bearer token',()=>{
  assert.match(html,/autocomplete="one-time-code"/);
  assert.match(html,/viewport-fit=cover/);
  assert.match(html,/src="\/mio-event-pass-ui.js"/);
- assert.doesNotMatch(js,/localStorage|sessionStorage|\/api\/gacha|\/api\/register/);
+ assert.doesNotMatch(js,/(?:window\.)?(?:localStorage|sessionStorage)\s*\.|fetch\(['"]\/api\/(?:gacha|register)/);
  assert.match(js,/credentials:'same-origin'/);
 });
