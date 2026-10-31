@@ -46,8 +46,8 @@ test('uncertain Web grant keeps the exact operation ID across explicit retry',as
  };
  let confirmCalls=0;
  const ctx={
-  document:{getElementById:get,createElement:element,createTextNode:t=>({textContent:t})},
-  window:{confirm(){confirmCalls++;return true}},
+  document:{hidden:false,getElementById:get,createElement:element,createTextNode:t=>({textContent:t}),addEventListener(){},querySelector(){return null}} ,
+  window:{confirm(){confirmCalls++;return true},addEventListener(){},setInterval(){}},
   sessionStorage,fetch,
   crypto:{getRandomValues(arr){for(let i=0;i<arr.length;i++)arr[i]=(codeId++%255);return arr}},
   snapshot:{normalOpen:false},code:'valid dummy administrator key',navigator:{clipboard:{writeText:async()=>{}}},
