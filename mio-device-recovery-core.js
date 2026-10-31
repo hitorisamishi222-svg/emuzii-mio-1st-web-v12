@@ -42,6 +42,15 @@ export async function verifyExistingIdentity(session,{getLight,callGAS,digest=ha
     !Number.isSafeInteger(Number(gacha.total))||Number(gacha.total)<1||
     !Number.isSafeInteger(Number(gacha.remaining))||Number(gacha.remaining)<0)
   return {ok:false,code:'GAS_GACHA_PROOF_MISSING'};
+ // GAS status historically omits integratedParticipantId: a name match is not
+ // a canonical participant-ID match. Require an independent locked GAS read.
+ let proof;
+ try{proof=await callGAS('webAdminOpsRecoveryProof',{participantId:session.id,tokenHash})}
+ catch{return {ok:false,code:'GAS_CANONICAL_PROOF_UNAVAILABLE'}}
+ if(!proof||proof.ok!==true||proof.verified!==true||
+    proof.participantId!==session.id||proof.name!==neon.name||
+    proof.integratedParticipantId!==neon.integratedParticipantId)
+  return {ok:false,code:'GAS_CANONICAL_ID_MISMATCH'};
  return {ok:true,webId:session.id,mioId:neon.integratedParticipantId,
   name:neon.name,tokenHash,gasStatus:gas};
 }
