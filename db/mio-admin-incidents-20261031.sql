@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS mio_admin_incidents (
  fingerprint char(64) NOT NULL,
  participant_ref varchar(32) NOT NULL,
  source varchar(24) NOT NULL CHECK (source IN ('gacha','status')),
- category varchar(32) NOT NULL CHECK (category IN ('DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE')),
+ category varchar(32) NOT NULL CHECK (category IN ('DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','AUTH_LEGACY_REJECTED','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE')),
  draw_id char(32),
  stage varchar(24) NOT NULL,
  state varchar(12) NOT NULL DEFAULT 'unhandled' CHECK (state IN ('unhandled','working','resolved')),
