@@ -2,6 +2,7 @@ import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 import {recoverFromAdminApprovedLightCookie} from './mio-admin-approved-light-recovery.js';
 import {recordObservedFailure} from './mio-incident-recorder.js';
 import {readLightSession} from './registration-light-session.js';
+import {signedRecoveryOfferAllowed} from './mio-device-recovery-core.js';
 
 export default async function handler(req,res){
   const cfg=prepare(req,res);
@@ -43,8 +44,7 @@ export default async function handler(req,res){
     // cookie from the SAME browser identity can be classified as recoverable.
     // Generic connection timeouts MUST remain 502 and never alter sessions.
     const light=readLightSession(req.headers.cookie,process.env.MIO_LIGHT_SESSION_SECRET);
-    const sameBrowser=!!light&&light.id===session.id&&light.token===session.token;
-    if(sameBrowser&&String(error?.message||'')==='unauthorized'){
+    if(signedRecoveryOfferAllowed(session,light,error)){
       await recordObservedFailure({session,action:'status',error,
         category:'AUTH_LEGACY_REJECTED'});
       return res.status(401).json({ok:false,
