@@ -59,7 +59,8 @@ test('recovery only reads saved draw history and never creates a new draw',async
 test('if a draw never committed, preserve pending ID and do not spend another right',async()=>{
   const h=harness(new Map([[key,JSON.stringify(pending)]]),[]);
   await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history']);
+  // The follow-up catalog request is read-only and cannot consume another right.
+  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog']);
   assert.deepEqual(JSON.parse(h.saved.get(key)),pending);
   assert.match(h.$('drawMessage').textContent,/再抽選せず運営/);
   assert.equal(h.$('retryDraw').hidden,false);
@@ -70,7 +71,7 @@ test('reject mismatched participant identity even if draw ID matches',async()=>{
   await click(h);
   assert.deepEqual(h.requests.map(x=>x.action),['history']);
   assert.equal(h.saved.has(key),true);
-  assert.match(h.$('drawMessage').textContent,/本人確認/);
+  assert.match(h.$('drawMessage').textContent,/不整合/);
 });
 
 test('reject wrong mode, duplicate IDs or broken ordinal without dropping pending draw',async()=>{
