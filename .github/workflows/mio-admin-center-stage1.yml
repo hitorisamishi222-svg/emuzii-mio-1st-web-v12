@@ -11,7 +11,16 @@ on:
       - tests/mio-incident-center.test.mjs
       - tests/mio-gacha-confirmed-history-recovery.test.mjs
       - tests/mio-incident-identity-mapping.test.mjs
-      - tests/mio-gacha-admin-draw-lookup.test.mjs
+      - tests/mio-gacha-admin-draw-lookup.test.mjs tests/mio-device-recovery.test.mjs
+      - tests/mio-device-recovery.test.mjs
+      - mio-device-recovery-core.js
+      - api-mio-device-recovery-client.js
+      - api-mio-device-recovery-admin.js
+      - mio-device-recovery-ui.js
+      - gacha-device-recovery-admin.js
+      - db/mio-device-recovery-20261031.sql
+      - gacha.html
+      - vercel.json
       - GAS_Code_FULL_WEB_OPS_20261030.gs
       - api-mio-gacha-result-lookup.js
       - GAS_WebAdminOps_20261030.gs
@@ -36,6 +45,15 @@ on:
       - tests/mio-gacha-confirmed-history-recovery.test.mjs
       - tests/mio-incident-identity-mapping.test.mjs
       - tests/mio-gacha-admin-draw-lookup.test.mjs
+      - tests/mio-device-recovery.test.mjs
+      - mio-device-recovery-core.js
+      - api-mio-device-recovery-client.js
+      - api-mio-device-recovery-admin.js
+      - mio-device-recovery-ui.js
+      - gacha-device-recovery-admin.js
+      - db/mio-device-recovery-20261031.sql
+      - gacha.html
+      - vercel.json
       - GAS_Code_FULL_WEB_OPS_20261030.gs
       - api-mio-gacha-result-lookup.js
       - GAS_WebAdminOps_20261030.gs
@@ -80,5 +98,11 @@ jobs:
           node --check api-status.js
           node --check gacha-page.js
           node --check gacha-incident-admin.js
+          node --check mio-device-recovery-core.js
+          node --check api-mio-device-recovery-client.js
+          node --check api-mio-device-recovery-admin.js
+          node --check mio-device-recovery-ui.js
+          node --check gacha-device-recovery-admin.js
+          node --check tests/mio-device-recovery.test.mjs
       - name: Isolated gate, polling and read-only permission tests
         run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs
