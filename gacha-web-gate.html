@@ -92,6 +92,16 @@ main{max-width:760px}
   </div>
  </div>
 
+ <section id="cookieLossAdminPanel" class="ops-card" aria-labelledby="cookieLossAdminHeading">
+ <h2 id="cookieLossAdminHeading">📱 新端末・Cookie消失の復旧相談</h2>
+ <p class="ops-caption">元のブラウザのCookieがない人の相談窓口です。申告された名前だけで本人認証せず、状態の管理のみを行います。</p>
+ <p id="cookieLossAdminCount">相談 — 件</p>
+ <button type="button" id="cookieLossAdminRefresh" disabled>相談一覧を更新</button>
+ <p id="cookieLossAdminMessage" class="ops-message" role="status" aria-live="polite">管理者ログイン後に確認します。</p>
+ <button type="button" id="cookieLossAdminRetry" hidden disabled>前回と同じ操作IDで再確認</button>
+ <div id="cookieLossAdminList" class="ops-list"></div>
+ <p class="ops-caption">ここでの状態変更では、参加者ID・Cookie・皆勤・ガチャ回数・当選履歴は変更されません。</p>
+ </section>
  <section id="deviceRecoveryAdminPanel" class="ops-card" aria-labelledby="deviceRecoveryTitle">
   <h2 id="deviceRecoveryTitle">📱 端末・ログイン復旧申請</h2>
   <p class="ops-caption">本人の元ブラウザに署名付き登録情報が残り、Neonと既存GASの両方で承認済みの場合だけ申請が届きます。運営から別端末への新規認証情報の発行は行いません。</p>
@@ -167,4 +177,4 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/gacha-incident-admin.js" defer></script><script src="/gacha-device-recovery-admin.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/gacha-incident-admin.js" defer></script><script src="/gacha-device-recovery-admin.js" defer></script><script src="/gacha-cookie-loss-admin.js" defer></script></body></html>
