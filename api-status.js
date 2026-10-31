@@ -1,6 +1,7 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 import {recoverFromAdminApprovedLightCookie} from './mio-admin-approved-light-recovery.js';
 import {recordObservedFailure} from './mio-incident-recorder.js';
+import {readLightSession} from './registration-light-session.js';
 
 export default async function handler(req,res){
   const cfg=prepare(req,res);
@@ -14,6 +15,9 @@ export default async function handler(req,res){
       recovery={status:'failed'};
     }
     if(recovery.status==='recovered')return res.status(200).json(recovery.data);
+    // Only a separately verified signed light cookie supplies a trustworthy browser ID.
+    const light=readLightSession(req.headers.cookie,process.env.MIO_LIGHT_SESSION_SECRET);
+    if(light)await recordObservedFailure({session:light,action:'status',category:'AUTH_COOKIE_MISSING'});
     return res.status(401).json({
       ok:false,
       error:'このブラウザの認証情報を確認できません。登録済みの方は再登録せず、管理者に端末認証の復旧をご依頼ください。',
