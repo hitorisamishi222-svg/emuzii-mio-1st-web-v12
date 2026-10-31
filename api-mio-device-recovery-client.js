@@ -48,8 +48,11 @@ export default async function handler(req,res){
  try{
   if(body.action==='status'){
    const r=await db().query(`SELECT request_id,state,expires_at FROM mio_device_recovery_requests
-      WHERE web_id=$1 AND token_binding=$2 AND state IN ('pending','approved','consumed')
-       AND expires_at>now() ORDER BY requested_at DESC LIMIT 1`,[session.id,binding]);
+      WHERE web_id=$1 AND token_binding=$2
+       AND expires_at>now()
+       AND (state IN ('pending','approved') OR
+            (state='consumed' AND redeemed_at>now()-interval '2 minutes'))
+       ORDER BY requested_at DESC LIMIT 1`,[session.id,binding]);
    return res.status(200).json({ok:true,
     status:r.rows[0]?.state||'none',expiresAt:r.rows[0]?.expires_at||null});
   }
