@@ -42,7 +42,7 @@ function mioAdminOpsSummary_(ss,webRows){
  var roster=[];Object.keys(byId).forEach(function(id){var x=byId[id],gg=(grants[id]||[]);roster.push({mioId:id,name:x.name,gacha:gg.length===1?gg[0]:null,needsReview:gg.length!==1});});
  // Private operator-only identity links. Never include tokenHash, login ID, or raw cookie.
  var webLinks=web.map(function(r){
-  var approved=r.status==='承認済み'&&r.integrity==='確認済み'&&/^MIO-\\d{4}$/.test(r.mioId)&&r.linkedName;
+  var approved=r.status==='承認済み'&&r.integrity==='確認済み'&&/^MIO-\d{4}$/.test(r.mioId)&&r.linkedName;
   return {webId:r.webId,name:approved?r.linkedName:r.name,mioId:approved?r.mioId:'',verified:!!approved};
  });
  return {ok:true,pending:pending,roster:roster,webLinks:webLinks,simple:simple.slice(-60).reverse(),totalPending:web.filter(function(x){return x.status==='承認待ち'||(x.status==='承認済み'&&x.integrity!=='確認済み');}).length,rejectedCount:web.filter(function(x){return x.status==='却下'}).length};
