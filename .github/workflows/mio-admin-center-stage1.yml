@@ -11,6 +11,9 @@ on:
       - tests/mio-incident-center.test.mjs
       - tests/mio-gacha-confirmed-history-recovery.test.mjs
       - tests/mio-incident-identity-mapping.test.mjs
+      - tests/mio-gacha-admin-draw-lookup.test.mjs
+      - GAS_Code_FULL_WEB_OPS_20261030.gs
+      - api-mio-gacha-result-lookup.js
       - GAS_WebAdminOps_20261030.gs
       - api-gacha-admin-ops.js
       - mio-incident-core.js
@@ -32,6 +35,9 @@ on:
       - tests/mio-incident-center.test.mjs
       - tests/mio-gacha-confirmed-history-recovery.test.mjs
       - tests/mio-incident-identity-mapping.test.mjs
+      - tests/mio-gacha-admin-draw-lookup.test.mjs
+      - GAS_Code_FULL_WEB_OPS_20261030.gs
+      - api-mio-gacha-result-lookup.js
       - GAS_WebAdminOps_20261030.gs
       - api-gacha-admin-ops.js
       - mio-incident-core.js
@@ -64,6 +70,8 @@ jobs:
           node --check tests/mio-incident-center.test.mjs
           node --check tests/mio-gacha-confirmed-history-recovery.test.mjs
           node --check tests/mio-incident-identity-mapping.test.mjs
+          node --check tests/mio-gacha-admin-draw-lookup.test.mjs
+          node --check api-mio-gacha-result-lookup.js
           node --check mio-incident-core.js
           node --check mio-incident-recorder.js
           node --check api-mio-incidents.js
@@ -73,4 +81,4 @@ jobs:
           node --check gacha-page.js
           node --check gacha-incident-admin.js
       - name: Isolated gate, polling and read-only permission tests
-        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs
+        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs
