@@ -121,6 +121,7 @@ test('per participant incident recording is bounded within one hour',async()=>{
  participantRef:user,source:'gacha',stage:'draw',category:'DRAW_CLIENT_UNCONFIRMED',drawId:draw},secret);
  assert.match(query,/occurred_at>now\(\)-interval '1 hour'/);
  assert.match(query,/count\(\*\)/);
+ assert.match(query,/OR EXISTS \(SELECT 1 FROM mio_admin_incidents/);
 });
 test('integration is guarded; present gacha, register and switch paths remain unchanged',()=>{
  const api=load('api-mio-incidents.js'),recorder=load('mio-incident-recorder.js');
