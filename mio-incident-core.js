@@ -43,14 +43,17 @@ export function buildIncident(data,secret,now=Date.now()){
 }
 export async function recordIncident(query,data,secret,now=Date.now()){
  const e=buildIncident(data,secret,now);
- await query(`INSERT INTO mio_admin_incidents
+ const result=await query(`INSERT INTO mio_admin_incidents
   (incident_id,fingerprint,participant_ref,source,category,draw_id,stage)
-  VALUES ($1,$2,$3,$4,$5,$6,$7)
+  SELECT $1,$2,$3,$4,$5,$6,$7
+  WHERE (SELECT count(*) FROM mio_admin_incidents
+         WHERE participant_ref=$3 AND occurred_at>now()-interval '1 hour')<30
   ON CONFLICT (fingerprint) WHERE state <> 'resolved'
   DO UPDATE SET occurrence_count=mio_admin_incidents.occurrence_count+1,
-    last_seen_at=now(),updated_at=now()`,
+    last_seen_at=now(),updated_at=now()
+  RETURNING incident_id`,
   [e.incidentId,e.fingerprint,e.participantRef,e.source,e.category,e.drawId,e.stage]);
- return {incidentId:e.incidentId,category:e.category};
+ return {recorded:result?.rowCount!==0,incidentId:e.incidentId,category:e.category};
 }
 export async function listIncidents(query){
  const r=await query(`SELECT incident_id,participant_ref,source,category,draw_id,stage,
