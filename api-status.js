@@ -39,6 +39,18 @@ export default async function handler(req,res){
       recovery={status:'failed'};
     }
     if(recovery.status==='recovered')return res.status(200).json(recovery.data);
+    // Only an explicit GAS authentication rejection with a second valid signed
+    // cookie from the SAME browser identity can be classified as recoverable.
+    // Generic connection timeouts MUST remain 502 and never alter sessions.
+    const light=readLightSession(req.headers.cookie,process.env.MIO_LIGHT_SESSION_SECRET);
+    const sameBrowser=!!light&&light.id===session.id&&light.token===session.token;
+    if(sameBrowser&&String(error?.message||'')==='unauthorized'){
+      await recordObservedFailure({session,action:'status',error,
+        category:'AUTH_LEGACY_REJECTED'});
+      return res.status(401).json({ok:false,
+        code:'BROWSER_SESSION_REVIEW_AVAILABLE',
+        error:'旧ログイン情報の照合が必要です。元の登録ブラウザで管理者へ復旧申請してください。新規登録は不要です。'});
+    }
     await recordObservedFailure({session,action:'status',error});
     return res.status(502).json({ok:false,error:'⚠️ 一時的な通信エラーの可能性があります。ページを再読み込みして、もう一度お試しください。再登録は不要です。登録情報・ガチャ回数・当選履歴は、この再確認操作では変更されません。改善しない場合は管理者にご連絡ください。'});
   }
