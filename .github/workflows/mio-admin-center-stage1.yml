@@ -12,6 +12,10 @@ on:
       - mio-incident-core.js
       - mio-incident-recorder.js
       - api-mio-incidents.js
+      - api-mio-incident-report.js
+      - api-gacha.js
+      - api-status.js
+      - gacha-page.js
       - gacha-incident-admin.js
       - db/mio-admin-incidents-20261031.sql
       - .github/workflows/mio-admin-center-stage1.yml
@@ -25,6 +29,10 @@ on:
       - mio-incident-core.js
       - mio-incident-recorder.js
       - api-mio-incidents.js
+      - api-mio-incident-report.js
+      - api-gacha.js
+      - api-status.js
+      - gacha-page.js
       - gacha-incident-admin.js
       - db/mio-admin-incidents-20261031.sql
       - .github/workflows/mio-admin-center-stage1.yml
@@ -49,6 +57,10 @@ jobs:
           node --check mio-incident-core.js
           node --check mio-incident-recorder.js
           node --check api-mio-incidents.js
+          node --check api-mio-incident-report.js
+          node --check api-gacha.js
+          node --check api-status.js
+          node --check gacha-page.js
           node --check gacha-incident-admin.js
       - name: Isolated gate, polling and read-only permission tests
         run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs
