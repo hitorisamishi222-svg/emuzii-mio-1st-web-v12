@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {tokenBinding,verifyExistingIdentity,createRecoveryRequest,
- approveRecoveryRequest,redeemRecovery,requestEnabled,adminEnabled,claimEnabled} from '../mio-device-recovery-core.js';
+ approveRecoveryRequest,redeemRecovery,requestEnabled,adminEnabled,claimEnabled,signedRecoveryOfferAllowed} from '../mio-device-recovery-core.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const web='MIO-W-'+'a'.repeat(24),mio='MIO-0010';
@@ -24,6 +24,15 @@ test('all release stages require separate exact flags',()=>{
  assert.equal(claimEnabled(r),false);
 });
 
+test('signed legacy session rejection is recoverable only for exact light-cookie identity',()=>{
+ const error=new Error('unauthorized');
+ assert.equal(signedRecoveryOfferAllowed(session,{...session},error),true);
+ assert.equal(signedRecoveryOfferAllowed(session,null,error),false);
+ assert.equal(signedRecoveryOfferAllowed(session,{...session,token:'c'.repeat(64)},error),false);
+ assert.equal(signedRecoveryOfferAllowed(session,{...session,id:'MIO-W-'+'c'.repeat(24)},error),false);
+ assert.equal(signedRecoveryOfferAllowed(session,session,new Error('連携先に接続できません')),false);
+ assert.equal(signedRecoveryOfferAllowed(session,session,Object.assign(new Error('timeout'),{name:'TimeoutError'})),false);
+});
 test('binding is scoped to the exact signed light cookie, not to display name',()=>{
  assert.match(tokenBinding(session,key),/^[a-f0-9]{64}$/);
  assert.notEqual(tokenBinding(session,key),tokenBinding({...session,token:'c'.repeat(64)},key));
