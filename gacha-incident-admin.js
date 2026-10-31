@@ -9,12 +9,13 @@ const labels={
  DRAW_UNKNOWN:'抽選結果の確定状況が不明',
  DRAW_CLIENT_UNCONFIRMED:'参加者の画面で抽選結果が未表示',
  AUTH_COOKIE_MISSING:'既存端末のログイン認証が見つからない',
+ AUTH_LEGACY_REJECTED:'既存CookieをGASが認証できない',
  GAS_TIMEOUT:'連携先の応答待ちが長い',
  UPSTREAM_FAILED:'ガチャ情報の取得に失敗',
  STATUS_UNAVAILABLE:'登録状態の取得に失敗'
 };
 const statuses={unhandled:'未対応',working:'対応中',resolved:'解決'};
-const categories=['DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE'];
+const categories=['DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','AUTH_LEGACY_REJECTED','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE'];
 const states=['unhandled','working','resolved'];
 const GACHA_URL='https://emuzii-mio-1st-web-v12.vercel.app/gacha.html';
 function recoveryInstructions(category){
