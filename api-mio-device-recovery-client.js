@@ -37,8 +37,11 @@ export default async function handler(req,res){
    return reply(res,503,'RECOVERY_DB_NOT_READY');
  const session=readLightSession(req.headers.cookie,process.env.MIO_LIGHT_SESSION_SECRET);
  if(!session)return reply(res,401,'SIGNED_LIGHT_SESSION_REQUIRED');
- if(readSession(req.headers.cookie,cfg.secret))
-   return res.status(200).json({ok:true,status:'already_connected'});
+ // A legacy cookie can be correctly signed but point to a retired GAS record.
+ // Never treat its signature alone as proof of a working login.
+ const legacy=readSession(req.headers.cookie,cfg.secret);
+ if(legacy&&(legacy.id!==session.id||legacy.token!==session.token))
+   return reply(res,409,'COOKIE_IDENTITY_CONFLICT');
  let binding;
  try{binding=tokenBinding(session,process.env.MIO_DEVICE_RECOVERY_BINDING_SECRET)}
  catch{return reply(res,401,'LIGHT_COOKIE_INVALID')}
