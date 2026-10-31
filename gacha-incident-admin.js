@@ -69,6 +69,30 @@ function request(data){
   return v;
  });
 }
+async function verifyCommittedResult(ticket,output,btn){
+ if(!connected||!snapshot||!ticket.drawId)return;
+ btn.disabled=true;
+ output.textContent='既存の当選履歴だけを確認しています…';
+ try{
+  const response=await fetch('/api/mio-gacha-result-lookup',{
+   method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({code,webId:ticket.participantRef,drawId:ticket.drawId})
+  });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||data.ok!==true)throw Error(
+   data.code==='RESULT_LOOKUP_DISABLED'?'既存GASとの照会連携を準備中です。':
+   data.error||'当選結果を照合できません'
+  );
+  if(data.status==='confirmed')output.textContent='確定済み：'+(data.name||'')+
+   ' / '+data.mioId+' / '+data.mode+' / '+data.ordinal+'回目 / 当選 '+data.prize+
+   '（閲覧のみ・回数変更なし）';
+  else if(data.status==='unconfirmed')output.textContent='この抽選IDの確定記録は見つかりません。再抽選はしないでください。';
+  else if(data.status==='identity_unverified')output.textContent='このWeb登録IDの本人照合を先に確認してください。';
+  else output.textContent='抽選IDの重複または当選履歴に矛盾があります。自動復旧できません。';
+ }catch(e){output.textContent='⚠️ '+e.message}
+ finally{btn.disabled=false}
+}
 function counts(){
  const s=latest?.counts||{};
  for(const type of states){
@@ -116,6 +140,12 @@ function render(){
    actions.append(resolve);
   }
   if(actions.children.length)card.append(actions);
+  if(v.drawId){
+   const result=node('p','当選台帳：未照会','ops-message');
+   const inspect=node('button','当選結果を確認（抽選しない）','ops-action ops-secondary');
+   inspect.addEventListener('click',()=>void verifyCommittedResult(v,result,inspect));
+   card.append(inspect,result);
+  }
   const copy=node('button','参加者向けの復旧案内をコピー','ops-action ops-secondary');
   copy.addEventListener('click',async()=>{
    try{
