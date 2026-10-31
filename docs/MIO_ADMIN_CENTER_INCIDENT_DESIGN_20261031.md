@@ -129,3 +129,22 @@
 4. DBマイグレーションと4つのフラグの設定は、本番での試験合格・承認までは行わない。
 
 **この段階では管理画面にボタンがあるだけで、本番のログインを解除できる状態とは主張しない。**
+
+## Phase 2C 追加監査：iPhone / LINE / X 認証復旧の強化（2026-10-31）
+**確認できた構造上の問題**
+1. 既存GAS`status`（リポジトリ上の候補版）は、Web ID・表示名・承認状態・皆勤・ガチャを返すが、**正本の`integratedParticipantId`を返さない**。NeonとGASで表示名が一致するだけでは正しいMIO-IDへのリンクが証明できない。
+2. 既存`mio_session`の署名が正しくても、GASの登録行が旧端末扱い・認証不一致なら操作できない。署名だけで「ログイン済み」と認識すると申請が進まない。
+3. Safari、Chrome、LINE内WebView、X内WebViewはCookieストレージが同じとは限らない。「LINE/Xで不調ならSafariへ切替」という旧案内は、元のCookie喪失を招く可能性がある。
+4. 申請用Cookieがないのに12秒間隔の再チェックを続けると、無駄な通信が増える。
+
+**開発版の対応**
+- `GAS_WebAdminOps_20261030.gs`だけに読み取り専用`webAdminOpsRecoveryProof`候補を追加。BRIDGE_SECRET、元のWeb ID/トークンハッシュ、21列のWeb登録シートの承認・MIO-ID・整合性、旧端末判定、正本参加者行を検証し、**重複した有効Web IDがある場合は自動許可しない**。
+- `mio-device-recovery-core.js`の`verifyExistingIdentity`は、Neon/GAS`status`に加えて上記の独立したGAS正本ID証明を**必須**とする。未搭載・不一致なら`GAS_CANONICAL_PROOF_UNAVAILABLE`または`GAS_CANONICAL_ID_MISMATCH`で安全停止。
+- `api-mio-device-recovery-client.js`では旧Cookieの署名だけで復旧済み判定せず、元のライトCookieと異なるWeb ID/トークンがある場合は`COOKIE_IDENTITY_CONFLICT`で停止。
+- 旧CookieとライトCookieが同じWeb ID・トークンで、GASから**明示的な`unauthorized`**が返った場合だけ、`api-status.js`が復旧案内へつなぐ。タイムアウト・502・GAS全体障害は認証不一致と扱わない。正本ID証明の欠如も復旧できない。
+- 署名付きCookieなし等で失敗した画面は自動ポーリングを停止。承認待ち・承認済みのみ画面表示中に再確認する。過去に成功した引換済みセッションの再試行は**2分**に限定。
+- 説明文を「Safari・Chrome・LINE・Xのうち、**最初に登録した同じアプリ・ブラウザを使用**」に統一。別アプリへ移動してもCookieは引き継がれないことを明記。
+
+**合成自動テスト**：端末条件の表示/ボタン状態と状態遷移をNode上の模擬ブラウザで検証（Cookie欠落、承認待ち→承認済み→元のブラウザで引換、返答未到達時の同一ブラウザ再確認、異なるログインIDとライトIDの衝突、GAS正本ID不一致）。**これはiPhone/LINE/X実機試験を代替しない**。
+
+**未解放理由**：稼働GASには`webAdminOpsRecoveryProof`が存在すると確認できておらず、既存GAS全文は原本保護のため無変更。既存の本番URL・DB・GAS設定も未変更。管理者の実機照合と既存稼働GASコードの確認後にのみ、既存プロジェクトで適用判断する。
