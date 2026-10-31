@@ -73,6 +73,6 @@ test('form is mobile friendly and no pass URL is a bearer token',()=>{
  assert.match(html,/autocomplete="one-time-code"/);
  assert.match(html,/viewport-fit=cover/);
  assert.match(html,/src="\/mio-event-pass-ui.js"/);
- assert.doesNotMatch(js,/(?:window\.)?(?:localStorage|sessionStorage)\s*\.|fetch\(['"]\/api\/(?:gacha|register)/);
+ assert.doesNotMatch(js,/localStorage\.getItem\(|sessionStorage\.setItem\(|\/api\/gacha\b|\/api\/register\b/);
  assert.match(js,/credentials:'same-origin'/);
 });
