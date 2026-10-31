@@ -7,7 +7,7 @@ const WEB=/^MIO-W-[a-f0-9]{24}$/;
 const DRAW=/^[a-f0-9]{32}$/;
 const OP=/^[a-f0-9]{32}$/;
 const STATES=['unhandled','working','resolved'];
-const CATEGORIES=['DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE'];
+const CATEGORIES=['DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','AUTH_LEGACY_REJECTED','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE'];
 const STAGES=['draw','catalog','history','status'];
 const good=(x,list)=>typeof x==='string'&&list.includes(x);
 export const enabled=(env=process.env)=>env.MIO_INCIDENT_CENTER_RELEASE===RELEASE;
