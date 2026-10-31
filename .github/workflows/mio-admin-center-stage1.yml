@@ -1,0 +1,37 @@
+name: MIO Admin Center Phase1 isolated tests
+on:
+  push:
+    branches:
+      - feature/mio-admin-center-phase1
+    paths:
+      - gacha-web-gate.html
+      - gacha-admin-ops.js
+      - gacha-passkey-ui.js
+      - tests/mio-admin-center-stage1.test.mjs
+      - .github/workflows/mio-admin-center-stage1.yml
+  pull_request:
+    paths:
+      - gacha-web-gate.html
+      - gacha-admin-ops.js
+      - gacha-passkey-ui.js
+      - tests/mio-admin-center-stage1.test.mjs
+      - .github/workflows/mio-admin-center-stage1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  operator-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JS syntax without connecting to production
+        run: |
+          node --check gacha-admin-ops.js
+          node --check gacha-passkey-ui.js
+          node --check tests/mio-admin-center-stage1.test.mjs
+      - name: Isolated gate, polling and read-only permission tests
+        run: node --test tests/mio-admin-center-stage1.test.mjs
