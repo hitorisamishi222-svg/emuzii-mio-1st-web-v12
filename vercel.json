@@ -2,6 +2,54 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "api-mio-cookie-loss-admin.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-cookie-loss-client.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-cookie-loss-admin.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-cookie-loss-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "gacha-device-recovery-admin.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-device-recovery-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-mio-device-recovery-admin.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-device-recovery-client.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-gacha-result-lookup.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-incident-report.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-incident-admin.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-mio-incidents.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "gacha-passkey-ui.js",
       "use": "@vercel/static"
     },
@@ -391,6 +439,54 @@
     }
   ],
   "routes": [
+    {
+      "src": "/gacha-cookie-loss-admin.js",
+      "dest": "/gacha-cookie-loss-admin.js"
+    },
+    {
+      "src": "/mio-cookie-loss-ui.js",
+      "dest": "/mio-cookie-loss-ui.js"
+    },
+    {
+      "src": "/api/mio-cookie-loss-admin",
+      "dest": "/api-mio-cookie-loss-admin.js"
+    },
+    {
+      "src": "/api/mio-cookie-loss-client",
+      "dest": "/api-mio-cookie-loss-client.js"
+    },
+    {
+      "src": "/gacha-device-recovery-admin.js",
+      "dest": "/gacha-device-recovery-admin.js"
+    },
+    {
+      "src": "/mio-device-recovery-ui.js",
+      "dest": "/mio-device-recovery-ui.js"
+    },
+    {
+      "src": "/api/mio-device-recovery-admin",
+      "dest": "/api-mio-device-recovery-admin.js"
+    },
+    {
+      "src": "/api/mio-device-recovery-client",
+      "dest": "/api-mio-device-recovery-client.js"
+    },
+    {
+      "src": "/api/mio-gacha-result-lookup",
+      "dest": "/api-mio-gacha-result-lookup.js"
+    },
+    {
+      "src": "/api/mio-incident-report",
+      "dest": "/api-mio-incident-report.js"
+    },
+    {
+      "src": "/gacha-incident-admin.js",
+      "dest": "/gacha-incident-admin.js"
+    },
+    {
+      "src": "/api/mio-incidents",
+      "dest": "/api-mio-incidents.js"
+    },
     {
       "src": "/gacha-passkey-ui.js",
       "dest": "/gacha-passkey-ui.js"

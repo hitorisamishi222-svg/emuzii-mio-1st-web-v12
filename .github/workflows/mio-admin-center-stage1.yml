@@ -1,0 +1,137 @@
+name: MIO Admin Center Phase1 isolated tests
+on:
+  push:
+    branches:
+      - feature/mio-admin-center-phase1
+    paths:
+      - gacha-web-gate.html
+      - gacha-admin-ops.js
+      - gacha-passkey-ui.js
+      - tests/mio-admin-center-stage1.test.mjs
+      - tests/mio-incident-center.test.mjs
+      - tests/mio-gacha-confirmed-history-recovery.test.mjs
+      - tests/mio-incident-identity-mapping.test.mjs
+      - tests/mio-gacha-admin-draw-lookup.test.mjs
+      - tests/mio-device-recovery.test.mjs
+      - tests/mio-device-recovery-canonical-proof.test.mjs
+      - tests/mio-device-recovery-browser-flows.test.mjs
+      - tests/mio-cookie-loss-intake.test.mjs
+      - tests/mio-cookie-loss-candidate.test.mjs
+      - mio-cookie-loss-intake-core.js
+      - api-mio-cookie-loss-client.js
+      - api-mio-cookie-loss-admin.js
+      - mio-cookie-loss-ui.js
+      - gacha-cookie-loss-admin.js
+      - db/mio-cookie-loss-cases-20261031.sql
+      - mio-device-recovery-core.js
+      - api-mio-device-recovery-client.js
+      - api-mio-device-recovery-admin.js
+      - mio-device-recovery-ui.js
+      - gacha-device-recovery-admin.js
+      - db/mio-device-recovery-20261031.sql
+      - gacha.html
+      - vercel.json
+      - GAS_Code_FULL_WEB_OPS_20261030.gs
+      - api-mio-gacha-result-lookup.js
+      - GAS_WebAdminOps_20261030.gs
+      - api-gacha-admin-ops.js
+      - mio-incident-core.js
+      - mio-incident-recorder.js
+      - api-mio-incidents.js
+      - api-mio-incident-report.js
+      - api-gacha.js
+      - api-status.js
+      - gacha-page.js
+      - gacha-incident-admin.js
+      - db/mio-admin-incidents-20261031.sql
+      - .github/workflows/mio-admin-center-stage1.yml
+  pull_request:
+    paths:
+      - gacha-web-gate.html
+      - gacha-admin-ops.js
+      - gacha-passkey-ui.js
+      - tests/mio-admin-center-stage1.test.mjs
+      - tests/mio-incident-center.test.mjs
+      - tests/mio-gacha-confirmed-history-recovery.test.mjs
+      - tests/mio-incident-identity-mapping.test.mjs
+      - tests/mio-gacha-admin-draw-lookup.test.mjs
+      - tests/mio-device-recovery.test.mjs
+      - tests/mio-device-recovery-canonical-proof.test.mjs
+      - tests/mio-device-recovery-browser-flows.test.mjs
+      - tests/mio-cookie-loss-intake.test.mjs
+      - tests/mio-cookie-loss-candidate.test.mjs
+      - mio-cookie-loss-intake-core.js
+      - api-mio-cookie-loss-client.js
+      - api-mio-cookie-loss-admin.js
+      - mio-cookie-loss-ui.js
+      - gacha-cookie-loss-admin.js
+      - db/mio-cookie-loss-cases-20261031.sql
+      - mio-device-recovery-core.js
+      - api-mio-device-recovery-client.js
+      - api-mio-device-recovery-admin.js
+      - mio-device-recovery-ui.js
+      - gacha-device-recovery-admin.js
+      - db/mio-device-recovery-20261031.sql
+      - gacha.html
+      - vercel.json
+      - GAS_Code_FULL_WEB_OPS_20261030.gs
+      - api-mio-gacha-result-lookup.js
+      - GAS_WebAdminOps_20261030.gs
+      - api-gacha-admin-ops.js
+      - mio-incident-core.js
+      - mio-incident-recorder.js
+      - api-mio-incidents.js
+      - api-mio-incident-report.js
+      - api-gacha.js
+      - api-status.js
+      - gacha-page.js
+      - gacha-incident-admin.js
+      - db/mio-admin-incidents-20261031.sql
+      - .github/workflows/mio-admin-center-stage1.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  operator-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JS syntax without connecting to production
+        run: |
+          node --check gacha-admin-ops.js
+          node --check gacha-passkey-ui.js
+          node --check tests/mio-admin-center-stage1.test.mjs
+          node --check tests/mio-incident-center.test.mjs
+          node --check tests/mio-gacha-confirmed-history-recovery.test.mjs
+          node --check tests/mio-incident-identity-mapping.test.mjs
+          node --check tests/mio-gacha-admin-draw-lookup.test.mjs
+          node --check api-mio-gacha-result-lookup.js
+          node --check mio-incident-core.js
+          node --check mio-incident-recorder.js
+          node --check api-mio-incidents.js
+          node --check api-mio-incident-report.js
+          node --check api-gacha.js
+          node --check api-status.js
+          node --check gacha-page.js
+          node --check gacha-incident-admin.js
+          node --check mio-device-recovery-core.js
+          node --check api-mio-device-recovery-client.js
+          node --check api-mio-device-recovery-admin.js
+          node --check mio-device-recovery-ui.js
+          node --check gacha-device-recovery-admin.js
+          node --check tests/mio-device-recovery.test.mjs
+          node --check tests/mio-device-recovery-canonical-proof.test.mjs
+          node --check tests/mio-device-recovery-browser-flows.test.mjs
+          node --check tests/mio-cookie-loss-intake.test.mjs
+          node --check tests/mio-cookie-loss-candidate.test.mjs
+          node --check mio-cookie-loss-intake-core.js
+          node --check api-mio-cookie-loss-client.js
+          node --check api-mio-cookie-loss-admin.js
+          node --check mio-cookie-loss-ui.js
+          node --check gacha-cookie-loss-admin.js
+      - name: Isolated gate, polling and read-only permission tests
+        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs tests/mio-device-recovery.test.mjs tests/mio-device-recovery-canonical-proof.test.mjs tests/mio-device-recovery-browser-flows.test.mjs tests/mio-cookie-loss-candidate.test.mjs tests/mio-cookie-loss-intake.test.mjs
