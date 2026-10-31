@@ -13,13 +13,13 @@ export async function recordObservedFailure({session,action,drawId,error,categor
  if(!stage)return false;
  try{
   const db=await pool();
-  await recordIncident((sql,args)=>db.query(sql,args),{
+  const result=await recordIncident((sql,args)=>db.query(sql,args),{
    participantRef:session.id,
    source:stage==='status'?'status':'gacha',stage,
    category:category||classifiedFailure(stage,error),
    drawId:stage==='draw'?drawId:null
   },process.env.MIO_INCIDENT_FINGERPRINT_SECRET);
-  return true;
+  return result.recorded===true;
  }catch{
   // Recording failures must not mutate the draw nor replace its original response.
   return false;
