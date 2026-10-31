@@ -91,7 +91,22 @@ main{max-width:760px}
    <p>既存Apps Scriptの「デプロイを管理」から同じデプロイの<strong>新バージョン</strong>で更新します。稼働GASとデータの一致が未確認の間は一切変更しません。</p>
   </div>
  </div>
- <p class="ops-caption">現段階の通知対象は「登録承認待ち」の集計です。抽選や通信エラーの自動チケット化は次の段階で追加します。</p>
+
+ <section id="incidentPanel" class="ops-card" aria-labelledby="incidentTitle">
+  <div class="ops-summary"><h2 id="incidentTitle">🛠️ エラー・復旧管理</h2><span id="incidentBell" class="ops-pill" aria-live="polite">管理者認証待ち</span></div>
+  <p class="ops-caption">障害を自動的に記録・分類し、対応状況を管理します。現時点では既存DBへの専用台帳導入と管理者の解放確認が完了するまで読み取り・書き込みは停止します。</p>
+  <div class="ops-grid">
+   <div class="ops-card"><strong id="incidentCountunhandled">—</strong><div>未対応</div></div>
+   <div class="ops-card"><strong id="incidentCountworking">—</strong><div>対応中</div></div>
+  </div>
+  <p>解決済み <strong id="incidentCountresolved">—</strong> 件</p>
+  <button type="button" id="incidentReload" class="ops-secondary" disabled>エラー一覧を更新</button>
+  <p id="incidentMessage" class="ops-message" role="status" aria-live="polite">管理者ログイン後に障害台帳を読み込みます。</p>
+  <button type="button" id="incidentRetry" hidden disabled>前回と同じ操作IDで再確認</button>
+  <div id="incidentList" class="ops-list"><p>未接続</p></div>
+  <p class="ops-caption">「対応を開始」「解決済みにする」はチケット状態の変更で、抽選権利の再付与や結果の再抽選は行いません。</p>
+ </section>
+ <p class="ops-caption">本番の障害台帳は未解放です。登録承認待ち通知のみ、現在の既存接続で利用できます。</p>
 </section>
 
 </main><script>
@@ -142,4 +157,4 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/gacha-incident-admin.js" defer></script></body></html>
