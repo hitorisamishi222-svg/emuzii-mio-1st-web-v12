@@ -2,6 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "event-pass.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-event-pass-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-mio-event-email.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api-mio-event-pass.js",
       "use": "@vercel/node"
     },
@@ -443,6 +455,18 @@
     }
   ],
   "routes": [
+    {
+      "src": "/event-pass.html",
+      "dest": "/event-pass.html"
+    },
+    {
+      "src": "/mio-event-pass-ui.js",
+      "dest": "/mio-event-pass-ui.js"
+    },
+    {
+      "src": "/api/mio-event-email",
+      "dest": "/api-mio-event-email.js"
+    },
     {
       "src": "/api/mio-event-pass",
       "dest": "/api-mio-event-pass.js"
