@@ -1,13 +1,14 @@
 /**
  * MIO Web operator service. Add to EXISTING Apps Script; DO NOT run setup.
  * Dispatcher in existing doPost AFTER BRIDGE_SECRET comparison, inside ScriptLock:
- *   if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))
+ *   if(/^webAdminOps(?:Read|DrawLookup|Approve|Grant|Review|Create|Intake)$/.test(d.action))
  *     return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
  * This file never changes check-in or draw logic.
  */
 function mioAdminOps_(ss,d){
  var action=String(d.action||'');
  if(action==='webAdminOpsRead')return mioAdminOpsRead_(ss,d);
+ if(action==='webAdminOpsDrawLookup')return mioAdminOpsDrawLookup_(ss,d);
  if(action==='webAdminOpsApprove')return mioAdminOpsApprove_(ss,d);
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
  if(action==='webAdminOpsCreate')return mioAdminOpsCreate_(ss,d);
@@ -331,4 +332,32 @@ function mioAdminOpsIntake_(ss,d){
    throw new Error('受付の保存確認ができません');
  history.getRange(audit,8).setValue('確定');
  return {ok:true,status:'管理確認待ち'};
+}
+
+// READ ONLY: exact draw ID, exact Web ID, verified canonical MIO ID. No draw, no grant.
+function mioAdminOpsDrawLookup_(ss,d){
+ var wid=mioAdminOpsStr_(d.webId),drawId=mioAdminOpsStr_(d.drawId);
+ if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||!/^[a-f0-9]{32}$/.test(drawId))
+  throw new Error('抽選照会IDが不正です');
+ var web=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_Web登録'),21);
+ var matched=web.filter(function(r){return mioAdminOpsStr_(r[0])===wid});
+ if(matched.length!==1)return {ok:true,status:'identity_unverified'};
+ var r=matched[0],id=mioAdminOpsStr_(r[7]);
+ if(r[5]!=='承認済み'||r[11]!=='確認済み'||!/^MIO-\d{4}$/.test(id))
+  return {ok:true,status:'identity_unverified'};
+ var h=mioAdminOpsSheet_(ss,'emuzii_当選履歴'),length=h.getLastRow()-1;
+ if(length>20000)throw new Error('当選履歴が読み取り検証上限を超えています');
+ if(length<1)return {ok:true,status:'unconfirmed'};
+ var rowNums=h.getRange(2,1,length,1).getValues(),rows=[];
+ for(var i=0;i<rowNums.length;i++)if(mioAdminOpsStr_(rowNums[i][0])===drawId)rows.push(i+2);
+ if(rows.length>1)return {ok:true,status:'conflict'};
+ if(!rows.length)return {ok:true,status:'unconfirmed'};
+ var x=h.getRange(rows[0],1,1,13).getValues()[0],ordinal=Number(x[9]);
+ if(mioAdminOpsStr_(x[1])!==wid||mioAdminOpsStr_(x[2])!==id||
+    mioAdminOpsStr_(x[10])!=='確定'||['通常','ラキフェス'].indexOf(mioAdminOpsStr_(x[4]))<0||
+    !mioAdminOpsStr_(x[6])||!isFinite(ordinal)||ordinal<1||Math.floor(ordinal)!==ordinal)
+  return {ok:true,status:'conflict'};
+ return {ok:true,status:'confirmed',webId:wid,mioId:id,name:mioAdminOpsStr_(r[2]),
+  drawId:drawId,mode:mioAdminOpsStr_(x[4]),prize:mioAdminOpsStr_(x[6]),
+  ordinal:ordinal,rarity:mioAdminOpsStr_(x[11]),image:mioAdminOpsStr_(x[12])};
 }
