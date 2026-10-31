@@ -30,6 +30,7 @@
   snapshot=await request({action:'read'});
   $('code').value='';redraw();
   say('✅ Face IDで管理者としてログインしました。');
+  window.dispatchEvent(new Event('mio:admin-connected'));
  }
  function buttons(disabled){loginBtn.disabled=disabled;registerBtn.disabled=disabled}
  loginBtn.onclick=async()=>{
