@@ -15,7 +15,7 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   function element(name='div'){
     const handlers=new Map();
     return {id:name,hidden:false,disabled:false,style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},
-      setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},remove(){},
+      setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},after(){},remove(){},
       scrollIntoView(){throw Error('recovery may not scroll')},
       addEventListener:(event,cb)=>handlers.set(event,cb),handlers,get offsetWidth(){return 2}};
   }
