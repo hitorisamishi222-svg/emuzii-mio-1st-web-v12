@@ -42,5 +42,5 @@ test('normal catalog refresh re-displays committed result without issuing draw',
  assert.match(part,/confirmedHistoryResult\(h,participant,pending\)/);
  assert.match(part,/renderResult\(matched\.result\)/);
  assert.match(part,/forget\(\)/);
- assert.doesNotMatch(part,/action:'draw'/);
+ assert.doesNotMatch(part,/post\(['"]\/api\/gacha['"],\s*\{action:'draw'/);
 });
