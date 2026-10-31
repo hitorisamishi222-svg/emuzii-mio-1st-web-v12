@@ -23,7 +23,9 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   const context=vm.createContext({
     document:{getElementById:$,querySelectorAll:()=>[],createElement:()=>element(),addEventListener(){},hidden:false},
     location:{hostname:'emuzii-mio-1st-web-v12.vercel.app'},
-    window:{matchMedia:()=>({matches:true}),setInterval(){},addEventListener(){},dispatchEvent(){}},
+    window:{matchMedia:()=>({matches:true}),setInterval(){},addEventListener(){},dispatchEvent(){},
+      // Simulate a user declining the required re-draw confirmation.
+      confirm(){return false}},
     localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
     fetch:async(_path,{body})=>{
       const request=JSON.parse(body);requests.push(request);
@@ -62,7 +64,7 @@ test('if a draw never committed, preserve pending ID and do not spend another ri
   // The follow-up catalog request is read-only and cannot consume another right.
   assert.deepEqual(h.requests.map(x=>x.action),['history','catalog']);
   assert.deepEqual(JSON.parse(h.saved.get(key)),pending);
-  assert.match(h.$('drawMessage').textContent,/再抽選せず運営/);
+  assert.match(h.$('drawMessage').textContent,/再開せずに保留/);
   assert.equal(h.$('retryDraw').hidden,false);
 });
 
