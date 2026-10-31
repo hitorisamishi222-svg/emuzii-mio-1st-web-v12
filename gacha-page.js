@@ -62,6 +62,21 @@ function setButtons(c){
   $('retryDraw').hidden=!pending;$('retryDraw').textContent='▶ 前回のガチャを再開する'
 }
 function statusText(c){if(c.gateConfigured===false)return '管理者のガチャ公開設定が接続されていません。運営に連絡してください。';const start=Number(c.festAvailableFrom)||5,next=Number(c.nextOrdinal)||1;if(!c.confirmed)return 'メンシプ購入の確認をお待ちください。';if(c.remaining<1)return 'ガチャ権利をすべて使用済みです。';if(!c.normalOpen&&!c.festOpen)return 'メンシプガチャ／ラキフェスは現在停止中です。';if(!c.normal.ready&&!c.fest.ready)return '景品設定中です。';if(!c.festEntitled)return c.normalOpen?`メンシプガチャを利用できます。総ガチャ権利${start}回以上でラキフェス対象になります。`:'メンシプガチャは現在停止中です。';if(!c.festUnlocked)return c.normalOpen?`ラキフェス対象です。あと${Math.max(0,start-next)}回メンシプガチャを引くと、${start}回目からラキフェスを選べます。`:'メンシプガチャは現在停止中です。';if(c.normalOpen&&c.festOpen)return `${start}回目以降です。メンシプガチャ／ラキフェスを選んで抽選できます。`;if(c.festOpen)return 'ラキフェスのみ受付中です。';return 'メンシプガチャのみ受付中です。'}
+// Verify the complete set of rows for ONE draw ID; a second inconsistent row is not recoverable.
+function confirmedHistoryResult(history,expectedParticipant,pending){
+ if(!pending||!/^[a-f0-9]{32}$/.test(pending.drawId||'')||
+  !['通常','ラキフェス'].includes(pending.mode))return {status:'conflict'};
+ if(!history||history.participantId!==expectedParticipant||!Array.isArray(history.history))return {status:'conflict'};
+ const rows=history.history.filter(x=>x.drawId===pending.drawId);
+ if(!rows.length)return {status:'missing'};
+ if(rows.length!==1)return {status:'conflict'};
+ const row=rows[0],ordinal=Number(row.ordinal);
+ if(row.mode!==pending.mode||typeof row.prize!=='string'||!row.prize.trim()||
+  !Number.isSafeInteger(ordinal)||ordinal<1)return {status:'conflict'};
+ return {status:'confirmed',result:{participantId:expectedParticipant,
+  drawId:pending.drawId,mode:pending.mode,prize:row.prize,ordinal,
+  rarity:String(row.rarity||''),image:String(row.image||''),replayed:true}};
+}
 async function loadCatalog(includeHistory=true){
   if(busy)return false;
   busy=true;
@@ -78,12 +93,15 @@ async function loadCatalog(includeHistory=true){
     // A completed draw may have reached GAS even when its browser reply failed.
     // Only release the device-local pending lock after confirming the SAME
     // draw ID and mode in this authenticated user's committed history.
-    if(pending&&h.participantId===participant&&Array.isArray(h.history)){
-      const matching=h.history.filter(x=>x.drawId===pending.drawId&&x.mode===pending.mode&&
-        typeof x.prize==='string'&&x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0);
-      if(matching.length===1){
+    if(pending){
+      const matched=confirmedHistoryResult(h,participant,pending);
+      if(matched.status==='confirmed'){
+        // Re-display exactly the committed result, never reissue action:'draw'.
+        if($('drawResultCard').hidden)renderResult(matched.result);
         forget();
-        note('前回の当選結果を確認できました。当選履歴に保存済みです。通常のガチャに戻れます。');
+        note('前回の当選結果を復元しました。同じ景品です。閉じると次へ進めます。');
+      }else if(matched.status==='conflict'){
+        note('前回の抽選IDに不整合があります。再抽選せず、運営が確認します。');
       }
     }
     $('drawHistory').replaceChildren();
@@ -145,9 +163,8 @@ async function recoverPrevious(p){
   note('前回のガチャの結果を確認しています。');
   try{
     const history=await post('/api/gacha',{action:'history'});
-    if(history.participantId!==participant||!Array.isArray(history.history))throw Error('当選履歴の本人確認に失敗しました');
-    const rows=history.history.filter(x=>x.drawId===p.drawId);
-    if(rows.length===0){
+    const matched=confirmedHistoryResult(history,participant,p);
+    if(matched.status==='missing'){
       // No committed result for this exact ID. Reusing this ID is idempotent on
       // the GAS backend (ScriptLock + drawId lookup before an append).
       // Require an explicit second confirmation before spending a right.
@@ -158,12 +175,8 @@ async function recoverPrevious(p){
         throw Error('前回の抽選と残り回数を運営が確認中です');
       resume=window.confirm('前回のガチャの続きを再開します。\n\nすでに当選していれば、同じ結果を表示します。\nまだ当選が決まっていなければ、ガチャ券を1回使って抽選します。\n\n続けますか？');
       if(!resume)note('今回は再開せずに保留しました。続けるときは「前回のガチャを再開する」を押してね。');
-    }else if(rows.length===1&&rows[0].mode===p.mode&&typeof rows[0].prize==='string'&&rows[0].prize.trim()&&
-      Number.isSafeInteger(Number(rows[0].ordinal))&&Number(rows[0].ordinal)>=1){
-      const x=rows[0];
-      renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
-        prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
-        image:String(x.image||''),replayed:true});
+    }else if(matched.status==='confirmed'){
+      renderResult(matched.result);
       forget();recovered=true;
       note('前回の当選結果を確認できたよ！景品を閉じると次のガチャに進めます。');
     }else{
