@@ -54,6 +54,27 @@ function updateBell(count,{failed=false}={}){
  }
  if(!failed)lastPendingCount=count;
 }
+// Resolve identities by exact Web ID only; never guess from matching nicknames.
+window.mioResolveIncidentIdentity=function(webId){
+ if(!state||!/^MIO-W-[a-f0-9]{24}$/.test(webId||''))return null;
+ const webLinks=Array.isArray(state.webLinks)?state.webLinks:[];
+ const linked=webLinks.filter(x=>x?.webId===webId);
+ if(linked.length>1)return {status:'conflict'};
+ if(linked.length===1){
+  const x=linked[0];
+  if(typeof x.name!=='string'||!x.name.trim())return null;
+  const verified=x.verified===true&&/^MIO-\d{4}$/.test(x.mioId||'');
+  return {status:'found',name:x.name.slice(0,80),mioId:verified?x.mioId:'',
+   verified};
+ }
+ const pending=(state.pending||[]).filter(x=>x.webId===webId);
+ if(pending.length!==1||typeof pending[0].name!=='string')return null;
+ return {status:'found',name:pending[0].name.slice(0,80),mioId:'',verified:false};
+};
+function identityUpdated(){
+ if(typeof window.dispatchEvent==='function'&&typeof Event==='function')
+  window.dispatchEvent(new Event('mio:admin-identities-updated'));
+}
 function ready(){return snapshot&&typeof snapshot.normalOpen==='boolean'}
 function request(action,values={}){
  if(!ready())throw Error('先に管理者コードで受付管理へ接続してください');
@@ -76,6 +97,7 @@ async function refresh({automatic=false}={}){
  try{
   const response=await request('read');
   state=response;
+  identityUpdated();
   showGuide(false);
   updateBell(Number(state.totalPending)||0);
   if(editing)el('opsCount').textContent='要確認 '+state.totalPending+' 件';else render();
