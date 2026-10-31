@@ -2,6 +2,22 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "gacha-device-recovery-admin.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-device-recovery-ui.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api-mio-device-recovery-admin.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-device-recovery-client.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api-mio-gacha-result-lookup.js",
       "use": "@vercel/node"
     },
@@ -407,6 +423,22 @@
     }
   ],
   "routes": [
+    {
+      "src": "/gacha-device-recovery-admin.js",
+      "dest": "/gacha-device-recovery-admin.js"
+    },
+    {
+      "src": "/mio-device-recovery-ui.js",
+      "dest": "/mio-device-recovery-ui.js"
+    },
+    {
+      "src": "/api/mio-device-recovery-admin",
+      "dest": "/api-mio-device-recovery-admin.js"
+    },
+    {
+      "src": "/api/mio-device-recovery-client",
+      "dest": "/api-mio-device-recovery-client.js"
+    },
     {
       "src": "/api/mio-gacha-result-lookup",
       "dest": "/api-mio-gacha-result-lookup.js"
