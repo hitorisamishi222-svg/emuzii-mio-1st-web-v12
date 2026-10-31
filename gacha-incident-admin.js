@@ -19,15 +19,15 @@ const states=['unhandled','working','resolved'];
 const GACHA_URL='https://emuzii-mio-1st-web-v12.vercel.app/gacha.html';
 function recoveryInstructions(category){
  if(category==='DRAW_UNKNOWN'||category==='DRAW_CLIENT_UNCONFIRMED'||category==='GAS_TIMEOUT'){
-  return '【前回のガチャ結果を確認する方法】\\n'+
-   'ガチャを引いた時と同じSafari・Chromeでこちらを開いてください。\\n'+
-   GACHA_URL+'\\n'+
-   '当選結果が確定済みなら同じ景品が表示されます。再登録や新しいガチャのやり直しはしないでください。\\n'+
+  return '【前回のガチャ結果を確認する方法】\n'+
+   'ガチャを引いた時と同じSafari・Chromeでこちらを開いてください。\n'+
+   GACHA_URL+'\n'+
+   '当選結果が確定済みなら同じ景品が表示されます。再登録や新しいガチャのやり直しはしないでください。\n'+
    '結果が確認できない場合、前回のガチャを再開すると未確定分は権利を使う場合があるため、続行前に管理者へご相談ください。';
  }
- return '【ログイン・登録情報の確認】\\n'+
-  '以前登録したSafari・Chromeなど、元のブラウザからアクセスしてください。\\n'+
-  GACHA_URL+'\\n'+
+ return '【ログイン・登録情報の確認】\n'+
+  '以前登録したSafari・Chromeなど、元のブラウザからアクセスしてください。\n'+
+  GACHA_URL+'\n'+
   'LINE・X内ブラウザは別の端末情報になる場合があります。再登録はせず、運営に本人確認と端末の復旧を依頼してください。';
 }
 const $=id=>el(id);
