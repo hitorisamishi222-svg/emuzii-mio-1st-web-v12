@@ -119,6 +119,12 @@ async function execute(pending){
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
   }catch(e){
+    // Reporting is diagnostic only. Never repeat a draw/spend.
+    void fetch('/api/mio-incident-report',{
+      method:'POST',credentials:'same-origin',cache:'no-store',keepalive:true,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'drawUnconfirmed',drawId:pending.drawId})
+    }).catch(()=>{});
     clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
   }finally{
     clearAnimationTimers();$('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active','royal-charge','royal-release','royal-climax');busy=false;$('skipDraw').hidden=true;$('skipDraw').disabled=true;$('retryDraw').disabled=false;
