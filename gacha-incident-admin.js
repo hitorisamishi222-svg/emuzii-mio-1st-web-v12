@@ -78,6 +78,13 @@ function render(){
   head.append(node('strong',labels[v.category]||v.category));
   head.append(node('small',statuses[v.state]));
   card.append(head);
+  const person=typeof window.mioResolveIncidentIdentity==='function'?
+   window.mioResolveIncidentIdentity(v.participantRef):null;
+  if(person?.status==='conflict')card.append(node('p','名前：登録IDが重複しています（要確認）'));
+  else if(person?.status==='found')
+   card.append(node('p','名前：'+person.name+(person.verified?'（本人照合済み）':'（入力名・未照合）')+
+    (person.mioId?' / '+person.mioId:'')));
+  else card.append(node('p','名前：未照合（管理者台帳の登録IDと確認が必要）'));
   card.append(node('p','Web登録ID: '+v.participantRef));
   if(v.drawId)card.append(node('p','抽選ID: '+v.drawId));
   card.append(node('p','発生回数: '+Number(v.count||1)+' / 最終検知: '+new Date(v.lastSeenAt).toLocaleString('ja-JP')));
@@ -145,6 +152,7 @@ $('incidentReload').addEventListener('click',()=>void refresh());
 $('incidentRetry').addEventListener('click',()=>{
  if(pending&&window.confirm('前回の対応を同じ操作IDで再確認しますか？'))void replay();
 });
+window.addEventListener('mio:admin-identities-updated',()=>{if(latest&&!loading)render();});
 window.addEventListener('mio:admin-connected',()=>{
  connected=true;$('incidentReload').disabled=false;
  if(pending){msg('前回の管理操作が未確認です。同じ操作IDで再確認してください。',true);setPending(pending)}
