@@ -7,7 +7,9 @@ import gacha from '../api-gacha.js';
 import {hash,readSession,sessionCookie} from '../bridge.js';
 
 const secret='s'.repeat(48),id='MIO-W-'+'a'.repeat(24),token='b'.repeat(64);
-const saved={secret:process.env.APPS_SCRIPT_SECRET,url:process.env.APPS_SCRIPT_URL};
+const saved={secret:process.env.APPS_SCRIPT_SECRET,url:process.env.APPS_SCRIPT_URL,vercelEnv:process.env.VERCEL_ENV};
+// In this isolated unit test all GAS requests are mocked; prepare() is production-only.
+process.env.VERCEL_ENV='production';
 process.env.APPS_SCRIPT_SECRET=secret;
 process.env.APPS_SCRIPT_URL='https://script.google.com/macros/s/FAKE_SCRIPT/exec';
 const cookie=sessionCookie(id,token,secret).split(';')[0];
@@ -124,6 +126,6 @@ test('no changes to registration, gacha draws, event UI or GAS',()=>{
  assert.match(gachaSrc,/drawId:body.drawId,mode:body.mode/);
 });
 process.on('exit',()=>{globalThis.fetch=oldFetch;
- for(const [name,value] of [['APPS_SCRIPT_SECRET',saved.secret],['APPS_SCRIPT_URL',saved.url]]){
+ for(const [name,value] of [['APPS_SCRIPT_SECRET',saved.secret],['APPS_SCRIPT_URL',saved.url],['VERCEL_ENV',saved.vercelEnv]]){
  if(value===undefined)delete process.env[name];else process.env[name]=value;
  }});

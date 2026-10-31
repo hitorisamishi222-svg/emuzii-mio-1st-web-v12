@@ -15,7 +15,7 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   function element(name='div'){
     const handlers=new Map();
     return {id:name,hidden:false,disabled:false,style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},
-      setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},remove(){},
+      setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},after(){},remove(){},
       scrollIntoView(){throw Error('recovery may not scroll')},
       addEventListener:(event,cb)=>handlers.set(event,cb),handlers,get offsetWidth(){return 2}};
   }
@@ -23,7 +23,9 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   const context=vm.createContext({
     document:{getElementById:$,querySelectorAll:()=>[],createElement:()=>element(),addEventListener(){},hidden:false},
     location:{hostname:'emuzii-mio-1st-web-v12.vercel.app'},
-    window:{matchMedia:()=>({matches:true}),setInterval(){},addEventListener(){},dispatchEvent(){}},
+    window:{matchMedia:()=>({matches:true}),setInterval(){},addEventListener(){},dispatchEvent(){},
+      // Simulate a user declining the required re-draw confirmation.
+      confirm(){return false}},
     localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
     fetch:async(_path,{body})=>{
       const request=JSON.parse(body);requests.push(request);
@@ -59,9 +61,10 @@ test('recovery only reads saved draw history and never creates a new draw',async
 test('if a draw never committed, preserve pending ID and do not spend another right',async()=>{
   const h=harness(new Map([[key,JSON.stringify(pending)]]),[]);
   await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history']);
+  // The follow-up catalog request is read-only and cannot consume another right.
+  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog']);
   assert.deepEqual(JSON.parse(h.saved.get(key)),pending);
-  assert.match(h.$('drawMessage').textContent,/再抽選せず運営/);
+  assert.match(h.$('drawMessage').textContent,/再開せずに保留/);
   assert.equal(h.$('retryDraw').hidden,false);
 });
 
@@ -70,7 +73,7 @@ test('reject mismatched participant identity even if draw ID matches',async()=>{
   await click(h);
   assert.deepEqual(h.requests.map(x=>x.action),['history']);
   assert.equal(h.saved.has(key),true);
-  assert.match(h.$('drawMessage').textContent,/本人確認/);
+  assert.match(h.$('drawMessage').textContent,/不整合/);
 });
 
 test('reject wrong mode, duplicate IDs or broken ordinal without dropping pending draw',async()=>{
