@@ -83,10 +83,12 @@ main{max-width:760px}
  </div>
  <details class="ops-card"><summary>ガチャ回数の付与履歴</summary><div id="opsGrants" class="ops-list"></div></details>
  <div class="ops-card">
-  <button id="opsSetupToggle" type="button" class="ops-secondary" aria-expanded="false">Code.gs全貼り付け手順を開く</button>
+  <button id="opsSetupToggle" type="button" class="ops-secondary" aria-expanded="false" aria-controls="opsInstallGuide">Code.gs全貼り付け手順を開く</button>
   <div id="opsInstallGuide" hidden>
    <p>既存GAS本番の稼働版が未確認の場合、管理操作は停止されたままになります。既存のApps Scriptを新規作成せず、稼働コードを照合してください。</p>
-   <p>旧GASを推測で上書きせず、バックアップ・現行コードの一致確認・既存デプロイ更新・読み取り検証を完了してから管理書き込みの解放を判断します。</p>
+   <p>更新方式は<strong>Code.gsの全貼り付け（部分追加なし）</strong>。既存稼働コードとバックアップを照合し、許可された場合だけ統合版全文に置き換えます。</p>
+   <p>確認用ソース：<a href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_Code_FULL_WEB_OPS_20261030.gs" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff">GAS_Code_FULL_WEB_OPS_20261030.gs</a>（この参照版を本番にそのまま適用してよいという意味ではありません）。</p>
+   <p>既存Apps Scriptの「デプロイを管理」から同じデプロイの<strong>新バージョン</strong>で更新します。稼働GASとデータの一致が未確認の間は一切変更しません。</p>
   </div>
  </div>
  <p class="ops-caption">現段階の通知対象は「登録承認待ち」の集計です。抽選や通信エラーの自動チケット化は次の段階で追加します。</p>
