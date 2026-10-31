@@ -11,7 +11,7 @@ on:
       - tests/mio-incident-center.test.mjs
       - tests/mio-gacha-confirmed-history-recovery.test.mjs
       - tests/mio-incident-identity-mapping.test.mjs
-      - tests/mio-gacha-admin-draw-lookup.test.mjs tests/mio-device-recovery.test.mjs
+      - tests/mio-gacha-admin-draw-lookup.test.mjs
       - tests/mio-device-recovery.test.mjs
       - mio-device-recovery-core.js
       - api-mio-device-recovery-client.js
@@ -105,4 +105,4 @@ jobs:
           node --check gacha-device-recovery-admin.js
           node --check tests/mio-device-recovery.test.mjs
       - name: Isolated gate, polling and read-only permission tests
-        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs
+        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs tests/mio-device-recovery.test.mjs
