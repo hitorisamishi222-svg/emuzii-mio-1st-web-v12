@@ -1,5 +1,6 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 import {recoverFromAdminApprovedLightCookie} from './mio-admin-approved-light-recovery.js';
+import {recordObservedFailure} from './mio-incident-recorder.js';
 
 export default async function handler(req,res){
   const cfg=prepare(req,res);
@@ -24,7 +25,7 @@ export default async function handler(req,res){
     if(data.participantId!==session.id)throw Error('identity mismatch');
     if(data.status==='承認済み')res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
     return res.status(200).json(data);
-  }catch{
+  }catch(error){
     // Retired legacy browser sessions can retain a valid signature.
     // Only the independently verified, allowlisted light session can recover.
     let recovery;
@@ -34,6 +35,7 @@ export default async function handler(req,res){
       recovery={status:'failed'};
     }
     if(recovery.status==='recovered')return res.status(200).json(recovery.data);
+    await recordObservedFailure({session,action:'status',error});
     return res.status(502).json({ok:false,error:'⚠️ 一時的な通信エラーの可能性があります。ページを再読み込みして、もう一度お試しください。再登録は不要です。登録情報・ガチャ回数・当選履歴は、この再確認操作では変更されません。改善しない場合は管理者にご連絡ください。'});
   }
 }
