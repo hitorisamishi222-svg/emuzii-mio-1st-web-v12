@@ -1,7 +1,7 @@
 /**
  * MIO Web operator service. Add to EXISTING Apps Script; DO NOT run setup.
  * Dispatcher in existing doPost AFTER BRIDGE_SECRET comparison, inside ScriptLock:
- *   if(/^webAdminOps(?:Read|DrawLookup|Approve|Grant|Review|Create|Intake)$/.test(d.action))
+ *   if(/^webAdminOps(?:Read|DrawLookup|RecoveryProof|Approve|Grant|Review|Create|Intake)$/.test(d.action))
  *     return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
  * This file never changes check-in or draw logic.
  */
@@ -9,6 +9,7 @@ function mioAdminOps_(ss,d){
  var action=String(d.action||'');
  if(action==='webAdminOpsRead')return mioAdminOpsRead_(ss,d);
  if(action==='webAdminOpsDrawLookup')return mioAdminOpsDrawLookup_(ss,d);
+ if(action==='webAdminOpsRecoveryProof')return mioAdminOpsRecoveryProof_(ss,d);
  if(action==='webAdminOpsApprove')return mioAdminOpsApprove_(ss,d);
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
  if(action==='webAdminOpsCreate')return mioAdminOpsCreate_(ss,d);
@@ -360,4 +361,33 @@ function mioAdminOpsDrawLookup_(ss,d){
  return {ok:true,status:'confirmed',webId:wid,mioId:id,name:mioAdminOpsStr_(r[2]),
   drawId:drawId,mode:mioAdminOpsStr_(x[4]),prize:mioAdminOpsStr_(x[6]),
   ordinal:ordinal,rarity:mioAdminOpsStr_(x[11]),image:mioAdminOpsStr_(x[12])};
+}
+
+
+// READ ONLY: signed browser proof of the unique existing canonical participant.
+// Caller is server-side BRIDGE_SECRET authenticated; tokenHash is verified against
+// the original Web-registration row. Never expose this action to public clients.
+function mioAdminOpsRecoveryProof_(ss,d){
+ var webId=mioAdminOpsStr_(d.participantId),tokenHash=mioAdminOpsStr_(d.tokenHash);
+ if(!/^MIO-W-[a-f0-9]{24}$/.test(webId)||!/^[a-f0-9]{64}$/.test(tokenHash))
+  return {ok:true,verified:false};
+ var all=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_Web登録'),21);
+ var found=all.filter(function(r){return mioAdminOpsStr_(r[0])===webId});
+ if(found.length!==1)return {ok:true,verified:false};
+ var row=found[0],master=mioAdminOpsStr_(row[7]),name=mioAdminOpsStr_(row[2]);
+ if(mioAdminOpsStr_(row[1])!==tokenHash||
+    row[5]!=='承認済み'||row[11]!=='確認済み'||
+    row[16]==='旧端末'||!/^MIO-\d{4}$/.test(master)||
+    mioAdminOpsStr_(row[10])!==master||
+    typeof webIntegrityOk_!=='function'||!webIntegrityOk_(row))
+  return {ok:true,verified:false};
+ // Do not approve when different active Web credentials point to the same MIO ID.
+ if(all.some(function(r){return mioAdminOpsStr_(r[0])!==webId&&
+    mioAdminOpsStr_(r[7])===master&&r[5]==='承認済み'&&r[16]!=='旧端末';}))
+  return {ok:true,verified:false};
+ var people=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_参加者'),10).filter(function(p){
+   return mioAdminOpsStr_(p[0])===master&&mioAdminOpsStr_(p[1])===name;
+ });
+ if(people.length!==1)return {ok:true,verified:false};
+ return {ok:true,verified:true,participantId:webId,integratedParticipantId:master,name:name};
 }
