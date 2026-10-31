@@ -92,6 +92,16 @@ main{max-width:760px}
   </div>
  </div>
 
+ <section id="deviceRecoveryAdminPanel" class="ops-card" aria-labelledby="deviceRecoveryTitle">
+  <h2 id="deviceRecoveryTitle">📱 端末・ログイン復旧申請</h2>
+  <p class="ops-caption">本人の元ブラウザに署名付き登録情報が残り、Neonと既存GASの両方で承認済みの場合だけ申請が届きます。運営から別端末への新規認証情報の発行は行いません。</p>
+  <p id="deviceRecoveryAdminCount">復旧承認待ち — 件</p>
+  <button type="button" id="deviceRecoveryAdminReload" disabled>復旧申請を再確認</button>
+  <p id="deviceRecoveryAdminMessage" class="ops-message" role="status" aria-live="polite">管理者認証後に確認します。</p>
+  <button type="button" id="deviceRecoveryAdminRetry" hidden disabled>前回の承認を同じIDで再確認</button>
+  <div id="deviceRecoveryAdminList" class="ops-list"></div>
+  <p class="ops-caption">管理者の復旧許可は抽選や回数付与とは無関係です。承認から15分以内に本人が元の登録ブラウザで操作します。</p>
+ </section>
  <section id="incidentPanel" class="ops-card" aria-labelledby="incidentTitle">
   <div class="ops-summary"><h2 id="incidentTitle">🛠️ エラー・復旧管理</h2><span id="incidentBell" class="ops-pill" aria-live="polite">管理者認証待ち</span></div>
   <p class="ops-caption">障害を自動的に記録・分類し、対応状況を管理します。現時点では既存DBへの専用台帳導入と管理者の解放確認が完了するまで読み取り・書き込みは停止します。</p>
@@ -157,4 +167,4 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/gacha-incident-admin.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/gacha-incident-admin.js" defer></script><script src="/gacha-device-recovery-admin.js" defer></script></body></html>
