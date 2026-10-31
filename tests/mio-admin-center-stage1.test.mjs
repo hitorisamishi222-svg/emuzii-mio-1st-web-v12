@@ -74,7 +74,7 @@ test('no participant record is fetched before administrator connection', async (
   const b=fakeBrowser();
   await b.settled();
   assert.equal(b.requests.length,0);
-  assert.equal(b.el('opsCount').textContent,'未接続');
+  assert.equal(b.el('opsPending').children.length,0,'no private rows before login');
 });
 test('authenticated read shows pending alert and allows viewing roster while writes are disabled', async () => {
   const b=fakeBrowser();
