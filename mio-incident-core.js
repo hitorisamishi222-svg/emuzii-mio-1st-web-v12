@@ -48,6 +48,8 @@ export async function recordIncident(query,data,secret,now=Date.now()){
   SELECT $1,$2,$3,$4,$5,$6,$7
   WHERE (SELECT count(*) FROM mio_admin_incidents
          WHERE participant_ref=$3 AND occurred_at>now()-interval '1 hour')<30
+     OR EXISTS (SELECT 1 FROM mio_admin_incidents
+          WHERE fingerprint=$2 AND state <> 'resolved')
   ON CONFLICT (fingerprint) WHERE state <> 'resolved'
   DO UPDATE SET occurrence_count=mio_admin_incidents.occurrence_count+1,
     last_seen_at=now(),updated_at=now()
