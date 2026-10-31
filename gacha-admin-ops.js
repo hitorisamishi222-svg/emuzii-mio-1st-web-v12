@@ -69,7 +69,8 @@ function request(action,values={}){
 function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('')}
 function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
 async function refresh({automatic=false}={}){
- if(processing||!ready()||automatic&&(document.hidden||pending||document.querySelector('#opsAdminPanel input:focus, #opsAdminPanel select:focus')))return;
+ if(processing||!ready()||(automatic&&(document.hidden||pending)))return;
+ const editing=automatic&&!!document.querySelector('#opsAdminPanel input:focus, #opsAdminPanel select:focus');
  blocked(true);
  if(!automatic)notice('管理台帳から最新の受付情報を取得中…');
  try{
@@ -77,10 +78,10 @@ async function refresh({automatic=false}={}){
   state=response;
   showGuide(false);
   updateBell(Number(state.totalPending)||0);
-  render();
+  if(editing)el('opsCount').textContent='要確認 '+state.totalPending+' 件';else render();
   if(!automatic)notice(pending?'未確定の操作があります。再確認ボタンから同じIDで照合してください。':state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
  }catch(e){state=null;updateBell(0,{failed:true});render();showGuide(e.code==='GAS_UPDATE_REQUIRED');notice(e.message,true)}
- finally{blocked(false)}
+ finally{blocked(false);if(!editing)render()}
 }
 el('opsReload').addEventListener('click',refresh);
 el('opsIntakeCreate').addEventListener('click',async()=>{
@@ -210,7 +211,7 @@ async function verifyPending(){
    state=null;render();
    notice('操作結果が未確認です。別の操作IDでやり直さず「同じIDで再確認」を押してください。'+e.message,true);
   }
- }finally{blocked(false)}
+ }finally{blocked(false);render()}
 }
 el('opsRetry').addEventListener('click',()=>{
  if(!pending||processing)return;
