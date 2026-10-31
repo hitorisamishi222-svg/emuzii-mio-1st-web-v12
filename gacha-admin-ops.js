@@ -71,6 +71,25 @@ window.mioResolveIncidentIdentity=function(webId){
  if(pending.length!==1||typeof pending[0].name!=='string')return null;
  return {status:'found',name:pending[0].name.slice(0,80),mioId:'',verified:false};
 };
+// Read-only possible account candidates for admin review.
+// A name match or a claimed MIO-ID is NEVER proof of identity.
+window.mioManualRecoveryCandidates=function(name,claimedMioId){
+ if(!state||!Array.isArray(state.roster))return {status:'unavailable',items:[]};
+ const text=String(name||'').trim().normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase();
+ const id=String(claimedMioId||'').trim();
+ if(!text)return {status:'unavailable',items:[]};
+ const all=state.roster.filter(x=>/^MIO-\d{4}$/.test(x.mioId||'')&&typeof x.name==='string');
+ let matches;
+ if(id){
+  matches=all.filter(x=>x.mioId===id);
+  if(matches.length!==1||matches[0].name.normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase()!==text)
+   return {status:'conflict',items:[]};
+ }else{
+  matches=all.filter(x=>x.name.normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase()===text);
+ }
+ return {status:matches.length===1?'possible':matches.length>1?'multiple':'none',
+  items:matches.slice(0,4).map(x=>({name:x.name,mioId:x.mioId}))};
+};
 function identityUpdated(){
  if(typeof window.dispatchEvent==='function'&&typeof Event==='function')
   window.dispatchEvent(new Event('mio:admin-identities-updated'));
