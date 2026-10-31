@@ -4,10 +4,12 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8');
+const statusStart=source.indexOf('async function readCurrentStatus(){');
 const start=source.indexOf('async function refresh(){');
 const end=source.indexOf("\n$('register')?.addEventListener",start);
-assert.ok(start>=0 && end>start,'Could not locate original special-site status flow');
-const refreshSource=source.slice(start,end);
+assert.ok(statusStart>=0 && start>statusStart && end>start,'Could not locate original special-site status flow');
+// Include the real read-only retry helper, not only the caller.
+const refreshSource=source.slice(statusStart,end);
 
 function browser({knownSession=false,status=502}={}){
   const elements=Object.fromEntries(
@@ -25,7 +27,9 @@ function browser({knownSession=false,status=502}={}){
       error.status=status;
       throw error;
     },
-    display:()=>{context.wasDisplayed=true}
+    display:()=>{context.wasDisplayed=true},
+    // Resolve mock retry delays immediately without external traffic.
+    setTimeout:fn=>fn()
   };
   const api=vm.runInNewContext(
     'let registered='+JSON.stringify(knownSession)+';\n'+refreshSource+
@@ -42,8 +46,7 @@ test('temporary status outage does not turn an existing user into new registrati
   assert.equal(app.api.registered(),true);
   assert.equal(app.elements.registerButton.textContent,'参加状況を再確認');
   assert.equal(app.elements.personal.hidden,true);
-  assert.equal(app.requests.length,1);
-  assert.equal(app.requests[0],'/api/status');
+  assert.deepEqual(app.requests,['/api/status','/api/status','/api/status']);
 });
 
 test('a real no-session response permits the existing registration flow',async()=>{
@@ -51,6 +54,8 @@ test('a real no-session response permits the existing registration flow',async()
   const ok=await app.api.run();
   assert.equal(ok,false);
   assert.equal(app.api.registered(),false);
+  assert.equal(app.elements.registerButton.textContent,'認証状態を再確認');
+  assert.deepEqual(app.requests,['/api/status']);
 });
 
 test('an anonymous user remains anonymous after a transient status outage',async()=>{
