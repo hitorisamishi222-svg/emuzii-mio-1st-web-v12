@@ -35,6 +35,17 @@ async function refresh(){
    card.append(node('strong',item.name));
    card.append(node('p','申告されたMIO-ID: '+(item.claimedMioId||'不明')));
    card.append(node('p','以前のブラウザ: '+item.previousBrowser));
+   const candidates=typeof window.mioManualRecoveryCandidates==='function'?
+    window.mioManualRecoveryCandidates(item.name,item.claimedMioId):{status:'unavailable',items:[]};
+   const summary={
+     possible:'台帳に一致候補あり（本人確定ではありません）',
+     multiple:'同名の候補が複数あります（手動照合）',
+     conflict:'申告MIO-IDと登録名が一致しません（要調査）',
+     none:'台帳に一致候補なし（要調査）',
+     unavailable:'管理台帳の照合は未接続です'
+   };
+   card.append(node('p','登録台帳: '+(summary[candidates.status]||summary.unavailable)));
+   for(const candidate of candidates.items||[])card.append(node('p','候補：'+candidate.name+' / '+candidate.mioId));
    const label={submitted:'未確認',reviewing:'運営確認中',manual_verification_required:'別途本人確認が必要'}[item.state]||'終了';
    card.append(node('p','状態: '+label+' ／ 新端末ログイン権限: 未発行'));
    const controls=node('div','');controls.className='ops-grid';
