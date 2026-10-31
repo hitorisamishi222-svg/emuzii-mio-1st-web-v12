@@ -33,7 +33,8 @@ async function refresh(){
  buttons(true);
  try{
   const d=await call('status');
-  connected=d.status==='approved';
+  // A consumed request may have lost its Set-Cookie response; same signed browser may retry briefly.
+  connected=d.status==='approved'||d.status==='consumed';
   if(d.status==='already_connected'){note('ログイン情報が復旧しています。画面を再読み込みしてください。');connected=false;}
   else if(d.status==='approved')note('管理者の承認が完了しました。「ログインを復旧」を押してください。');
   else if(d.status==='pending')note('管理者の本人確認待ちです。この画面を閉じずにお待ちください。');
