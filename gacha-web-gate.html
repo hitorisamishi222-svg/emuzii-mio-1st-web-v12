@@ -16,6 +16,37 @@ small{color:#bbd8ed}
 #status{white-space:pre-wrap;word-break:break-word;border-radius:14px;background:#112a49;padding:13px;min-height:54px}
 #status.error{background:#542922;border:1px solid #f69e87}
 
+
+/* 運営管理センター Phase 1: existing GAS remains the source of truth. */
+main{max-width:760px}
+.ops-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ops-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;background:#294764;border:1px solid #78a6cc;border-radius:999px;font-weight:700}
+.ops-pill.alert{background:#67401c;border-color:#f9ca6a;color:#fff1cf}
+.ops-pill.blocked{background:#532c2b;border-color:#e89b91}
+.ops-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ops-grid button{height:100%}
+.ops-card{margin:13px 0;border:1px solid #597fa8;border-radius:14px;padding:14px;background:#122e50}
+.ops-list{max-height:450px;overflow:auto}
+.ops-action{display:block;margin-top:10px;min-height:48px;font-size:15px}
+.ops-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ops-head small{overflow-wrap:anywhere}
+.ops-item{background:#14375c;border:1px solid #5e92c2;border-radius:12px;padding:13px;margin:11px 0;overflow-wrap:anywhere}
+.ops-item>p{margin:7px 0}
+.ops-item button{min-height:48px}
+.ops-item select{width:100%;min-height:48px;border-radius:9px;padding:9px;margin-top:8px}
+.ops-message{padding:12px;border-radius:10px;background:#102943;white-space:pre-wrap;overflow-wrap:anywhere}
+.ops-error{color:#ffe0dd;background:#592f31;padding:12px;border-radius:10px}
+.ops-ok{padding:12px;background:#16405b;border-radius:10px}
+.ops-section-title{margin:6px 0 10px;font-size:20px}
+.ops-caption{display:block;color:#bdd6e8;font-size:13px}
+.ops-field{margin:10px 0}
+.ops-field label{font-size:14px}
+.ops-control{width:100%;min-height:48px}
+.ops-number{width:100%;padding:12px;border-radius:12px;border:1px solid #90bddd;background:white;color:#06162e}
+.ops-secondary{background:#22577e;color:#f1f8ff;border:1px solid #7eadd2;margin-top:12px}
+#opsCount{font-weight:800;font-size:18px}
+#opsRetry{background:#f9d3a5}
+@media(max-width:520px){.ops-grid{grid-template-columns:1fr}.ops-summary{align-items:flex-start}}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
 <section><h2>🔑 Face ID・パスキー</h2><p><small>初回だけ管理者コードで登録。次からはFace IDでログインできます。</small></p><button id="passkeyLogin" disabled>Face IDでログイン</button><button id="passkeyRegister" disabled style="margin-top:10px;background:#184d71;color:#f3f9ff;border:1px solid #83afce">この端末のFace IDを登録</button><p id="passkeyStatus" role="status" aria-live="polite">Face IDの利用状況を確認しています…</p></section>
@@ -25,6 +56,41 @@ small{color:#bbd8ed}
 <p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
 <p><small>変更はGoogle管理台帳の実際の受付設定に反映します。利用者のガチャ回数・当選履歴は変更しません。</small></p>
 
+
+<section id="opsAdminPanel" aria-labelledby="opsAdminTitle">
+ <div class="ops-summary"><h2 id="opsAdminTitle">🔔 運営管理センター</h2><span id="opsBell" class="ops-pill" aria-live="polite">通知：管理者認証待ち</span></div>
+ <p class="ops-caption">参加者・ガチャ履歴は既存のGoogle管理台帳が正本です。管理者認証後に承認待ちを読み込みます。更新は30秒ごと（画面を閉じている間は停止）。</p>
+ <div class="ops-summary"><strong id="opsCount">未接続</strong><button type="button" id="opsReload" class="ops-secondary" disabled style="width:auto;min-height:48px">一覧を更新</button></div>
+ <p id="opsStatus" class="ops-message" role="status" aria-live="polite">管理者コードまたはFace IDで接続してください。</p>
+ <p id="opsRetryInfo" class="ops-error" hidden></p><button type="button" id="opsRetry" hidden disabled>前回と同じ操作IDで再確認</button>
+ <div class="ops-card"><h3 class="ops-section-title">承認待ち・本人確認</h3><div id="opsPending" class="ops-list"><p>未接続</p></div></div>
+ <div class="ops-card"><h3 class="ops-section-title">ガチャ回数の確認・付与</h3>
+  <div class="ops-field"><label for="opsSearch">参加者の名前・MIO-IDで検索</label><input id="opsSearch" type="search" placeholder="参加者を検索" autocomplete="off"></div>
+  <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <div class="ops-grid">
+   <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
+   <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
+  </div>
+  <button type="button" id="opsGrant" disabled>選択した参加者に回数を付与</button>
+  <p class="ops-caption">抽選結果不明時は、既存の確定履歴を先に照合してください。未確認の回数を自動付与しません。</p>
+ </div>
+ <div class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
+  <div class="ops-field"><label for="opsNewName">来場者名</label><input id="opsNewName" maxlength="40" placeholder="ColorSing名"></div>
+  <div class="ops-field"><label for="opsNewNote">受付メモ</label><input id="opsNewNote" maxlength="120" placeholder="例：ガチャだけ参加"></div>
+  <button type="button" id="opsIntakeCreate" disabled>初訪問を受付記録に追加</button>
+  <p class="ops-caption">初訪問の記録はガチャ承認・回数付与とは別の操作です。</p>
+  <div id="opsSimple" class="ops-list"></div>
+ </div>
+ <details class="ops-card"><summary>ガチャ回数の付与履歴</summary><div id="opsGrants" class="ops-list"></div></details>
+ <div class="ops-card">
+  <button id="opsSetupToggle" type="button" class="ops-secondary" aria-expanded="false">Code.gs全貼り付け手順を開く</button>
+  <div id="opsInstallGuide" hidden>
+   <p>既存GAS本番の稼働版が未確認の場合、管理操作は停止されたままになります。既存のApps Scriptを新規作成せず、稼働コードを照合してください。</p>
+   <p>旧GASを推測で上書きせず、バックアップ・現行コードの一致確認・既存デプロイ更新・読み取り検証を完了してから管理書き込みの解放を判断します。</p>
+  </div>
+ </div>
+ <p class="ops-caption">現段階の通知対象は「登録承認待ち」の集計です。抽選や通信エラーの自動チケット化は次の段階で追加します。</p>
+</section>
 
 </main><script>
 'use strict';
@@ -55,6 +121,7 @@ $('connect').onclick=async()=>{
   snapshot=await request({action:'read'});
   $('code').value='';
   say('✅ 管理シートの実際の設定と一致しました。');
+  window.dispatchEvent(new Event('mio:admin-connected'));
  }catch(e){snapshot=null;code='';say(e.message,true)}
  finally{busy=false;redraw()}
 };
@@ -73,4 +140,4 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script></body></html>
