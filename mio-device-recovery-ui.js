@@ -7,7 +7,7 @@ const start=document.getElementById('deviceRecoveryRequest');
 const check=document.getElementById('deviceRecoveryCheck');
 const claim=document.getElementById('deviceRecoveryClaim');
 const msg=document.getElementById('deviceRecoveryMessage');
-let active=false,busy=false,connected=false;
+let active=false,busy=false,connected=false,polling=false;
 async function call(action){
  const r=await fetch('/api/mio-device-recovery-client',{
   method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',
@@ -22,7 +22,10 @@ async function call(action){
 function note(text){msg.textContent=text}
 function buttons(v){busy=v;start.disabled=v;check.disabled=v;claim.disabled=v||!connected}
 function explain(e){
- if(e.status===401)return '以前登録したSafari・Chromeで開いてください。認証情報が残っていない場合は、運営に本人確認を依頼してください。新規登録は不要です。';
+ if(e.status===401)return 'このブラウザには以前の署名付き登録情報がありません。Safari・Chrome・LINE・Xのうち、最初に登録した同じアプリとブラウザから開き直してください。別ブラウザへ移してもCookieは自動で引き継がれません。新規登録せず運営へ本人確認を依頼してください。';
+ if(e.message==='COOKIE_IDENTITY_CONFLICT')return 'この端末には異なる参加者の認証情報が混在しています。安全のため復旧を停止しました。管理者へ本人確認をご依頼ください。';
+ if(e.message==='GAS_CANONICAL_ID_MISMATCH'||e.message==='GAS_CANONICAL_PROOF_UNAVAILABLE')
+  return '参加者IDの照合が完了していません。既存データ保護のため、自動復旧できません。運営に確認してください。';
  if(e.message==='DEVICE_RECOVERY_DISABLED')return 'この復旧機能は確認作業中です。管理者へ連絡してください。';
  if(e.message==='REGISTRATION_NOT_VERIFIED'||e.message==='GAS_GACHA_PROOF_MISSING'||e.message==='GAS_IDENTITY_MISMATCH')
   return '登録台帳との本人確認が完了していません。自動復旧せず管理者に確認してください。';
@@ -35,12 +38,13 @@ async function refresh(){
   const d=await call('status');
   // A consumed request may have lost its Set-Cookie response; same signed browser may retry briefly.
   connected=d.status==='approved'||d.status==='consumed';
+  polling=d.status==='pending'||connected;
   if(d.status==='already_connected'){note('ログイン情報が復旧しています。画面を再読み込みしてください。');connected=false;}
   else if(d.status==='approved')note('管理者の承認が完了しました。「ログインを復旧」を押してください。');
   else if(d.status==='pending')note('管理者の本人確認待ちです。この画面を閉じずにお待ちください。');
   else if(d.status==='consumed')note('復旧処理が記録されています。もう一度ログイン復旧をお試しください。');
   else note('復旧申請は未受付です。元のブラウザから申請してください。');
- }catch(e){note(explain(e));connected=false}
+ }catch(e){note(explain(e));connected=false;polling=false}
  finally{buttons(false)}
 }
 start.addEventListener('click',async()=>{
@@ -50,8 +54,8 @@ start.addEventListener('click',async()=>{
   const d=await call('request');
   note(d.status==='approved'?'承認済みです。復旧を進めてください。':
    '復旧申請を受け付けました。管理者の確認後にこの画面から再開できます。');
-  connected=d.status==='approved';
- }catch(e){note(explain(e));connected=false}
+  connected=d.status==='approved';polling=true;
+ }catch(e){note(explain(e));connected=false;polling=false}
  finally{buttons(false)}
 });
 check.addEventListener('click',()=>void refresh());
@@ -68,5 +72,5 @@ claim.addEventListener('click',async()=>{
 window.addEventListener('mio:legacy-session-missing',()=>{
  active=true;panel.hidden=false;void refresh();
 });
-window.setInterval(()=>{if(active&&!busy&&!document.hidden)void refresh()},12000);
+window.setInterval(()=>{if(active&&polling&&!busy&&!document.hidden)void refresh()},12000);
 })();
