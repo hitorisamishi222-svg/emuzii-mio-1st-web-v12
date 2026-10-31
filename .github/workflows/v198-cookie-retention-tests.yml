@@ -29,3 +29,5 @@ jobs:
         run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - name: Test signed cookie retention and old API compatibility
         run: node --test release-prep/session-cookie-rolling-v198.test.mjs
+      - name: Focused registration and draw recovery regressions (no production calls)
+        run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs
