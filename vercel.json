@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "api-mio-event-pass.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api-mio-cookie-loss-admin.js",
       "use": "@vercel/node"
     },
@@ -439,6 +443,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/mio-event-pass",
+      "dest": "/api-mio-event-pass.js"
+    },
     {
       "src": "/gacha-cookie-loss-admin.js",
       "dest": "/gacha-cookie-loss-admin.js"
