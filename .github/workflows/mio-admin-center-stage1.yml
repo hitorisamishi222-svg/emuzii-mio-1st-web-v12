@@ -8,6 +8,12 @@ on:
       - gacha-admin-ops.js
       - gacha-passkey-ui.js
       - tests/mio-admin-center-stage1.test.mjs
+      - tests/mio-incident-center.test.mjs
+      - mio-incident-core.js
+      - mio-incident-recorder.js
+      - api-mio-incidents.js
+      - gacha-incident-admin.js
+      - db/mio-admin-incidents-20261031.sql
       - .github/workflows/mio-admin-center-stage1.yml
   pull_request:
     paths:
@@ -15,6 +21,12 @@ on:
       - gacha-admin-ops.js
       - gacha-passkey-ui.js
       - tests/mio-admin-center-stage1.test.mjs
+      - tests/mio-incident-center.test.mjs
+      - mio-incident-core.js
+      - mio-incident-recorder.js
+      - api-mio-incidents.js
+      - gacha-incident-admin.js
+      - db/mio-admin-incidents-20261031.sql
       - .github/workflows/mio-admin-center-stage1.yml
   workflow_dispatch:
 permissions:
@@ -33,5 +45,10 @@ jobs:
           node --check gacha-admin-ops.js
           node --check gacha-passkey-ui.js
           node --check tests/mio-admin-center-stage1.test.mjs
+          node --check tests/mio-incident-center.test.mjs
+          node --check mio-incident-core.js
+          node --check mio-incident-recorder.js
+          node --check api-mio-incidents.js
+          node --check gacha-incident-admin.js
       - name: Isolated gate, polling and read-only permission tests
-        run: node --test tests/mio-admin-center-stage1.test.mjs
+        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs
