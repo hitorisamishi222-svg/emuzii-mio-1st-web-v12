@@ -64,10 +64,9 @@ test('completed-only check, name and ordinal safety',()=>{
  const b=sandbox();b.result[9]=0;assert.equal(b.lookup().status,'conflict');
  const c=sandbox();c.result[6]='';assert.equal(c.lookup().status,'conflict');
 });
-test('full replacement candidate contains same read-only lookup, not live GAS',()=>{
- assert.match(full,/function mioAdminOpsDrawLookup_/);
- assert.match(full,/webAdminOpsDrawLookup/);
- assert.match(full,/getRange\(2,1,length,1\)\.getValues\(\)/);
+test('reviewed full-paste GAS stays untouched until real production code is verified',()=>{
+ assert.doesNotMatch(full,/function mioAdminOpsDrawLookup_/);
+ assert.match(module,/function mioAdminOpsDrawLookup_/);
  assert.match(module,/getRange\(2,1,length,1\)\.getValues\(\)/);
 });
 test('server API requires admin identity and explicit release, never draws',()=>{
