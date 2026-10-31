@@ -100,3 +100,32 @@
 - `MIO_GACHA_RESULT_LOOKUP_RELEASE=verified-existing-gas-draw-lookup-20261031` が**未設定**のため、管理画面の結果照会は503（準備中）で止まる。公開するには実稼働GASの照合、既存デプロイの更新、実データの読み取り試験、回数・履歴の保全確認が必要。
 - 管理者に表示する当選情報は本人照合のとれた該当IDに限定。既存ログインからの閲覧が不可の人に、他人の履歴やCookieを転送しない。
 - 2026-10-30の障害について**回線混雑・GASタイムアウト・抽選後の表示失敗の真因は依然未確定**。本番GAS実行ログ・抽選ID・API実行時間を照合するまで、分類を確定原因として扱わない。
+
+## Phase 2C：管理者1操作の端末・ログイン復旧（2026-10-31、開発版のみ）
+
+### 採用した方法
+- 登録済みブラウザの**署名付き`mio_light_session`**からのみ復旧申請可能。ユーザーが自由な名前、他人のWeb ID、MIO-IDを渡して権利を取得できない。
+- サーバーでNeon `statusV201`（同一トークンハッシュ、承認済み、重複確認済み、既存MIO-ID照合済み）とGAS `status`（同一Web ID、正しい登録名、承認済み、既存ガチャ確認済み）を**別々に検証**する。どちらかが不明なら申請不可。
+- 専用表`mio_device_recovery_requests`は**同じ既存Neon登録DB**に追加するマイグレーション案（**未適用**）。元のID・ログイン・参加者・皆勤・ガチャ・景品は更新しない。
+- 申請に保存するのは正規Web ID、正規MIO-ID、表示名、HMACで拘束したブラウザトークンの非可逆値、状態、管理者承認方式、時刻。**原Cookie・原token・管理者コードを保存しない**。
+- 申請から15分で失効。管理者コード/Face IDによって一覧を閲覧し、本人照合済みの1件に対して**1操作で許可**。承認時は同一operationId再送保護。承認済みでも新しい端末の署名なし認証は不可。
+- 元のブラウザに戻った本人が`claim`を押すと、**NeonとGASの照合をもう一度実施**し、同じブラウザの署名・トークン拘束が一致する場合だけ、従来の`mio_session`を再発行する。抽選・付与・新規参加者登録は行わない。
+- 既存セッションの返信が通信断で届かなかった場合だけ、同じブラウザ署名を持つ利用者が2分以内に再試行可能。それ以外は新しい管理者承認が必要。
+- 署名付きの簡易Cookieすらないブラウザ・未確認の重複登録・GAS/Neonの不一致は、**自動復旧しない**。この場合の安全な本人確認と端末再紐付けは別途設計。
+
+### 導入ガード（すべてデフォルトOFF）
+- `MIO_DEVICE_RECOVERY_RELEASE=verified-device-recovery-20261031`
+- `MIO_DEVICE_RECOVERY_REQUEST_RELEASE=verified-device-recovery-request-20261031`
+- `MIO_DEVICE_RECOVERY_ADMIN_RELEASE=verified-device-recovery-admin-20261031`
+- `MIO_DEVICE_RECOVERY_CLAIM_RELEASE=verified-device-recovery-claim-20261031`
+- `MIO_DEVICE_RECOVERY_BINDING_SECRET`：32文字以上の新しい非公開秘密値（ソースコード・HTML・公開ログに置かない）
+- `MIO_REGISTRATION_DATABASE_URL`、`MIO_LIGHT_SESSION_SECRET`、既存GAS連携、管理者認証などの稼働実態を読み取り確認する必要あり。
+- 認証時に通常の`MIO_AUTO_RECOVER_VERIFIED_TWO`を勝手に変更しない。既存2名限定の特別復旧条件・端末認証・GAS確認方式は維持。
+
+### 本番反映前の確認
+1. 既存Neonへの接続先とスキーマを読み取り確認し、バックアップを取得。別のDB・プロジェクトは作らない。
+2. 現行稼働GASの承認コードと部署の実運用データを照合。テスト用署名付き軽量Cookieで、正規のNeon/GASの両方から本人承認が返ることを確認。
+3. iPhone Safari、LINE/X内WebView、再読み込み、管理者2名のパスキー、申請失効、他人IDによるなりすまし、Cookieなし時拒否を検証。
+4. DBマイグレーションと4つのフラグの設定は、本番での試験合格・承認までは行わない。
+
+**この段階では管理画面にボタンがあるだけで、本番のログインを解除できる状態とは主張しない。**
