@@ -49,7 +49,7 @@ test('luxury v2.1 is loaded by presentation page, while real operation stays pro
   const html=text('gacha.html');
   assert.match(html,/href="\/gacha-deluxe-v21\.css"/);
   assert.match(html,/src="\/gacha-deluxe-v21\.js"/);
-  assert.match(html,/src="\/gacha-page\.js"/);
+  assert.match(html,/src="\/gacha-page\.js(?:\?[^"]*)?"/);
   assert.match(html,/src="\/gacha-effects-v19\.js"/);
   const demo=text('gacha-deluxe-v21.js');
   assert.match(demo,/new URLSearchParams\(location\.search\)\.get\('deluxeDemo'\)!=='1'/);
