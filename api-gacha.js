@@ -1,4 +1,5 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
+import {recordObservedFailure} from './mio-incident-recorder.js';
 
 export default async function handler(req,res){
  const cfg=prepare(req,res);
@@ -18,6 +19,8 @@ export default async function handler(req,res){
   res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
   return res.status(200).json(data);
  }catch(error){
+  if(body.action==='draw'||body.action==='history'||body.action==='catalog')
+   await recordObservedFailure({session,action:body.action,drawId:body.drawId,error});
   return res.status(409).json({ok:false,error:error.message==='unauthorized'?'登録の確認が必要です':error.message||'抽選結果を確認できませんでした。同じ抽選を再確認してください'});
  }
 }
