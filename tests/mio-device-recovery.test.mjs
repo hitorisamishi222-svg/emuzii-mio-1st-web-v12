@@ -35,23 +35,42 @@ test('binding is scoped to the exact signed light cookie, not to display name',(
 test('signed identity must independently match registration DB and GAS on same Web ID',async()=>{
  let calls=0;
  const getLight=async()=>{calls++;return neon};
- const callGAS=async()=>{calls++;return gas};
+ const canonical={ok:true,verified:true,participantId:web,name:'テスト本人',integratedParticipantId:mio};
+ const callGAS=async(action)=>{calls++;return action==='status'?gas:canonical};
  const result=await verifyExistingIdentity(session,{getLight,callGAS});
  assert.equal(result.ok,true);
  assert.equal(result.mioId,mio);
- assert.equal(calls,2);
+ assert.equal(calls,3);
  for(const change of [
   {neon:{...neon,pendingReview:true}},
   {neon:{...neon,attendanceGrantVerified:false}},
   {neon:{...neon,integratedParticipantId:'invalid'}},
   {gas:{...gas,participantId:'MIO-W-'+'c'.repeat(24)}},
   {gas:{...gas,name:'別人'}},
-  {gas:{...gas,progress:{...gas.progress,gacha:{...gas.progress.gacha,confirmed:false}}}}
+  {gas:{...gas,progress:{...gas.progress,gacha:{...gas.progress.gacha,confirmed:false}}}},
+  {canonical:{...canonical,integratedParticipantId:'MIO-0099'}},
+  {canonical:{...canonical,verified:false}}
  ]){
   const x=await verifyExistingIdentity(session,{getLight:async()=>change.neon||neon,
-   callGAS:async()=>change.gas||gas});
+   callGAS:async(action)=>action==='status'?(change.gas||gas):(change.canonical||canonical)});
   assert.equal(x.ok,false,JSON.stringify(change));
  }
+});
+
+test('valid GAS status alone is not enough to recover a different MIO-ID',async()=>{
+ const noAction=await verifyExistingIdentity(session,{
+  getLight:async()=>neon,
+  callGAS:async(action)=>{if(action==='status')return gas;throw Error('GAS does not support canonical proof');}
+ });
+ assert.equal(noAction.ok,false);
+ assert.equal(noAction.code,'GAS_CANONICAL_PROOF_UNAVAILABLE');
+ const wrong=await verifyExistingIdentity(session,{
+  getLight:async()=>neon,
+  callGAS:async(action)=>action==='status'?gas:{
+   ok:true,verified:true,participantId:web,name:neon.name,integratedParticipantId:'MIO-0099'
+  }
+ });
+ assert.equal(wrong.code,'GAS_CANONICAL_ID_MISMATCH');
 });
 
 function client(){
