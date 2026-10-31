@@ -95,6 +95,33 @@ test('triage rejects direct reopen and unapproved operators',async()=>{
  assert.throws(()=>normalizeTriage({incidentId:id,action:'start',expectedState:'working',operationId:'a'.repeat(32)}));
  await assert.rejects(transitionIncident(fakeClient(),{incidentId:id,action:'start',expectedState:'unhandled',operationId:'a'.repeat(32)},'anonymous'));
 });
+test('client-only report is authenticated, opt-in, and never issues a draw',()=>{
+ const api=load('api-mio-incident-report.js');
+ const page=load('gacha-page.js');
+ const status=load('api-status.js');
+ const schema=load('db/mio-admin-incidents-20261031.sql');
+ assert.match(api,/readSession\(req\.headers\.cookie,cfg\.secret\)/);
+ assert.match(api,/MIO_INCIDENT_CLIENT_REPORT_RELEASE/);
+ assert.match(api,/canRecord\(\)/);
+ assert.match(api,/recordObservedFailure/);
+ assert.doesNotMatch(api,/bridge\(|action:'draw'\s*,\s*participantId/);
+ assert.match(page,/action:'drawUnconfirmed'/);
+ assert.match(page,/fetch\('\/api\/mio-incident-report'/);
+ assert.match(status,/readLightSession/);
+ assert.match(status,/AUTH_COOKIE_MISSING/);
+ assert.match(schema,/DRAW_CLIENT_UNCONFIRMED/);
+ assert.match(schema,/AUTH_COOKIE_MISSING/);
+ const config=JSON.parse(load('vercel.json'));
+ assert.equal(config.routes.find(x=>x.src==='/api/mio-incident-report')?.dest,
+ '/api-mio-incident-report.js');
+});
+test('per participant incident recording is bounded within one hour',async()=>{
+ let query;
+ await recordIncident(async(sql,args)=>{query=sql;return {rowCount:0}},{
+ participantRef:user,source:'gacha',stage:'draw',category:'DRAW_CLIENT_UNCONFIRMED',drawId:draw},secret);
+ assert.match(query,/occurred_at>now\(\)-interval '1 hour'/);
+ assert.match(query,/count\(\*\)/);
+});
 test('integration is guarded; present gacha, register and switch paths remain unchanged',()=>{
  const api=load('api-mio-incidents.js'),recorder=load('mio-incident-recorder.js');
  const html=load('gacha-web-gate.html'),js=load('gacha-incident-admin.js');
