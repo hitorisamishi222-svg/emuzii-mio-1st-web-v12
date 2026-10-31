@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "api-mio-incident-report.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "gacha-incident-admin.js",
       "use": "@vercel/static"
     },
@@ -399,6 +403,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/api/mio-incident-report",
+      "dest": "/api-mio-incident-report.js"
+    },
     {
       "src": "/gacha-incident-admin.js",
       "dest": "/gacha-incident-admin.js"
