@@ -150,6 +150,10 @@ window.addEventListener('mio:admin-connected',()=>{
  if(pending){msg('前回の管理操作が未確認です。同じ操作IDで再確認してください。',true);setPending(pending)}
  else void refresh();
 });
+if(typeof snapshot!=='undefined'&&snapshot&&typeof snapshot.normalOpen==='boolean'){
+ connected=true;$('incidentReload').disabled=false;
+ if(!pending)void refresh();
+}
 window.setInterval(()=>{if(connected&&!pending&&!loading)void refresh({automatic:true})},30000);
 document.addEventListener('visibilitychange',()=>{
  if(!document.hidden&&connected&&!pending&&!loading)void refresh({automatic:true});
