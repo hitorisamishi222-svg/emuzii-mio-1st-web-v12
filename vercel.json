@@ -2,6 +2,22 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     {
+      "src": "api-mio-cookie-loss-admin.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-cookie-loss-client.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "gacha-cookie-loss-admin.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-cookie-loss-ui.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gacha-device-recovery-admin.js",
       "use": "@vercel/static"
     },
@@ -423,6 +439,22 @@
     }
   ],
   "routes": [
+    {
+      "src": "/gacha-cookie-loss-admin.js",
+      "dest": "/gacha-cookie-loss-admin.js"
+    },
+    {
+      "src": "/mio-cookie-loss-ui.js",
+      "dest": "/mio-cookie-loss-ui.js"
+    },
+    {
+      "src": "/api/mio-cookie-loss-admin",
+      "dest": "/api-mio-cookie-loss-admin.js"
+    },
+    {
+      "src": "/api/mio-cookie-loss-client",
+      "dest": "/api-mio-cookie-loss-client.js"
+    },
     {
       "src": "/gacha-device-recovery-admin.js",
       "dest": "/gacha-device-recovery-admin.js"
