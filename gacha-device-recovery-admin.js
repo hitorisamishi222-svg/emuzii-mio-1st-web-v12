@@ -64,7 +64,9 @@ async function refresh(){
  }catch(e){
   note(e.message==='DEVICE_RECOVERY_NOT_READY'?'端末復旧の管理操作は本番接続確認まで停止中です。':
     '復旧申請の一覧を確認できません。'+e.message);
- }finally{loading=false;el('deviceRecoveryAdminReload').disabled=false;save(pending)}
+ }finally{loading=false;el('deviceRecoveryAdminReload').disabled=false;
+  el('deviceRecoveryAdminList').querySelectorAll('button').forEach(b=>{b.disabled=!!pending});
+  save(pending)}
 }
 async function approve(){
  if(!connected||!pending||loading)return;
