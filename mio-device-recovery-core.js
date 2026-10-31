@@ -107,13 +107,25 @@ export async function redeemRecovery(client,{requestId,webId,mioId,binding}){
   throw Error('invalid claim');
  await client.query('BEGIN');
  try{
-  const r=await client.query(`UPDATE mio_device_recovery_requests
+  const r=await client.query(`SELECT state,web_id,mio_id,token_binding,expires_at,redeemed_at
+   FROM mio_device_recovery_requests WHERE request_id=$1 FOR UPDATE`,[requestId]);
+  if(r.rowCount!==1)throw Error('recovery request missing');
+  const row=r.rows[0];
+  if(row.web_id!==webId||row.mio_id!==mioId||row.token_binding!==binding)
+   throw Error('browser identity mismatch');
+  if(row.expires_at&&new Date(row.expires_at).getTime()<=Date.now())throw Error('approval expired');
+  if(row.state==='consumed'&&row.redeemed_at&&
+    Date.now()-new Date(row.redeemed_at).getTime()<=120000){
+   await client.query('COMMIT');return {replayed:true};
+  }
+  if(row.state!=='approved')throw Error('approval not valid for this browser');
+  const updated=await client.query(`UPDATE mio_device_recovery_requests
    SET state='consumed',redeemed_at=now()
    WHERE request_id=$1 AND web_id=$2 AND mio_id=$3 AND token_binding=$4
-     AND state='approved' AND expires_at>now() RETURNING request_id`,
-    [requestId,webId,mioId,binding]);
-  if(r.rowCount!==1)throw Error('approval not valid for this browser');
+      AND state='approved' AND expires_at>now() RETURNING request_id`,
+   [requestId,webId,mioId,binding]);
+  if(updated.rowCount!==1)throw Error('approval changed');
   await client.query('COMMIT');
-  return true;
+  return {replayed:false};
  }catch(e){await client.query('ROLLBACK');throw e}
 }
