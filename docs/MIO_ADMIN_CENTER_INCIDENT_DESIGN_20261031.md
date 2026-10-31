@@ -148,3 +148,27 @@
 **合成自動テスト**：端末条件の表示/ボタン状態と状態遷移をNode上の模擬ブラウザで検証（Cookie欠落、承認待ち→承認済み→元のブラウザで引換、返答未到達時の同一ブラウザ再確認、異なるログインIDとライトIDの衝突、GAS正本ID不一致）。**これはiPhone/LINE/X実機試験を代替しない**。
 
 **未解放理由**：稼働GASには`webAdminOpsRecoveryProof`が存在すると確認できておらず、既存GAS全文は原本保護のため無変更。既存の本番URL・DB・GAS設定も未変更。管理者の実機照合と既存稼働GASコードの確認後にのみ、既存プロジェクトで適用判断する。
+
+## Phase 2D：Cookie消失・新端末からの運営相談（2026-10-31、開発版のみ）
+
+### 従来の方法が使えないケース
+- Safari、Chrome、LINE・X内ブラウザ、スマホ変更等で**元の署名付きCookieが消えた**場合、従来の`mio_device_recovery_requests`は開始できない。元のブラウザで認証済みの別ブラウザ接続機能も使えない。
+- **名前と自己申告したMIO-IDは本人認証にならない。** 管理者が確認ボタンを押しただけで旧tokenHashの上書き、セッション発行、皆勤・抽選権利変更を行う実装は不可。
+
+### 開発版で新規追加した機能
+- `mio-cookie-loss-ui.js`：元のCookieがない人が、以前の登録名（必須）、MIO-ID（任意）、登録に使ったブラウザの種類を選んで**復旧相談のみ**申請。電話番号、パスワード、復旧URL/コード、機密情報は収集しない。
+- `api-mio-cookie-loss-client.js`：ランダム32バイトのHttpOnly/Secure/SameSite=Laxの専用相談Cookieを発行し、DBにはそのSHA-256のみ記録。該当ブラウザは自分の相談状態だけ閲覧。ブラウザトークンは**ログイン権限やガチャ権利に交換できない**。
+- `db/mio-cookie-loss-cases-20261031.sql`：既存Neon登録DB内に独立した`mio_cookie_loss_cases`と監査表を追加する**未適用**SQL。既存登録・GAS・皆勤・ガチャ履歴を変更しない。相談Cookieの有効期限は24時間で、初期状態は`submitted`。
+- `api-mio-cookie-loss-admin.js`と`gacha-cookie-loss-admin.js`：管理者コード/Face ID認証後、`submitted`、`reviewing`、`manual_verification_required`、`closed`のみを管理。操作IDの二重処理防止・監査付き。**`identity_verified=false`、`login_enabled=false`はDB制約により変更できない。**
+- `gacha-admin-ops.js`の閲覧状態に`mioManualRecoveryCandidates`を追加し、既存管理台帳で**登録候補を表示だけ**する。名前一致は候補であり本人認証ではない。同名複数や自己申告IDと名前の不一致は要調査として表示する。
+- この段階は、Cookieを完全に失った人が確実に運営へ状況を伝え、管理者が元の参加者IDを**紐付けずに**調査できるまで。**新端末で自動ログイン復旧する機能ではない**。
+
+### 導入を止めている条件
+- `MIO_COOKIE_LOSS_INTAKE_RELEASE=reviewed-cookie-loss-intake-20261031` が**未設定**なのでAPIは503で停止する。DBマイグレーションは未適用。
+- 無認証の受付には悪意ある大量投稿のリスクがあるため、**本番のVercel Firewall / IP単位のリクエスト抑制の確認を公開前必須**とする。アプリ内のCookieによる一件制限だけでは攻撃者の新Cookie作成を止められない。
+- 実際の端末切り替え・新トークンの正規発行・旧トークン失効・既存Web IDに対応するGASの単一行更新・Neonとの原子的な整合性・複数端末の扱いを、既存本番GASとDBの正本を確認してから**別の強い本人確認の承認フロー**として設計する。本人認証できない場合は発行しない。
+- 過去の`MIO-0010`、`MIO-0018`等に限定された特別復旧を、新端末の公開相談受付で無条件に拡張しない。
+- 新規Neon、GAS、GitHubリポジトリ、Vercelプロジェクトは作成していない。
+
+### テスト
+`tests/mio-cookie-loss-intake.test.mjs`と`tests/mio-cookie-loss-candidate.test.mjs`で認証Cookieの独立性、本人確認がないとログインを発行しないこと、同名複数、自己申告IDの不一致、管理操作の重複保護、既存ガチャ等への書込禁止を検証。
