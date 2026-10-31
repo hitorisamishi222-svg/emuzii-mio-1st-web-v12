@@ -236,7 +236,6 @@ el('opsGrant').addEventListener('click',async()=>{
 });
 el('opsRoster').append(node('p','管理者コードで接続後に検索できます。'));
 window.addEventListener('mio:admin-connected',()=>{el('opsReload').disabled=false;void refresh();});
-if(ready()){el('opsReload').disabled=false;void refresh();}
 window.setInterval(()=>{if(ready()&&!processing&&!pending)void refresh({automatic:true});},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready()&&!processing&&!pending)void refresh({automatic:true});});
 renderPending();
