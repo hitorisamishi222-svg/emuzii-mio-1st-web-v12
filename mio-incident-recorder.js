@@ -8,7 +8,7 @@ function pool(){
   idleTimeoutMillis:1000});
  return instance;
 }
-export async function recordObservedFailure({session,action,drawId,error}){
+export async function recordObservedFailure({session,action,drawId,error,category}){
  if(!canRecord()||!process.env.GALLERY_DATABASE_URL||!session?.id)return false;
  const stage=['draw','catalog','history','status'].includes(action)?action:null;
  if(!stage)return false;
@@ -16,7 +16,7 @@ export async function recordObservedFailure({session,action,drawId,error}){
   await recordIncident((sql,args)=>pool().query(sql,args),{
    participantRef:session.id,
    source:stage==='status'?'status':'gacha',stage,
-   category:classifiedFailure(stage,error),
+   category:category||classifiedFailure(stage,error),
    drawId:stage==='draw'?drawId:null
   },process.env.MIO_INCIDENT_FINGERPRINT_SECRET);
   return true;
