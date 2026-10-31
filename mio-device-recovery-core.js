@@ -18,6 +18,13 @@ export function tokenBinding(session,secret){
     typeof secret!=='string'||secret.length<32)throw Error('signed identity and server key required');
  return createHmac('sha256',secret).update('mio-device-recovery-v1:'+session.id+':'+session.token).digest('hex');
 }
+// A known GAS rejection on a correctly signed legacy + light credential pair
+// is different from a timeout, upstream outage, or another participant's cookie.
+export function signedRecoveryOfferAllowed(legacy,light,error){
+ return !!legacy&&!!light&&ID.test(legacy.id||'')&&legacy.id===light.id&&
+  /^[a-f0-9]{64}$/.test(legacy.token||'')&&legacy.token===light.token&&
+  String(error?.message||'')==='unauthorized';
+}
 export async function verifyExistingIdentity(session,{getLight,callGAS,digest=hash}){
  if(!session||!ID.test(session.id||'')||!/^[a-f0-9]{64}$/.test(session.token||''))
   return {ok:false,code:'SIGNED_SESSION_REQUIRED'};
