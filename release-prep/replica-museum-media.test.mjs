@@ -33,7 +33,7 @@ test('museum links to the very same TikTok video from the previous published gal
 test('original media is served by the correct static build and cannot invoke a draw',()=>{
  const build=str('build-preview.sh');
  assert.match(build,/cp mio-awakening\.mp3 public\/mio-awakening\.mp3/);
- assert.match(build,/cmp -s mio-awakening\.mp3 public\/mio-awakening\.mp3/);
+ assert.match(build,/readFileSync\(src\)\.equals\(fs\.readFileSync\(dest\)\)/);
  assert.match(build,/test ! -e public\/api-register\.js/);
  assert.match(build,/test ! -e public\/gacha\.html/);
  assert.doesNotMatch(museum,/\/api\/gacha|\/api\/checkin|\/api\/register/);
