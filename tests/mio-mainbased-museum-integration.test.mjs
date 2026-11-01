@@ -3,13 +3,20 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
+import {createHash} from 'node:crypto';
 import {approvedGalleryItems} from '../gallery-items.js';
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const exists=p=>existsSync(new URL('../'+p,import.meta.url));
 const config=JSON.parse(read('vercel.json'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
-const baseConfig=()=>JSON.parse(git('show','origin/main:vercel.json'));
+const baseline=JSON.parse(read('tests/fixtures/mio-protected-main-baseline-20261102.json'));
+const shaOfFile=path=>{
+ const bytes=readFileSync(new URL('../'+path,import.meta.url));
+ return createHash('sha1').update('blob '+bytes.length).update(Buffer.from([0])).update(bytes).digest('hex');
+};
+const hasMainRef=()=>{try{git('rev-parse','--verify','origin/main');return true}catch{return false}};
+
 const media={
  song:'/mio-awakening.mp3',
  video:'https://vt.tiktok.com/ZSgFvmy7Q/',
@@ -29,20 +36,29 @@ const unchanged=[
 
 test('all old production authentication, draw, attendance and approved media blobs are byte-identical to origin/main',()=>{
  // This is a structural check of the protected source, not live GAS/DB validation.
- git('rev-parse','--verify','origin/main');
+ assert.equal(baseline.baselineCommit,'bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b');
+ assert.equal(Object.keys(baseline.productionFileBlobs).length,unchanged.length);
  for(const path of unchanged){
-  assert.equal(git('rev-parse','HEAD:'+path),git('rev-parse','origin/main:'+path),
+  assert.equal(shaOfFile(path),baseline.productionFileBlobs[path],
    'PROTECTED MAIN FILE CHANGED: '+path);
+ }
+ // Also protect against main advancing after the snapshot when a remote ref is present.
+ if(hasMainRef()){
+  assert.equal(git('rev-parse','origin/main'),baseline.baselineCommit,
+    'main changed since staging baseline; refresh under review before release');
+  for(const path of unchanged){
+   assert.equal(git('rev-parse','HEAD:'+path),git('rev-parse','origin/main:'+path),
+     'Protected main file differs from live baseline: '+path);
+  }
  }
 });
 test('all prior Vercel builds and routes are retained EXACTLY, in the same order',()=>{
- const origin=baseConfig();
- const filteredBuilds=config.builds.filter(x=>origin.builds.some(y=>y.src===x.src));
- const filteredRoutes=config.routes.filter(x=>origin.routes.some(y=>y.src===x.src));
- assert.deepEqual(filteredBuilds,origin.builds,'A production build was removed/modified/reordered');
- assert.deepEqual(filteredRoutes,origin.routes,'A production route was removed/modified/reordered');
- assert.equal(config.builds.length,origin.builds.length+museumFiles.length);
- assert.equal(config.routes.length,origin.routes.length+museumFiles.length);
+ const filteredBuilds=config.builds.filter(x=>baseline.builds.some(y=>y.src===x.src));
+ const filteredRoutes=config.routes.filter(x=>baseline.routes.some(y=>y.src===x.src));
+ assert.deepEqual(filteredBuilds,baseline.builds,'A production build was removed/modified/reordered');
+ assert.deepEqual(filteredRoutes,baseline.routes,'A production route was removed/modified/reordered');
+ assert.equal(config.builds.length,baseline.builds.length+museumFiles.length);
+ assert.equal(config.routes.length,baseline.routes.length+museumFiles.length);
 });
 test('museum routes are exact static files only; no production auth or database endpoints are added',()=>{
  for(const path of museumFiles){
