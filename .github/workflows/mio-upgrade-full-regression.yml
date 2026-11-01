@@ -1,0 +1,70 @@
+name: MIO upgrade readiness - entire regression (Draft only)
+
+on:
+  push:
+    branches:
+      - fix/mio-ci-regressions-20261031
+    paths:
+      - .github/workflows/mio-upgrade-full-regression.yml
+      - tests/**
+      - api-gacha.js
+      - api-status.js
+      - app.js
+      - gacha-page.js
+      - gacha.html
+      - package.json
+  pull_request:
+    paths:
+      - .github/workflows/mio-upgrade-full-regression.yml
+      - tests/**
+      - api-gacha.js
+      - api-status.js
+      - app.js
+      - gacha-page.js
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install declared test dependencies without modifying the repository
+        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
+      - name: Run entire registration, gacha, administration and incident regression
+        run: npm test
+      - name: Confirm protected production sources remain untouched by this job
+        if: always()
+        run: |
+          git diff --exit-code
+          git status --short
+
+  integration-regression:
+    # This is a DIFFERENT release scope, not a waiver of the full-suite failure.
+    # The visual-only hash test must still run (and gate) the full-regression job.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install declared test dependencies without modifying the repository
+        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
+      - name: Verify visual-only strict test remains in repository
+        run: |
+          test -f tests/gacha-release-visual-scope.test.mjs
+          grep -Fq "api-gacha.js" tests/gacha-release-visual-scope.test.mjs
+      - name: Run all integration tests except the separately gated visual-only release contract
+        run: |
+          find tests -name '*.test.mjs' ! -name 'gacha-release-visual-scope.test.mjs' -print0 \
+            | sort -z | xargs -0 node --test
+      - name: Confirm no source changes from tests
+        if: always()
+        run: git diff --exit-code
