@@ -6,6 +6,12 @@ const eventId=params.get('event')||'';
 const valid=/^[a-z0-9][a-z0-9_-]{2,39}$/.test(eventId);
 let busy=false,verified=false;
 function msg(s){el('eventPassMessage').textContent=s}
+function showRoomLink(){
+ const link=el('eventPassRoomLink');
+ if(!link||!valid)return;
+ link.href='/event-room.html?event='+encodeURIComponent(eventId);
+ link.hidden=false;
+}
 function setBusy(value){
  busy=value;
  el('eventPassSendCode').disabled=value||!valid;
@@ -43,6 +49,7 @@ async function issue(){
   if(inviteCode)body.inviteCode=inviteCode;
   const d=await post('/api/mio-event-pass',body);
   verified=true;el('eventPassTicket').hidden=false;
+  showRoomLink();
   el('eventPassTicket').textContent='✅ 参加証を確認しました（'+d.passId.slice(0,8)+'…）';
   msg(d.status==='already_issued'?
    'すでに参加証が発行されています。同じ会員のため重複発行していません。':
@@ -85,6 +92,7 @@ if(valid)void (async()=>{
   const d=await post('/api/mio-event-pass',{action:'check',eventId});
   if(d.allowed){
    verified=true;el('eventPassTicket').hidden=false;
+   showRoomLink();
    el('eventPassTicket').textContent='✅ このイベントの参加資格があります';
    msg('すでに参加証があります。');
   }
