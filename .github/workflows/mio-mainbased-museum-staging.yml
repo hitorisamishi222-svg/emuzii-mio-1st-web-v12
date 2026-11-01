@@ -10,6 +10,7 @@ on:
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
       - tests/browser-registration-status.test.mjs
+      - tests/gacha-legacy-recovery.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
   pull_request:
     branches:
@@ -20,6 +21,7 @@ on:
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
       - tests/browser-registration-status.test.mjs
+      - tests/gacha-legacy-recovery.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
   workflow_dispatch:
 
@@ -53,6 +55,8 @@ jobs:
         run: node --test tests/mio-mainbased-museum-integration.test.mjs
       - name: Previously failing registration status mock only (no live requests)
         run: node --test tests/browser-registration-status.test.mjs
+      - name: Previously failing same-drawId recovery mock only (no draw requests)
+        run: node --test tests/gacha-legacy-recovery.test.mjs
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
