@@ -9,6 +9,7 @@ on:
       - mio-profile.html
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
+      - tests/browser-registration-status.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
   pull_request:
     branches:
@@ -18,6 +19,7 @@ on:
       - mio-profile.html
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
+      - tests/browser-registration-status.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
   workflow_dispatch:
 
@@ -49,6 +51,8 @@ jobs:
           node --check tests/mio-mainbased-museum-integration.test.mjs
       - name: Verify all original login, check-in, gacha and gallery files remain identical to main
         run: node --test tests/mio-mainbased-museum-integration.test.mjs
+      - name: Previously failing registration status mock only (no live requests)
+        run: node --test tests/browser-registration-status.test.mjs
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
