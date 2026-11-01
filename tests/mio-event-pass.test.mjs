@@ -115,6 +115,6 @@ test('API refuses unverified email and does not register identities or grant pri
  assert.match(api,/SAME|INVALID_ORIGIN/);
  assert.doesNotMatch(api+core,/makeIdentity\(|sessionCookie\(|bridge\(['"]draw|bridge\(['"]register|webAdminOpsGrant|gachaGrant\(/);
  assert.doesNotMatch(schema,/ALTER TABLE mio_registration_v2|DROP TABLE|UPDATE emuzii_/);
- assert.match(schema,/UNIQUE\(event_id,subject_id\)/);
+ assert.match(schema,/UNIQUE\s*\(\s*event_id\s*,\s*subject_id\s*\)/);
  assert.match(schema,/mio_event_verified_members/);
 });
