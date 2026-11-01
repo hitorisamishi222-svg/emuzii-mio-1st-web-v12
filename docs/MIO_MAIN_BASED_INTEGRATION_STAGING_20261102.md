@@ -35,3 +35,21 @@
 7. **公開前**：現行本番の正本データ・バックアップ、公開作品のDB全件照合（現在の静的2件だけでは不足かもしれない）、iPhone Safari/LINE/Xブラウザ、戻し方、運営最終承認。
 
 **結論：最新版mainベースの統合コピーは作成・表示レーン初期統合済み。全体完成・本番公開ではない。**
+
+
+## 2026-11-02：失敗済みテストだけの修復と再検証
+
+- 既存 `main` の製品コード **19保護ファイルは無変更**。元の`app.js`、`gacha-page.js`、`api-gacha.js`、`bridge.js`、`api-status.js`、`gacha-admin-ops.js`、実GAS/DB/参加者は変更していない。
+- 登録テスト`tests/browser-registration-status.test.mjs`は、元の`app.js`が既に持つ`readCurrentStatus()`のリトライ補助関数をモックの読取範囲に含めておらず、再試行タイマーも模擬できていなかった。開発済みPR #75から製品コード一致を検証して安全なテストだけ移植。
+- 抽選復旧テスト`tests/gacha-legacy-recovery.test.mjs`は`Element.after()`と「抽選前の2度目の確認を利用者が拒否する」動作のモックが欠けていた。未確認のdrawIdに対する**再抽選や権利消費を行わない**検査として修正。
+- 不承認ブラウザのエラーコード期待値を現行コードのfail-closed`not-admin-approved-for-gacha`に一致させ、**cookieを発行しないこと**を追加で確認。
+- 演出限定HTMLは正規の`gacha-page.js?v=...`キャッシュ更新クエリ付きだったため、バージョン付きscriptを許可するテストへ修正（固定Git SHA保護は不変更）。
+- 専用の限定試験：[CI #41332424506](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41332424506) **記念館8/8、登録状態4/4、drawId復旧5/5、未承認ブラウザ1/1、演出の読込1/1、すべてPASS**。実際の`draw`アクション/登録変更/GAS通信はしていない。
+- 管理ブラウザ限定試験には`pg`依存が必要だったため、専用CIだけ`npm install --no-save --package-lock=false --ignore-scripts`を導入。最初の実行`ERR_MODULE_NOT_FOUND`はテスト実行環境の問題で、実ユーザーの認証エラーではない。再試験は合格。
+- [登録全回帰 CI #41332424476](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41332424476)：**184/189 PASS、5 FAIL**。当初の174/189から不合格10件を減らしたが、**全体合格ではない**。
+- 残る5件の内訳（むやみにチェックを消さない）：
+  1. `tests/gacha-release-visual-scope.test.mjs`固定本番SHA: ビジュアル演出専用候補の旧基準と現行mainの`api-status.js`内容が一致しない。**固定SHAを変更・削除せず**、ガチャの安全な演出適用方法を別工程で照合。
+  2. `tests/mio-gas-connect-guidance.test.mjs`2件と`tests/mio-gas-full-install.test.mjs`1件: Web管理にテストで期待するGAS案内UIがまだ存在しない。特に「Code.gs全文貼付け」案内は**現在の19同名関数重複・既存GASデプロイ保護と衝突する恐れがある**ため、テストを満たす目的で危険な貼付け案内を追加しない。稼働GASの現行版バックアップ・差分安全追加が先。
+  3. `tests/mio-web-admin-ops.test.mjs`1件: 現行Web管理画面の一部必須コントロールがまだ存在しない。管理/抽選権を迂回させず、安全な設計を統合コピーで再確認。
+- これら5件は**公開を止める要件**であり、既存本番に対して回数や履歴の変更を行う理由にはならない。
+- 新規サイト・Vercel Project/GAS/Neon/Sheetsなし。PR #76はDraftのまま／本番URL・データ維持。実機は引き続き未確認。
