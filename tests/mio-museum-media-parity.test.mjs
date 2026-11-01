@@ -28,6 +28,11 @@ test('museum links to the very same TikTok video from the previous published gal
  assert.match(museum,/翠の覚醒 -MIO- 魔王チャレンジ応援ソング/);
  assert.match(museum,/href="https:\/\/vt\.tiktok\.com\/ZSgFvmy7Q\//);
  assert.match(museum,/rel="noopener noreferrer"/);
+ // This must be the same approved thumbnail returned by the current public gallery API,
+ // not the generic SVG cover that replaced it accidentally in the first preview.
+ assert.ok(museum.includes('src="https://auzqwppmdidoadf8.public.blob.vercel-storage.com/mio-gallery/9a3949fe-d123-4bf5-bfd2-f0d9d7613484.jpg"'));
+ assert.match(museum,/referrerpolicy="no-referrer"/);
+ assert.doesNotMatch(museum,/alt="翠の覚醒 -MIO- 応援動画の既存ジャケット画像"/);
  const approved=str('gallery-items.js');
  assert.match(approved,/id: 'mio-awakening-video'/);
  assert.match(approved,/url: 'https:\/\/vt\.tiktok\.com\/ZSgFvmy7Q\//);
