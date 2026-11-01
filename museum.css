@@ -1,0 +1,102 @@
+/* MIO MEMORIAL MUSEUM — first-stage public-only experience.
+   Scoped to the two museum pages. No gacha / registration overrides. */
+:root{color-scheme:dark;--museum-night:#07192f;--museum-blue:#123d67;--museum-ink:#f4f8ff;--museum-soft:#cddff1;--museum-gold:#f4d7a2;--museum-border:#91c9e28c}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body.museum{margin:0;min-width:280px;min-height:100dvh;background:radial-gradient(ellipse at 85% -8%,#24548a8c,transparent 42%),linear-gradient(170deg,#06142b,#0b2a4b 54%,#08142b);font:16px/1.75 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;color:var(--museum-ink)}
+body.museum a{color:inherit}
+body.museum a:focus-visible,body.museum button:focus-visible{outline:3px solid var(--museum-gold);outline-offset:4px}
+body.museum img{max-width:100%;height:auto}
+body.museum [hidden]{display:none!important}
+.museum-skip{position:absolute;left:-10000px;top:10px;z-index:20;background:white;color:#07192f!important;padding:10px 15px;border-radius:9px}
+.museum-skip:focus{left:12px}
+.museum-shell{max-width:1130px;margin:0 auto;padding:0 22px}
+.museum-header{border-bottom:1px solid #a9d5ea40;background:#081b35e9;position:relative;z-index:5}
+.museum-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;min-height:76px;padding-block:9px}
+.museum-brand{text-decoration:none;display:inline-flex;gap:11px;align-items:center;font-size:20px;font-weight:900;letter-spacing:.06em}
+.museum-brand .mark{font-size:28px}
+.museum-brand small{display:block;font:600 10px/1.4 Georgia,serif;letter-spacing:.22em;color:var(--museum-gold)}
+.museum-nav{display:flex;flex-wrap:wrap;gap:5px 15px}
+.museum-nav a{font-size:14px;font-weight:750;text-decoration:none;padding:8px 5px;border-bottom:2px solid transparent}
+.museum-nav a:hover,.museum-nav a[aria-current="page"]{border-color:var(--museum-gold)}
+.museum-hero{position:relative;isolation:isolate;overflow:hidden;background:#0a2e54 url('/assets/mio-bg-princess.jpg') 70% 22%/cover no-repeat;border-bottom:1px solid #9cc8e58c}
+.museum-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#04152bed 0%,#071a37c9 53%,#071a374e 100%),linear-gradient(0deg,#061a35f7,transparent 52%)}
+.museum-hero-inner{display:grid;grid-template-columns:1.5fr .6fr;align-items:center;gap:10px;min-height:510px;padding-block:82px 86px}
+.museum-kicker{color:var(--museum-gold);font-weight:800;font-size:12px;letter-spacing:.22em}
+.museum-hero h1,.museum-page-heading h1{font-size:clamp(36px,6.8vw,69px);line-height:1.3;letter-spacing:.05em;margin:15px 0 18px;text-shadow:0 7px 30px #001428}
+.museum-hero .hero-lead{font-size:clamp(17px,2.2vw,21px);line-height:2.0;max-width:660px;color:#f1f7ff;margin:0}
+.museum-hero .hero-sub{color:#dfebf7;max-width:620px;margin:20px 0 25px}
+.museum-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.museum-button{min-height:50px;padding:12px 20px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;font-weight:850;border:1px solid #d2e6fa91;background:#133f6d}
+.museum-button.primary{background:linear-gradient(120deg,#fff0c9,#e1c48d);border-color:#fff1c7;color:#172439}
+.museum-button.secondary{background:#092445dc}
+.museum-mascot{align-self:center;text-align:center}
+.museum-mascot img{width:min(100%,230px);filter:drop-shadow(0 15px 30px #021124c9)}
+.museum-mascot span{display:block;color:var(--museum-gold);font-size:12px;letter-spacing:.18em;margin-top:5px}
+.museum-section{padding-block:52px 10px}
+.museum-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.museum-eyebrow{color:var(--museum-gold);font:600 12px/1.3 Georgia,serif;letter-spacing:.2em}
+.museum-heading h2{font-size:clamp(25px,4vw,36px);line-height:1.4;margin:7px 0}
+.museum-heading p{color:var(--museum-soft);margin:8px 0 0}
+.museum-view-all{color:#f0dfbe!important;font-weight:750;text-underline-offset:4px}
+.museum-feature{background:linear-gradient(135deg,#163e69e8,#0b2448f5);border:1px solid var(--museum-border);padding:24px;border-radius:18px;box-shadow:0 16px 40px #020d20aa}
+.museum-feature h3{font-size:23px;margin:8px 0 11px}
+.museum-feature p{color:#d6e8f6}
+.museum-news-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.museum-news-item{min-width:0;padding:20px;border:1px solid #9acced6e;border-radius:16px;background:#0b2d52;box-shadow:0 8px 26px #0004}
+.museum-news-item time{display:block;color:var(--museum-gold);font-size:13px}
+.museum-news-item h3{font-size:17px;line-height:1.6;overflow-wrap:anywhere;margin:7px 0}
+.museum-news-item p{font-size:14px;color:var(--museum-soft);overflow-wrap:anywhere;white-space:pre-line}
+.museum-news-item a{font-size:14px;font-weight:800;text-underline-offset:4px}
+.museum-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.museum-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;border-radius:18px;border:1px solid #96cae88f;background:linear-gradient(145deg,#113a68,#0b2446);text-decoration:none;transition:transform .16s,border-color .16s}
+.museum-card[href]:hover{transform:translateY(-3px);border-color:#e7d6a6}
+.museum-card .card-art{display:flex;align-items:center;justify-content:center;min-height:155px;font-size:64px;background:radial-gradient(ellipse at 50% 40%,#3472ae94,transparent 62%),linear-gradient(125deg,#0f325a,#092245)}
+.museum-card .card-body{padding:19px 20px 22px;flex:1}
+.museum-card .card-label{font:600 11px Georgia,serif;letter-spacing:.16em;color:var(--museum-gold)}
+.museum-card h3{font-size:20px;line-height:1.5;margin:7px 0 7px}
+.museum-card p{color:var(--museum-soft);font-size:14px;margin:0}
+.museum-card .card-cta{color:#ffe5ae;font-weight:800;font-size:14px;margin-top:18px;display:block}
+.museum-card.future{border-style:dashed}
+.museum-card.future .card-body{padding-bottom:18px}
+.museum-status{display:inline-block;background:#193d60;padding:3px 10px;border-radius:999px;font-size:12px;color:#efdfc3;margin-top:15px}
+.museum-feature.split{display:grid;grid-template-columns:1.35fr .65fr;gap:20px;align-items:center}
+.museum-points{list-style:none;padding:0;margin:14px 0;color:var(--museum-soft)}
+.museum-points li{margin:11px 0}
+.museum-points li::before{content:"✦";color:var(--museum-gold);margin-right:10px}
+.museum-footer{border-top:1px solid #92c5e455;margin-top:60px;padding:26px 0 72px;color:#c4dcec;font-size:14px}
+.museum-footer-inner{display:flex;justify-content:space-between;align-items:start;gap:18px;flex-wrap:wrap}
+.museum-footer a{color:#f3d9ae!important;text-underline-offset:4px}
+.museum-page-heading{padding:62px 0 27px;text-align:center}
+.museum-page-heading h1{font-size:clamp(34px,6.5vw,57px)}
+.museum-profile-portrait{max-height:420px;background:linear-gradient(180deg,#091c39aa,#06152ef5),url('/assets/mio-bg-princess.jpg') center 20%/cover no-repeat;min-height:300px;border-radius:16px;border:1px solid var(--museum-border)}
+.museum-profile-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start}
+.museum-list{display:grid;gap:14px}
+.museum-info-block{border-bottom:1px solid #91c9e24f;padding-bottom:14px}
+.museum-info-block strong{display:block;font-size:16px;color:#f4dba8}
+.museum-info-block p{margin:4px 0;color:var(--museum-soft)}
+.museum-soft{color:var(--museum-soft)}
+@media(max-width:850px){
+ .museum-news-list,.museum-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .museum-hero-inner{grid-template-columns:1fr .38fr;min-height:440px}
+ .museum-mascot img{width:130px}
+ .museum-feature.split{grid-template-columns:1fr}
+}
+@media(max-width:630px){
+ body.museum{line-height:1.7}
+ .museum-shell{padding-inline:16px}
+ .museum-bar{align-items:flex-start}
+ .museum-nav{width:100%;gap:3px 13px}
+ .museum-nav a{font-size:13px;padding:6px 2px}
+ .museum-hero{background-position:58% 18%}
+ .museum-hero::before{background:linear-gradient(0deg,#06172bf7 4%,#071a39bf 60%,#081e39a1 100%)}
+ .museum-hero-inner{display:block;min-height:0;padding-block:67px 62px}
+ .museum-hero h1{font-size:clamp(35px,10vw,50px)}
+ .museum-mascot{display:none}
+ .museum-section{padding-top:40px}
+ .museum-news-list,.museum-grid,.museum-profile-grid{grid-template-columns:1fr}
+ .museum-card .card-art{min-height:128px;font-size:49px}
+ .museum-heading h2{font-size:27px}
+ .museum-feature{padding:20px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.museum-card{transition:none}}
