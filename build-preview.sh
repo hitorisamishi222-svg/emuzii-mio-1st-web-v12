@@ -16,6 +16,9 @@ test -s assets/gallery-emuzii-mio-cover.svg
 cp mio-awakening.mp3 public/mio-awakening.mp3
 test -s public/mio-awakening.mp3
 test -s public/assets/gallery-emuzii-mio-cover.svg
+# The new preview must play exactly the original published song, not a stub or renamed copy.
+cmp -s mio-awakening.mp3 public/mio-awakening.mp3
+cmp -s assets/gallery-emuzii-mio-cover.svg public/assets/gallery-emuzii-mio-cover.svg
 
 # Require the complete non-gacha replacement set in the isolated preview build.
 for page in home-portrait-next.html home-updates-demo.html news.html schedule.html attendance-deluxe-demo.html mypage-deluxe-demo.html community-demo.html music-gallery-demo.html login-recovery-demo.html login-id-settings-preview.html device-sessions-preview.html passkey-preview.html release-readiness.html mobile-checklist.html; do
