@@ -13,7 +13,7 @@ test('admin connection read is allowed before write release; mutations remain lo
 });
 test('all Web administrative mutation buttons stay disabled until release confirmed',()=>{
  const ui=get('gacha-admin-ops.js');
- assert.match(ui,/b\.disabled=!state\?\.writeEnabled/);
+ assert.match(ui,/!readOnly&&!state\?\.writeEnabled/);
  assert.match(ui,/opsGrant'\)\.disabled=v\|\|!!pending\|\|!state\?\.writeEnabled/);
  assert.match(ui,/opsIntakeCreate'\)\.disabled=v\|\|!!pending\|\|!state\?\.writeEnabled/);
  assert.match(ui,/管理の書き込み|承認・回数付与はまだ停止中/);

@@ -1,0 +1,108 @@
+# みお1周年：アップデート準備・並行実行台帳（2026-11-01）
+
+## 目的
+ユーザーの「いつも新しい話に集中して以前の未完了作業が止まる」を防止する。
+このファイルを**みおアップデートの正本進行表**として扱い、各作業で
+**①直近要求 ②先行未完了 ③全体公開ゲート**を毎回並行確認。
+「重点テスト合格」は「本番準備完了」ではない。
+
+**不変条件**：本番`https://emuzii-mio-1st-web-v12.vercel.app`、
+既存GitHub repo/main、既存GAS/スプレッドシート/Neon、参加者・MIO-ID、
+皆勤・FA・予想・ガチャ回数・消費・景品・当選履歴を保護。
+新規GAS/Webアプリ・本番URL・プロジェクト作成禁止。
+未確認の参加者へ資格を自動付与しない。
+本番反映はテスト→GAS/DBバックアップ→同一既存デプロイ更新→実機確認の順。
+※他チャットのエラー専用PR #75と、総合管理機能PR #74は混ぜない。
+
+## 毎回同時進行する優先レーン
+
+|レーン|現在の正本と証拠|未完了・次に実施|合格／停止条件|
+|---|---|---|---|
+|A 最優先：GAS本番とWeb管理接続|Issue #66。mainに保存されたGAS統合候補と単独Ops候補を照合したところ19関数がすべて重複、統合候補内に既存ルートあり|**稼働中の既存GASの実ソース・デプロイ版**を読み取り、バックアップ、既存`doPost`/関数と照合。ない機能のみ差分追加。管理画面読み取り接続試験|現行実コード未取得なら追加中止。管理書き込みフラグOFF。新規GAS/全文置換禁止|
+|B 最優先：CI・既存登録/ガチャ維持|Draft PR #75; 2026-11-01 全件CI 283件中282 PASS / 1 FAIL、Signed Cookie PASS|唯一の`api-gacha.js`固定SHA衝突を**演出限定候補**と**管理統合候補**に分離。現行版と本番APIバイト一致を確認。認証・Cookie・端末・drawId重点テストを継続|固定ハッシュを更新してテストを迂回しない。全体回帰/プレビュー/実機で追加失敗なしを確認するまでマージ禁止|
+|C 高：管理センター/障害復旧|Issue #73, Draft PR #74。管理・エラー一覧、相談受付、抽選済み結果再表示、ログイン復旧は開発段階|管理UIが既存管理セッションから本当に開けるか、GAS/Neon正本ID・操作冪等性・端末復旧の実接続と集中再現試験|確認済みの抽選だけ同じdrawIdの同じ結果を再表示。未確認の再抽選、無条件端末/認証解放は禁止|
+|D 高：ガチャ王宮v2.1|Draft PR #44/#45、演出限定の既存候補。PR #72は「エラーで再抽選」履歴の別候補|スマホで箱・カプセル・景品カード・閉じる→次へ・5秒演出を確認。API/GAS/残回数は現行の安全版から変更しない。O列履歴を現GAS照合|ガチャ演出だけ変更の候補を独立、ガチャAPI・GAS・履歴/景品は同一を証明。再抽選の事実確認がない行にラベルを付けない|
+|E 継続：登録・皆勤・メンシプ資格|既存MIO-ID/端末/ログインID、管理者の本人確認を正本とする|新規/同名/旧登録復旧・皆勤2回/日・ガチャ付与対象の資格を検証。既存ログインIDとメール認証の紐付けは別本人確認で|参加者IDの新規作成/上書き/他人の履歴紐付けをしない。端末変更の旧認証無効化を検証|
+|F 継続：FA・予想・サイト管理|元の全体アップデート予定：FA受付・予想、皆勤、ギャラリー、お知らせ、公開ステータス、管理画面一本化、二重保存|既存機能の更新前後スモーク、FA受付から承認・表示・原本保持、正本Sheetsと第二保存先の整合性、管理設定重複を洗い出す|未実装機能を「完成」と言わない。過去データ・公開状態を保持|
+|G 継続：記念館・公開画面|Draft PR #47/#48、公開画面の不必要な内部表記除去が残る|展示・アイコン・思い出・ギャラリーの表示と権限、iPhone/PCプレビュー、FA等へのリンク検査|原本/権利/公開範囲を確認するまで公開しない|
+|H 継続：メール・イベント参加証|Draft PR #74 Phase2E/2F。モデルテスト102件合格（その時点）|既存GASのMailApp送信追加候補、Neonの**未適用**SQL、OTP abuse対策、iPhoneでの実メール/入場試験|参加証はイベント入場のみ。メンシプ/投票/ガチャ/皆勤権限と別。現時点は本番機能OFF|
+
+## 直近の進捗を毎回残すフォーマット
+- **直近変更**：作業レーン、既存branch/Issue/PR、変更したファイル、commit。
+- **実行した試験**：CI URL、全件数、PASS/FAIL/skip、実機・稼働GASが未確認ならその旨。
+- **未完了も必ず記載**：各レーンの残件と依存関係。失敗を理由に他レーンまで停止しない。
+- **次に並行して進める対象**：A/Bを最優先とし、C/D/E/F/G/Hも保守的に着手可能な作業を選ぶ。新機能だけ延長し続けない。
+- **公開可否**：「重点モックPASS」と「mainマージ/Production公開可能」を分けて判定。
+
+## 2026-11-01の実際の進行
+1. PR #75にフル回帰CI`.github/workflows/mio-upgrade-full-regression.yml`追加：
+   https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41261168930
+   **283 tests, 282 PASS, 1 FAIL**。既存PRはDraft。
+2. Issue #66の候補GAS照合：mainの統合版に管理関数19/19と`doPost`ルートがすでにある。新しいOpsモジュールの二重追加は危険。**現稼働GAS内容は未確認**、本番未変更。
+3. PR #74開発ブランチへ`tests/mio-gas-additive-safety.test.mjs`を追加し、二重挿入/実稼働未確認の停止条件を自動検査。
+4. GAS・DB・main・Vercel Production変更なし。本人確認/付与/当選履歴操作なし。
+
+## 未解決の最短公開ゲート
+- 本番GASの**実ソース**とデプロイの同一性、既存台帳と認証の正本照合。
+- 設定/外部APIの限定読取テスト。受付OFF/必要な管理write OFF。
+- 全件回帰で既知の固定SHA衝突をリリース対象の分離により正しく解消。
+- 参加登録・皆勤・予想・FA・ガチャ/ラキフェス・景品履歴・管理画面を実機で一巡し、全現行データの前後照合。バージョンの上書き禁止。
+
+## 2026-11-01 11:00 JST 以降：並行レーンの更新
+
+### レーンB：全回帰と公開スコープを切り分けて検証
+- Draft PR #75 `fix/mio-ci-regressions-20261031` の全件CIを継続。
+- 皆勤(`/api/checkin`)、正本照合付き皆勤復帰、ギャラリー/FAの公開読取と管理者書込の権限、ガチャと管理API、既存Vercelルートの維持を検証する`tests/mio-upgrade-feature-parity.test.mjs`を追加。
+- [CI run 41263779516](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41263779516)
+  - **全300件：299 PASS / 1 FAIL**（演出限定向け厳格な`api-gacha.js`固定Blob SHA検査だけ不一致）。
+  - **管理統合スコープ296件：296 PASS / 0 FAIL**。このジョブは演出専用の4テストを独立扱いにしたもので、**フルスイートの失敗を取り消すものではない**。
+  - 既存`main`の`api-gacha.js`は期待Blob `8ecaad8f...`と一致。統合開発ブランチは`b512287f...`で、同一ではない。演出専用差分としてマージ不可。
+- すでに`main`には王宮v2.1の静的JS/CSS・デモJSON・ステージ背景が存在。**再実装は不要**。未完了はiPhone実機での表示・操作、稼働GASとの契約照合と演出限定公開スコープの最終判定。
+
+### レーンC：端末復旧相談UIの初期表示漏れ修正
+- `gacha-page.js`の401を画面状態として記録し、`mio-cookie-loss-ui.js`が読み込み順によってイベント通知を見逃しても復旧相談欄を表示。
+- `tests/mio-cookie-loss-browser-entry.test.mjs`で、401通知が画面初期化前／後、通知重複、正常ログイン時の非表示を検証。**新規ログインID、ガチャ権利、再抽選は発行しない**。
+- [管理センターCI 41263710169](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41263710169) **110件PASS / 0 FAIL**。稼働GAS接続は未確認。
+
+### レーンA：Vercel本番を読み取り専用で確認
+- Vercel deployment `dpl_J7oZ362TLR2RjGgBegfKELnDcjtP` は `READY`、`target=production`。
+- 現行の本番エイリアス `emuzii-mio-1st-web-v12.vercel.app` で配信中のコミットは `main bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b`。開発Branch `feature/mio-admin-center-phase1` とエラー修正Branch `fix/mio-ci-regressions-20261031`ではない。
+- GASの実稼働デプロイ版が不明なため**GAS追加は行わず**、Issue #66に記録した19関数重複と追加候補2関数の照合を停止条件にする。
+
+### レーンF/G：FA・展示・公開機能の明確化
+- 現在のAPIルートにはギャラリー公開作品リスト・管理者承認・画面・画像・管理セッションが既に存在。
+- `api-gallery-publish.js` は明示的な503停止実装。単にリンク/画面があるだけで投稿・公開まで完成とは扱わない。管理APIの承認済みオーナー/承認端末による処理とは分けて検証。
+- 予想・FA受付・皆勤・記念館については運用中の実GAS/DBと保護された実機データ試験が未完了。全機能の更新完了を宣言しない。
+
+**公開判断：停止中**。全300件のうち残る固定SHA1件、実稼働GAS、iPhone実機、皆勤/FA/予想/履歴の前後照合が解消するまでマージしない。
+
+## 2026-11-01：既存大型アップデートコピーとの接続を再開（本番未公開）
+
+- ユーザーの再確認：**大型アップデートはコピー版で全て準備・確認してから既存URLに一括更新**。新機能の完成だけで部分公開しない。開発の中心はこの公開ゲートに戻す。
+- 既存コピー `release/v2-next-integrated-replica` を発見。現行mainとの比較で **ahead 518 / behind 240 / diverged**。一括merge/上書きすると認証・皆勤・ガチャ・FAの旧版化リスクがあるため禁止。
+- コピーの `vercel.json` は現行Production用の`builds/routes`ではなく `bash ./build-preview.sh` と `outputDirectory:public` の静的デモ設定。旧コピーのビルドは`index.html`、`gacha.html`、`api-*.js`、`bridge.js`を公開から除外し、実ガチャや登録を実行しない設計。
+- 承認済みUX候補（トップ、王宮ガチャ、皆勤、マイページ、コミュニティ、音楽、管理、統合操作デモ）は旧コピーに保持されている。**UIモックであり本番API結合の保証なし**。
+- 現行mainにある`api-activate-attendance.js`、`api-gacha-admin-ops.js`、`api-gallery-items.js`、`api-gallery-manage.js`、`api-gallery-moderate.js`、`gacha-web-gate.html`、`gallery.html`は旧コピーにはない。旧コピーを本番ベースにしない具体的理由。
+- コピー側に`release-prep/INTEGRATION_BRIDGE_20261101.md`と`release-prep/replica-baseline-audit.mjs`を作成。現在mainの必須productionファイル16件の差分を自動発見し、旧コピーが「デザイン参照のみ／公開不可」であることを明示。CI `.github/workflows/mio-replica-baseline-audit.yml`では静的プレビューのビルドと、ガチャ・認証APIの出力除外も検査（**実行結果は未取得なので合格と扱わない**）。
+- **統合先の方針**：最新版mainベースの既存開発ブランチ`feature/mio-admin-center-phase1`を含む作業コピーへ、承認済み旧コピーの画面・演出差分だけを選択導入。最新の本番認証/GAS/DB/参加者・履歴機能を古いコードで置き換えない。PR #75はエラー修正専用のまま独立。
+- 依然として最優先：Issue #66の稼働GAS実デプロイ照合、全体CIの固定SHA1件、管理センター統合、ガチャv2.1、31日皆勤、FA/予想、記念館、コミュニティ、メールイベント参加証の実機とバックエンド結合。
+
+**判定**：旧コピーの存在確認・隔離検査を進めたが、**大型アップデートの完成／統合／Production公開は未実施**。main/GAS/Neon/Sheets/本番URLは維持。
+
+## 2026-11-01：ミュージアムレーンを再開（大型アップデートコピーに統合）
+- 既存Draft PR #47（記念館入口）と #48（歴代アイコン・思い出・イベント記録・管理画面・ゴミ箱）を確認。両方とも本番未マージ。第2段階は第1段階に依存し、最新mainより32コミット遅れ。ブランチ全体を本番へmergeしない。
+- Phase2の`museum-news.js`が、Vercelに存在しない`/api/announcements`を参照していたため、実際の公開ニュースルート`/api/gallery/announcements`へ修正。未公開記事フィルタ・失敗時フォールバックをモックで確認。
+- [Museum CI 41275514928](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41275514928)：**重点74/74 PASS＋Chromium 320/375/390/430px PASS＋隔離PostgreSQL 1/1 PASS**。実GAS/本番Neon/実Blob/iPhoneの代替ではない。
+- 以前からある大型更新コピー`release/v2-next-integrated-replica`に**記念館トップ・プロフィール・アーカイブの静的表示用コピー**を追加。既存の`next-preview.html`から導線を接続。コピー専用JSはAPI、Cookie、保存を呼ばず、検索禁止メタ情報・未公開案内を付与。
+- [コピー版統合文書](../blob/release/v2-next-integrated-replica/release-prep/INTEGRATION_BRIDGE_20261101.md)に差分と残件を記録。Vercel Previewは`READY`でProductionと別。**実ブラウザHTTP/実機とコピーCI結果は別途要確認**。
+- 次は本番最新mainベースの**統合候補に博物館の動的DB・管理APIだけを選択的に取り込む**。現行のガチャ・皆勤・FA・管理者Cookie/権限、旧MIO-ID、参加者データとシークレットを保護。記念館単独の本番公開・本番DBへのSQL適用をしない。
+
+
+## 2026-11-02：旧公開作品の保持と大型アップデート回帰（並行レーンB/G）
+
+- 大型アップデート用コピーに`main/gallery-items.js`から既存公開作品2件の一覧を同一Git blobで取り込み、`museum-approved-gallery.html`を新設。公開済み音楽「翠の覚醒 -MIO-」とTikTok動画を、元音源/元URLを変えずに表示。既存コピーの記念館・プロフィール・展示室・採用済みトップ・メニューの誤リンクを修正。
+- `release-prep/replica-baseline-audit.mjs`と安全監査CIへ、現在`origin/main`との公開作品カタログ/MP3/カバーの一致必須を追加。旧コピーはそれでも本番mainと大幅分岐しているため、**完成候補へ全体merge不可**。
+- Vercel Preview `dpl_AVPh5VSkYND49qJyjttwj54x25Xk` [公開済み作品一覧](https://emuzii-mio-1st-web-v12-gqof70doo-gtgz8867jh-3139.vercel.app/museum-approved-gallery.html) `READY`、build内の関連テスト**16/16 PASS**。HTTP直アクセス環境未確認、iPhone Safari操作は未実施。
+- 別のエラー修正Draft PR #75 に`tests/mio-published-media-retention.test.mjs`を追加し、現行mainベースの公開動画/音楽退行を新たに保護。GitHub CI [41320226071](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41320226071)：管理統合**300/300 PASS**、全件**303/304 PASS**、失敗は以前の演出専用`api-gacha.js`固定SHAのみ。安全検査を削除しない。
+- 動的ギャラリーAPI/DBに追加の公開済み作品が存在するかは未照合。**静的2件を取り込んだだけで全ギャラリーの統合完了と扱わない。**
+- 他レーンも引き続き未完了：Issue #66の実稼働GASコード/管理接続、PR #74のWeb管理・復旧、ガチャv2.1、皆勤・FA・予想、記念館動的DB/Blob/管理、OTPと参加証。これらの最終テスト・実機・バックアップ・ユーザー承認前に本番へ反映しない。

@@ -61,7 +61,12 @@ export default async function handler(req,res){
   if(d.action==='read'){
    if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||!Array.isArray(result.simple))
      throw Error('受付状態を読み取れません');
-   return res.status(200).json({ok:true,writeEnabled,pending:result.pending,roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0,rejectedCount:result.rejectedCount||0});
+   const webLinks=Array.isArray(result.webLinks)?result.webLinks.slice(0,999).filter(x=>
+    x&&/^MIO-W-[a-f0-9]{24}$/.test(x.webId||'')&&typeof x.name==='string'
+    ).map(x=>({webId:x.webId,name:x.name.slice(0,80),
+      mioId:x.verified===true&&/^MIO-\d{4}$/.test(x.mioId||'')?x.mioId:'',
+      verified:x.verified===true&&/^MIO-\d{4}$/.test(x.mioId||'')})):[];
+   return res.status(200).json({ok:true,writeEnabled,pending:result.pending,roster:result.roster,simple:result.simple,webLinks,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0,rejectedCount:result.rejectedCount||0});
   }
   return res.status(200).json({ok:true,result:{replayed:!!result.replayed,mioId:result.mioId||null,status:result.status||null,granted:result.granted||null,special:result.special??null,member:result.member||null}});
  }catch(e){
