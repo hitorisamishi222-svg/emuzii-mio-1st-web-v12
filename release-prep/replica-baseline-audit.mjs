@@ -48,8 +48,19 @@ const rows=critical.map(([feature,path])=>{
     replica:!copy?'missing':cur===copy?'identical':'diverged',blocker:!cur||!copy||cur!==copy};
 });
 const demos=visual.map(([feature,path])=>({feature,path,present:!!blob('HEAD',path)}));
+const alreadyPublicWorks=[
+ ['Approved public works list','gallery-items.js'],
+ ['Already published MIO Awakening audio','mio-awakening.mp3'],
+ ['Already approved MIO Awakening cover','assets/gallery-emuzii-mio-cover.svg']
+];
+const legacyRows=alreadyPublicWorks.map(([feature,path])=>{
+ const origin=blob(target,path),copy=blob('HEAD',path);
+ return{feature,path,originExists:!!origin,copyExists:!!copy,identical:!!origin&&copy===origin};
+});
+const legacyWorksReady=legacyRows.every(x=>x.identical);
+
 const blocking=rows.filter(x=>x.blocker);
-const releaseReady=blocking.length===0 && branch==='release/v2-next-integrated-replica';
+const releaseReady=blocking.length===0 && legacyWorksReady && branch==='release/v2-next-integrated-replica';
 const ticks=String.fromCharCode(96);
 const md=x=>ticks+x+ticks;
 const summary=[
@@ -61,6 +72,11 @@ const summary=[
  '- Current baseline origin/main: '+md(main),
  '- Critical baseline blockers: **'+blocking.length+'/'+rows.length+'**',
  '- Visual prototypes present: **'+demos.filter(x=>x.present).length+'/'+demos.length+'**',
+ '- Already published works retained **'+legacyRows.filter(x=>x.identical).length+'/'+legacyRows.length+'**',
+ '',
+ '| Protected legacy public works | File | Same as current main? |',
+ '|---|---|---|',
+ ...legacyRows.map(x=>'| '+x.feature+' | '+md(x.path)+' | '+(x.identical?'YES — original preserved':'NO — STOP')+' |'),
  '',
  '| Critical existing function | File | Copy compared with latest main |',
  '|---|---|---|',
@@ -80,6 +96,10 @@ const summary=[
 ].join('\n');
 console.log(summary);
 if(process.env.GITHUB_STEP_SUMMARY){mkdirSync(dirname(process.env.GITHUB_STEP_SUMMARY),{recursive:true});writeFileSync(process.env.GITHUB_STEP_SUMMARY,summary+'\n',{flag:'a'});}
+if(process.argv.includes('--require-approved-works-parity') && !legacyWorksReady){
+ console.error('BLOCKED: previously published approved music/video catalog diverged from current main.');
+ process.exit(1);
+}
 if(process.argv.includes('--release-gate') && !releaseReady)process.exit(1);
 if(process.argv.includes('--expect-copy-blocked') && releaseReady){
  console.error('Copy unexpectedly identical; re-evaluate the expected-blocker assertion before declaring safety.');
