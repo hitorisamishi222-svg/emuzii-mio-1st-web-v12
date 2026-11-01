@@ -52,7 +52,7 @@ server=http.createServer(async(req,res)=>{
       res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
       res.end(JSON.stringify({ok:true,open:true,items}));return;
     }
-    if(p==='/api/announcements'){
+    if(p==='/api/gallery/announcements'){
       const items=[
        {id:'a',title:'公開のお知らせ',body:'開催情報のご案内',published:true,updatedAt:'2026-10-29T00:00:00Z'},
        {id:'b',title:'下書き秘密のお知らせ',body:'非公開',published:false,updatedAt:'2026-10-29T00:00:00Z'}
