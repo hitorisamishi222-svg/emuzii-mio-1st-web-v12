@@ -33,6 +33,10 @@ jobs:
         run: |
           test -f release-prep/REPLICA_WORKPLAN.md
           test -f release-prep/replica-safety.test.mjs
-          test ! -f vercel.json
+          test -f vercel.json
+          test -f build-preview.sh
+          node --input-type=module -e "import fs from 'node:fs';const c=JSON.parse(fs.readFileSync('vercel.json','utf8'));if(c.buildCommand!=='bash ./build-preview.sh'||c.outputDirectory!=='public'||c.rewrites?.some(x=>x.source.startsWith('/api/')))process.exit(1);"
+          grep -Fq "! -name 'api-*.js'" build-preview.sh
+          grep -Fq "test ! -e public/bridge.js" build-preview.sh
           git diff --exit-code
       # No Vercel deploy, main merge, GAS, Neon, Sheets or draw execution here.
