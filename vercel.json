@@ -388,6 +388,46 @@
     {
       "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-profile.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-news.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-approved-gallery.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-approved-gallery.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-media-fallback.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -516,6 +556,84 @@
       "dest": "/gallery-items.js",
       "headers": {
         "Cache-Control": "no-store, max-age=0",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum.html",
+      "dest": "/museum.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-profile.html",
+      "dest": "/mio-profile.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum.css",
+      "dest": "/museum.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.html",
+      "dest": "/museum-archive.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.css",
+      "dest": "/museum-archive.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.js",
+      "dest": "/museum-archive.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-news.js",
+      "dest": "/museum-news.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-approved-gallery.html",
+      "dest": "/museum-approved-gallery.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-approved-gallery.js",
+      "dest": "/museum-approved-gallery.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-media-fallback.js",
+      "dest": "/museum-media-fallback.js",
+      "headers": {
         "X-Content-Type-Options": "nosniff"
       }
     },
