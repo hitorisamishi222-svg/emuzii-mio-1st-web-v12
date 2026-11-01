@@ -1,0 +1,38 @@
+name: MIO upgrade readiness - entire regression (Draft only)
+
+on:
+  push:
+    branches:
+      - fix/mio-ci-regressions-20261031
+    paths:
+      - .github/workflows/mio-upgrade-full-regression.yml
+      - tests/**
+      - api-gacha.js
+      - api-status.js
+      - app.js
+      - gacha-page.js
+      - gacha.html
+      - package.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install declared test dependencies without modifying the repository
+        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
+      - name: Run entire registration, gacha, administration and incident regression
+        run: npm test
+      - name: Confirm protected production sources remain untouched by this job
+        if: always()
+        run: |
+          git diff --exit-code
+          git status --short
