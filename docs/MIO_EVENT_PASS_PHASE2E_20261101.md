@@ -42,3 +42,24 @@
 `tests/mio-event-pass.test.mjs`：一般/招待/限定、同一イベント再発行、未公開の拒否、異なるメール会員/偽造署名の拒否、MIO権限に触れないこと。
 `tests/mio-event-email-auth.test.mjs`：コード有効期限、5回ロック、DBの暗号化検索キー、送信失敗、本人確認成功。
 `tests/mio-event-pass-ui.test.mjs`：モバイル画面のメール確認→自動発行、既発行表示、メール送信失敗、無効イベント。
+
+## Phase 2F — 参加証の発行から実際のイベント会場へ（2026-11-01）
+
+**今回の改修は開発ブランチのみ。本番の既存Vercel・GAS・Neon・参加者データは未変更。**
+
+- `db/mio-event-pass-20261101.sql` を**全体的に再構築**。以前の候補ファイルに、正規表現の`$`を含む置換処理由来のテキスト重複・破損があった。SQLは未適用だったため本番被害なし。今回は独立した1回の`BEGIN/COMMIT`内に、OTP・メール会員・イベント・招待・事前確認会員・参加証・非公開ルームの7テーブルを定義し、構造テストを追加。**本物のPostgresに適用した検証ではない**。
+- `mio-event-room-core.js` と `api-mio-event-room.js`：署名付きメールセッションに含まれる会員IDを使用して、**1本のSQL**で有効な参加証、現在のイベント開催時刻、公開中イベント、公開中ルームを照合。限定会員イベントの場合は、その時点でサーバーに記録された事前確認会員資格も必須。`MIO_EVENT_ROOM_RELEASE=verified-event-room-phase2f-20261101` を別の初期OFFフラグにして、発行機能だけをONにしても会場は未公開。
+- `event-room.html` と `mio-event-room-ui.js`：静的ページは**空の入場画面だけ**。非公開の文章・認証情報・動画URLを静的ファイルに含めない。サーバーが入場を許可した時だけ`textContent`で文章を表示し、生HTMLを実行しない。会場への公開リンクだけではコンテンツに入れない。
+- `event-pass.html` と `mio-event-pass-ui.js`：メール確認後の参加証発行成功・既発行の確認成功後に「イベント会場へ入る」を表示。未確認時は非表示。
+- `mio-event-email-auth-core.js`：メール送信の同時申請に対して、メール検索キーとIP検索キーの双方をDBトランザクション内でロックし、1時間の送信上限確認と競合を直列化。同じブラウザの未使用旧コードは`superseded`として無効化。新旧のコードが同時に成功しない方向へ強化。DBの実挙動は本番未確認。
+
+### 本番導入を止める条件
+
+1. 既存GASのバックアップ、`GAS_EventEmailOtp_20261101.gs` の**同一プロジェクトへの追加**、秘密鍵照合後の既存`doPost`ディスパッチャ追加、必要なMailApp認可、既存デプロイの新バージョン適用まで管理者がレビュー。新GAS・新本番URLは作らない。
+2. 既存Neonに追加する7テーブルについて**バックアップ、SQLの実行計画・マイグレーション・ロールバックと実DBスキーマ照合**を先に行う。SQL未実行。
+3. 本番のVercel WAFで`/api/mio-event-email`を対象とする**IPベースのレート制限とBot対策**を管理者がレビューする。Vercelの`x-real-ip`は公式ドキュメント上`x-forwarded-for`と同じ扱いだが、独自プロキシ構成・ヘッダー偽装・NAT共有を評価する。アプリ内のIP制限はWAFの代わりにならない。出典：https://vercel.com/docs/headers/request-headers 、https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting
+4. メール送信の実受信試験、Safari/Chrome/LINE/Xの同一ブラウザ内6桁入力、遅延や再送、停止時のUI、公開/招待/限定会員3条件での入場、資格解除・イベント終了・コンテンツ非表示を**実機と既存DBのテストデータで検証**。
+5. ルーム本文は候補DBの`mio_event_rooms`に入る**4,000文字以内のテキストだけ**。限定動画や画像の保存先・URL自体はここで保護されないため、動画/画像等の媒体向け権限付き配信は別設計。秘密のURLを静的/一般公開サーバーに置かない。
+6. 通常のMIO-IDやガチャ権利の復旧とは別。一般参加証では、皆勤・ガチャ・投票・メンシプ権限は付与されない。
+
+テスト：`tests/mio-event-room.test.mjs`、`tests/mio-event-pass-ui.test.mjs`、`tests/mio-event-email-auth.test.mjs` を独立CIへ追加。モックテストは**本番接続・実DBでのSQL適用・実メール送信の証明ではない**。
