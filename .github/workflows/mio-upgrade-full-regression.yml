@@ -13,6 +13,14 @@ on:
       - gacha-page.js
       - gacha.html
       - package.json
+  pull_request:
+    paths:
+      - .github/workflows/mio-upgrade-full-regression.yml
+      - tests/**
+      - api-gacha.js
+      - api-status.js
+      - app.js
+      - gacha-page.js
   workflow_dispatch:
 
 permissions:
