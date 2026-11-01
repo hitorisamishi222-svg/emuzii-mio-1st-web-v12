@@ -9,6 +9,9 @@ on:
       - release-prep/INTEGRATION_BRIDGE_20261101.md
       - release-prep/replica-museum-preview.test.mjs
       - release-prep/replica-museum-media.test.mjs
+      - release-prep/replica-approved-works.test.mjs
+      - museum-approved-gallery*
+      - gallery-items.js
       - museum*
       - mio-profile.html
       - next-preview.html
@@ -33,9 +36,9 @@ jobs:
       - name: Fetch latest main for read-only comparison
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
       - name: Audit copy against latest protected production code
-        run: node release-prep/replica-baseline-audit.mjs --expect-copy-blocked
+        run: node release-prep/replica-baseline-audit.mjs --expect-copy-blocked --require-approved-works-parity
       - name: Museum preview safety contracts
-        run: node --test release-prep/replica-museum-preview.test.mjs release-prep/replica-museum-media.test.mjs
+        run: node --test release-prep/replica-museum-preview.test.mjs release-prep/replica-museum-media.test.mjs release-prep/replica-approved-works.test.mjs
       - name: Build approved static copy without API or GAS connection
         run: |
           bash ./build-preview.sh
