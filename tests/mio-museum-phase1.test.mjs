@@ -47,7 +47,8 @@ test('existing homepage has a museum entry without losing attendance or gacha li
  assert.match(index,/src="\/app.js"/);
 });
 test('published news is displayed with safe text APIs and a fallback',()=>{
- assert.match(news,/\/api\/announcements/);
+ assert.match(news,/\/api\/gallery\/announcements/);
+ assert.ok(config.routes.some(x=>x.src==='/api/gallery/announcements'&&x.dest==='/api-announcements.js'));
  assert.match(news,/credentials:'omit'/);
  assert.match(news,/x\.published===true/);
  assert.match(news,/\.slice\(0,3\)/);
