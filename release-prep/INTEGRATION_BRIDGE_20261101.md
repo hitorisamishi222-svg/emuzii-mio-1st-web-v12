@@ -70,3 +70,16 @@
 - `release-prep/replica-museum-media.test.mjs`でMP3/画像の実blob一致・動画URL・画面の再生UI・旧本番API除外を検査。**静的音楽・公開動画以外の実会員データやAPIはコピーに接続しない。**
 - **未確認**：Preview配信されたMP3のiPhone Safari実再生・外部TikTokの遷移。Vercel build READYだけで操作完了とみなさない。
 - 以前から使っていた作品を大型アップデートで欠落させないことを今後の公開ゲートとする。
+
+
+## 2026-11-02：以前の公開作品ギャラリーをコピー版へ保持
+
+- 既存`main/gallery-items.js`の公開承認済み作品**2件**（`mio-awakening-video`、`mio-awakening-song`）を確認。大型更新コピーにはこの公開作品リスト自体がなく、記念館の「ギャラリーを見る」リンクは作品一覧でなく`community-demo.html`に飛んでいたため、過去の音楽・動画が引き継がれていないように見えた。
+- 現`main/gallery-items.js`を**Git blob `69896a5aa5bf1cc28a1a17feecefcc043f98c1f8`と同一**でコピーへ保存。元`mio-awakening.mp3`・`assets/gallery-emuzii-mio-cover.svg`も引き続きGit blob一致。
+- `museum-approved-gallery.html`と`museum-approved-gallery.js`を追加。元の公開作品リストから`hidden:false`のみを表示し、音楽は既存MP3のネイティブ再生、動画は元のTikTok URLへ移動。**表示専用で投稿・会員確認・ガチャ/皆勤・DB/HTTP API通信なし**。
+- 大型更新の採用済みトップ`home-portrait-next.html`、`next-preview.html`、記念館トップ、プロフィール、展示室の「ギャラリー」導線を`museum-approved-gallery.html`へ修正。以前の`community-demo.html`（投稿デモ）は別機能として残した。
+- `release-prep/replica-approved-works.test.mjs`で6項目追加：元の3ファイルSHA、両作品の実描画、非公開除外、Cookie/API不使用、全画面リンク、static buildの旧API遮断。
+- `release-prep/replica-baseline-audit.mjs`とCIに**最新`origin/main`の公開カタログ・MP3・カバーとコピー版が完全一致しない場合に停止する条件** `--require-approved-works-parity`を追加。旧コピーの一括main統合が危険なことは引き続き独立に検査。
+- [Vercel Preview build](https://emuzii-mio-1st-web-v12-gqof70doo-gtgz8867jh-3139.vercel.app/museum-approved-gallery.html)：commit `80b84055102a6583913c547d771e870e4e6b5fb4`、状態`READY`、build内の**関連16/16テスト合格**。プレビューHTTPからの実表示検証はツール側でアクセス不可、iPhone再生・TikTok外部遷移は未検証。
+- **注意**：コピーに取り込んだものは`main/gallery-items.js`に静的登録されている元の2作品。実稼働DB/APIに存在する他の承認済み作品があれば、**公開前に読み取り専用の照合が必要**。この2件だけで公開ギャラリー完全移行済みとは宣言しない。
+- 本番エイリアスは引き続き`main bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b`、`READY`。今回変更は開発コピーのみ。実装全体・管理センター/GAS・皆勤・FA・予想・ガチャ等はまだ未完了。
