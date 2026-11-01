@@ -23,6 +23,7 @@ test('museum exhibits original track with a visible native audio player',()=>{
  assert.match(museum,/src="\/assets\/gallery-emuzii-mio-cover\.svg"/);
  assert.match(css,/\.museum-awakening-grid/);
  assert.match(css,/@media\(max-width:390px\)/);
+ assert.match(str('mio-profile.html'),/href="\/museum\.html#mioAwakening"/);
 });
 test('museum links to the very same TikTok video from the previous published gallery',()=>{
  assert.match(museum,/翠の覚醒 -MIO- 魔王チャレンジ応援ソング/);
