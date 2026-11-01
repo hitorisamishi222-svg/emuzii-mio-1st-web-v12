@@ -28,7 +28,7 @@ const unchanged=[
  'index.html','app.js','style.css','bridge.js',
  'api-register.js','api-status.js','api-checkin.js',
  'api-gacha.js','gacha-page.js','gacha.html',
- 'api-gacha-admin-ops.js','gacha-web-gate.html',
+ 'api-gacha-admin-ops.js',
  'api-gallery-items.js','api-gallery-manage.js','api-gallery-moderate.js',
  'gallery.html','gallery-items.js','mio-awakening.mp3',
  'assets/gallery-emuzii-mio-cover.svg'
@@ -37,7 +37,7 @@ const unchanged=[
 test('all old production authentication, draw, attendance and approved media blobs are byte-identical to origin/main',()=>{
  // This is a structural check of the protected source, not live GAS/DB validation.
  assert.equal(baseline.baselineCommit,'bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b');
- assert.equal(Object.keys(baseline.productionFileBlobs).length,unchanged.length);
+ assert.equal(Object.keys(baseline.productionFileBlobs).length,unchanged.length+1);
  for(const path of unchanged){
   assert.equal(shaOfFile(path),baseline.productionFileBlobs[path],
    'PROTECTED MAIN FILE CHANGED: '+path);
@@ -51,6 +51,29 @@ test('all old production authentication, draw, attendance and approved media blo
      'Protected main file differs from live baseline: '+path);
   }
  }
+});
+test('existing live gacha gate remains exactly the original code after removing the marked disabled admin preview',()=>{
+ const html=read('gacha-web-gate.html');
+ const start='<!-- MIO_ADMIN_PREVIEW_START -->';
+ const end='<!-- MIO_ADMIN_PREVIEW_END -->';
+ assert.equal(html.split(start).length,2);
+ assert.equal(html.split(end).length,2);
+ const original=html.replace(/<!-- MIO_ADMIN_PREVIEW_START -->[\s\S]*?<!-- MIO_ADMIN_PREVIEW_END -->\n/,'');
+ const buffer=Buffer.from(original,'utf8');
+ const restoredSha=createHash('sha1').update('blob '+buffer.length)
+  .update(Buffer.from([0])).update(buffer).digest('hex');
+ assert.equal(restoredSha,baseline.productionFileBlobs['gacha-web-gate.html'],
+  'Original gacha toggles/Face ID/API calls must remain byte identical after removing new disabled panel');
+ const panel=html.slice(html.indexOf(start),html.indexOf(end));
+ for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','opsCount','opsStatus','opsReload','opsSearch','opsQuantity','opsReason','opsIntakeCreate']){
+  assert.equal(html.split('id="'+id+'"').length-1,1,'missing or duplicate admin control '+id);
+ }
+ for(const id of ['opsReload','opsGrant','opsIntakeCreate','opsSearch','opsQuantity','opsReason','opsNewName','opsNewNote']){
+  assert.match(panel,new RegExp('<(?:button|input)[^>]*id="'+id+'"[^>]*\\bdisabled\\b'));
+ }
+ assert.doesNotMatch(panel,/\\bfetch\\s*\\(|<script|onclick\\s*=|onchange\\s*=|document\\.cookie|localStorage|sessionStorage/);
+ assert.doesNotMatch(html,/<script[^>]*src="\\/gacha-admin-ops\\.js"/,
+  'Do not activate admin actions until deployed GAS and credentials are verified');
 });
 test('all prior Vercel builds and routes are retained EXACTLY, in the same order',()=>{
  const filteredBuilds=config.builds.filter(x=>baseline.builds.some(y=>y.src===x.src));
