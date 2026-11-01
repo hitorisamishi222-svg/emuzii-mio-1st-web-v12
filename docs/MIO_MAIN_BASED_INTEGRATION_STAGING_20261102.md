@@ -53,3 +53,14 @@
   3. `tests/mio-web-admin-ops.test.mjs`1件: 現行Web管理画面の一部必須コントロールがまだ存在しない。管理/抽選権を迂回させず、安全な設計を統合コピーで再確認。
 - これら5件は**公開を止める要件**であり、既存本番に対して回数や履歴の変更を行う理由にはならない。
 - 新規サイト・Vercel Project/GAS/Neon/Sheetsなし。PR #76はDraftのまま／本番URL・データ維持。実機は引き続き未確認。
+
+
+## 2026-11-02：Web管理画面の安全な部品追加（実GAS操作は未接続）
+
+- 全体回帰[41361341992](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41361341992)：**189/193 PASS、4 FAIL**（初回174/189から15件相当の失敗を修復）。今回は前回残5件のうち、Web管理コントロール不足の1件を**実画面HTMLの追加**で解消。
+- `gacha-web-gate.html`に管理センター候補の承認待ち一覧・MIO-ID/参加者検索・ガチャ付与・初訪問/簡易受付の各UIを、`MIO_ADMIN_PREVIEW_START/END`で囲った**明示的な未接続・無効化状態**で追加。実参加者データは表示せず、書込ボタン・検索もdisabled。既存`gacha-admin-ops.js`は**読み込まず**、資格を持つ人にもこの新パネルからGAS操作はできない。
+- **従来のガチャ通常/ラキフェスON/OFF・Face ID・受付用APIの実コードは変更していない。** `tests/mio-mainbased-museum-integration.test.mjs`は新規パネルだけを除いた元HTMLのGit blob SHAが旧本番と**完全一致**することを確認。従来スイッチをPreviewで操作してよいという意味ではない。
+- 新しい[GAS安全接続手順](MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102.md)を作り、管理画面から参照。既存Apps Scriptプロジェクト/現行デプロイのソース・版数・バックアップ、`doPost`/同名19関数の衝突照合、**差分追加のみをレビュー**、書込OFFで読み取り専用接続までを手順化。新規GAS/URL/全貼替はしない。
+- `tests/mio-gas-safe-onboarding.test.mjs`で、管理画面が未接続/操作停止を明示し、GASシークレットを晒さず、安全手順へ誘導する3件を追加。専用[CI 41361342265](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41361342265)は記念館9/9、登録状態4/4、drawId復旧5/5、未承認ブラウザ1/1、演出読込1/1、安全なGAS準備3/3の**計23/23 PASS**。
+- 残る**4件のブロッカー**は旧ガチャ演出限定のAPI固定ハッシュ1件と、元`Code.gs`の全文貼り替えを求める旧GAS案内テスト3件。テスト通過のために危険な設置説明を復活させない。旧検査の規約改訂は別途レビューし、**より強い安全検査に置換**できる根拠が揃うまで全体公開ゲートは停止。
+- 実GAS/本番Neon/参加者台帳/ガチャ権利/当選履歴は読み書きしていない。本PRは引き続きDraft、Productionは変更なし。
