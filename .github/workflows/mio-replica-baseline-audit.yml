@@ -1,0 +1,38 @@
+name: MIO large update copy baseline audit (no release)
+
+on:
+  push:
+    branches:
+      - release/v2-next-integrated-replica
+    paths:
+      - release-prep/replica-baseline-audit.mjs
+      - release-prep/INTEGRATION_BRIDGE_20261101.md
+      - .github/workflows/mio-replica-baseline-audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-copy-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch latest main for read-only comparison
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      - name: Audit copy against latest protected production code
+        run: node release-prep/replica-baseline-audit.mjs --expect-copy-blocked
+      - name: Verify copy-only test artifacts cannot write to production
+        run: |
+          test -f release-prep/REPLICA_WORKPLAN.md
+          test -f release-prep/replica-safety.test.mjs
+          test ! -f vercel.json
+          git diff --exit-code
+      # No Vercel deploy, main merge, GAS, Neon, Sheets or draw execution here.
