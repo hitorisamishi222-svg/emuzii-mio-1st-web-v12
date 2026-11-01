@@ -96,3 +96,13 @@
 - 以前からある大型更新コピー`release/v2-next-integrated-replica`に**記念館トップ・プロフィール・アーカイブの静的表示用コピー**を追加。既存の`next-preview.html`から導線を接続。コピー専用JSはAPI、Cookie、保存を呼ばず、検索禁止メタ情報・未公開案内を付与。
 - [コピー版統合文書](../blob/release/v2-next-integrated-replica/release-prep/INTEGRATION_BRIDGE_20261101.md)に差分と残件を記録。Vercel Previewは`READY`でProductionと別。**実ブラウザHTTP/実機とコピーCI結果は別途要確認**。
 - 次は本番最新mainベースの**統合候補に博物館の動的DB・管理APIだけを選択的に取り込む**。現行のガチャ・皆勤・FA・管理者Cookie/権限、旧MIO-ID、参加者データとシークレットを保護。記念館単独の本番公開・本番DBへのSQL適用をしない。
+
+
+## 2026-11-02：旧公開作品の保持と大型アップデート回帰（並行レーンB/G）
+
+- 大型アップデート用コピーに`main/gallery-items.js`から既存公開作品2件の一覧を同一Git blobで取り込み、`museum-approved-gallery.html`を新設。公開済み音楽「翠の覚醒 -MIO-」とTikTok動画を、元音源/元URLを変えずに表示。既存コピーの記念館・プロフィール・展示室・採用済みトップ・メニューの誤リンクを修正。
+- `release-prep/replica-baseline-audit.mjs`と安全監査CIへ、現在`origin/main`との公開作品カタログ/MP3/カバーの一致必須を追加。旧コピーはそれでも本番mainと大幅分岐しているため、**完成候補へ全体merge不可**。
+- Vercel Preview `dpl_AVPh5VSkYND49qJyjttwj54x25Xk` [公開済み作品一覧](https://emuzii-mio-1st-web-v12-gqof70doo-gtgz8867jh-3139.vercel.app/museum-approved-gallery.html) `READY`、build内の関連テスト**16/16 PASS**。HTTP直アクセス環境未確認、iPhone Safari操作は未実施。
+- 別のエラー修正Draft PR #75 に`tests/mio-published-media-retention.test.mjs`を追加し、現行mainベースの公開動画/音楽退行を新たに保護。GitHub CI [41320226071](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41320226071)：管理統合**300/300 PASS**、全件**303/304 PASS**、失敗は以前の演出専用`api-gacha.js`固定SHAのみ。安全検査を削除しない。
+- 動的ギャラリーAPI/DBに追加の公開済み作品が存在するかは未照合。**静的2件を取り込んだだけで全ギャラリーの統合完了と扱わない。**
+- 他レーンも引き続き未完了：Issue #66の実稼働GASコード/管理接続、PR #74のWeb管理・復旧、ガチャv2.1、皆勤・FA・予想、記念館動的DB/Blob/管理、OTPと参加証。これらの最終テスト・実機・バックアップ・ユーザー承認前に本番へ反映しない。
