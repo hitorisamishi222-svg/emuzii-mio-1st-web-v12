@@ -75,3 +75,16 @@
 - 予想・FA受付・皆勤・記念館については運用中の実GAS/DBと保護された実機データ試験が未完了。全機能の更新完了を宣言しない。
 
 **公開判断：停止中**。全300件のうち残る固定SHA1件、実稼働GAS、iPhone実機、皆勤/FA/予想/履歴の前後照合が解消するまでマージしない。
+
+## 2026-11-01：既存大型アップデートコピーとの接続を再開（本番未公開）
+
+- ユーザーの再確認：**大型アップデートはコピー版で全て準備・確認してから既存URLに一括更新**。新機能の完成だけで部分公開しない。開発の中心はこの公開ゲートに戻す。
+- 既存コピー `release/v2-next-integrated-replica` を発見。現行mainとの比較で **ahead 518 / behind 240 / diverged**。一括merge/上書きすると認証・皆勤・ガチャ・FAの旧版化リスクがあるため禁止。
+- コピーの `vercel.json` は現行Production用の`builds/routes`ではなく `bash ./build-preview.sh` と `outputDirectory:public` の静的デモ設定。旧コピーのビルドは`index.html`、`gacha.html`、`api-*.js`、`bridge.js`を公開から除外し、実ガチャや登録を実行しない設計。
+- 承認済みUX候補（トップ、王宮ガチャ、皆勤、マイページ、コミュニティ、音楽、管理、統合操作デモ）は旧コピーに保持されている。**UIモックであり本番API結合の保証なし**。
+- 現行mainにある`api-activate-attendance.js`、`api-gacha-admin-ops.js`、`api-gallery-items.js`、`api-gallery-manage.js`、`api-gallery-moderate.js`、`gacha-web-gate.html`、`gallery.html`は旧コピーにはない。旧コピーを本番ベースにしない具体的理由。
+- コピー側に`release-prep/INTEGRATION_BRIDGE_20261101.md`と`release-prep/replica-baseline-audit.mjs`を作成。現在mainの必須productionファイル16件の差分を自動発見し、旧コピーが「デザイン参照のみ／公開不可」であることを明示。CI `.github/workflows/mio-replica-baseline-audit.yml`では静的プレビューのビルドと、ガチャ・認証APIの出力除外も検査（**実行結果は未取得なので合格と扱わない**）。
+- **統合先の方針**：最新版mainベースの既存開発ブランチ`feature/mio-admin-center-phase1`を含む作業コピーへ、承認済み旧コピーの画面・演出差分だけを選択導入。最新の本番認証/GAS/DB/参加者・履歴機能を古いコードで置き換えない。PR #75はエラー修正専用のまま独立。
+- 依然として最優先：Issue #66の稼働GAS実デプロイ照合、全体CIの固定SHA1件、管理センター統合、ガチャv2.1、31日皆勤、FA/予想、記念館、コミュニティ、メールイベント参加証の実機とバックエンド結合。
+
+**判定**：旧コピーの存在確認・隔離検査を進めたが、**大型アップデートの完成／統合／Production公開は未実施**。main/GAS/Neon/Sheets/本番URLは維持。
