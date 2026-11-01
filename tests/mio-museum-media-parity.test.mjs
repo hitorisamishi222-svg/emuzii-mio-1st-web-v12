@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,statSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {Script} from 'node:vm';
 const root=p=>new URL('../'+p,import.meta.url);
 const read=p=>readFileSync(root(p));
 const str=p=>read(p).toString('utf8');
@@ -46,4 +47,25 @@ test('original media is served by the correct static build and cannot invoke a d
   assert.ok(config.routes.some(x=>x.src==='/'+src&&x.dest==='/'+src));
  }
  assert.doesNotMatch(museum,/\/api\/gacha|\/api\/checkin|\/api\/register/);
+});
+
+
+test('original public video artwork falls back safely if the gallery thumbnail becomes unavailable',()=>{
+ const source=str('museum-media-fallback.js');
+ assert.match(museum,/data-mio-video-thumb/);
+ assert.match(museum,/src="\/museum-media-fallback\.js"/);
+ const thumb={src:'https://public-blob.example/video.jpg',dataset:{},listeners:{},
+  addEventListener(type,fn){this.listeners[type]=fn}};
+ const context={document:{querySelector(sel){assert.equal(sel,'[data-mio-video-thumb]');return thumb;}}};
+ (new Script(source)).runInNewContext(context);
+ assert.equal(typeof thumb.listeners.error,'function');
+ thumb.listeners.error();
+ assert.equal(thumb.src,'/assets/gallery-emuzii-mio-cover.svg');
+ assert.equal(thumb.dataset.mioFallback,'true');
+ thumb.listeners.error();
+ assert.equal(thumb.src,'/assets/gallery-emuzii-mio-cover.svg');
+ assert.doesNotMatch(source,/fetch\s*\(|XMLHttpRequest|sendBeacon|document\.cookie|\/api\/|gacha|checkin/i);
+ const cfg=JSON.parse(str('vercel.json'));
+ assert.ok(cfg.builds.some(x=>x.src==='museum-media-fallback.js'&&x.use==='@vercel/static'));
+ assert.ok(cfg.routes.some(x=>x.src==='/museum-media-fallback.js'&&x.dest==='/museum-media-fallback.js'));
 });
