@@ -88,3 +88,11 @@
 - 依然として最優先：Issue #66の稼働GAS実デプロイ照合、全体CIの固定SHA1件、管理センター統合、ガチャv2.1、31日皆勤、FA/予想、記念館、コミュニティ、メールイベント参加証の実機とバックエンド結合。
 
 **判定**：旧コピーの存在確認・隔離検査を進めたが、**大型アップデートの完成／統合／Production公開は未実施**。main/GAS/Neon/Sheets/本番URLは維持。
+
+## 2026-11-01：ミュージアムレーンを再開（大型アップデートコピーに統合）
+- 既存Draft PR #47（記念館入口）と #48（歴代アイコン・思い出・イベント記録・管理画面・ゴミ箱）を確認。両方とも本番未マージ。第2段階は第1段階に依存し、最新mainより32コミット遅れ。ブランチ全体を本番へmergeしない。
+- Phase2の`museum-news.js`が、Vercelに存在しない`/api/announcements`を参照していたため、実際の公開ニュースルート`/api/gallery/announcements`へ修正。未公開記事フィルタ・失敗時フォールバックをモックで確認。
+- [Museum CI 41275514928](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41275514928)：**重点74/74 PASS＋Chromium 320/375/390/430px PASS＋隔離PostgreSQL 1/1 PASS**。実GAS/本番Neon/実Blob/iPhoneの代替ではない。
+- 以前からある大型更新コピー`release/v2-next-integrated-replica`に**記念館トップ・プロフィール・アーカイブの静的表示用コピー**を追加。既存の`next-preview.html`から導線を接続。コピー専用JSはAPI、Cookie、保存を呼ばず、検索禁止メタ情報・未公開案内を付与。
+- [コピー版統合文書](../blob/release/v2-next-integrated-replica/release-prep/INTEGRATION_BRIDGE_20261101.md)に差分と残件を記録。Vercel Previewは`READY`でProductionと別。**実ブラウザHTTP/実機とコピーCI結果は別途要確認**。
+- 次は本番最新mainベースの**統合候補に博物館の動的DB・管理APIだけを選択的に取り込む**。現行のガチャ・皆勤・FA・管理者Cookie/権限、旧MIO-ID、参加者データとシークレットを保護。記念館単独の本番公開・本番DBへのSQL適用をしない。
