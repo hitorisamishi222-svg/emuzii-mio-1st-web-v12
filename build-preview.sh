@@ -2,6 +2,8 @@
 set -euo pipefail
 
 node --test --test-name-pattern='rejects malformed device session ID without revoking active sessions' security/mio-auth-flow.test.mjs
+# Gate approved legacy media and the API-free museum copy before producing a preview.
+node --test release-prep/replica-museum-preview.test.mjs release-prep/replica-museum-media.test.mjs
 
 mkdir -p public/data
 find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.png' -o -name '*.jpg' -o -name '*.svg' -o -name '*.webp' \) ! -name 'index.html' ! -name 'gacha.html' ! -name 'api-*.js' ! -name 'bridge.js' ! -name '*.test.js' ! -name '*.test.mjs' -exec cp -t public/ {} +
