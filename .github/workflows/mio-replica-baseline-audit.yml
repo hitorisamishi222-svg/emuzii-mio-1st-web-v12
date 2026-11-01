@@ -7,6 +7,10 @@ on:
     paths:
       - release-prep/replica-baseline-audit.mjs
       - release-prep/INTEGRATION_BRIDGE_20261101.md
+      - release-prep/replica-museum-preview.test.mjs
+      - museum*
+      - mio-profile.html
+      - next-preview.html
       - .github/workflows/mio-replica-baseline-audit.yml
   workflow_dispatch:
 
@@ -29,6 +33,8 @@ jobs:
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
       - name: Audit copy against latest protected production code
         run: node release-prep/replica-baseline-audit.mjs --expect-copy-blocked
+      - name: Museum preview safety contracts
+        run: node --test release-prep/replica-museum-preview.test.mjs
       - name: Build approved static copy without API or GAS connection
         run: |
           bash ./build-preview.sh
@@ -40,6 +46,11 @@ jobs:
           test ! -e public/gacha.html
           test ! -e public/index.html
           test ! -e public/bridge.js
+          test -s public/museum.html
+          test -s public/mio-profile.html
+          test -s public/museum-archive.html
+          test -s public/museum-archive.js
+          test -s public/museum-news.js
       - name: Verify copy-only test artifacts cannot write to production
         run: |
           test -f release-prep/REPLICA_WORKPLAN.md
