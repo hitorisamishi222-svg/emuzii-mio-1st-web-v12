@@ -41,3 +41,24 @@ test('current replica build is static and excludes production participant and dr
  assert.match(build,/test ! -e public\/bridge\.js/);
  for(const p of pages)assert.ok(/\.html$/.test(p));
 });
+
+
+test('every local museum link and asset exists and fragment anchors actually resolve in the isolated copy',()=>{
+ for(const file of ['museum.html','mio-profile.html','museum-archive.html']){
+  const html=read(file);
+  for(const match of html.matchAll(/(?:href|src)="([^"]+)"/g)){
+   const link=match[1];
+   if(!(link.startsWith('/')||link.startsWith('#')))continue;
+   const url=new URL(link,'https://preview.invalid/'+file);
+   assert.notEqual(url.pathname,'/','museum must not silently navigate to the unrelated preview root: '+link);
+   const dest=decodeURIComponent(url.pathname.slice(1));
+   const content=read(dest);
+   if(url.hash){
+    const id=decodeURIComponent(url.hash.slice(1));
+    assert.ok(content.includes('id="'+id+'"'),file+' broken destination: '+link);
+   }
+  }
+ }
+ assert.match(read('mio-profile.html'),/href="\/museum\.html#mioAwakening"/);
+ assert.doesNotMatch(read('museum.html'),/href="\/#events"/);
+});
