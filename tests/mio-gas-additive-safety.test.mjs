@@ -20,7 +20,8 @@ function assessAdditiveGAS(liveText,moduleText){
 }
 test('GitHub-integrated source is not proof of the live Apps Script deployment',()=>{
  const x=assessAdditiveGAS(full,additive);
- assert.equal(x.proposedFunctions,19);
+ assert.equal(x.proposedFunctions,21);
+ assert.equal(x.duplicateFunctions.length,19);
  assert.equal(x.duplicateFunctions.length,19);
  assert.equal(x.alreadyDispatched,true);
  // STOP: adding this file to a GAS project already running the integrated
@@ -29,7 +30,9 @@ test('GitHub-integrated source is not proof of the live Apps Script deployment',
 test('minimal standalone GAS candidate has exactly one definition per helper and no doPost',()=>{
  const proposed=names(additive);
  assert.equal(new Set(proposed).size,proposed.length);
- assert.equal(proposed.length,19);
+ assert.equal(proposed.length,21);
+ assert.ok(proposed.includes('mioAdminOpsDrawLookup_'));
+ assert.ok(proposed.includes('mioAdminOpsRecoveryProof_'));
  assert.equal(proposed.includes('doPost'),false);
  assert.match(additive,/function mioAdminOps_/);
 });
