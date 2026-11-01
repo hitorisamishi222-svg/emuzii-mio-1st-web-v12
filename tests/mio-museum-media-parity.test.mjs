@@ -6,7 +6,8 @@ const root=p=>new URL('../'+p,import.meta.url);
 const read=p=>readFileSync(root(p));
 const str=p=>read(p).toString('utf8');
 const blob=p=>{
- const b=read(p);return createHash('sha1').update('blob '+b.length+'\\0'.replace('\\0','\0')).update(b).digest('hex');
+ const b=read(p);
+ return createHash('sha1').update('blob '+b.length).update(Buffer.from([0])).update(b).digest('hex');
 };
 const museum=str('museum.html');
 const css=str('museum.css');
