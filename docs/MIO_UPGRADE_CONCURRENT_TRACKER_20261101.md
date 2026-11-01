@@ -47,3 +47,31 @@
 - 設定/外部APIの限定読取テスト。受付OFF/必要な管理write OFF。
 - 全件回帰で既知の固定SHA衝突をリリース対象の分離により正しく解消。
 - 参加登録・皆勤・予想・FA・ガチャ/ラキフェス・景品履歴・管理画面を実機で一巡し、全現行データの前後照合。バージョンの上書き禁止。
+
+## 2026-11-01 11:00 JST 以降：並行レーンの更新
+
+### レーンB：全回帰と公開スコープを切り分けて検証
+- Draft PR #75 `fix/mio-ci-regressions-20261031` の全件CIを継続。
+- 皆勤(`/api/checkin`)、正本照合付き皆勤復帰、ギャラリー/FAの公開読取と管理者書込の権限、ガチャと管理API、既存Vercelルートの維持を検証する`tests/mio-upgrade-feature-parity.test.mjs`を追加。
+- [CI run 41263779516](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41263779516)
+  - **全300件：299 PASS / 1 FAIL**（演出限定向け厳格な`api-gacha.js`固定Blob SHA検査だけ不一致）。
+  - **管理統合スコープ296件：296 PASS / 0 FAIL**。このジョブは演出専用の4テストを独立扱いにしたもので、**フルスイートの失敗を取り消すものではない**。
+  - 既存`main`の`api-gacha.js`は期待Blob `8ecaad8f...`と一致。統合開発ブランチは`b512287f...`で、同一ではない。演出専用差分としてマージ不可。
+- すでに`main`には王宮v2.1の静的JS/CSS・デモJSON・ステージ背景が存在。**再実装は不要**。未完了はiPhone実機での表示・操作、稼働GASとの契約照合と演出限定公開スコープの最終判定。
+
+### レーンC：端末復旧相談UIの初期表示漏れ修正
+- `gacha-page.js`の401を画面状態として記録し、`mio-cookie-loss-ui.js`が読み込み順によってイベント通知を見逃しても復旧相談欄を表示。
+- `tests/mio-cookie-loss-browser-entry.test.mjs`で、401通知が画面初期化前／後、通知重複、正常ログイン時の非表示を検証。**新規ログインID、ガチャ権利、再抽選は発行しない**。
+- [管理センターCI 41263710169](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41263710169) **110件PASS / 0 FAIL**。稼働GAS接続は未確認。
+
+### レーンA：Vercel本番を読み取り専用で確認
+- Vercel deployment `dpl_J7oZ362TLR2RjGgBegfKELnDcjtP` は `READY`、`target=production`。
+- 現行の本番エイリアス `emuzii-mio-1st-web-v12.vercel.app` で配信中のコミットは `main bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b`。開発Branch `feature/mio-admin-center-phase1` とエラー修正Branch `fix/mio-ci-regressions-20261031`ではない。
+- GASの実稼働デプロイ版が不明なため**GAS追加は行わず**、Issue #66に記録した19関数重複と追加候補2関数の照合を停止条件にする。
+
+### レーンF/G：FA・展示・公開機能の明確化
+- 現在のAPIルートにはギャラリー公開作品リスト・管理者承認・画面・画像・管理セッションが既に存在。
+- `api-gallery-publish.js` は明示的な503停止実装。単にリンク/画面があるだけで投稿・公開まで完成とは扱わない。管理APIの承認済みオーナー/承認端末による処理とは分けて検証。
+- 予想・FA受付・皆勤・記念館については運用中の実GAS/DBと保護された実機データ試験が未完了。全機能の更新完了を宣言しない。
+
+**公開判断：停止中**。全300件のうち残る固定SHA1件、実稼働GAS、iPhone実機、皆勤/FA/予想/履歴の前後照合が解消するまでマージしない。
