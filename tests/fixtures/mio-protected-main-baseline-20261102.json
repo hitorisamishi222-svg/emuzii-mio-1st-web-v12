@@ -13,7 +13,14 @@
     "gallery-items.js": "69896a5aa5bf1cc28a1a17feecefcc043f98c1f8",
     "mio-awakening.mp3": "06ee46a27519d20f10e9a04a9f065922d2a39e13",
     "assets/gallery-emuzii-mio-cover.svg": "6426cde661b8c88468cc0e6f698eba70ae8010ee",
-    "gallery.html": "c5bdd90d3a197ac38a242e891125f2bc16af6ea6"
+    "gallery.html": "c5bdd90d3a197ac38a242e891125f2bc16af6ea6",
+    "app.js": "3825adf53cb9884a853fc1411446d13b9904b5b9",
+    "style.css": "773cc3d60c380bcf6cb06ea638f029a79dcdc3ec",
+    "gacha-page.js": "d95f7ba16abcbf398e0c506691486546841fd1e1",
+    "gacha-web-gate.html": "6a0ee86da10a020739baedf76463948aa4180f60",
+    "api-gallery-items.js": "a5be935bd70ff9edb95e251f72aa4adad1e9aa2b",
+    "api-gallery-manage.js": "d4a9a433229346fa1a11c38f0b4804ab92e4a99a",
+    "api-gallery-moderate.js": "ce17b96eb54715f5b9df5cda339b1f7c09167d0e"
   },
   "builds": [
     {
