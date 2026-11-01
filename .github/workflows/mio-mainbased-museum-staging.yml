@@ -61,6 +61,8 @@ jobs:
         run: node --test tests/browser-registration-status.test.mjs
       - name: Previously failing same-drawId recovery mock only (no draw requests)
         run: node --test tests/gacha-legacy-recovery.test.mjs
+      - name: Install existing test imports without executing package scripts
+        run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund
       - name: Unapproved browser must stay blocked (failed-only case)
         run: node --test --test-name-pattern='other unapproved browsers' tests/mio-mg-admin-browser-approved-recovery.test.mjs
       - name: Existing cache-busted gacha asset is still loaded (failed-only case)
