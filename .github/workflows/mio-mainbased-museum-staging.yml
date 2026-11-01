@@ -10,6 +10,15 @@ on:
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - museum*
+      - mio-profile.html
+      - vercel.json
+      - tests/mio-mainbased-museum-integration.test.mjs
+      - .github/workflows/mio-mainbased-museum-staging.yml
   workflow_dispatch:
 
 permissions:
