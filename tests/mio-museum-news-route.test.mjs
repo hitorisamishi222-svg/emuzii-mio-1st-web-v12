@@ -9,7 +9,7 @@ const config=JSON.parse(read('vercel.json'));
 const callPath='/api/gallery/announcements';
 
 function checkStub({items=[],status=200,ok=true}={}){
- const children=[],calls=[];
+ const calls=[];
  const node=(tag)=>({tag,children:[],textContent:'',href:'',className:'',
   dateTime:'',attributes:{},
   append(...els){this.children.push(...els)},
@@ -23,7 +23,7 @@ function checkStub({items=[],status=200,ok=true}={}){
   return {ok:status>=200&&status<300,json:async()=>({ok,items})};
  };
  vm.runInNewContext(src,{document,fetch});
- return {root,calls,children};
+ return {root,calls,children:root.children};
 }
 async function flush(){for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve))}
 
