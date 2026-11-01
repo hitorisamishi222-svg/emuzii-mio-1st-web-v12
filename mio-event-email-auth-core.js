@@ -49,7 +49,10 @@ export async function startEmailChallenge(db,{email,token,ip,secret}){
   id=randomUUID();
  await db.query('BEGIN');
  try{
-  await db.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,[lookup]);
+  // Lock both the recipient key and network key before calculating hourly limits.
+  // Different email addresses coming from one network must not race past its cap.
+  await db.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,['email:'+lookup]);
+  await db.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,['ip:'+network]);
   const rate=await db.query(`SELECT
    COUNT(*) FILTER(WHERE email_lookup=$1)::int AS email_count,
    COUNT(*) FILTER(WHERE ip_lookup=$2)::int AS ip_count
@@ -57,6 +60,9 @@ export async function startEmailChallenge(db,{email,token,ip,secret}){
    [lookup,network]);
   if(Number(rate.rows?.[0]?.email_count||0)>=3||
     Number(rate.rows?.[0]?.ip_count||0)>=12)throw Error('email challenge rate limit');
+  // Only the most recent code in the same browser may remain usable.
+  await db.query(`UPDATE mio_event_email_challenges
+    SET state='superseded' WHERE browser_hash=$1 AND state='pending'`,[binding]);
   const r=await db.query(`INSERT INTO mio_event_email_challenges
    (challenge_id,email_lookup,ip_lookup,browser_hash,code_digest,state,expires_at)
    VALUES($1,$2,$3,$4,$5,'pending',now()+interval '10 minutes')
