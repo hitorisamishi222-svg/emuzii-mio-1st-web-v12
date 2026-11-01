@@ -58,3 +58,15 @@
 - 統合後は**現行mainの`gallery`権限とAPI**を基準に、元Phase2から動的展示機能を慎重に選択統合する。コピーの表示用スタブを本番の正式公開APIと混同・上書きしない。
 
 **この節は視覚プレビューの進捗。大型アップデートの最終合格／一括本番公開ではない。**
+
+
+## 2026-11-01：既存「翠の覚醒 -MIO-」作品の脱落を復旧
+
+- ユーザーから「ミュージアムに既に使っていた動画と音楽がない」と指摘を受け、現行`main/gallery-items.js`の承認済み公開作品を正本として照合。
+- 動画 `mio-awakening-video`：『翠の覚醒 -MIO- 魔王チャレンジ応援ソング』、公開URL `https://vt.tiktok.com/ZSgFvmy7Q/`、制作者 `えむじー🐱`。**オリジナルの投稿へ外部リンク**し、動画自体の無許可転載・再アップロードはしない。
+- 音楽 `mio-awakening-song`：『翠の覚醒 -MIO-』。元`mio-awakening.mp3`のGit blob `06ee46a27519d20f10e9a04a9f065922d2a39e13`は本番mainとコピーで**完全一致**。既存カバー`assets/gallery-emuzii-mio-cover.svg`のGit blob `6426cde661b8c88468cc0e6f698eba70ae8010ee`も同一。
+- コピー`build-preview.sh`は旧来`*.mp3`を出力していなかったため、**既存MP3をバイト同一で`public/mio-awakening.mp3`へコピー**し、ジャケットも同梱。`cmp -s`で一致をビルド時検査。
+- コピー`museum.html`に目立つ音楽プレーヤー・旧TikTok動画ボタンを追加。記念曲のメニューと展示室からワンタップで到達。元ソースPhase2記念館にも同じ公開作品を追加。
+- `release-prep/replica-museum-media.test.mjs`でMP3/画像の実blob一致・動画URL・画面の再生UI・旧本番API除外を検査。**静的音楽・公開動画以外の実会員データやAPIはコピーに接続しない。**
+- **未確認**：Preview配信されたMP3のiPhone Safari実再生・外部TikTokの遷移。Vercel build READYだけで操作完了とみなさない。
+- 以前から使っていた作品を大型アップデートで欠落させないことを今後の公開ゲートとする。
