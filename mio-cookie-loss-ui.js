@@ -48,5 +48,15 @@ el('cookieLossSubmit').addEventListener('click',async()=>{
  finally{busy=false;el('cookieLossSubmit').disabled=false}
 });
 el('cookieLossCheck').addEventListener('click',()=>void status());
-window.addEventListener('mio:legacy-session-missing',()=>{panel.hidden=false;void status()});
+let opened=false;
+function openNoSessionHelp(){
+ if(opened)return;
+ opened=true;
+ panel.hidden=false;
+ void status();
+}
+window.addEventListener('mio:legacy-session-missing',openNoSessionHelp);
+// gacha-page is an independent module. A fast 401 may arrive before this
+// script installs the event listener; the visible support path must not vanish.
+if(document.documentElement.dataset.mioSessionMissing==='true')openNoSessionHelp();
 })();
