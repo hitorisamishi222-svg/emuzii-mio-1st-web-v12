@@ -26,6 +26,45 @@ small{color:#bbd8ed}
 <p><small>変更はGoogle管理台帳の実際の受付設定に反映します。利用者のガチャ回数・当選履歴は変更しません。</small></p>
 
 
+<!-- MIO_ADMIN_PREVIEW_START -->
+<section id="opsAdminPanel" aria-labelledby="opsAdminTitle" style="margin-top:24px;border-color:#97bdde">
+ <h2 id="opsAdminTitle">🛡️ Web管理センター（統合準備中）</h2>
+ <p role="status" id="opsStatus" aria-live="polite">大型更新の表示確認用です。既存GASの稼働コードと管理権限の照合が終わるまでは、参加者の取得・承認・回数付与を行いません。</p>
+ <p style="background:#342b19;border:1px solid #eac779;border-radius:10px;padding:10px">🔒 管理者データとの接続停止中・書き込み停止中。ボタンは安全のため無効化されています。</p>
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+  <strong id="opsCount">承認待ち：未接続</strong>
+  <button id="opsReload" type="button" disabled style="width:auto;min-height:46px">一覧を更新（停止中）</button>
+ </div>
+ <div id="opsPending" aria-label="承認待ち一覧" style="padding:12px;background:#091d36;border-radius:12px;margin-top:12px">承認待ち一覧は未接続です。</div>
+ <div style="padding-top:16px">
+  <h3>🔎 参加者とガチャ回数</h3>
+  <label for="opsSearch">参加者を検索（接続後に利用）</label>
+  <input id="opsSearch" type="search" autocomplete="off" disabled placeholder="管理接続未確認">
+  <div id="opsRoster" aria-label="参加者一覧" style="padding:12px;margin-top:12px;background:#091d36;border-radius:12px">参加者情報は読み込みません。</div>
+  <p id="opsPerson">対象参加者：未選択</p>
+  <label for="opsQuantity">付与回数（停止中）</label>
+  <input id="opsQuantity" type="number" min="1" max="50" value="1" disabled>
+  <label for="opsReason">付与理由（停止中）</label>
+  <input id="opsReason" type="text" maxlength="120" disabled>
+  <button type="button" id="opsGrant" disabled>ガチャ回数を付与（停止中）</button>
+ </div>
+ <div style="padding-top:16px">
+  <h3>📝 初訪問・簡易受付</h3>
+  <label for="opsNewName">来訪者名（停止中）</label>
+  <input id="opsNewName" disabled autocomplete="off" maxlength="40">
+  <label for="opsNewNote">受付メモ（停止中）</label>
+  <input id="opsNewNote" disabled maxlength="120">
+  <button type="button" id="opsIntakeCreate" disabled>初訪問を受付（停止中）</button>
+  <div id="opsSimple" aria-label="簡易受付一覧">管理者の接続照合が完了するまで表示しません。</div>
+ </div>
+ <details style="margin-top:18px"><summary>以前の操作結果を安全に照合するための欄</summary>
+  <p id="opsRetryInfo" role="status">未接続：操作IDの再試行はできません。</p>
+  <button id="opsRetry" type="button" hidden disabled>同じ操作IDで再照合（停止中）</button>
+  <div id="opsGrants">付与履歴は未接続です。</div>
+ </details>
+ <p>既存Apps Scriptは、新規作成も全文置換も行いません。稼働版をバックアップし、既存の<code>doPost</code>と重複関数を照合したうえで、必要な差分だけを同じデプロイに導入します。</p>
+</section>
+<!-- MIO_ADMIN_PREVIEW_END -->
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);
