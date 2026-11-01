@@ -100,3 +100,18 @@ body.museum [hidden]{display:none!important}
  .museum-feature{padding:20px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.museum-card{transition:none}}
+
+
+/* Previously published "翠の覚醒 -MIO-" artwork and audio, preserved in the museum. */
+.museum-awakening-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.museum-awakening-card{display:grid;grid-template-columns:minmax(106px,34%) minmax(0,1fr);gap:18px;align-items:center;padding:18px;background:linear-gradient(145deg,#102d57,#091d3a);border:1px solid #86caff77;border-radius:20px;min-width:0;box-shadow:0 14px 35px #0004}
+.museum-awakening-cover{width:100%;max-height:240px;aspect-ratio:2/3;object-fit:cover;border-radius:12px;box-shadow:0 8px 22px #0006}
+.museum-awakening-info{min-width:0}
+.museum-awakening-label{display:block;font-size:11px;letter-spacing:.13em;color:#ffe0a3;font-weight:800}
+.museum-awakening-info h3{margin:9px 0;font-size:clamp(17px,2vw,22px);line-height:1.5;overflow-wrap:anywhere;color:#f6fbff}
+.museum-awakening-info p{font-size:13px;color:#c8e1f3;line-height:1.8;margin:8px 0 14px}
+.museum-awakening-info audio{display:block;width:100%;max-width:100%;min-height:46px}
+.museum-awakening-action{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:11px 16px;background:#f8db9f;color:#061c37!important;border-radius:14px;font-weight:800;text-decoration:none;text-align:center}
+.museum-awakening-action:focus-visible{outline:3px solid #9af5ff;outline-offset:3px}
+@media(max-width:900px){.museum-awakening-grid{grid-template-columns:1fr}}
+@media(max-width:390px){.museum-awakening-card{grid-template-columns:1fr}.museum-awakening-cover{max-width:170px;max-height:210px;margin-inline:auto}}
