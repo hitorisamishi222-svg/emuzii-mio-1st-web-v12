@@ -18,6 +18,7 @@ function mock(){
   if(sql.includes('COUNT(*) FILTER')){
    return {rowCount:1,rows:[{email_count:state.emailCount,ip_count:state.ipCount}]};
   }
+  if(sql.includes("SET state='superseded'"))return {rowCount:0,rows:[]};
   if(sql.includes('INSERT INTO mio_event_email_challenges')){
    state.id=args[0];state.lookup=args[1];state.codeDigest=args[4];
    return {rowCount:1,rows:[{challenge_id:args[0]}]};
@@ -74,6 +75,19 @@ test('no plaintext addresses or 6-digit codes are stored in challenge DB',async(
  assert.equal(sql.args[3],browserHash(token,key));
  assert.equal(sql.args[4],otpDigest(made.challengeId,made.code,key));
  assert.notEqual(ipHash('203.0.113.42',key),'203.0.113.42');
+});
+test('rate limits serialize both recipient and IP keys and supersede older browser codes',async()=>{
+ const d=mock();
+ const r=await startEmailChallenge(d,{email:'one@gmail.com',token,ip:'198.51.100.12',secret:key});
+ assert.ok(r.challengeId);
+ const locks=d.calls.filter(x=>x.sql.includes('pg_advisory_xact_lock'));
+ assert.equal(locks.length,2);
+ assert.match(locks[0].args[0],/^email:/);
+ assert.match(locks[1].args[0],/^ip:/);
+ const supersede=d.calls.find(x=>x.sql.includes("SET state='superseded'"));
+ assert.ok(supersede);
+ assert.equal(supersede.args[0],browserHash(token,key));
+ assert.ok(d.calls.indexOf(supersede)<d.calls.findIndex(x=>x.sql.includes('INSERT INTO mio_event_email_challenges')));
 });
 test('database-backed recipient and IP hourly limits reject repeated sending',async()=>{
  const db=mock();db.state.emailCount=3;
