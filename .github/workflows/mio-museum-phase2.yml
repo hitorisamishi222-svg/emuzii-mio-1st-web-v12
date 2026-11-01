@@ -19,7 +19,7 @@ on:
       - 'vercel.json'
       - 'robots.txt'
       - 'tests/mio-museum-phase1.test.mjs'
-      - 'tests/mio-museum-news-route.test.mjs tests/mio-museum-media-parity.test.mjs'
+      - 'tests/mio-museum-news-route.test.mjs'
       - 'tests/mio-museum-media-parity.test.mjs'
       - 'tests/mio-museum-phase2.test.mjs'
       - 'tests/mio-museum-image.test.mjs'
@@ -56,7 +56,7 @@ jobs:
           node --check museum-archive.js
           node --check tests/mio-museum-news-route.test.mjs
       - name: Museum phase 1 and 2 contracts
-        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-news-route.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs tests/mio-museum-device-check.test.mjs tests/mio-museum-auth-path.test.mjs tests/mio-museum-preflight.test.mjs
+        run: node --test tests/mio-museum-phase1.test.mjs tests/mio-museum-news-route.test.mjs tests/mio-museum-media-parity.test.mjs tests/mio-museum-phase2.test.mjs tests/mio-museum-image.test.mjs tests/mio-museum-trash-audit.test.mjs tests/mio-museum-curate-ux.test.mjs tests/mio-museum-device-check.test.mjs tests/mio-museum-auth-path.test.mjs tests/mio-museum-preflight.test.mjs
       - name: Real Chromium small-screen and owner interaction test (fixture only)
         timeout-minutes: 2
         run: |
