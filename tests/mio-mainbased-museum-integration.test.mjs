@@ -63,17 +63,17 @@ test('existing live gacha gate remains exactly the original code after removing 
  const restoredSha=createHash('sha1').update('blob '+buffer.length)
   .update(Buffer.from([0])).update(buffer).digest('hex');
  assert.equal(restoredSha,baseline.productionFileBlobs['gacha-web-gate.html'],
-  'Original gacha toggles/Face ID/API calls must remain byte identical after removing new disabled panel');
+  'Original gacha switches, passkeys, and API calls must remain byte identical');
  const panel=html.slice(html.indexOf(start),html.indexOf(end));
  for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','opsCount','opsStatus','opsReload','opsSearch','opsQuantity','opsReason','opsIntakeCreate']){
-  assert.equal(html.split('id="'+id+'"').length-1,1,'missing or duplicate admin control '+id);
+  assert.equal(html.split('id="'+id+'"').length-1,1,'Missing/duplicate admin control '+id);
  }
  for(const id of ['opsReload','opsGrant','opsIntakeCreate','opsSearch','opsQuantity','opsReason','opsNewName','opsNewNote']){
   assert.match(panel,new RegExp('<(?:button|input)[^>]*id="'+id+'"[^>]*\\bdisabled\\b'));
  }
- assert.doesNotMatch(panel,/\\bfetch\\s*\\(|<script|onclick\\s*=|onchange\\s*=|document\\.cookie|localStorage|sessionStorage/);
- assert.doesNotMatch(html,/<script[^>]*src="\\/gacha-admin-ops\\.js"/,
-  'Do not activate admin actions until deployed GAS and credentials are verified');
+ assert.doesNotMatch(panel,/fetch\s*\(|<script|onclick\s*=|onchange\s*=|document\.cookie|localStorage|sessionStorage/);
+ assert.doesNotMatch(html,new RegExp('<script[^>]*src="/gacha-admin-ops[.]js"'),
+  'Do not activate admin actions until deployed GAS is verified');
 });
 test('all prior Vercel builds and routes are retained EXACTLY, in the same order',()=>{
  const filteredBuilds=config.builds.filter(x=>baseline.builds.some(y=>y.src===x.src));
