@@ -30,7 +30,8 @@
     <nav class="museum-nav" aria-label="記念館メニュー">
       <a href="/museum.html" aria-current="page">記念館トップ</a>
       <a href="/mio-profile.html">翠央を知る</a>
-      <a href="#exhibits">展示室</a>
+      <a href="#mioAwakening">記念曲・動画</a>
+      <a href="/museum-archive.html">思い出の展示室</a>
       <a href="#latest">お知らせ</a>
       <a href="/">参加者ページ</a>
     </nav>
@@ -52,6 +53,37 @@
       <div class="museum-mascot" aria-hidden="true">
         <img src="/gacha-v191-whale-blue.svg" width="230" height="230" alt="" decoding="async">
         <span>WHALE × DIAMOND ✦</span>
+      </div>
+    </div>
+  </section>
+  <section class="museum-section" id="mioAwakening" aria-labelledby="mioAwakeningTitle">
+    <div class="museum-shell">
+      <div class="museum-heading">
+        <div>
+          <div class="museum-eyebrow">MIO MEMORIAL MUSIC & VIDEO</div>
+          <h2 id="mioAwakeningTitle">🎵 翠の覚醒 -MIO-</h2>
+          <p>以前から公開している記念曲と応援動画を、この記念館でも楽しめます。</p>
+        </div>
+      </div>
+      <div class="museum-awakening-grid">
+        <article class="museum-awakening-card">
+          <img class="museum-awakening-cover" src="/assets/gallery-emuzii-mio-cover.svg" alt="翠の覚醒 -MIO- の既存ジャケット画像" loading="lazy" decoding="async">
+          <div class="museum-awakening-info">
+            <span class="museum-awakening-label">MEMORIAL MUSIC</span>
+            <h3>翠の覚醒 -MIO-</h3>
+            <p>翠央1周年記念曲。再生ボタンからそのまま聴けます。</p>
+            <audio controls playsinline preload="none" src="/mio-awakening.mp3" aria-label="翠の覚醒 -MIO- の音楽を再生">このブラウザでは音声再生に対応していません。</audio>
+          </div>
+        </article>
+        <article class="museum-awakening-card">
+          <img data-mio-video-thumb class="museum-awakening-cover" src="https://auzqwppmdidoadf8.public.blob.vercel-storage.com/mio-gallery/9a3949fe-d123-4bf5-bfd2-f0d9d7613484.jpg" alt="翠の覚醒 -MIO- 応援動画の公開済みサムネイル" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+          <div class="museum-awakening-info">
+            <span class="museum-awakening-label">MEMORIAL VIDEO</span>
+            <h3>翠の覚醒 -MIO- 魔王チャレンジ応援ソング</h3>
+            <p>えむじー🐱が公開した、以前からある応援動画です。</p>
+            <a class="museum-awakening-action" href="https://vt.tiktok.com/ZSgFvmy7Q/" target="_blank" rel="noopener noreferrer" aria-label="翠の覚醒 -MIO- の動画をTikTokで見る">▶ 動画を見る（TikTok）</a>
+          </div>
+        </article>
       </div>
     </div>
   </section>
@@ -89,7 +121,7 @@
           <div class="card-body"><span class="card-label">GALLERY</span><h3>翠央っ子ギャラリー</h3>
             <p>ファンアート、応援作品、映像などを見に行こう。</p><span class="card-cta">作品を見る →</span></div>
         </a>
-        <a class="museum-card" href="/#music">
+        <a class="museum-card" href="#mioAwakening">
           <div class="card-art" aria-hidden="true">🎼</div>
           <div class="card-body"><span class="card-label">MEMORIAL MUSIC</span><h3>記念曲のお部屋</h3>
             <p>1周年記念曲「翠の覚醒-MIO-」を楽しめます。</p><span class="card-cta">記念曲へ →</span></div>
@@ -99,21 +131,21 @@
           <div class="card-body"><span class="card-label">EVENT INFORMATION</span><h3>イベントのお知らせ</h3>
             <p>最新の案内や記念企画のお知らせを確認できます。</p><span class="card-cta">お知らせへ →</span></div>
         </a>
-        <div class="museum-card future" aria-label="歴代アイコン館 準備中">
+        <a class="museum-card" href="/museum-archive.html?kind=icons">
           <div class="card-art" aria-hidden="true">👑</div>
           <div class="card-body"><span class="card-label">ICON ARCHIVE</span><h3>歴代アイコン館</h3>
-            <p>これまでのアイコンを時代ごとに展示する予定です。</p><span class="museum-status">展示準備中</span></div>
-        </div>
-        <div class="museum-card future" aria-label="思い出アルバム 準備中">
+            <p>これまでのアイコンを時代ごとに展示します。公開済みの思い出がない場合は準備中と表示します。</p><span class="card-cta">歴代アイコンを見る →</span></div>
+        </a>
+        <a class="museum-card" href="/museum-archive.html?kind=moments">
           <div class="card-art" aria-hidden="true">📸</div>
           <div class="card-body"><span class="card-label">MEMORY ALBUM</span><h3>あの日のアルバム</h3>
-            <p>思い出のスクショやエピソードを展示する予定です。</p><span class="museum-status">展示準備中</span></div>
-        </div>
-        <div class="museum-card future" aria-label="イベント記録館 準備中">
+            <p>あの日のスクショやエピソードを振り返れるお部屋です。</p><span class="card-cta">思い出を見る →</span></div>
+        </a>
+        <a class="museum-card" href="/museum-archive.html?kind=events">
           <div class="card-art" aria-hidden="true">🏆</div>
           <div class="card-body"><span class="card-label">EVENT ARCHIVE</span><h3>イベントの記録</h3>
-            <p>過去のイベントを振り返れる展示を準備します。</p><span class="museum-status">展示準備中</span></div>
-        </div>
+            <p>イベントの開催記録や思い出を時系列で残すお部屋です。</p><span class="card-cta">イベントの記録を見る →</span></div>
+        </a>
       </div>
     </div>
   </section>
@@ -158,5 +190,6 @@
   </div>
 </footer>
 <script defer src="/museum-news.js"></script>
+<script defer src="/museum-media-fallback.js"></script>
 </body>
 </html>

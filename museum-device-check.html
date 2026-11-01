@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#07192f">
+<title>スマホ動作チェック｜翠央記念館</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-width:280px;min-height:100dvh;background:linear-gradient(155deg,#07182e,#123b60 60%,#081a34);color:#f2f8ff;font:16px/1.7 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:780px;margin:auto;padding:20px 16px 70px}
+a{color:#d0eaff}
+h1{font-size:clamp(24px,6vw,34px);line-height:1.4;margin:18px 0}
+h2{font-size:19px;margin:0 0 10px}
+.panel{padding:18px;margin:15px 0;border:1px solid #8cbddd;border-radius:16px;background:#0b2b4aec}
+.note{font-size:14px;color:#d2e6f7}
+.status{border:1px solid #75aad1;border-radius:10px;background:#061e3b;padding:13px;overflow-wrap:anywhere}
+button,input{font:inherit}
+button{background:#ead6aa;color:#12304e;border:1px solid #fff1c7;border-radius:12px;min-height:50px;padding:11px 18px;font-weight:800;cursor:pointer;width:100%;margin:8px 0}
+button.secondary{background:#1b4671;color:#fff;border-color:#a6c9e8}
+button:disabled{opacity:.5;cursor:not-allowed}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #ffe1a2;outline-offset:3px}
+input[type=file]{display:block;width:100%;font-size:16px;min-height:50px;border:1px solid #9fc9e2;border-radius:10px;padding:10px;background:#092240;color:#f4faff}
+.preview{max-height:300px;max-width:100%;object-fit:contain;margin:12px auto;display:block}
+dl{display:grid;grid-template-columns:1fr auto;gap:9px;margin:12px 0}
+dd,dt{margin:0;border-bottom:1px solid #82aeca55;padding:5px 0}
+.ok{color:#b9f2cd}.warn{color:#ffe1aa}
+[hidden]{display:none!important}
+@media(max-width:450px){main{padding:14px 12px 60px}.panel{padding:14px}dl{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head><body>
+<main>
+<nav><a href="/museum-curate.html">← 思い出展示の管理へ</a></nav>
+<h1>🐳 スマホ動作チェック 💎</h1>
+<p>翠央記念館を公開する前に、iPhone・Androidで基本機能を確認するためのページです。<strong>ログイン・本番データの変更は不要です。</strong></p>
+<section class="panel">
+ <h2>① 画面と画像変換の自動確認</h2>
+ <p class="note">ボタンの大きさ、画面のはみ出し、端末内の画像圧縮を確認します。確認用の絵は端末内で一時的に作るだけです。</p>
+ <button id="runAuto" type="button">自動チェックを始める</button>
+ <p id="autoStatus" class="status" role="status" aria-live="polite">未実施</p>
+ <dl id="autoDetails" hidden></dl>
+</section>
+<section class="panel">
+ <h2>② 実際の写真を選んで確認（任意）</h2>
+ <p class="note">HEIC・PNG・JPEGなどを選んで、端末内で軽量化できるか調べます。画像自体は保存・アップロードしません。個人情報のある写真は選ばないでください。</p>
+ <label for="localPhoto">テストする写真</label>
+ <input id="localPhoto" type="file" accept="image/*,.heic,.heif">
+ <button id="tryPhoto" type="button" class="secondary" disabled>選んだ写真を確認する</button>
+ <p id="photoStatus" class="status" role="status" aria-live="polite">未実施（任意）</p>
+ <img id="photoPreview" class="preview" alt="端末内で変換したテスト写真の確認" hidden>
+ <button id="clearPhoto" type="button" class="secondary" disabled>画像の表示を消す</button>
+</section>
+<section class="panel">
+ <h2>③ 結果を記録</h2>
+ <p class="note">テスト結果だけをJSONで端末へ保存できます。元画像、写真の名前、電話番号、認証情報、端末識別子は含めません。</p>
+ <button id="saveReport" class="secondary" type="button" disabled>確認結果をJSONで保存</button>
+ <p id="reportStatus" role="status" aria-live="polite" class="note">自動チェックを実行すると保存できます。</p>
+</section>
+<p class="note">🔒 このページは動作確認専用です。写真や結果は外部へ送信せず、画像は画面から消すとメモリ上の一時URLを破棄します。実際の管理者ログイン・公開用データベース・本番画像保存のテストとは別です。</p>
+</main>
+<script defer src="/museum-image-client.js"></script>
+<script defer src="/museum-device-check.js"></script>
+</body></html>

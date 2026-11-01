@@ -13,7 +13,7 @@
   card.append(heading,description,link);root.append(card);
  };
  try{
-  const response=await fetch('/api/announcements',{cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
+  const response=await fetch('/api/gallery/announcements',{cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
   if(!response.ok)throw new Error('ANNOUNCEMENTS_UNAVAILABLE');
   const payload=await response.json();
   if(payload.ok!==true||!Array.isArray(payload.items))throw new Error('ANNOUNCEMENTS_INVALID');
