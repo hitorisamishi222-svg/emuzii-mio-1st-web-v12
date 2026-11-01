@@ -8,6 +8,7 @@ on:
       - release-prep/replica-baseline-audit.mjs
       - release-prep/INTEGRATION_BRIDGE_20261101.md
       - release-prep/replica-museum-preview.test.mjs
+      - release-prep/replica-museum-media.test.mjs
       - museum*
       - mio-profile.html
       - next-preview.html
@@ -34,7 +35,7 @@ jobs:
       - name: Audit copy against latest protected production code
         run: node release-prep/replica-baseline-audit.mjs --expect-copy-blocked
       - name: Museum preview safety contracts
-        run: node --test release-prep/replica-museum-preview.test.mjs
+        run: node --test release-prep/replica-museum-preview.test.mjs release-prep/replica-museum-media.test.mjs
       - name: Build approved static copy without API or GAS connection
         run: |
           bash ./build-preview.sh
