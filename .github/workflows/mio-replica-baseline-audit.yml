@@ -29,6 +29,17 @@ jobs:
         run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
       - name: Audit copy against latest protected production code
         run: node release-prep/replica-baseline-audit.mjs --expect-copy-blocked
+      - name: Build approved static copy without API or GAS connection
+        run: |
+          bash ./build-preview.sh
+          for page in home-portrait-next.html attendance-deluxe-demo.html mypage-deluxe-demo.html community-demo.html music-gallery-demo.html admin-center-demo.html; do
+            test -s "public/$page"
+          done
+          test ! -e public/api-gacha.js
+          test ! -e public/api-register.js
+          test ! -e public/gacha.html
+          test ! -e public/index.html
+          test ! -e public/bridge.js
       - name: Verify copy-only test artifacts cannot write to production
         run: |
           test -f release-prep/REPLICA_WORKPLAN.md
