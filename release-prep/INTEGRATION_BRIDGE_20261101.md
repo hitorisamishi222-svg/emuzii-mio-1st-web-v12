@@ -45,3 +45,16 @@
 
 ## 最終判定
 **準備中／統合未完了／本番未公開。** この文書や旧コピーの更新だけを理由にProductionへ反映しない。
+
+## 2026-11-01：ミュージアム表示見本をこの既存コピーに追加
+
+- 記念館Phase2 Draft #48から公開ページ側の `museum.html`、`mio-profile.html`、`museum-archive.html`、`museum.css`、`museum-archive.css`を**視覚用コピー**として導入。既存サイトの管理API/DB/GASはコピーせず、秘匿データを含まない。
+- `next-preview.html`の先行体験カードから `/museum.html` に進める。トップ → プロフィール → 3種類の展示室の表示とカテゴリー選択が可能。
+- このコピー専用`museum-news.js`は固定案内文だけを表示、`museum-archive.js`は外部API/DBを呼ばず未公開状態を描画。**実ニュース・実アイコン・実写真・管理者APIを読み込まない。**
+- 3ページのヘッダーに「大型アップデート用の画面見本」「本番未公開」を明示し、`noindex,nofollow`。既存の見本デモへのリンクに差し替え。Phase2元ブランチにある正式な動的APIコードは変更しない。
+- `release-prep/replica-museum-preview.test.mjs`でリンク/未公開表示/検索禁止/外部API・Cookie・保存処理の不使用を検査。コピーの安全監査CIにも追加。
+- Vercel既存プロジェクトのPreview: `dpl_92RLppo7w3kVDKXhxdTenqByZ8jD`、commit `22edbbf4eba27cd42a52db78fe8143b4ce7ba931` は`READY` / `target=null`。**HTTPブラウザ表示・iPhone実機・GitHubコピーCIの実行結果は未確認**。Productionへ昇格していない。
+- Phase2開発元ではお知らせ参照の古い`/api/announcements`を現行公開ルート`/api/gallery/announcements`へ修正。最新検証：[Museum Phase2 CI 41275514928](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41275514928) **74/74合格＋Chromiumスマホ幅＋隔離PostgreSQL1件合格**。本番DBと実管理者Cookieでは未検証。
+- 統合後は**現行mainの`gallery`権限とAPI**を基準に、元Phase2から動的展示機能を慎重に選択統合する。コピーの表示用スタブを本番の正式公開APIと混同・上書きしない。
+
+**この節は視覚プレビューの進捗。大型アップデートの最終合格／一括本番公開ではない。**
