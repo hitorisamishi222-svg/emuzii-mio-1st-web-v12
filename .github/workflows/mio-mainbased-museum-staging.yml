@@ -1,0 +1,45 @@
+name: MIO v2 main-based museum staging safety (no production release)
+
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum*
+      - mio-profile.html
+      - vercel.json
+      - tests/mio-mainbased-museum-integration.test.mjs
+      - .github/workflows/mio-mainbased-museum-staging.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  museum-staging-only:
+    name: Main baseline parity + museum and media safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out current staging branch, no credentials retained
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read current production source tree without altering it
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      - name: Syntax check only new museum presentation code
+        run: |
+          node --check museum-archive.js
+          node --check museum-news.js
+          node --check museum-approved-gallery.js
+          node --check museum-media-fallback.js
+          node --check tests/mio-mainbased-museum-integration.test.mjs
+      - name: Verify all original login, check-in, gacha and gallery files remain identical to main
+        run: node --test tests/mio-mainbased-museum-integration.test.mjs
+      - name: Confirm this test did not modify tracked files
+        run: git diff --exit-code
+      # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
