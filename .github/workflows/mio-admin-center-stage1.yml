@@ -34,6 +34,7 @@ on:
       - event-room.html
       - tests/mio-event-room.test.mjs
       - tests/mio-event-email-gas-dispatch.test.mjs
+      - tests/mio-gas-additive-safety.test.mjs
       - mio-cookie-loss-intake-core.js
       - api-mio-cookie-loss-client.js
       - api-mio-cookie-loss-admin.js
@@ -94,6 +95,7 @@ on:
       - event-room.html
       - tests/mio-event-room.test.mjs
       - tests/mio-event-email-gas-dispatch.test.mjs
+      - tests/mio-gas-additive-safety.test.mjs
       - mio-cookie-loss-intake-core.js
       - api-mio-cookie-loss-client.js
       - api-mio-cookie-loss-admin.js
@@ -175,10 +177,11 @@ jobs:
           node --check mio-event-room-ui.js
           node --check tests/mio-event-room.test.mjs
           node --check tests/mio-event-email-gas-dispatch.test.mjs
+          node --check tests/mio-gas-additive-safety.test.mjs
           node --check mio-cookie-loss-intake-core.js
           node --check api-mio-cookie-loss-client.js
           node --check api-mio-cookie-loss-admin.js
           node --check mio-cookie-loss-ui.js
           node --check gacha-cookie-loss-admin.js
       - name: Isolated gate, polling and read-only permission tests
-        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs tests/mio-device-recovery.test.mjs tests/mio-device-recovery-canonical-proof.test.mjs tests/mio-device-recovery-browser-flows.test.mjs tests/mio-cookie-loss-candidate.test.mjs tests/mio-cookie-loss-intake.test.mjs tests/mio-event-pass.test.mjs tests/mio-event-email-auth.test.mjs tests/mio-event-pass-ui.test.mjs tests/mio-event-room.test.mjs tests/mio-event-email-gas-dispatch.test.mjs
+        run: node --test tests/mio-admin-center-stage1.test.mjs tests/mio-incident-center.test.mjs tests/mio-gacha-confirmed-history-recovery.test.mjs tests/mio-incident-identity-mapping.test.mjs tests/mio-gacha-admin-draw-lookup.test.mjs tests/mio-device-recovery.test.mjs tests/mio-device-recovery-canonical-proof.test.mjs tests/mio-device-recovery-browser-flows.test.mjs tests/mio-cookie-loss-candidate.test.mjs tests/mio-cookie-loss-intake.test.mjs tests/mio-event-pass.test.mjs tests/mio-event-email-auth.test.mjs tests/mio-event-pass-ui.test.mjs tests/mio-event-room.test.mjs tests/mio-event-email-gas-dispatch.test.mjs tests/mio-gas-additive-safety.test.mjs
