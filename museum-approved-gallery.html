@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#07192f">
+<title>以前からの公開作品｜翠央記念館・大型更新コピー</title>
+<meta name="description" content="翠央1周年の以前から公開している音楽・動画を大型更新コピーで確認するためのギャラリー。">
+<link rel="stylesheet" href="/museum.css">
+<style>
+.museum-approved-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:24px}
+.museum-approved-card{display:flex;flex-direction:column;gap:10px;min-width:0;border-radius:20px;padding:16px;border:1px solid #9ed9ff66;background:linear-gradient(148deg,#122f61,#061932)}
+.museum-approved-card img{display:block;width:100%;height:210px;object-fit:contain;border-radius:14px;background:#07192d}
+.museum-approved-card h2{font-size:20px;margin:0;line-height:1.5}
+.museum-approved-card p{line-height:1.7;margin:0}
+.museum-approved-card audio{width:100%;min-height:48px}
+.museum-approved-card a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:#ffe2a3;color:#071d38;padding:12px 16px;border-radius:14px;min-height:48px;font-weight:800}
+.museum-approved-card a:focus-visible{outline:3px solid #8ffaff;outline-offset:2px}
+.museum-approved-label{font-size:12px;color:#f8dca8;font-weight:800}
+@media(max-width:620px){.museum-approved-grid{grid-template-columns:1fr}.museum-approved-card img{height:180px}}
+</style></head><body class="museum">
+<div role="status" style="padding:12px 16px;background:#0f3157;border-bottom:2px solid #ffe29b;text-align:center;color:#fff">
+🧪 大型アップデート用コピー版。以前から公開している作品の閲覧確認用で、ログイン・投稿・ガチャ・個人情報には接続しません。
+</div>
+<a class="museum-skip" href="#approvedMain">作品一覧へ移動</a>
+<header class="museum-header"><div class="museum-shell museum-bar">
+<a class="museum-brand" href="/museum.html">🐳 翠央記念館 <small>MIO MEMORIAL MUSEUM</small></a>
+<nav class="museum-nav" aria-label="メニュー">
+<a href="/museum.html">記念館トップ</a>
+<a href="/museum-approved-gallery.html" aria-current="page">公開済み作品</a>
+<a href="/museum-archive.html">思い出の展示室</a>
+<a href="/">大型更新トップ</a>
+</nav></div></header>
+<main id="approvedMain" class="museum-shell" style="padding-top:32px">
+<div class="museum-eyebrow">APPROVED WORKS • LEGACY RETAINED</div>
+<h1>🎵 以前からの公開作品</h1>
+<p>以前から掲載している動画・音楽を引き継いでいます。ここに表示されるのはコピーに取り込んだ公開作品のみで、管理中の新規作品や非公開作品は表示しません。</p>
+<div id="approvedGalleryStatus" role="status" aria-live="polite">公開済み作品の一覧を確認しています…</div>
+<section id="approvedGalleryItems" class="museum-approved-grid" aria-label="以前から公開している作品一覧"></section>
+<p style="margin-top:30px"><a class="museum-button secondary" href="/museum.html#mioAwakening">記念曲と動画の展示へ戻る</a></p>
+</main>
+<script type="module" src="/museum-approved-gallery.js"></script></body></html>
