@@ -9,6 +9,9 @@ on:
       - mio-profile.html
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
+      - tests/mio-gas-safe-onboarding.test.mjs
+      - docs/MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102.md
+      - gacha-web-gate.html
       - tests/browser-registration-status.test.mjs
       - tests/gacha-legacy-recovery.test.mjs
       - tests/mio-mg-admin-browser-approved-recovery.test.mjs
@@ -22,6 +25,9 @@ on:
       - mio-profile.html
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
+      - tests/mio-gas-safe-onboarding.test.mjs
+      - docs/MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102.md
+      - gacha-web-gate.html
       - tests/browser-registration-status.test.mjs
       - tests/gacha-legacy-recovery.test.mjs
       - tests/mio-mg-admin-browser-approved-recovery.test.mjs
@@ -67,6 +73,8 @@ jobs:
         run: node --test --test-name-pattern='other unapproved browsers' tests/mio-mg-admin-browser-approved-recovery.test.mjs
       - name: Existing cache-busted gacha asset is still loaded (failed-only case)
         run: node --test --test-name-pattern='luxury v2.1 is loaded' tests/gacha-release-visual-scope.test.mjs
+      - name: Existing GAS safe onboarding and disabled management controls
+        run: node --test tests/mio-gas-safe-onboarding.test.mjs
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
