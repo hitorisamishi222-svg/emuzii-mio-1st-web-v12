@@ -3,7 +3,7 @@ set -euo pipefail
 
 node --test --test-name-pattern='rejects malformed device session ID without revoking active sessions' security/mio-auth-flow.test.mjs
 # Gate approved legacy media and the API-free museum copy before producing a preview.
-node --test release-prep/replica-museum-preview.test.mjs release-prep/replica-museum-media.test.mjs
+node --test release-prep/replica-museum-preview.test.mjs release-prep/replica-museum-media.test.mjs release-prep/replica-approved-works.test.mjs
 
 mkdir -p public/data
 find . -maxdepth 1 -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.png' -o -name '*.jpg' -o -name '*.svg' -o -name '*.webp' \) ! -name 'index.html' ! -name 'gacha.html' ! -name 'api-*.js' ! -name 'bridge.js' ! -name '*.test.js' ! -name '*.test.mjs' -exec cp -t public/ {} +
@@ -18,6 +18,10 @@ test -s assets/gallery-emuzii-mio-cover.svg
 cp mio-awakening.mp3 public/mio-awakening.mp3
 test -s public/mio-awakening.mp3
 test -s public/assets/gallery-emuzii-mio-cover.svg
+# Previously approved public gallery must remain browsable, separate from the community mock.
+test -s public/museum-approved-gallery.html
+test -s public/museum-approved-gallery.js
+test -s public/gallery-items.js
 # The new preview must play exactly the original published song, not a stub or renamed copy.
 node -e 'const fs=require("node:fs");for(const [src,dest] of [["mio-awakening.mp3","public/mio-awakening.mp3"],["assets/gallery-emuzii-mio-cover.svg","public/assets/gallery-emuzii-mio-cover.svg"]]){if(!fs.readFileSync(src).equals(fs.readFileSync(dest))){console.error("MIO approved media copy mismatch:",src);process.exit(1)}}'
 
