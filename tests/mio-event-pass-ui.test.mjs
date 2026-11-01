@@ -9,8 +9,8 @@ function page(search='?event=mio-open-2026',queue=[]){
  const el={},calls=[],responses=[...queue];
  for(const id of ['eventPassInfo','eventPassEmail','eventPassCode','eventPassInvite',
   'eventPassSendCode','eventPassVerify','eventPassIssue','eventPassEventLabel',
-  'eventPassMessage','eventPassTicket']){
-  el[id]={value:'',disabled:true,hidden:id==='eventPassTicket',textContent:'',
+  'eventPassMessage','eventPassTicket','eventPassRoomLink']){
+  el[id]={value:'',disabled:true,hidden:id==='eventPassTicket'||id==='eventPassRoomLink',href:'',textContent:'',
    onclick:null,addEventListener(type,fn){this['on'+type]=fn},
    click(){return this.onclick?.()}};
  }
@@ -38,6 +38,8 @@ test('six-digit code verification automatically issues event pass, no repeated r
  assert.match(p.el.eventPassMessage.textContent,/参加証を発行しました/);
  assert.match(p.el.eventPassTicket.textContent,/33333333/);
  assert.equal(p.el.eventPassTicket.hidden,false);
+ assert.equal(p.el.eventPassRoomLink.hidden,false);
+ assert.equal(p.el.eventPassRoomLink.href,'/event-room.html?event=mio-open-2026');
  assert.deepEqual(p.calls.map(x=>x.input.action),['check','start','verify','issue']);
  assert.equal(p.calls.some(x=>/register|gacha|grant/.test(x.path)),false);
  assert.equal(p.calls[3].input.eventId,'mio-open-2026');
@@ -46,6 +48,7 @@ test('revisit uses stored signed session to report existing pass without issuing
  const p=page('?event=mio-open-2026',[{status:200,data:{ok:true,allowed:true}}]);
  await drain();
  assert.match(p.el.eventPassMessage.textContent,/すでに参加証/);
+ assert.equal(p.el.eventPassRoomLink.hidden,false);
  assert.deepEqual(p.calls.map(x=>x.input.action),['check']);
 });
 test('email sender failure never marks session verified or issues ticket',async()=>{
@@ -59,6 +62,7 @@ test('email sender failure never marks session verified or issues ticket',async(
  assert.match(p.el.eventPassMessage.textContent,/メール送信の準備/);
  assert.deepEqual(p.calls.map(x=>x.input.action),['check','start']);
  assert.equal(p.el.eventPassTicket.hidden,true);
+ assert.equal(p.el.eventPassRoomLink.hidden,true);
 });
 test('bad event ID is inert and does not send OTP or create ticket',async()=>{
  const p=page('?event=../../gacha');
