@@ -11,6 +11,8 @@ on:
       - tests/mio-mainbased-museum-integration.test.mjs
       - tests/browser-registration-status.test.mjs
       - tests/gacha-legacy-recovery.test.mjs
+      - tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - tests/gacha-release-visual-scope.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
   pull_request:
     branches:
@@ -22,6 +24,8 @@ on:
       - tests/mio-mainbased-museum-integration.test.mjs
       - tests/browser-registration-status.test.mjs
       - tests/gacha-legacy-recovery.test.mjs
+      - tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - tests/gacha-release-visual-scope.test.mjs
       - .github/workflows/mio-mainbased-museum-staging.yml
   workflow_dispatch:
 
@@ -57,6 +61,10 @@ jobs:
         run: node --test tests/browser-registration-status.test.mjs
       - name: Previously failing same-drawId recovery mock only (no draw requests)
         run: node --test tests/gacha-legacy-recovery.test.mjs
+      - name: Unapproved browser must stay blocked (failed-only case)
+        run: node --test --test-name-pattern='other unapproved browsers' tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - name: Existing cache-busted gacha asset is still loaded (failed-only case)
+        run: node --test --test-name-pattern='luxury v2.1 is loaded' tests/gacha-release-visual-scope.test.mjs
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
