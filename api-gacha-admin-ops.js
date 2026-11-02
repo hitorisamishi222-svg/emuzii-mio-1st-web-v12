@@ -61,7 +61,7 @@ export default async function handler(req,res){
   if(d.action==='read'){
    // Do not silently display "0 waiting" when the connected GAS is old
    // or truncated; require explicit nonnegative counts for every queue.
-   const countKeys=['totalPending','pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount','unknownSimpleStatusCount','rejectedCount'];
+   const countKeys=['totalPending','pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount','unknownSimpleStatusCount','invalidWebIdCount','incompleteSimpleRowCount','rejectedCount'];
    if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||
       !Array.isArray(result.simple)||!Array.isArray(result.simplePending)||
       countKeys.some(key=>!Number.isSafeInteger(result[key])||result[key]<0)||
@@ -78,6 +78,8 @@ export default async function handler(req,res){
     pendingIdentityCount:result.pendingIdentityCount,pendingSimpleCount:result.pendingSimpleCount,
     unknownWebStatusCount:result.unknownWebStatusCount,
     unknownSimpleStatusCount:result.unknownSimpleStatusCount,
+    invalidWebIdCount:result.invalidWebIdCount,
+    incompleteSimpleRowCount:result.incompleteSimpleRowCount,
     pendingListTruncated:result.pendingListTruncated,
     simplePendingListTruncated:result.simplePendingListTruncated,
     rejectedCount:result.rejectedCount});
