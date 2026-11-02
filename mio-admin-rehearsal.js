@@ -7,7 +7,7 @@
   roster:[{id:'DEMO-01',name:'デモ参加者',tickets:3}],
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
-  ops:new Map(),log:[],selected:null,nextMember:2
+  ops:new Map(),log:[],selected:null,nextMember:2,unconfirmed:null
  });
  let s=initial();
  const make=(tag,content,cls)=>{
@@ -52,6 +52,10 @@
   }
   if(!matching.length)roster.append(make('p','一致する架空の参加者はいません。'));
   $('demoGrant').disabled=!s.roster.some(x=>x.id===s.selected);
+  $('demoVerify').disabled=!s.unconfirmed;
+  $('demoUnknown').textContent=s.unconfirmed?
+   '応答が失われた模擬操作：'+s.unconfirmed.op+'。新しい付与より先に同じIDで再照合してください。':
+   '結果不明の模擬操作はありません。';
   const incidents=$('demoIncidents');incidents.replaceChildren();
   const labels={unhandled:'未対応',working:'対応中',resolved:'解決済み'};
   for(const incident of s.incidents){
@@ -103,22 +107,42 @@
    setMessage('操作IDは「DEMO-」で始まる英数字とハイフンで指定してください。');return
   }
   const payload=member.id+':'+amount;
+  if(s.unconfirmed&&s.unconfirmed.op!==op){
+   setMessage('結果不明の操作が残っています。先に同じ操作IDで再照合してください。');return
+  }
   if(s.ops.has(op)){
    if(s.ops.get(op)!==payload)setMessage('操作IDが別の内容で再利用されました。付与は拒否しました。');
-   else setMessage('同じ操作IDの再送を確認しました。二重付与はしていません。');
+   else{
+    if(s.unconfirmed?.op===op)s.unconfirmed=null;
+    setMessage('同じ操作IDの再送を確認しました。二重付与はしていません。');
+   }
    render();return
   }
   s.ops.set(op,payload);
   member.tickets+=amount;
   audit(member.id+'：'+amount+'回模擬付与（'+op+'）');
-  setMessage(member.name+'へ'+amount+'回模擬付与しました。実際のガチャ回数には反映しません。');
+  if($('demoDropReply').checked){
+   $('demoDropReply').checked=false;
+   s.unconfirmed={op,memberId:member.id,amount,payload};
+   setMessage('応答途絶を再現：処理は1回済みですが結果が不明です。新しい付与はせず再照合してください。');
+  }else setMessage(member.name+'へ'+amount+'回模擬付与しました。実際のガチャ回数には反映しません。');
   render();
  }
  $('demoSearch').addEventListener('input',render);
  $('demoGrant').addEventListener('click',grant);
+ $('demoVerify').addEventListener('click',()=>{
+  const pending=s.unconfirmed;
+  if(!pending){setMessage('結果不明の模擬操作はありません。');return}
+  if(s.ops.get(pending.op)!==pending.payload){
+   setMessage('保存済み操作と照合できません。新しい付与はしないでください。');return
+  }
+  s.unconfirmed=null;
+  setMessage('操作ID '+pending.op+' の既存結果を照合しました。'+pending.amount+'回の付与は1回だけで、再付与していません。');
+  render();
+ });
  $('demoReset').addEventListener('click',()=>{
   s=initial();$('demoSearch').value='';$('demoGrantAmount').value='1';
-  $('demoOperationId').value='DEMO-OP-001';
+  $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
   setMessage('リハーサルを初期状態へ戻しました。実データは変更していません。');
   render();
  });
