@@ -1,0 +1,43 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>GAS現行ソース安全照合｜みお管理センター</title>
+<style>
+:root{font:16px/1.7 system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:#09172c;color:#f5f9ff}
+main,header{max-width:820px;padding:20px;margin:auto}
+h1{font-size:clamp(23px,5vw,30px);line-height:1.4}
+h2{font-size:20px}a{color:#b5e9ff}
+section,.warning{margin:16px 0;padding:16px;border:1px solid #7ea6cd;border-radius:14px;background:#162a43}
+.warning{border:2px solid #f0d49a;background:#39301c}
+input[type=file]{display:block;width:100%;font:inherit;padding:16px;min-height:54px;border:1px solid #92bddc;border-radius:9px}
+button{border:1px solid #9fcbeb;background:#deefff;color:#06172a;border-radius:10px;font:700 16px system-ui;padding:12px 15px;min-height:48px;margin:8px 8px 8px 0}
+button:disabled{opacity:.45}button:focus-visible,input:focus-visible{outline:3px solid #ffdc9b}
+dl{display:grid;grid-template-columns:1fr 1fr;gap:8px}dd{margin:0;font-size:20px;font-weight:750}dt{font-size:14px;color:#c0d7eb}
+li{margin:5px 0;overflow-wrap:anywhere}code{color:#ffdcac}
+@media(max-width:470px){dl{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header><a href="/gacha-web-gate.html">← Web管理センターへ戻る</a>
+<h1>🔎 みおGAS 現行ソース照合</h1></header>
+<main>
+<p class="warning" role="status"><strong>開発版・端末内だけの検査</strong>。この画面はApps Script・Googleシート・本番APIに接続せず、選択したファイルの内容を送信しません。ファイルに秘密鍵が含まれていても画面や結果JSONには表示しません。</p>
+<section><h2>① 現行GASから書き出したソースを選ぶ</h2>
+<p>稼働中の既存Apps Scriptの全ソース（<code>.gs</code> / <code>.txt</code>）を選択。新規プロジェクトを作成したり、稼働GASのコードを書き換えたりしません。</p>
+<label for="gasSources">端末内のGASソースファイル（複数選択可）</label>
+<input id="gasSources" type="file" multiple accept=".gs,.txt,text/plain">
+<p>最大30ファイル・合計8MB。ファイル名・コード本文は診断結果に保存しません。</p>
+<button id="gasCheck" type="button">端末内で安全照合する</button>
+<button id="gasClear" type="button">結果を消す</button></section>
+<section><h2>② 判定</h2>
+<p id="gasStatus" role="status" aria-live="polite">まだ検査していません。</p>
+<dl><div><dt>読み取ったファイル数</dt><dd id="gasFiles">—</dd></div>
+<div><dt>管理関数</dt><dd id="gasOps">—</dd></div>
+<div><dt>doPost宣言数</dt><dd id="gasPost">—</dd></div>
+<div><dt>関数定義の重複数</dt><dd id="gasDup">—</dd></div></dl>
+<h3>公開を止める確認事項</h3><ul id="gasReasons"><li>現行コードは未確認です。</li></ul>
+<button id="gasExport" type="button" disabled>個人情報を含まない診断結果JSONを保存</button>
+</section>
+<section><h2>③ 実機・本番接続の確認は別工程</h2>
+<p>この静的診断で管理関数19件が揃っても、<strong>稼働しているデプロイ版との一致、全ファイルの復元バックアップ、BRIDGE_SECRETの有効性、実シート監査台帳、管理者本人確認を保証できません。</strong></p>
+<p>結果が良好でも、現行GASの差し替えや管理機能の書き込みを自動実行することはありません。</p></section>
+</main><script defer src="/mio-gas-local-check.js"></script></body></html>
