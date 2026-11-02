@@ -43,7 +43,13 @@ const filterButtons=typeof document.querySelectorAll==='function'?
 // interrupts listening in Safari; filtering must preserve the existing DOM/media state.
 const cards=list&&status?approved.map(item=>({item,element:card(item)})):[];
 if(list&&status)list.replaceChildren(...cards.map(entry=>entry.element));
-let selected='all',keyword='';
+// Keep public category links shareable while never placing typed search terms in URLs.
+const kindFromUrl=()=>{
+ if(typeof window==='undefined')return 'all';
+ const kind=new URLSearchParams(window.location.search).get('kind');
+ return kind==='video'?'動画':kind==='music'?'音声・楽曲':'all';
+};
+let selected=kindFromUrl(),keyword='';
 function render(){
  if(!list||!status)return;
  let visibleCount=0;
@@ -68,6 +74,17 @@ if(search)search.addEventListener('input',()=>{keyword=search.value.trim().toLoc
 filterButtons.forEach(btn=>btn.addEventListener('click',()=>{
  const next=btn.dataset.galleryKind;
  if(next!=='all'&&next!=='動画'&&next!=='音声・楽曲')return;
- selected=next;render();
+ if(next===selected)return;
+ selected=next;
+ if(typeof window!=='undefined'){
+  const url=new URL(window.location.href),kind=next==='動画'?'video':next==='音声・楽曲'?'music':null;
+  if(kind)url.searchParams.set('kind',kind);
+  else url.searchParams.delete('kind');
+  window.history.pushState(null,'',url.pathname+url.search+url.hash);
+ }
+ render();
 }));
+if(typeof window!=='undefined')window.addEventListener('popstate',()=>{
+ selected=kindFromUrl();render();
+});
 render();
