@@ -84,7 +84,9 @@ test('ScriptLock check without an immediate failure return is blocked',()=>{
  const tryLine=full.split(String.fromCharCode(10)).find(line=>line.includes('if(!lock.tryLock(10000))'));
  assert.ok(tryLine,'archived tryLock guard is missing');
  // Deleting the early return must not be accepted as a safe lock barrier.
- const unsafe=full.replace(tryLine,tryLine.replace(/return[\\s\\S]*/, '{}'));
+ const weakened=tryLine.replace('return json_', 'json_');
+ assert.notEqual(weakened,tryLine,'failed-lock early return must be present');
+ const unsafe=full.replace(tryLine,weakened);
  const x=inspectSources([unsafe],{liveHeaders:sheet});
  assert.equal(x.classification,'BLOCKED_REVIEW');
  assert.equal(x.auditedDispatcher,false);
