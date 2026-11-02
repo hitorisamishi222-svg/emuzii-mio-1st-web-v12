@@ -394,6 +394,27 @@ try{
    await evaluate("document.querySelector('#gasClear').click()");
    assert.equal(await evaluate("document.querySelector('#gasExport').disabled"),true);
    assert.equal(await evaluate("document.querySelector('#gasFiles').textContent"),'—');
+   const cancelRace=await evaluate(`(async()=>{
+    const old=File.prototype.text;
+    let release;
+    File.prototype.text=function(){return new Promise(resolve=>{release=resolve})};
+    try{
+     const dt=new DataTransfer();
+     dt.items.add(new File(['function doPost(e){}'],'Code.gs',{type:'text/plain'}));
+     document.querySelector('#gasSources').files=dt.files;
+     document.querySelector('#gasCheck').click();
+     if(typeof release!=='function')throw Error('source read never started');
+     document.querySelector('#gasClear').click();
+     release('function doPost(e){}');
+     await new Promise(resolve=>setTimeout(resolve,40));
+     return {cleared:document.querySelector('#gasStatus').textContent.includes('消去しました'),
+      reportDisabled:document.querySelector('#gasExport').disabled,
+      noFileCount:document.querySelector('#gasFiles').textContent==='—',
+      inspectEnabled:!document.querySelector('#gasCheck').disabled};
+    }finally{File.prototype.text=old}
+   })()`);
+   assert.deepEqual(cancelRace,{cleared:true,reportDisabled:true,noFileCount:true,inspectEnabled:true},
+    'cleared source must not reappear when an old file-read promise later resolves');
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
