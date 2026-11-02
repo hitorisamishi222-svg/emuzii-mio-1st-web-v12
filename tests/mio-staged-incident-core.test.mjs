@@ -130,9 +130,22 @@ test('inbox rejects corrupted incident rows and only returns approved fields',as
 });
 function mockClient(){
  const state={current:'unhandled',audits:new Map(),writes:0,rollback:0};
+ let snapshot=null;
  return {state,async query(sql,args=[]){
-  if(sql==='BEGIN'||sql==='COMMIT')return {rowCount:0,rows:[]};
-  if(sql==='ROLLBACK'){state.rollback++;return {rowCount:0,rows:[]};}
+  if(sql==='BEGIN'){
+   if(snapshot)throw Error('nested transaction');
+   snapshot={current:state.current,writes:state.writes,
+    audits:new Map([...state.audits].map(([key,a])=>[key,{...a}]))};
+   return {rowCount:0,rows:[]};
+  }
+  if(sql==='COMMIT'){snapshot=null;return {rowCount:0,rows:[]};}
+  if(sql==='ROLLBACK'){
+   if(snapshot){
+    state.current=snapshot.current;state.writes=snapshot.writes;
+    state.audits=new Map(snapshot.audits);snapshot=null;
+   }
+   state.rollback++;return {rowCount:0,rows:[]};
+  }
   if(sql.startsWith('SELECT state FROM mio_admin_incidents'))return {rowCount:1,rows:[{state:state.current}]};
   if(sql.startsWith('SELECT incident_id,action'))return state.audits.has(args[0])?{rowCount:1,rows:[state.audits.get(args[0])]}:{rowCount:0,rows:[]};
   if(sql.startsWith('SELECT operation_id,payload_hash FROM mio_admin_incident_audit')){
@@ -192,6 +205,59 @@ test('delayed start replay requires one valid resolution audit, not a bare resol
    /incident resolved state lacks valid audit/,scenario);
   assert.equal(db.state.writes,before,'invalid retry must never update the incident');
   assert.equal(db.state.current,'resolved');
+  assert.equal(db.state.rollback,1);
+ }
+});
+test('incident triage stops before writing when the locked row is missing or malformed',async()=>{
+ const invalid=[null,undefined,{}, {rowCount:1,rows:[]},
+  {rowCount:1,rows:[{}]}, {rowCount:1,rows:[{state:'garbled'}]},
+  {rowCount:2,rows:[{state:'unhandled'},{state:'unhandled'}]}];
+ for(const reply of invalid){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',
+   operationId:'1'.repeat(32)};
+  const original=db.query.bind(db);
+  db.query=async(sql,args)=>sql.startsWith('SELECT state FROM mio_admin_incidents')?
+   reply:original(sql,args);
+  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident current state unavailable/);
+  assert.equal(db.state.writes,0);
+  assert.equal(db.state.audits.size,0);
+  assert.equal(db.state.rollback,1);
+ }
+});
+test('triage rejects incomplete update results and never records a successful operation',async()=>{
+ const invalid=[undefined,{}, {rowCount:1,rows:[]},
+  {rowCount:1,rows:[{incident_id:'22222222-2222-4222-8222-222222222222'}]},
+  {rowCount:0,rows:[]},{rowCount:2,rows:[{incident_id:incidentId}]}];
+ for(const reply of invalid){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',
+   operationId:'2'.repeat(32)};
+  const original=db.query.bind(db);
+  db.query=async(sql,args)=>sql.includes('UPDATE mio_admin_incidents')?reply:original(sql,args);
+  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident update conflict/);
+  assert.equal(db.state.writes,0);
+  assert.equal(db.state.audits.size,0);
+  assert.equal(db.state.current,'unhandled');
+  assert.equal(db.state.rollback,1);
+ }
+});
+test('triage rolls back both state and audit when audit insertion reply is unverified',async()=>{
+ const invalid=[undefined,null,{}, {rowCount:0,rows:[]},
+  {rowCount:1},{rowCount:1,rows:[{operation_id:'3'.repeat(32)}]}];
+ for(const reply of invalid){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',
+   operationId:'3'.repeat(32)};
+  const original=db.query.bind(db);
+  db.query=async(sql,args)=>{
+   if(sql.includes('INSERT INTO mio_admin_incident_audit')){
+    await original(sql,args);
+    return reply;
+   }
+   return original(sql,args);
+  };
+  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident audit insert unavailable/);
+  assert.equal(db.state.current,'unhandled');
+  assert.equal(db.state.writes,0);
+  assert.equal(db.state.audits.size,0);
   assert.equal(db.state.rollback,1);
  }
 });
