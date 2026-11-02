@@ -700,6 +700,29 @@ test('malformed Web IDs and nameless simple rows are surfaced as explicit data-q
  assert.equal(x.write.length,0);
  assert.equal(JSON.stringify(x.rows),before);
 });
+test('duplicated valid Web IDs and participant MIO IDs become separate read-only anomaly counts',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ const people=x.rows['emuzii_参加者'];
+ const first=[...web[1]];
+ web.push([...first]);
+ web.push([...first]);
+ // A different, valid Web ID must not count as a duplicate.
+ const distinct=[...first];distinct[0]='MIO-W-ffffffffffffffffffffffff';
+ web.push(distinct);
+ people.push(['MIO-0001','同名の参加者重複']);
+ people.push(['MIO-0001','別の重複']);
+ people.push(['MIO-0007','独立した参加者']);
+ const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.duplicateWebIdCount,2,'count duplicate rows beyond first occurrence');
+ assert.equal(out.duplicateMioIdCount,2);
+ assert.equal(out.invalidWebIdCount,0);
+ assert.equal(out.pendingRegistrationCount,4,'do not silently discard duplicate signups');
+ assert.equal(out.totalPending,4);
+ assert.equal(out.pending.length,4);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before,'read-only anomaly checks must not rewrite live-like data');
+});
 test('unknown sheet states are warnings, never silently counted as zero or processed as approval',()=>{
  const x=sandbox({schemaReady:false});
  const web=x.rows['emuzii_Web登録'];
