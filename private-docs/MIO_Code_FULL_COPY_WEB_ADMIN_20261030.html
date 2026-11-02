@@ -812,13 +812,30 @@ function mioAdminOpsSummary_(ss,webRows){
  var people=mioAdminOpsPeople_(ss),gacha=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_ガチャ'),17),fresh=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_新規簡易登録'),6);
  var byId={};for(var i=0;i&lt;people.length;i++){var id=mioAdminOpsStr_(people[i][0]);if(/^MIO-\d{4}$/.test(id))byId[id]={id:id,name:mioAdminOpsStr_(people[i][1])};}
  var grants={};for(var j=0;j&lt;gacha.length;j++){var g=gacha[j],gid=mioAdminOpsStr_(g[0]);if(!/^MIO-\d{4}$/.test(gid))continue;if(!grants[gid])grants[gid]=[];grants[gid].push({mioId:gid,name:mioAdminOpsStr_(g[1]),total:Number(g[5]),remaining:Number(g[7]),special:Number(g[14]),checked:g[12]==='OK'&amp;&amp;g[13]==='OK'});}
- var web=[];for(var k=0;k&lt;webRows.length;k++){var row=webRows[k],wid=mioAdminOpsStr_(row[0]);if(!/^MIO-W-[a-f0-9]{24}$/.test(wid))continue;var mioId=mioAdminOpsStr_(row[7]);web.push({webId:wid,name:mioAdminOpsStr_(row[2]),status:mioAdminOpsStr_(row[5]),member:mioAdminOpsStr_(row[6]),mioId:mioId,integrity:mioAdminOpsStr_(row[11]),linkedName:byId[mioId]?byId[mioId].name:'',gacha:(grants[mioId]||[]).length===1?grants[mioId][0]:null});}
+ var web=[],invalidWebIdCount=0;
+ for(var k=0;k&lt;webRows.length;k++){
+  var row=webRows[k],wid=mioAdminOpsStr_(row[0]);
+  if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)){
+    // A malformed/blank Web ID with other registration data is NOT an empty row.
+    if([row[0],row[2],row[4],row[5],row[7]].some(function(x){return mioAdminOpsStr_(x)!=='';}))
+      invalidWebIdCount++;
+    continue;
+  }
+  var mioId=mioAdminOpsStr_(row[7]);web.push({webId:wid,name:mioAdminOpsStr_(row[2]),status:mioAdminOpsStr_(row[5]),member:mioAdminOpsStr_(row[6]),mioId:mioId,integrity:mioAdminOpsStr_(row[11]),linkedName:byId[mioId]?byId[mioId].name:'',gacha:(grants[mioId]||[]).length===1?grants[mioId][0]:null});}
  // New approvals and incomplete approved identities need different responses.
  var awaitingApproval=web.filter(function(r){return r.status==='承認待ち';});
  var awaitingIdentity=web.filter(function(r){return r.status==='承認済み'&amp;&amp;r.integrity!=='確認済み';});
  var pending=web.filter(function(r){return r.status==='承認待ち'||(r.status==='承認済み'&amp;&amp;r.integrity!=='確認済み');}).slice(-80).reverse();
  var unknownWeb=web.filter(function(r){return ['承認待ち','承認済み','却下'].indexOf(r.status)&lt;0;});
- var simple=[];for(var l=0;l&lt;fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
+ var simple=[],incompleteSimpleRowCount=0;
+ for(var l=0;l&lt;fresh.length;l++){
+  var fr=fresh[l];
+  if(!mioAdminOpsStr_(fr[1])){
+    if([fr[0],fr[2],fr[3],fr[4],fr[5]].some(function(x){return mioAdminOpsStr_(x)!=='';}))
+      incompleteSimpleRowCount++;
+    continue;
+  }
+  simple.push({row:l+2,name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
  // A simple intake is a separate queue; never include smoke-test rows.
  var simplePending=simple.filter(function(r){return r.status==='未確認'||r.status==='管理確認待ち';});
  var simpleKnown=['未確認','管理確認待ち','確認済み','登録承認済み','本人確認・登録承認済み','却下','動作確認用'];
@@ -828,7 +845,8 @@ function mioAdminOpsSummary_(ss,webRows){
   simplePending:simplePending.slice(-60).reverse(),totalPending:awaitingApproval.length+awaitingIdentity.length,
   pendingRegistrationCount:awaitingApproval.length,pendingIdentityCount:awaitingIdentity.length,
   pendingSimpleCount:simplePending.length,unknownWebStatusCount:unknownWeb.length,
-  unknownSimpleStatusCount:unknownSimple.length,
+  unknownSimpleStatusCount:unknownSimple.length,invalidWebIdCount:invalidWebIdCount,
+  incompleteSimpleRowCount:incompleteSimpleRowCount,
   pendingListTruncated:awaitingApproval.length+awaitingIdentity.length&gt;pending.length,
   simplePendingListTruncated:simplePending.length&gt;60,
   rejectedCount:web.filter(function(x){return x.status==='却下';}).length};
