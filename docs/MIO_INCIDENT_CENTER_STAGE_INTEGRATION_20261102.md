@@ -15,7 +15,7 @@
 
 ## 実装確認
 - [ステージング障害管理テスト](../tests/mio-staged-incident-core.test.mjs)：既定OFF、入力の厳格検証、同一drawIdの重複判定と15分区切り、タイムアウト/未確定の区別、DBやガチャ実操作なし、監査付きの状態変更と同一操作IDの二重更新防止、認証されていない操作拒否、実APIルートなし。
-- [全登録回帰CI 41368329601](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41368329601)：**213/213 PASS、0 FAIL**（前回204件から9件追加）。対象は新しい障害処理を含む静的・モック・登録回帰で、実DB/GAS/iPhoneの合格ではない。
+- [全登録回帰CI 41368329601](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41368329601)：**214/214 PASS、0 FAIL**（前回204件から10件追加）。対象は新しい障害処理を含む静的・モック・登録回帰で、実DB/GAS/iPhoneの合格ではない。
 - [Issue #66](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/issues/66)：既存稼働GASの全ソース・バージョン・復元可能なバックアップ、19同名関数衝突検査が未完。**管理操作書き込みはSTOP**。
 - 既存`main`のVercel元97ビルド・31ルート・認証/ガチャ/皆勤/GASの重要20ファイルは元のまま維持。PR #76はDraft。
 
