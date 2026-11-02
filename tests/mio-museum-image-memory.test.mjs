@@ -6,7 +6,7 @@ import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../museum-image-client.js',import.meta.url),'utf8');
 
 function sandbox({mode='success'}={}){
- const canvases=[],revoked=[];
+ const canvases=[],revoked=[],formats=[];
  class FakeFile{
   constructor(parts,name,{type}={}){this.size=parts.length;this.name=name;this.type=type||'image/jpeg'}
  }
@@ -20,13 +20,18 @@ function sandbox({mode='success'}={}){
  const document={createElement(tag){
   assert.equal(tag,'canvas');
   const c={width:0,height:0,toBlob(callback,type){
-   queueMicrotask(()=>callback(mode==='throw'?null:{type:'image/webp',size:mode==='oversized'?800000:150}));
+   formats.push(type);
+   const unavailable=mode==='throw'||(mode==='safari-webp-null'&&type==='image/webp');
+   queueMicrotask(()=>callback(unavailable?null:{
+    type:mode==='safari-webp-as-jpeg'?'image/jpeg':type,
+    size:mode==='oversized'?800000:150
+   }));
   },getContext(){return {fillRect(){},drawImage(){},set fillStyle(_) {}}}};
   canvases.push(c);return c;
  }};
  const window={},mockUrl={createObjectURL:()=>('blob:local-input'),revokeObjectURL:url=>revoked.push(url)};
  runInNewContext(source,{window,document,URL:mockUrl,File:FakeFile,FileReader:FakeReader,Image:FakeImage,queueMicrotask});
- return {encode:window.MioMuseumImage.encode,File:FakeFile,canvases,revoked};
+ return {encode:window.MioMuseumImage.encode,File:FakeFile,canvases,revoked,formats};
 }
 const photo=s=>new s.File(['x'],'image.png',{type:'image/png'});
 
@@ -58,4 +63,21 @@ test('multiple image conversions never retain a finished canvas',async()=>{
   assert.ok(s.canvases.every(c=>c.width===0&&c.height===0));
  }
  assert.equal(s.revoked.length,5);
+});
+
+test('Safari WebP null Blob falls back to JPEG and frees backing memory',async()=>{
+ const s=sandbox({mode:'safari-webp-null'});
+ const r=await s.encode(photo(s));
+ assert.equal(r.format,'jpeg');
+ assert.equal(r.bytes,150);
+ assert.deepEqual(s.formats,['image/webp','image/jpeg']);
+ assert.deepEqual(s.canvases.map(c=>[c.width,c.height]),[[0,0]]);
+ assert.deepEqual(s.revoked,['blob:local-input']);
+});
+test('browser returning a JPEG Blob for WebP request is safely re-encoded as JPEG',async()=>{
+ const s=sandbox({mode:'safari-webp-as-jpeg'});
+ const r=await s.encode(photo(s));
+ assert.equal(r.format,'jpeg');
+ assert.deepEqual(s.formats,['image/webp','image/jpeg']);
+ assert.deepEqual(s.canvases.map(c=>[c.width,c.height]),[[0,0]]);
 });
