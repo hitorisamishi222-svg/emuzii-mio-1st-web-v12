@@ -719,16 +719,18 @@ test('malformed Web IDs and nameless simple intake cannot silently disappear fro
  assert.equal(x.write.length,0);
  assert.equal(JSON.stringify(x.rows),before);
 });
-test('administration read API may not turn missing or incoherent queue metadata into a zero count',()=>{
- const api=readFileSync(new URL('../staging/mio-admin-queue-api-candidate.js',import.meta.url),'utf8');
- for(const key of ['pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount',
-  'unknownSimpleStatusCount','invalidWebIdCount','incompleteSimpleRowCount','pendingListTruncated','simplePendingListTruncated']){
-  assert.ok(api.includes(key),'missing queue metric '+key);
+test('staging-only queue contract rejects missing counts without touching existing admin API',()=>{
+ const contract=readFileSync(new URL('../scripts/mio-admin-queue-contract.mjs',import.meta.url),'utf8');
+ const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+ for(const key of ['pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount',
+  'unknownWebStatusCount','unknownSimpleStatusCount','invalidWebIdCount',
+  'incompleteSimpleRowCount','pendingListTruncated','simplePendingListTruncated']){
+  assert.ok(contract.includes(key),'missing queue metric '+key);
  }
- assert.match(api,/Number\.isSafeInteger\(result\[key\]\)/);
- assert.match(api,/result\.totalPending!==result\.pendingRegistrationCount\+result\.pendingIdentityCount/);
- assert.match(api,/return reply\(res,424,'管理台帳の待機人数を検証できません/);
- assert.doesNotMatch(api,/totalPending:result\.totalPending\|\|0/);
+ assert.match(contract,/Number\.isSafeInteger\(value\[field\]\)/);
+ assert.match(contract,/value\.totalPending!==value\.pendingRegistrationCount\+value\.pendingIdentityCount/);
+ assert.ok(!config.routes.some(r=>/admin-queue-contract|queue-api-candidate/.test(r.src||'')),
+  'the experimental queue contract must not become an accessible production route');
 });
 test('actual 38 approved, 1 pending, 2 rejected never inflates approval queue to three',()=>{
  const x=sandbox();
