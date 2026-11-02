@@ -14,7 +14,10 @@
   CANVAS_UNAVAILABLE:'画像変換機能が利用できません。',
   IMAGE_ENCODER_UNAVAILABLE:'画像処理機能を読み込めません。'
  };
- const explain=e=>messages[e?.message]||'この端末で画像処理を完了できませんでした。';
+ // Never persist arbitrary browser error strings: they may contain local file paths or names.
+ const safeReason=e=>typeof e?.message==='string'&&
+  Object.prototype.hasOwnProperty.call(messages,e.message)?e.message:'UNKNOWN';
+ const explain=e=>messages[safeReason(e)]||'この端末で画像処理を完了できませんでした。';
  const detail=(label,value)=>{
   const dt=document.createElement('dt'),dd=document.createElement('dd');
   dt.textContent=label;dd.textContent=String(value);
@@ -68,7 +71,7 @@
    $('autoStatus').textContent=passed?'✅ 画面・画像変換の自動確認が合格しました。':
     '⚠️ 画像変換は成功しましたが、画面サイズの確認に問題があります。';
   }catch(e){
-   report.synthetic={ok:false,reason:e?.message||'UNKNOWN'};
+   report.synthetic={ok:false,reason:safeReason(e)};
    $('autoStatus').textContent='⚠️ 自動画像チェック未合格：'+explain(e);
   }finally{
    detail('画面の幅',screen.viewportWidth+'px');
@@ -100,7 +103,7 @@
    report.photo={ok:true,format:encoded.format,outputBytes:encoded.bytes};
    $('photoStatus').textContent='✅ 写真の変換に成功しました（'+Math.ceil(encoded.bytes/1024)+'KB）。画像は送信されていません。';
   }catch(e){
-   report.photo={ok:false,reason:e?.message||'UNKNOWN'};
+   report.photo={ok:false,reason:safeReason(e)};
    $('photoStatus').textContent='⚠️ 写真確認は未合格：'+explain(e);
   }finally{busy=false;updateButtons();}
  }
