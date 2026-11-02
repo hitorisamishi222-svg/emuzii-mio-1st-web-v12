@@ -10,7 +10,15 @@ import {join,resolve} from 'node:path';
 const cwd=process.cwd(),allowed=new Map([
  ['/museum-device-check.html',['museum-device-check.html','text/html']],
  ['/museum-device-check.js',['museum-device-check.js','text/javascript']],
- ['/museum-image-client.js',['museum-image-client.js','text/javascript']]
+ ['/museum-image-client.js',['museum-image-client.js','text/javascript']],
+ ['/museum-approved-gallery.html',['museum-approved-gallery.html','text/html']],
+ ['/museum-approved-gallery.js',['museum-approved-gallery.js','text/javascript']],
+ ['/museum-archive.html',['museum-archive.html','text/html']],
+ ['/museum-archive.js',['museum-archive.js','text/javascript']],
+ ['/museum.css',['museum.css','text/css']],
+ ['/museum-archive.css',['museum-archive.css','text/css']],
+ ['/gallery-items.js',['gallery-items.js','text/javascript']],
+ ['/assets/gallery-emuzii-mio-cover.svg',['assets/gallery-emuzii-mio-cover.svg','image/svg+xml']]
 ]);
 const requests=[],writes=[],exceptions=[];
 let chrome,ws,server;
@@ -129,6 +137,41 @@ try{
    await writeFile('artifacts/mio-offline-mobile-390.png',Buffer.from(shot.data,'base64'));
   }
   summary.push({width,passed:true,photoChecked:width===390});
+ }
+ // Drive the actual static museum exhibit UI in the same isolated Chrome.
+ // Do not visit external video links or load live APIs.
+ for(const width of [320,375,390,430]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
+  await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
+  const gallery=await evaluate(`(()=>({
+   width:innerWidth,doc:document.documentElement.scrollWidth,
+   cards:document.querySelectorAll('.museum-approved-card').length,
+   songs:document.querySelectorAll('.museum-approved-card audio[src="/mio-awakening.mp3"]').length,
+   videos:[...document.querySelectorAll('.museum-approved-card a[href^="https://"]')].map(a=>({url:a.href,rel:a.rel,target:a.target}))
+  }))()`);
+  assert.ok(gallery.doc<=gallery.width+2,'approved gallery horizontal overflow '+JSON.stringify(gallery));
+  assert.equal(gallery.cards,2,'previously approved works were lost');
+  assert.equal(gallery.songs,1,'original memorial music disappeared');
+  assert.deepEqual(gallery.videos,[{url:'https://vt.tiktok.com/ZSgFvmy7Q/',rel:'noopener noreferrer',target:'_blank'}]);
+
+  await cdp('Page.navigate',{url:root+'/museum-archive.html?kind=icons'});
+  await poll(()=>evaluate("document.querySelector('#archiveStatus')?.textContent.includes('準備中')"),18000);
+  const archive=await evaluate(`(()=>({
+   width:innerWidth,doc:document.documentElement.scrollWidth,
+   items:document.querySelectorAll('.archive-entry').length,
+   selected:[...document.querySelectorAll('.archive-filter[aria-pressed="true"]')].map(x=>x.dataset.kind),
+   status:document.querySelector('#archiveStatus')?.textContent
+  }))()`);
+  assert.ok(archive.doc<=archive.width+2,'archive horizontal overflow '+JSON.stringify(archive));
+  assert.deepEqual(archive.selected,['icons']);
+  assert.equal(archive.items,0,'unverified or private exhibit appeared in staging');
+  assert.ok(archive.status.includes('準備中'),'offline exhibit must say that content is not connected');
+  await evaluate("document.querySelector('.archive-filter[data-kind=events]').click()");
+  assert.equal(await evaluate("new URLSearchParams(location.search).get('kind')"),'events');
+  assert.equal(await evaluate("document.querySelector('.archive-filter[aria-pressed=true]').dataset.kind"),'events');
+  await evaluate("history.back()");
+  await poll(()=>evaluate("document.querySelector('.archive-filter[aria-pressed=true]')?.dataset.kind==='icons'"));
  }
  assert.equal(writes.length,0,'no HTTP writes permitted');
  assert.ok(requests.length>=12,'local static fixtures were not exercised');
