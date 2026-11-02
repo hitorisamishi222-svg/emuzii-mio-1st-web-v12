@@ -199,6 +199,23 @@ try{
    paused:window.__pauseCount,
    visible:!window.__mioMusic.closest('.museum-approved-card').hidden
   }))()`),{sameNode:true,paused:1,visible:true});
+  // Category selection must create a shareable URL; browser back restores
+  // the previous filter without replacing or reloading the playing audio node.
+  await evaluate("document.querySelector('[data-gallery-kind=\\\"音声・楽曲\\\"]').click()");
+  assert.equal(await evaluate("new URLSearchParams(location.search).get('kind')"),'music');
+  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),1);
+  await evaluate("history.back()");
+  await poll(()=>evaluate("document.querySelector('[data-gallery-kind=all]')?.getAttribute('aria-pressed')==='true'"));
+  assert.equal(await evaluate("window.__mioMusic===document.querySelector('.museum-approved-card audio')"),true);
+  if(width===390){
+   // Loading a shareable URL directly must show only approved music.
+   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html?kind=music'});
+   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
+   assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),1);
+   assert.equal(await evaluate("document.querySelector('[data-gallery-kind=\\\"音声・楽曲\\\"]').getAttribute('aria-pressed')"),'true');
+   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
+   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
+  }
   if(width===390){
    await mkdir('artifacts',{recursive:true});
    const galleryShot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
