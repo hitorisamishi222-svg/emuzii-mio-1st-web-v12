@@ -99,11 +99,17 @@ export async function transitionIncident(client,values,actor){
   const audit=await client.query(
    'SELECT incident_id,action,before_state,payload_hash FROM mio_admin_incident_audit WHERE operation_id=$1',[d.operationId]);
   if(audit.rowCount){
+   if(audit.rowCount!==1||!audit.rows?.[0])throw Error('ambiguous incident audit');
    const a=audit.rows[0];
    if(a.incident_id!==d.incidentId||a.action!==d.action||a.before_state!==d.expectedState||
       a.payload_hash!==payloadHash)throw Error('operation id reuse conflict');
+   // A retried START may arrive after RESOLVE. Never return an outdated 'working'
+   // status to the operator or overwrite the incident's advanced state.
+   const current=locked.rows[0].state;
+   if(current!==after&&!(after==='working'&&current==='resolved'))
+    throw Error('incident replay state inconsistent');
    await client.query('COMMIT');
-   return {replayed:true,incidentId:d.incidentId,state:after};
+   return {replayed:true,incidentId:d.incidentId,state:current};
   }
   if(locked.rows[0].state!==d.expectedState)throw Error('incident state changed');
   const update=await client.query(
