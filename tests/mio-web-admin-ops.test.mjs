@@ -614,6 +614,89 @@ test('review cannot finalize when registered status changed externally',()=>{
  assert.equal(log[7],'処理中');
 });
 
+test('read-only queue counts distinguish new signups, identity followups and simple intake',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ web[1][5]='承認待ち';web[1][11]='確認待ち';
+ const clone=(suffix,status,integrity)=>{
+  const row=[...web[1]];
+  row[0]='MIO-W-'+suffix.toString(16).padStart(24,'0');
+  row[5]=status;row[11]=integrity;web.push(row);
+ };
+ clone(1,'承認済み','確認済み');
+ clone(2,'承認済み','確認待ち');
+ clone(3,'却下','確認待ち');
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple.push(['','架空申請A','','フォーム・ギャラリー利用可','管理確認待ち','']);
+ simple.push(['','架空申請B','','フォーム・ギャラリー利用可','未確認','']);
+ simple.push(['','テスト行','','フォーム・ギャラリー利用可','動作確認用','']);
+ simple.push(['','承認完了','','フォーム・ギャラリー利用可','登録承認済み','']);
+ const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.totalPending,2);
+ assert.equal(out.pendingRegistrationCount,1);
+ assert.equal(out.pendingIdentityCount,1);
+ assert.equal(out.pendingSimpleCount,3,'existing unconfirmed simple row plus two fresh requests');
+ assert.equal(out.rejectedCount,1);
+ assert.equal(out.unknownWebStatusCount,0);
+ assert.equal(out.unknownSimpleStatusCount,0);
+ assert.equal(out.simplePending.length,3);
+ assert.deepEqual(Array.from(out.simplePending.map(x=>x.status)),['未確認','管理確認待ち','未確認']);
+ assert.equal(out.pendingListTruncated,false);
+ assert.equal(out.simplePendingListTruncated,false);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before,'operator queue read must never change cells');
+});
+test('pending lists may truncate while authoritative total counters still show all requests',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ for(let i=0;i<103;i++){
+  const row=[...web[1]];
+  row[0]='MIO-W-'+i.toString(16).padStart(24,'0');
+  row[2]='架空WEB'+i;
+  row[5]='承認待ち';
+  row[11]='確認待ち';
+  web.push(row);
+ }
+ const simple=x.rows['emuzii_新規簡易登録'];
+ for(let i=0;i<75;i++)simple.push(['','架空簡易'+i,'','登録','管理確認待ち','']);
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.totalPending,104);
+ assert.equal(out.pendingRegistrationCount,104);
+ assert.equal(out.pendingIdentityCount,0);
+ assert.equal(out.pending.length,80);
+ assert.equal(out.pendingListTruncated,true);
+ assert.equal(out.pendingSimpleCount,76);
+ assert.equal(out.simplePending.length,60);
+ assert.equal(out.simplePendingListTruncated,true);
+ assert.equal(x.write.length,0);
+});
+test('unknown sheet states are warnings, never silently counted as zero or processed as approval',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ web[1][5]='要調査';
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple[1][4]='不明な状態';
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.pendingRegistrationCount,0);
+ assert.equal(out.pendingIdentityCount,0);
+ assert.equal(out.pendingSimpleCount,0);
+ assert.equal(out.unknownWebStatusCount,1);
+ assert.equal(out.unknownSimpleStatusCount,1);
+ assert.equal(out.pending.length,0);
+ assert.equal(out.simplePending.length,0);
+ assert.equal(x.write.length,0);
+});
+test('administration read API may not turn missing or incoherent queue metadata into a zero count',()=>{
+ const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
+ for(const key of ['pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount',
+  'unknownSimpleStatusCount','pendingListTruncated','simplePendingListTruncated']){
+  assert.ok(api.includes(key),'missing queue metric '+key);
+ }
+ assert.match(api,/Number\.isSafeInteger\(result\[key\]\)/);
+ assert.match(api,/result\.totalPending!==result\.pendingRegistrationCount\+result\.pendingIdentityCount/);
+ assert.match(api,/return reply\(res,424,'管理台帳の待機人数を検証できません/);
+ assert.doesNotMatch(api,/totalPending:result\.totalPending\|\|0/);
+});
 test('actual 38 approved, 1 pending, 2 rejected never inflates approval queue to three',()=>{
  const x=sandbox();
  const web=x.rows['emuzii_Web登録'];
