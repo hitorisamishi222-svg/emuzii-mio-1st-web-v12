@@ -158,8 +158,8 @@ test('both archived GAS candidate variants enforce identical grant replay identi
  for(const code of [source,full]){
   assert.match(code,/Number\(prev\.c\[5\]\)!==expected/);
   assert.match(code,/mioAdminOpsStr_\(prev\.c\[8\]\)!==reason/);
-  assert.match(code,/mioAdminOpsStr_\\(h\\[4\\]\\)!==reason/);
-  assert.match(code,/mioAdminOpsName_\\(h\\[2\\]\\)!==mioAdminOpsName_\\(name\\)/);
+  assert.ok(code.includes('mioAdminOpsStr_(h[4])!==reason'));
+  assert.ok(code.includes('mioAdminOpsName_(h[2])!==mioAdminOpsName_(name)'));
   assert.match(code,/mioAdminOpsName_\(prev\.c\[9\]\)!==mioAdminOpsName_\(name\)/);
  }
  assert.doesNotThrow(()=>new vm.Script(full));
