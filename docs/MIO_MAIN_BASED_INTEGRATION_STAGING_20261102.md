@@ -121,3 +121,16 @@
 - [Registration regression #41383392402](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41383392402) **230/230 PASS・0 FAIL**。Vercelの当該コミットのPreviewはREADY（`target=null`）。ブラウザHTTPアクセス・iPhone実機・写真変換を実地確認できた意味ではない。
 - **次の本当のブロッカー**：Issue #66の現行GASの全ファイル・稼働デプロイ版と復元用バックアップが未取得、管理19関数/既存`doPost`の現物照合、付与履歴J列`Web操作ID`と監査タブの追加許可、公開中DB/作品の読み取り照合、iPhone/Android検証、全体の切戻し計画。
 - **引き続きDraft、main/Production/GAS/Sheets/DB・MIO-ID/皆勤/FA/景品/ガチャ残数/当選履歴は変更せず、Web管理書き込み・実抽選の試行もしない。**
+
+
+## 2026-11-02：スマホ画像メモリ保護とギャラリー閲覧機能の連続改善（Draft）
+
+- 開発ブランチの `museum-image-client.js` で、Canvas画像変換が成功して早期returnした場合や、変換途中で失敗した場合でも、必ず `canvas.width=0;canvas.height=0` を実行するように修正。写真連続変換時の端末メモリ負荷を抑えるための改修で、実iPhone上のメモリ量は未測定。
+- `tests/mio-museum-image-memory.test.mjs` に4件追加。正常終了、画像エンコード失敗、全3サイズで容量超過、連続5回の変換について、Canvasと一時URLの解放を模擬環境で確認。
+- 既存の `museum-approved-gallery.html` / `museum-approved-gallery.js` に、公開済み作品だけを対象とするローカル検索（作品名・制作者・説明）と「すべて／動画／音楽」切替、結果0件の表示を追加。公開許可済みの2作品、記念曲MP3とTikTok作品リンクは維持。非公開作品、管理API、Cookie、GAS、DB、ガチャには接続しない。
+- `tests/mio-staging-mobile-chromium.mjs` の実Chrome確認を320/375/390/430pxの4幅で、スマホ診断・承認済み音楽/動画・新検索/種類切替・展示室のカテゴリー切替/戻るまで拡張。公開許可されていない展示は0件で準備中の案内を維持。
+- アクティブな `.github/workflows/registration-tests.yml` のスクリーンショット保存対象に展示画面も加えた。ギャラリー/展示室/診断/写真プレビューの4枚がCI成果物に含まれることを確認。既存の診断JSONは許可された失敗理由のみ記録し、写真・氏名・端末IDを保存しない。
+- [全登録・管理回帰＋実Chrome #41385774060](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41385774060)：**236/236 PASS / 0 FAIL**、実Chrome4幅成功、テスト中のサーバー書き込み0。コミット `1a9b203db06fd7a1b6a26c3c3619b6f257ea23a2` に紐付くGitHub Actions **8本すべて成功**。
+- 画面表示の証拠はGitHub Actions成果物 `mio-staging-mobile-chrome-evidence`、保存期間7日。端末はLinux上のChrome模擬モバイルであり、**実iPhone Safari／Android Chromeを検証済みとはしない**。
+- **残件**：Issue #66の稼働GAS全ソースと実デプロイ版/復元可能バックアップの照合、同名19関数と既存`doPost`衝突、監査表と付与履歴のスキーマ許可、管理センターの実接続、既存作品DB/Blob照合、iPhone/Android実機、全体の復旧・切戻し・管理者公開判断。
+- **本番 `main bb4a39a`、Vercel Production、既存GAS、DB、スプレッドシート、MIO-ID、参加者、皆勤・FA・景品・抽選残数・当選履歴は変更せず**。PR #76はDraft、実管理の書込はOFF、実抽選0件。
