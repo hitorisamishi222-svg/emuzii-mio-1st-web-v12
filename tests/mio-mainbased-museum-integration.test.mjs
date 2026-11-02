@@ -24,6 +24,8 @@ const media={
 };
 const museumPages=['museum.html','mio-profile.html','museum-archive.html','museum-approved-gallery.html','museum-device-check.html'];
 const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js'];
+const rehearsalFiles=['mio-admin-rehearsal.html','mio-admin-rehearsal.js'];
+const stagedAssets=[...museumFiles,...rehearsalFiles];
 const unchanged=[
  'index.html','app.js','style.css','bridge.js',
  'api-register.js','api-status.js','api-checkin.js',
@@ -81,11 +83,11 @@ test('all prior Vercel builds and routes are retained EXACTLY, in the same order
  const filteredRoutes=config.routes.filter(x=>baseline.routes.some(y=>y.src===x.src));
  assert.deepEqual(filteredBuilds,baseline.builds,'A production build was removed/modified/reordered');
  assert.deepEqual(filteredRoutes,baseline.routes,'A production route was removed/modified/reordered');
- assert.equal(config.builds.length,baseline.builds.length+museumFiles.length);
- assert.equal(config.routes.length,baseline.routes.length+museumFiles.length);
+ assert.equal(config.builds.length,baseline.builds.length+stagedAssets.length);
+ assert.equal(config.routes.length,baseline.routes.length+stagedAssets.length);
 });
 test('museum routes are exact static files only; no production auth or database endpoints are added',()=>{
- for(const path of museumFiles){
+ for(const path of stagedAssets){
   assert.ok(exists(path),'Missing '+path);
   assert.deepEqual(config.builds.filter(x=>x.src===path),[{src:path,use:'@vercel/static'}]);
   const route=config.routes.filter(x=>x.src==='/'+path);
@@ -96,6 +98,21 @@ test('museum routes are exact static files only; no production auth or database 
  assert.equal(config.routes.filter(x=>x.src.startsWith('/api/museum')).length,0);
  for(const path of ['api-museum-exhibits.js','api-museum-image.js','api-museum-preflight.js'])
   assert.equal(exists(path),false,'Never stage unverified database writes: '+path);
+});
+test('admin rehearsal is a static, noindex fictional-data-only route with no live API handlers',()=>{
+ const html=read('mio-admin-rehearsal.html');
+ const js=read('mio-admin-rehearsal.js');
+ const panel=read('gacha-web-gate.html');
+ assert.match(html,/<meta name="robots" content="noindex,nofollow">/);
+ assert.match(html,/架空データ/);
+ assert.match(html,/実参加者に反映されません/);
+ assert.match(panel,/href="\/mio-admin-rehearsal.html"/);
+ assert.doesNotMatch(js,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|indexedDB|\binnerHTML\s*=/);
+ assert.doesNotMatch(js,/\/api\/|BRIDGE_SECRET|process\.env|postgres|@vercel\/blob/);
+ assert.match(js,/s\.ops\.has\(op\)/);
+ const htmlRoute=config.routes.find(x=>x.src==='/mio-admin-rehearsal.html');
+ assert.equal(htmlRoute.headers['X-Robots-Tag'],'noindex, nofollow');
+ assert.equal(htmlRoute.headers['Cache-Control'],'private, no-store');
 });
 test('original approved video and audio remain visible in the static catalog with no session rights changed',()=>{
  const video=approvedGalleryItems.find(x=>x.id==='mio-awakening-video');
