@@ -934,7 +934,11 @@ function mioAdminOpsApprove_(ss,d){
   var retryWeb=mioAdminOpsSheet_(ss,'emuzii_Web登録');
   var retryRows=mioAdminOpsValues_(retryWeb,21);
   var confirmed=mioAdminOpsOne_(retryRows,0,wid).c;
-  if(confirmed[5]==='承認済み'&amp;&amp;mioAdminOpsStr_(confirmed[7])===id&amp;&amp;
+  var linkedPerson=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id).c;
+  if(confirmed[5]==='承認済み'&amp;&amp;
+     mioAdminOpsName_(confirmed[2])===mioAdminOpsName_(linkedPerson[1])&amp;&amp;
+     mioAdminOpsName_(previous.c[9])===mioAdminOpsName_(confirmed[2])&amp;&amp;
+     mioAdminOpsStr_(confirmed[7])===id&amp;&amp;
      mioAdminOpsStr_(confirmed[10])===id&amp;&amp;confirmed[11]==='確認済み'&amp;&amp;
      confirmed[6]===(d.memberConfirmed?'確認済み':'未確認')&amp;&amp;
      confirmed[16]!=='旧端末'&amp;&amp;webIntegrityOk_(confirmed)&amp;&amp;
