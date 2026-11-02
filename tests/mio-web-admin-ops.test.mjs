@@ -84,6 +84,75 @@ test('read-only operator snapshot fails closed on absent required ledger without
  assert.equal(x.write.length,0);
  assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
 });
+test('current production schema fails closed for every admin write without creating tables or cells',()=>{
+ const cases=[
+  {label:'grant',action:{action:'webAdminOpsGrant',operationId:'1'.repeat(32),
+   mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'模擬追加付与'}},
+  {label:'approve',action:{action:'webAdminOpsApprove',operationId:'2'.repeat(32),
+   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+   memberConfirmed:false,expectedStatus:'承認待ち'}},
+  {label:'review',action:{action:'webAdminOpsReview',operationId:'3'.repeat(32),
+   row:2,expectedStatus:'未確認'}},
+  {label:'intake',action:{action:'webAdminOpsIntake',operationId:'4'.repeat(32),
+   name:'架空の新規申請',note:'本人確認待ち'}},
+  {label:'create',action:{action:'webAdminOpsCreate',operationId:'5'.repeat(32),
+   webId:'MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa',expectedStatus:'承認待ち'}}
+ ];
+ for(const item of cases){
+  const x=sandbox({schemaReady:false});
+  if(item.label==='create'){
+   x.rows['emuzii_参加者'].push(Array(10).fill(''));
+   x.rows['emuzii_Web登録'].push([item.action.webId,'test-token','初訪問者','',new Date(),
+    '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+  }
+  const before=JSON.stringify(x.rows);
+  assert.throws(()=>x.exec(item.action),/未整備/,'missing schema must block '+item.label);
+  assert.equal(JSON.stringify(x.rows),before,'no tab, column, credits or identity may change: '+item.label);
+  assert.equal(x.write.length,0,'never write to a production-like schema: '+item.label);
+  assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+  assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
+ }
+});
+test('grant refuses a missing or renamed operation-id header before any credit is changed',()=>{
+ for(const header of ['',null,'旧Web操作ID','操作ID']){
+  const x=sandbox();
+  x.rows['emuzii_ガチャ付与履歴'][0][9]=header;
+  const before=JSON.stringify(x.rows);
+  assert.throws(()=>x.exec({action:'webAdminOpsGrant',operationId:'6'.repeat(32),
+   mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'ガチャ付与検査'}),
+   /Web操作ID列が未整備/);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,0);
+  assert.equal(x.rows['emuzii_ガチャ'][1][14],2);
+ }
+});
+test('corrupted audit headers prevent every mutation without rewriting existing headers',()=>{
+ for(const action of [
+  {action:'webAdminOpsGrant',operationId:'7'.repeat(32),
+   mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'付与動作確認'},
+  {action:'webAdminOpsApprove',operationId:'8'.repeat(32),
+   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+   memberConfirmed:false,expectedStatus:'承認待ち'},
+  {action:'webAdminOpsIntake',operationId:'9'.repeat(32),
+   name:'架空の受付',note:'申請'}
+ ]){
+  const x=sandbox();
+  x.rows['emuzii_Web管理操作履歴'][0][1]='旧形式操作ID';
+  const before=JSON.stringify(x.rows);
+  assert.throws(()=>x.exec(action),/列見出しが不一致/);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,0);
+ }
+});
+test('GAS candidate code never auto-creates admin audit tabs or operation-ID column',()=>{
+ const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ for(const c of [source,full]){
+  assert.doesNotMatch(c,/insertSheet\('emuzii_Web管理操作履歴'\)/);
+  assert.doesNotMatch(c,/setValue\('Web操作ID'\)/);
+  assert.match(c,/Web管理操作履歴タブが未整備/);
+  assert.match(c,/ガチャ付与履歴のWeb操作ID列が未整備/);
+ }
+});
 test('grant updates only special count and writes idempotent audit',()=>{
  const x=sandbox(),op='e'.repeat(32),grant={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
  const first=x.exec(grant);
