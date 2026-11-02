@@ -177,7 +177,7 @@ test('all 19 archived Web admin helpers stay byte-identical across standalone an
  const extract=(code,name)=>{
   const start=code.indexOf('function '+name+'(');
   assert.notEqual(start,-1,'Missing '+name);
-  const end=code.indexOf('\\nfunction ',start+1);
+  const end=code.indexOf(String.fromCharCode(10)+'function ',start+1);
   return code.slice(start,end<0?code.length:end).trim();
  };
  assert.equal(helperNames.length,19);
