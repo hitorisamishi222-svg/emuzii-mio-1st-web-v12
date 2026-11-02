@@ -127,6 +127,12 @@ function mockClient(){
   if(sql==='ROLLBACK'){state.rollback++;return {rowCount:0,rows:[]};}
   if(sql.startsWith('SELECT state FROM mio_admin_incidents'))return {rowCount:1,rows:[{state:state.current}]};
   if(sql.startsWith('SELECT incident_id,action'))return state.audits.has(args[0])?{rowCount:1,rows:[state.audits.get(args[0])]}:{rowCount:0,rows:[]};
+  if(sql.startsWith('SELECT operation_id,payload_hash FROM mio_admin_incident_audit')){
+   const rows=[...state.audits.entries()].filter(([_,a])=>a.incident_id===args[0]&&
+    a.action==='resolve'&&a.before_state==='working'&&a.after_state==='resolved')
+    .slice(0,2).map(([operation_id,a])=>({operation_id,payload_hash:a.payload_hash}));
+   return {rowCount:rows.length,rows};
+  }
   if(sql.includes('UPDATE mio_admin_incidents')){
    if(state.current!==args[3])return {rowCount:0,rows:[]};
    state.current=args[1];state.writes++;return {rowCount:1,rows:[{incident_id:args[0]}]};
@@ -161,6 +167,25 @@ test('delayed replay of start after resolution reports the real resolved state w
  assert.equal(db.state.current,'resolved');
  assert.equal(db.state.writes,writes);
  assert.equal(db.state.audits.size,2);
+});
+test('delayed start replay requires one valid resolution audit, not a bare resolved state',async()=>{
+ for(const scenario of ['missing','corrupt-hash','duplicate']){
+  const db=mockClient();
+  const start={incidentId,action:'start',expectedState:'unhandled',operationId:'c'.repeat(32)};
+  const finish={incidentId,action:'resolve',expectedState:'working',operationId:'d'.repeat(32)};
+  await transitionIncident(db,start,'admin-code');
+  await transitionIncident(db,finish,'admin-passkey');
+  if(scenario==='missing')db.state.audits.delete(finish.operationId);
+  if(scenario==='corrupt-hash')db.state.audits.get(finish.operationId).payload_hash='0'.repeat(64);
+  if(scenario==='duplicate')db.state.audits.set('e'.repeat(32),
+   {...db.state.audits.get(finish.operationId)});
+  const before=db.state.writes;
+  await assert.rejects(transitionIncident(db,start,'admin-code'),
+   /incident resolved state lacks valid audit/,scenario);
+  assert.equal(db.state.writes,before,'invalid retry must never update the incident');
+  assert.equal(db.state.current,'resolved');
+  assert.equal(db.state.rollback,1);
+ }
 });
 test('inconsistent replay state fails closed and rolls back without an additional write',async()=>{
  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'e'.repeat(32)};
