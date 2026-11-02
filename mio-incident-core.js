@@ -70,7 +70,20 @@ export async function listIncidents(query){
    FROM mio_admin_incidents
    ORDER BY CASE state WHEN 'unhandled' THEN 0 WHEN 'working' THEN 1 ELSE 2 END,
             last_seen_at DESC LIMIT 100`,[]);
- return (r.rows||[]).map(x=>({
+ // A missing or partial DB response is never an empty inbox: no verified
+ // result means UNKNOWN, not "0 unresolved incidents" in an operator UI.
+ if(!r||!Array.isArray(r.rows)||!Number.isSafeInteger(r.rowCount)||
+    r.rowCount!==r.rows.length)throw Error('incident inbox read unavailable');
+ for(const x of r.rows){
+  if(!x||typeof x.incident_id!=='string'||
+     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x.incident_id)||
+     !WEB.test(x.participant_ref||'')||!good(x.source,['gacha','status'])||
+     !good(x.category,CATEGORIES)||!good(x.stage,STAGES)||!good(x.state,STATES)||
+     !Number.isSafeInteger(x.occurrence_count)||x.occurrence_count<1||
+     (x.draw_id!=null&&!DRAW.test(x.draw_id)))
+   throw Error('incident inbox row invalid');
+ }
+ return r.rows.map(x=>({
   incidentId:x.incident_id,participantRef:x.participant_ref,source:x.source,
   category:x.category,drawId:x.draw_id||null,stage:x.stage,state:x.state,
   count:x.occurrence_count,occurredAt:x.occurred_at,lastSeenAt:x.last_seen_at
