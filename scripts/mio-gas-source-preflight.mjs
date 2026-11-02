@@ -68,11 +68,14 @@ function bodyOfDoPost(source){
 function checkDispatcher(source){
  const body=bodyOfDoPost(source);
  if(!body)return {hasDispatcher:false,secretBefore:false,identityAfter:false,scriptLock:false};
- const actionPosition=body.indexOf('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
- const dispatchPosition=body.indexOf('mioAdminOps_(');
- const secretCheckPosition=Math.max(body.indexOf("getProperty('BRIDGE_SECRET')"),body.indexOf('getProperty("BRIDGE_SECRET")'));
- const comparePosition=body.indexOf('equal_(d.secret,secret)');
- const participantPosition=body.indexOf('d.participantId');
+ // Match executable tokens, not quotation-marked example code or decoy strings.
+ const active=maskInactiveGAS(body,true);
+ const actionPosition=active.indexOf('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
+ const dispatchPosition=active.indexOf('mioAdminOps_(');
+ const secretCheckPosition=[...active.matchAll(/getProperty\s*\(/g)]
+  .find(m=>/^getProperty\s*\(\s*(['"])BRIDGE_SECRET\1\s*\)/.test(body.slice(m.index)))?.index??-1;
+ const comparePosition=active.indexOf('equal_(d.secret,secret)');
+ const participantPosition=active.indexOf('d.participantId');
  return {
   hasDispatcher:actionPosition>=0&&dispatchPosition>actionPosition,
   secretBefore:secretCheckPosition>=0&&comparePosition>secretCheckPosition&&
@@ -81,12 +84,12 @@ function checkDispatcher(source){
   // Lock acquisition MUST precede the first admin dispatch, not merely appear later.
   // This is a conservative structural check, never a proof of runtime authentication.
   scriptLock:(()=>{
-   const lockPosition=body.indexOf('LockService.getScriptLock(');
-   const tryPosition=body.indexOf('lock.tryLock(');
-   const gatedPosition=body.indexOf('if(!lock.tryLock(');
+   const lockPosition=active.indexOf('LockService.getScriptLock(');
+   const tryPosition=active.indexOf('lock.tryLock(');
+   const gatedPosition=active.indexOf('if(!lock.tryLock(');
    // A failed tryLock must return before admin operations; a bare tryLock is insufficient.
    const failedLockReturns=gatedPosition>=0&&
-    /^if\(!lock\.tryLock\([^)]*\)\)\s*return\b/.test(body.slice(gatedPosition));
+    /^if\(!lock\.tryLock\([^)]*\)\)\s*return\b/.test(active.slice(gatedPosition));
    return lockPosition>=0&&tryPosition>lockPosition&&gatedPosition===tryPosition-4&&
     failedLockReturns&&
     (actionPosition<0||tryPosition<actionPosition)&&
