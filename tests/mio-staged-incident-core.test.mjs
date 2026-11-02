@@ -108,3 +108,19 @@ test('unapproved actor or stale state never creates an incident update',async()=
  assert.throws(()=>normalizeTriage({...d,operationId:'d'.repeat(32),action:'resolve',expectedState:'resolved'}));
  assert.equal(db.state.current,'unhandled');
 });
+
+
+test('the incident panel is diagnostic-only, shows no unverified counts and cannot refresh',()=>{
+ const html=read('gacha-web-gate.html');
+ const a=html.indexOf('<section id="incidentPreviewPanel"');
+ const b=html.indexOf('</section>',a);
+ assert.ok(a>=0&&b>a,'incident panel is missing');
+ const panel=html.slice(a,b);
+ for(const id of ['incidentPreviewState','incidentUnmatched','incidentWorking','incidentResolved','incidentPreviewList','incidentPreviewRefresh']){
+  assert.equal(panel.split('id="'+id+'"').length-1,1,'missing or duplicated incident slot: '+id);
+ }
+ assert.equal((panel.match(/未接続/g)||[]).length>=4,true);
+ assert.match(panel,/id="incidentPreviewRefresh"[^>]*disabled/);
+ assert.doesNotMatch(panel,/<script|<form|onclick=|onchange=|fetch\s*\(|\/api\/mio-incidents/);
+ assert.doesNotMatch(panel,/MIO-W-[a-f0-9]{24}|id="incidentPreviewRefresh"[^>]*\benabled\b/);
+});
