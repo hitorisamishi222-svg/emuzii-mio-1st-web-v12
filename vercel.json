@@ -428,6 +428,18 @@
     {
       "src": "museum-media-fallback.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum-device-check.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-image-client.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-device-check.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -633,6 +645,29 @@
     {
       "src": "/museum-media-fallback.js",
       "dest": "/museum-media-fallback.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-device-check.html",
+      "dest": "/museum-device-check.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-image-client.js",
+      "dest": "/museum-image-client.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-device-check.js",
+      "dest": "/museum-device-check.js",
       "headers": {
         "X-Content-Type-Options": "nosniff"
       }
