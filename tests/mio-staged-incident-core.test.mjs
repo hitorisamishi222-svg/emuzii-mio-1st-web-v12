@@ -119,7 +119,8 @@ test('offline incident triage is idempotent, cannot reuse operationId and change
  assert.equal(first.replayed,false);assert.equal(first.state,'working');
  const second=await transitionIncident(db,start,'admin-code');
  assert.equal(second.replayed,true);assert.equal(db.state.writes,1);
- await assert.rejects(transitionIncident(db,{...start,action:'resolve'},'admin-code'),/operation id reuse conflict/);
+ // This must be a valid resolution request first; reuse of the START operationId must still be rejected.
+ await assert.rejects(transitionIncident(db,{...start,action:'resolve',expectedState:'working'},'admin-code'),/operation id reuse conflict/);
  const done=await transitionIncident(db,{...start,action:'resolve',expectedState:'working',operationId:'d'.repeat(32)},'admin-passkey');
  assert.equal(done.state,'resolved');
  assert.equal(db.state.writes,2);assert.equal(db.state.audits.size,2);
