@@ -65,12 +65,12 @@ test('missing script lock / misplaced secret comparison blocks candidate dispatc
  checks(x);checks(y);
 });
 test('admin dispatch must remain after ScriptLock acquisition and gated tryLock',()=>{
- const route=full.split('\\n').find(line=>line.includes('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)')&&line.includes('mioAdminOps_('));
- const getter=full.split('\\n').find(line=>line.includes('var lock=LockService.getScriptLock();'));
- const tryLine=full.split('\\n').find(line=>line.includes('if(!lock.tryLock(10000))'));
+ const route=full.split(String.fromCharCode(10)).find(line=>line.includes('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)')&&line.includes('mioAdminOps_('));
+ const getter=full.split(String.fromCharCode(10)).find(line=>line.includes('var lock=LockService.getScriptLock();'));
+ const tryLine=full.split(String.fromCharCode(10)).find(line=>line.includes('if(!lock.tryLock(10000))'));
  assert.ok(route&&getter&&tryLine,'archived source layout changed; review guard before migration');
- const first=full.replace(getter,'').replace(route,route+'\\n'+getter);
- const second=full.replace(tryLine,'').replace(route,route+'\\n'+tryLine);
+ const first=full.replace(getter,'').replace(route,route+String.fromCharCode(10)+getter);
+ const second=full.replace(tryLine,'').replace(route,route+String.fromCharCode(10)+tryLine);
  for(const unsafe of [first,second]){
   const result=inspectSources([unsafe],{liveHeaders:sheet});
   assert.equal(result.classification,'BLOCKED_REVIEW');
