@@ -413,7 +413,12 @@ test('preview assets add independent API, keep current draw route',()=>{
  const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
  assert.match(api,/MIO_GACHA_ADMIN_OPS_RELEASE/);
  const html=readFileSync(new URL('../gacha-web-gate.html',import.meta.url),'utf8');
- for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','normal','fest'])assert.ok(html.includes('id="'+id+'"'));
+ for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','normal','fest',
+  'opsPendingNewCount','opsPendingIdentityCount','opsPendingSimpleCount','opsUnknownState'])
+  assert.ok(html.includes('id="'+id+'"'));
+ // A disconnected preview cannot claim no waiting participants.
+ assert.ok(html.includes('未接続（0人とは限りません）'));
+ assert.match(html,/id="opsReload"[^>]*disabled/);
 });
 
 test('new visitor MIO-ID is created only after exact unlinked registration check',()=>{
