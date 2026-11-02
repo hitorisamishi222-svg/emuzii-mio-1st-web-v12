@@ -1074,8 +1074,7 @@ function mioAdminOpsIntake_(ss,d){
    if(past.c[2]!=='初訪問受付'||mioAdminOpsName_(past.c[9])!==mioAdminOpsName_(name)||
       mioAdminOpsStr_(past.c[8])!==note)
      throw new Error('操作IDの再利用は禁止です');
-   if(past.c[7]==='確定')return {ok:true,replayed:true};
-   if(past.c[7]!=='処理中')throw new Error('同じ操作の受付状態を確認してください');
+   if(past.c[7]!=='確定'&&past.c[7]!=='処理中')throw new Error('同じ操作の受付状態を確認してください');
    // If the first attempt wrote the intake row but lost its response, do not
    // append another record. Match the unique Web-created row and audit time.
    var pendingSheet=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
@@ -1090,7 +1089,9 @@ function mioAdminOpsIntake_(ss,d){
        Number.isFinite(when)&&when>=started-5000&&when<=started+900000;
    });
    if(matching.length===1){
-     history.getRange(past.row,8).setValue('確定');
+     // Confirmed receipts must be verified against the current intake row,
+     // but must never update an already completed audit on replay.
+     if(past.c[7]==='処理中')history.getRange(past.row,8).setValue('確定');
      return {ok:true,replayed:true,status:mioAdminOpsStr_(matching[0][4])};
    }
    throw new Error('同じ操作の受付状態を確認してください');
