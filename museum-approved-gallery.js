@@ -39,18 +39,29 @@ function card(item){
 const search=document.getElementById('approvedGallerySearch');
 const filterButtons=typeof document.querySelectorAll==='function'?
  [...document.querySelectorAll('[data-gallery-kind]')]:[];
+// Build ONLY published cards once. Replacing active <audio> nodes during a search
+// interrupts listening in Safari; filtering must preserve the existing DOM/media state.
+const cards=list&&status?approved.map(item=>({item,element:card(item)})):[];
+if(list&&status)list.replaceChildren(...cards.map(entry=>entry.element));
 let selected='all',keyword='';
 function render(){
  if(!list||!status)return;
- const shown=approved.filter(item=>{
-  if(selected!=='all'&&item.category!==selected)return false;
+ let visibleCount=0;
+ for(const entry of cards){
+  const item=entry.item,el=entry.element;
   const haystack=[item.title,item.creator,item.description].filter(Boolean).join(' ').toLocaleLowerCase('ja');
-  return haystack.includes(keyword);
- });
+  const visible=(selected==='all'||item.category===selected)&&haystack.includes(keyword);
+  if(!visible&&!el.hidden){
+   // Stop playback only when its own card is filtered OUT, never when it stays visible.
+   const audio=typeof el.querySelector==='function'?el.querySelector('audio'):null;
+   if(audio&&typeof audio.pause==='function')audio.pause();
+  }
+  el.hidden=!visible;
+  if(visible)visibleCount++;
+ }
  filterButtons.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.galleryKind===selected)));
- list.replaceChildren(...shown.map(card));
- status.textContent=shown.length?
-  shown.length+'件の承認済み作品を表示しています。':
+ status.textContent=visibleCount?
+  visibleCount+'件の承認済み作品を表示しています。':
   '条件に一致する公開作品はありません。';
 }
 if(search)search.addEventListener('input',()=>{keyword=search.value.trim().toLocaleLowerCase('ja');render()});
