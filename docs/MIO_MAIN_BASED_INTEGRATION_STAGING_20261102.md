@@ -134,3 +134,14 @@
 - 画面表示の証拠はGitHub Actions成果物 `mio-staging-mobile-chrome-evidence`、保存期間7日。端末はLinux上のChrome模擬モバイルであり、**実iPhone Safari／Android Chromeを検証済みとはしない**。
 - **残件**：Issue #66の稼働GAS全ソースと実デプロイ版/復元可能バックアップの照合、同名19関数と既存`doPost`衝突、監査表と付与履歴のスキーマ許可、管理センターの実接続、既存作品DB/Blob照合、iPhone/Android実機、全体の復旧・切戻し・管理者公開判断。
 - **本番 `main bb4a39a`、Vercel Production、既存GAS、DB、スプレッドシート、MIO-ID、参加者、皆勤・FA・景品・抽選残数・当選履歴は変更せず**。PR #76はDraft、実管理の書込はOFF、実抽選0件。
+
+
+## 2026-11-02：音楽再生維持・Safari画像互換・公開作品カテゴリー共有（開発版限定）
+
+- 記念館の承認済み作品フィルタが毎回 DOM を作り直し、再生中の記念曲が検索で中断しうる問題を修正。承認済み作品だけを一度生成し、検索・種類変更で `hidden` を切り替える。非表示にした楽曲のみ `pause()`、表示が続く楽曲の元の `audio` 要素は維持。
+- `.museum-approved-card[hidden]{display:none}` を追加。CSS の `display:flex` が HTML の `hidden` を打ち消さないことを実Chromeでも検証した。公開未承認の作品は DOM にも追加しない。
+- 作品ジャンルの直接リンク `/museum-approved-gallery.html?kind=music` / `?kind=video` を追加。画面のカテゴリ切替で URL に反映し、ブラウザの戻る操作で選択が復元される。検索語は URL・Cookie・storage・サーバーへ記録しない。
+- `museum-image-client.js` では一部Safari等で WebP の `canvas.toBlob()` が null を返した場合、JPEG への再エンコードを行う。画像変換に使用したCanvasの成功/失敗後の解放は維持。Unit mock 2件を追加し、実Chromeでも null WebP エンコーダーを模擬してJPEGへの代替変換を検証。
+- [登録/管理回帰+実Chrome #41391286117](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41391286117) は **238/238 PASS、0 FAIL**。320/375/390/430pxで音楽プレイヤーの実ノード維持、非表示時だけpause、カテゴリURL・history.back、診断の写真変換を確認。ブラウザ試験中のサーバー書き込み0。
+- 上記はLinuxの実Chromeとモックであり、**iPhone Safari実機や稼働GASの接続成功ではない**。管理センター承認/回数付与は未接続・OFFのまま。
+- 対象PRは #76 Draft。公開中のmain、Vercel Production、稼働GAS、DB、Sheet、参加者・皆勤・FA・景品・ガチャ回数・当選履歴に変更なし。
