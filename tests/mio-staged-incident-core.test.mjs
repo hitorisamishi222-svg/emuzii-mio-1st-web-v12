@@ -125,6 +125,38 @@ test('offline incident triage is idempotent, cannot reuse operationId and change
  assert.equal(done.state,'resolved');
  assert.equal(db.state.writes,2);assert.equal(db.state.audits.size,2);
 });
+test('delayed replay of start after resolution reports the real resolved state without an extra write',async()=>{
+ const db=mockClient(),start={incidentId,action:'start',expectedState:'unhandled',operationId:'c'.repeat(32)};
+ const finish={incidentId,action:'resolve',expectedState:'working',operationId:'d'.repeat(32)};
+ await transitionIncident(db,start,'admin-code');
+ await transitionIncident(db,finish,'admin-passkey');
+ const writes=db.state.writes;
+ const replay=await transitionIncident(db,start,'admin-code');
+ assert.deepEqual(replay,{replayed:true,incidentId,state:'resolved'});
+ assert.equal(db.state.current,'resolved');
+ assert.equal(db.state.writes,writes);
+ assert.equal(db.state.audits.size,2);
+});
+test('inconsistent replay state fails closed and rolls back without an additional write',async()=>{
+ const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'e'.repeat(32)};
+ await transitionIncident(db,d,'admin-code');
+ db.state.current='unhandled'; // Simulate an unexpected external state rollback.
+ const writes=db.state.writes;
+ await assert.rejects(transitionIncident(db,d,'admin-code'),/incident replay state inconsistent/);
+ assert.equal(db.state.writes,writes);
+ assert.equal(db.state.rollback,1);
+});
+test('ambiguous duplicate audit rows cannot be accepted as a successful replay',async()=>{
+ const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'f'.repeat(32)};
+ await transitionIncident(db,d,'admin-code');
+ const original=db.query.bind(db);
+ db.query=async(sql,args)=>sql.startsWith('SELECT incident_id,action')?
+   {rowCount:2,rows:[db.state.audits.get(d.operationId),db.state.audits.get(d.operationId)]}:
+   original(sql,args);
+ await assert.rejects(transitionIncident(db,d,'admin-code'),/ambiguous incident audit/);
+ assert.equal(db.state.writes,1);
+ assert.equal(db.state.rollback,1);
+});
 test('triage refuses direct resolution before an admin has started handling the case',async()=>{
  const db=mockClient();
  const direct={incidentId,action:'resolve',expectedState:'unhandled',operationId:'e'.repeat(32)};
