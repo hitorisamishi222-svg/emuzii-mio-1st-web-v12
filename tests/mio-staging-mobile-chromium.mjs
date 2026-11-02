@@ -94,6 +94,30 @@ try{
      document.querySelector('#tryPhoto').click();ok(true)},'image/png'))})()`);
    await poll(()=>evaluate("document.querySelector('#photoStatus')?.textContent.includes('成功しました')"));
    assert.equal(await evaluate("document.querySelector('#photoPreview').naturalWidth>0"),true);
+   // Intercept the local JSON download; inspect the actual report bytes without downloading or uploading.
+   const report=await evaluate(`(async()=>{
+    const originalUrl=URL.createObjectURL,originalClick=HTMLAnchorElement.prototype.click;
+    let reportBlob=null;
+    URL.createObjectURL=function(blob){
+     if(blob.type==='application/json'){reportBlob=blob;return 'blob:offline-diagnostic-report'}
+     return originalUrl.call(URL,blob)
+    };
+    HTMLAnchorElement.prototype.click=function(){};
+    try{
+     document.querySelector('#saveReport').click();
+     if(!reportBlob)throw Error('report JSON was never generated');
+     return JSON.parse(await reportBlob.text());
+    }finally{URL.createObjectURL=originalUrl;HTMLAnchorElement.prototype.click=originalClick}
+   })()`);
+   assert.equal(report.schema,'mio-museum-device-check-v1');
+   assert.equal(report.browserTestOnly,true);
+   assert.equal(report.serverUploadTested,false);
+   assert.equal(report.realAdminLoginTested,false);
+   assert.equal(report.synthetic?.ok,true);
+   assert.equal(report.photo?.ok,true);
+   assert.ok(!JSON.stringify(report).includes('synthetic-only.png'),'photo filename leaked into report');
+   assert.deepEqual(Object.keys(report).sort(),
+     ['schema','screen','synthetic','photo','browserTestOnly','serverUploadTested','realAdminLoginTested'].sort());
    await mkdir('artifacts',{recursive:true});
    await evaluate("document.querySelector('#photoPreview').scrollIntoView({block:'center',behavior:'instant'})");
    const photoShot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
