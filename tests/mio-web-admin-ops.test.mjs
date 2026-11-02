@@ -720,7 +720,7 @@ test('malformed Web IDs and nameless simple intake cannot silently disappear fro
  assert.equal(JSON.stringify(x.rows),before);
 });
 test('administration read API may not turn missing or incoherent queue metadata into a zero count',()=>{
- const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
+ const api=readFileSync(new URL('../staging/mio-admin-queue-api-candidate.js',import.meta.url),'utf8');
  for(const key of ['pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount',
   'unknownSimpleStatusCount','invalidWebIdCount','incompleteSimpleRowCount','pendingListTruncated','simplePendingListTruncated']){
   assert.ok(api.includes(key),'missing queue metric '+key);
