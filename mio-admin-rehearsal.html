@@ -63,6 +63,12 @@ label{display:block;font-weight:700;margin-top:10px}
 <label for="demoOperationId">操作ID（同じIDで二重付与できない）</label>
 <input id="demoOperationId" type="text" maxlength="40" value="DEMO-OP-001" autocomplete="off">
 <div class="actions" style="margin-top:12px"><button id="demoGrant" type="button" disabled>選択した人へ模擬付与</button></div>
+<label for="demoDropReply" class="mini" style="display:flex;align-items:center;gap:9px;margin-top:12px">
+<input id="demoDropReply" type="checkbox" style="width:24px;min-height:24px;flex:none">
+付与処理の後、応答だけが失われる状況を1回再現
+</label>
+<div class="actions"><button id="demoVerify" type="button" class="secondary" disabled>同じ操作IDで結果を再照合</button></div>
+<p id="demoUnknown" class="mini" role="status" aria-live="polite">結果不明の模擬操作はありません。</p>
 </section>
 <section>
 <h2>障害・復旧対応</h2>
