@@ -22,8 +22,8 @@ const media={
  video:'https://vt.tiktok.com/ZSgFvmy7Q/',
  cover:'/assets/gallery-emuzii-mio-cover.svg'
 };
-const museumPages=['museum.html','mio-profile.html','museum-archive.html','museum-approved-gallery.html'];
-const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js'];
+const museumPages=['museum.html','mio-profile.html','museum-archive.html','museum-approved-gallery.html','museum-device-check.html'];
+const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js'];
 const unchanged=[
  'index.html','app.js','style.css','bridge.js',
  'api-register.js','api-status.js','api-checkin.js',
@@ -119,7 +119,7 @@ test('staging museum is non-indexed and not falsely described as production',()=
  }
 });
 test('museum display JavaScript cannot read participants or submit writes',()=>{
- for(const path of ['museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js']){
+ for(const path of ['museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js']){
   const script=read(path);
   assert.doesNotMatch(script,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|\bindexedDB\b/,path);
   assert.doesNotMatch(script,/\/api\/(?:register|gacha|status|checkin|gallery)/,path);
