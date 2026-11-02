@@ -97,12 +97,12 @@ export async function transitionIncident(client,values,actor){
    'SELECT state FROM mio_admin_incidents WHERE incident_id=$1 FOR UPDATE',[d.incidentId]);
   if(locked.rowCount!==1)throw Error('incident not found');
   const audit=await client.query(
-   'SELECT incident_id,action,before_state,payload_hash FROM mio_admin_incident_audit WHERE operation_id=$1',[d.operationId]);
+   'SELECT incident_id,action,before_state,after_state,payload_hash FROM mio_admin_incident_audit WHERE operation_id=$1',[d.operationId]);
   if(audit.rowCount){
    if(audit.rowCount!==1||!audit.rows?.[0])throw Error('ambiguous incident audit');
    const a=audit.rows[0];
    if(a.incident_id!==d.incidentId||a.action!==d.action||a.before_state!==d.expectedState||
-      a.payload_hash!==payloadHash)throw Error('operation id reuse conflict');
+      a.after_state!==after||a.payload_hash!==payloadHash)throw Error('operation id reuse conflict');
    // A retried START may arrive after RESOLVE. Never return an outdated 'working'
    // status to the operator or overwrite the incident's advanced state.
    const current=locked.rows[0].state;
