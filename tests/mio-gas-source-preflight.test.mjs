@@ -80,6 +80,18 @@ test('admin dispatch must remain after ScriptLock acquisition and gated tryLock'
  }
 });
 
+test('ScriptLock check without an immediate failure return is blocked',()=>{
+ const tryLine=full.split(String.fromCharCode(10)).find(line=>line.includes('if(!lock.tryLock(10000))'));
+ assert.ok(tryLine,'archived tryLock guard is missing');
+ // Deleting the early return must not be accepted as a safe lock barrier.
+ const unsafe=full.replace(tryLine,tryLine.replace(/return[\\s\\S]*/, '{}'));
+ const x=inspectSources([unsafe],{liveHeaders:sheet});
+ assert.equal(x.classification,'BLOCKED_REVIEW');
+ assert.equal(x.auditedDispatcher,false);
+ assert.ok(x.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
+ checks(x);
+});
+
 test('export-only tool never displays private source or secret material and never writes to files or network',()=>{
  const code=read('scripts/mio-gas-source-preflight.mjs');
  assert.doesNotMatch(code,/\bfetch\s*\(|https?\.request|createWriteStream|writeFile|appendFile|unlinkSync|execSync|eval\s*\(/);
