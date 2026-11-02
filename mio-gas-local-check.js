@@ -87,7 +87,7 @@
  const pick=document.getElementById('gasSources'),check=document.getElementById('gasCheck'),
   clear=document.getElementById('gasClear'),save=document.getElementById('gasExport'),
   status=document.getElementById('gasStatus'),list=document.getElementById('gasReasons');
- let report=null;
+ let report=null,revision=0;
  const set=(id,v)=>{document.getElementById(id).textContent=String(v)};
  function draw(){
   set('gasFiles',report?.fileCount??'—');
@@ -102,6 +102,7 @@
   }
  }
  check.addEventListener('click',async()=>{
+  const request=++revision;
   report=null;save.disabled=true;draw();
   const files=[...pick.files||[]];
   if(!files.length){status.textContent='ファイルを選択してください。';return}
@@ -112,6 +113,8 @@
   check.disabled=true;status.textContent='端末内で解析しています。ファイルの送信はしません。';
   try{
    const texts=await Promise.all(files.map(f=>f.text()));
+   // The user may have cleared the screen while a large local file was read.
+   if(request!==revision)return;
    report=inspect(texts);
    status.textContent=report.classification==='BLOCKED_REVIEW'?
     '導入停止：コード候補に重複・不足・確認できない順序があります。':
@@ -120,14 +123,17 @@
      '管理19関数が揃った候補です。稼働版の一致・バックアップは未確認のため導入禁止。';
    save.disabled=false;draw();
   }catch{
+   if(request!==revision)return;
    report=null;status.textContent='ファイルを安全に読み取れませんでした。結果は破棄しました。';draw();
   }finally{
-   // Do not keep user-selected source files attached to this form.
-   pick.value='';check.disabled=false;
+   // Never restore an obsolete result after the user pressed clear.
+   if(request===revision){pick.value='';check.disabled=false}
   }
  });
  clear.addEventListener('click',()=>{
-  report=null;pick.value='';save.disabled=true;status.textContent='検査結果を消去しました。';
+  revision++;
+  report=null;pick.value='';save.disabled=true;check.disabled=false;
+  status.textContent='検査結果を消去しました。';
   draw();
  });
  save.addEventListener('click',()=>{
