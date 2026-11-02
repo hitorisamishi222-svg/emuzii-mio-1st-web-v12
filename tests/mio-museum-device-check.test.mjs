@@ -64,3 +64,15 @@ test('privacy guard exports only fixed failure codes, never arbitrary browser er
  assert.equal(js.split('reason:safeReason(e)').length-1,2);
  assert.equal(js.includes('reason:e?.message'),false);
 });
+
+test('preview Chrome screenshots for approved museum and archive are retained by active CI',()=>{
+ const runner=read('tests/mio-staging-mobile-chromium.mjs');
+ const action=read('.github/workflows/registration-tests.yml');
+ for(const name of ['mio-museum-approved-gallery-390.png','mio-museum-archive-390.png']){
+  assert.ok(runner.includes(name),'missing browser screenshot capture: '+name);
+ }
+ assert.ok(action.includes('artifacts/mio-museum-*.png'),'CI would drop museum screenshot evidence');
+ assert.ok(action.includes('artifacts/mio-offline-mobile-*.png'),'CI would drop phone diagnostic evidence');
+ assert.ok(action.includes("github.head_ref == 'feature/mio-v2-integration-mainbaseline-20261102'"),
+  'browser fixture must remain scoped to staging branch');
+});
