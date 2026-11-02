@@ -125,6 +125,19 @@ export async function transitionIncident(client,values,actor){
   if(!locked||locked.rowCount!==1||!Array.isArray(locked.rows)||
      locked.rows.length!==1||!good(locked.rows[0]?.state,STATES))
    throw Error('incident current state unavailable');
+  if(d.action==='resolve'){
+   // A raw 'working' state is not proof that a verified operator started the
+   // incident. Both a new resolution and its replay need a single START audit.
+   const started=await client.query(
+    `SELECT operation_id,payload_hash FROM mio_admin_incident_audit
+      WHERE incident_id=$1 AND action='start'
+        AND before_state='unhandled' AND after_state='working'
+      LIMIT 2`,[d.incidentId]);
+   if(started?.rowCount!==1||started.rows?.length!==1||
+      !OP.test(started.rows[0]?.operation_id||'')||
+      started.rows[0].payload_hash!==sha([d.incidentId,'start','unhandled'].join(':')))
+    throw Error('incident working state lacks valid start audit');
+  }
   const audit=await client.query(
    'SELECT incident_id,action,before_state,after_state,payload_hash FROM mio_admin_incident_audit WHERE operation_id=$1',[d.operationId]);
   // The operation log is authoritative. If transport returned an incomplete
