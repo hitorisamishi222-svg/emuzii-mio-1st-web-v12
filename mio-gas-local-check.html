@@ -38,12 +38,12 @@ li{margin:5px 0;overflow-wrap:anywhere}code{color:#ffdcac}
 <button id="gasExport" type="button" disabled>個人情報を含まない診断結果JSONを保存</button>
 </section>
 <section><h2>③ 復元用バックアップの同一性チェック</h2>
-<p>保存した元ファイルとバックアップの2組が、<strong>ファイル名・ファイル内容まで完全一致するか</strong>を端末内で照合します。原本・バックアップのファイル名とコード本文は送信・保存・表示しません。</p>
+<p>保存した元ファイルとバックアップの2組が、<strong>ファイル名・ファイル内容まで完全一致するか</strong>を端末内で照合します。Apps Scriptで使う <code>.gs</code>・<code>.html</code>・<code>appsscript.json</code> 等も対象です。原本・バックアップのファイル名とコード本文は送信・保存・表示しません。</p>
 <label for="gasBackupOriginal">比較元：既存GASから保存したファイル一式</label>
-<input id="gasBackupOriginal" type="file" multiple accept=".gs,.txt,text/plain">
+<input id="gasBackupOriginal" type="file" multiple accept=".gs,.txt,.html,.json,text/plain,text/html,application/json">
 <label for="gasBackupCopy">比較先：復元用バックアップのファイル一式</label>
-<input id="gasBackupCopy" type="file" multiple accept=".gs,.txt,text/plain">
-<p>それぞれ最大30ファイル・合計8MB。照合する2組は同じ構成である必要があります。</p>
+<input id="gasBackupCopy" type="file" multiple accept=".gs,.txt,.html,.json,text/plain,text/html,application/json">
+<p>それぞれ最大30ファイル・合計8MB。ファイルの順番は自由ですが、名前が重複するファイルは比較できません。選択した2組が一致しても、全ファイルを選び終えた保証にはなりません。</p>
 <button id="gasBackupCompare" type="button">2組を端末内で照合する</button>
 <button id="gasBackupClear" type="button">バックアップ照合結果を消す</button>
 <p id="gasBackupStatus" role="status" aria-live="polite">まだバックアップを比較していません。</p>
