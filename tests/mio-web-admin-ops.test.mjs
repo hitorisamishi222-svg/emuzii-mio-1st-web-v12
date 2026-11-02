@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../GAS_WebAdminOps_20261030.gs',import.meta.url),'utf8');
-function sandbox(){
+function sandbox({schemaReady=true}={}){
  const rows={
   'emuzii_Web登録':[['Web参加ID'],['MIO-W-1234567890abcdef12345678','token','新しい人','',new Date(),'承認待ち','未確認','MIO-0001','','','','確認待ち',...Array(9).fill('')]],
   'emuzii_参加者':[['参加者ID'],['MIO-0001','新しい人']],
@@ -12,6 +12,13 @@ function sandbox(){
   'emuzii_当選履歴':[['抽選ID']],
   'emuzii_新規簡易登録':[['登録日時'],['','初訪問者','MIO-W-222222222222222222222222','登録','未確認','']]
  };
+ if(schemaReady){
+  rows['emuzii_Web管理操作履歴']=[[
+   '日時','操作ID','操作種別','Web参加ID','MIO-ID',
+   '変更前','変更後','処理状態','備考','対象名'
+  ]];
+  rows['emuzii_ガチャ付与履歴'][0][9]='Web操作ID';
+ }
  const write=[];
  const ss={
   getSheetByName(n){return rows[n]?sheet(n):null},
@@ -52,7 +59,7 @@ test('safe read hides tokens and returns pending, roster and simple intake',()=>
  assert.equal(JSON.stringify(out).includes('token'),false);
 });
 test('read-only operator snapshot never writes, creates audit tabs, or adds the missing operation ID column',()=>{
- const x=sandbox();
+ const x=sandbox({schemaReady:false});
  const before=JSON.stringify(x.rows);
  assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
  assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
@@ -67,7 +74,7 @@ test('read-only operator snapshot never writes, creates audit tabs, or adds the 
  }
 });
 test('read-only operator snapshot fails closed on absent required ledger without creating it',()=>{
- const x=sandbox();
+ const x=sandbox({schemaReady:false});
  const before=JSON.stringify(x.rows);
  delete x.rows['emuzii_ガチャ付与履歴'];
  const afterDelete=JSON.stringify(x.rows);
