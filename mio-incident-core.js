@@ -128,6 +128,19 @@ export async function transitionIncident(client,values,actor){
    const current=locked.rows[0].state;
    if(current!==after&&!(after==='working'&&current==='resolved'))
     throw Error('incident replay state inconsistent');
+   if(after==='working'&&current==='resolved'){
+    // A delayed START retry must not mistake an unaudited/corrupt direct
+    // state change for a legitimate resolution. This is read-only.
+    const resolvedAudit=await client.query(
+     `SELECT operation_id,payload_hash FROM mio_admin_incident_audit
+       WHERE incident_id=$1 AND action='resolve'
+         AND before_state='working' AND after_state='resolved'
+       LIMIT 2`,[d.incidentId]);
+    if(resolvedAudit?.rowCount!==1||resolvedAudit.rows?.length!==1||
+       !OP.test(resolvedAudit.rows[0]?.operation_id||'')||
+       resolvedAudit.rows[0].payload_hash!==sha([d.incidentId,'resolve','working'].join(':')))
+     throw Error('incident resolved state lacks valid audit');
+   }
    await client.query('COMMIT');
    return {replayed:true,incidentId:d.incidentId,state:current};
   }
