@@ -123,3 +123,15 @@ node scripts/mio-gas-source-preflight.mjs "/private/backup/Code.gs" "/private/ba
 - `gacha-web-gate.html` の停止中管理プレビューパネルに、3つの待機カテゴリーを**「未接続（0人とは限りません）」**と明示。既存ガチャスイッチや管理操作の安全な無効化状態を保持。静的画面のモバイル幅と接続OFFをChromeで確認。
 - 既存の保護スナップショット `tests/mio-mainbased-museum-integration.test.mjs` は緩めない。保護APIを変更した途中のCI失敗は失敗として扱い、その後main原本に完全復元し合格を再確認した。
 - **公開停止**：これらの人数は実際の連携済み管理センターにまだ自動反映されない。稼働GAS全ファイルとデプロイ版/バックアップ/監査台帳の認可が完了するまで、運営管理API接続・承認・付与はONにしない。参加者/MIO-ID/皆勤/FA/ガチャ残数・当選履歴・Googleシートは変更しない。
+
+## 2026-11-02 17時台：新着承認待ちのゼロ件誤表示を防ぐ（開発版のみ）
+
+**背景**：実際の登録台帳を読み取り専用で確認して承認待ちを集計できたが、今後の管理画面では異なる「待機中」を一括集計すると対応漏れが起きる。稼働GASの読み取り接続はIssue #66の未完了ゲートであり、静的プレビューを実データ接続済みと見せてはいけない。
+
+- GASの **保存済み未配備候補** で、Web登録の「承認待ち」 (`pendingRegistrationCount`)、承認済みだが本人整合が未確認 (`pendingIdentityCount`)、簡易登録の未確認・管理確認待ち (`pendingSimpleCount`) を分離。過去の合算 `totalPending` も互換性のため維持するが、内容を分けて表示・判定する。
+- どの分類にも属さないWeb登録状態 (`unknownWebStatusCount`)、簡易登録状態 (`unknownSimpleStatusCount`)、不正/空欄のWeb参加IDがある登録行 (`invalidWebIdCount`)、氏名のない不完全簡易登録行 (`incompleteSimpleRowCount`) を別の「要確認件数」として集計する。空白の未使用行や動作確認用レコードを通常の待機人数に含めない。
+- 最近の表示一覧はWebで最大80件、簡易登録で最大60件だが、**全件総数は省略しない**。`pendingListTruncated`/`simplePendingListTruncated` を明示し、契約テストでは件数と実表示行数の一致（各上限まで）を要求する。
+- `gacha-web-gate.html` の**停止中プレビュー**に待機3分類の見出しを追加。ただし「未接続（0人とは限りません）」のままとし、実参加者一覧や個人情報は表示しない。承認・付与・更新ボタンは無効のまま。
+- **既存本番由来API `api-gacha-admin-ops.js` は一時的に誤変更したが、mainのGit blob `d38a5f2de048b72b9e378eb0e59a431ba18a4ad6` と完全一致する状態へ復元**。変更を検知したCI失敗履歴は残し、保護テストを弱めない。重複した未配備API候補も削除し、`scripts/mio-admin-queue-contract.mjs` だけを純粋で副作用のない検証ロジックとして保持。Vercelへの新規管理APIルート追加や本番認証・GAS接続はしていない。
+- `tests/mio-web-admin-ops.test.mjs` と `tests/mio-admin-ops-queue-api.test.mjs` で混在した待機分類、大量登録による省略、不正ID/欠損名、不明ステータス、欠落した人数メタデータ、不完全な一覧レスポンスを検証。実Chromeで320/375/390/430pxの停止中画面の表記とボタン無効を確認する。
+- これらの改善は**管理センターの本番運用を開始したことを意味しない**。実稼働GAS正本/デプロイ版・復元バックアップ・承認済み監査スキーマ照合が終わるまではPR #76をDraft、管理書込OFF、個人情報の実接続なしで維持する。
