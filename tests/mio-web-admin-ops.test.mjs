@@ -179,6 +179,57 @@ test('confirmed grant replay is read-only and requires the original grant histor
  assert.equal(JSON.stringify(x.rows),before);
  assert.equal(x.write.length,writes);
 });
+test('confirmed approval replay requires unchanged live identity and performs no writes',()=>{
+ const request={action:'webAdminOpsApprove',operationId:'a'.repeat(32),
+  webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+  memberConfirmed:true,expectedStatus:'承認待ち'};
+ for(const state of ['approvalRemoved','identityCorrupt','memberReverted','otherDevice']){
+  const x=sandbox();x.exec(request);
+  if(state==='approvalRemoved')x.rows['emuzii_Web登録'][1][5]='承認待ち';
+  if(state==='identityCorrupt')x.rows['emuzii_Web登録'][1][11]='未確認';
+  if(state==='memberReverted')x.rows['emuzii_Web登録'][1][6]='未確認';
+  if(state==='otherDevice')x.rows['emuzii_Web登録'][1][16]='旧端末';
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),/前の処理を管理者が確認中です/,state);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes);
+ }
+ const x=sandbox();x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
+test('confirmed new MIO-ID replay verifies original participant still exists with the same name',()=>{
+ const webId='MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa';
+ const request={action:'webAdminOpsCreate',operationId:'b'.repeat(32),
+  webId,expectedStatus:'承認待ち'};
+ for(const mode of ['renamedParticipant','missingParticipant','renamedWeb']){
+  const x=sandbox();
+  x.rows['emuzii_参加者'].push(Array(10).fill(''));
+  x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),
+   '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+  assert.equal(x.exec(request).mioId,'MIO-0002');
+  if(mode==='renamedParticipant')x.rows['emuzii_参加者'][2][1]='別の人';
+  if(mode==='missingParticipant')x.rows['emuzii_参加者'][2][1]='';
+  if(mode==='renamedWeb')x.rows['emuzii_Web登録'][2][2]='別の人';
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),
+   mode==='renamedWeb'?/操作IDの再利用は禁止です/:
+     /確定済み参加者IDの本人整合を確認できません/,mode);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes);
+ }
+ const x=sandbox();
+ x.rows['emuzii_参加者'].push(Array(10).fill(''));
+ x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),
+  '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+ x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
 test('grant updates only special count and writes idempotent audit',()=>{
  const x=sandbox(),op='e'.repeat(32),grant={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
  const first=x.exec(grant);
