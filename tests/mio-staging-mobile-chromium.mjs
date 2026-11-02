@@ -45,7 +45,7 @@ try{
   '--remote-allow-origins=*','--remote-debugging-port=0',
   '--user-data-dir='+join(temp,'profile'),'about:blank'],{stdio:'ignore'});
  const portFile=join(temp,'profile','DevToolsActivePort');
- const debugPort=await poll(async()=>Number((await readFile(portFile,'utf8')).split('\\n')[0])||null);
+ const debugPort=await poll(async()=>Number((await readFile(portFile,'utf8')).split(String.fromCharCode(10))[0])||null);
  const page=await poll(async()=>{
   const r=await fetch('http://127.0.0.1:'+debugPort+'/json/list');
   const items=await r.json();return items.find(x=>x.type==='page'&&x.webSocketDebuggerUrl);
