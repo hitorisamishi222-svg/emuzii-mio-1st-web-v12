@@ -691,10 +691,38 @@ test('unknown sheet states are warnings, never silently counted as zero or proce
  assert.equal(out.simplePending.length,0);
  assert.equal(x.write.length,0);
 });
+test('malformed Web IDs and nameless simple intake cannot silently disappear from pending attention',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ const base=[...web[1]];
+ base[0]='INVALID-WEB-REFERENCE';
+ base[2]='架空の未完了登録';
+ base[5]='承認待ち';
+ web.push(base);
+ const missing=[...web[1]];
+ missing[0]='';
+ missing[2]='架空のID欠損';
+ missing[5]='承認待ち';
+ web.push(missing);
+ web.push(Array(21).fill('')); // A genuinely blank spreadsheet row must not count.
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple.push(['2026-11-02T00:00:00Z','','','フォーム・ギャラリー利用可','未確認','']);
+ simple.push(['','','','','','']); // Empty row, not a pending person.
+ const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.invalidWebIdCount,2);
+ assert.equal(out.incompleteSimpleRowCount,1);
+ assert.equal(out.totalPending,1,'do not silently promote malformed-ID rows to approved registrations');
+ assert.equal(out.pendingRegistrationCount,1);
+ assert.equal(out.pendingSimpleCount,1);
+ assert.equal(out.unknownWebStatusCount,0);
+ assert.equal(out.unknownSimpleStatusCount,0);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before);
+});
 test('administration read API may not turn missing or incoherent queue metadata into a zero count',()=>{
  const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
  for(const key of ['pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount',
-  'unknownSimpleStatusCount','pendingListTruncated','simplePendingListTruncated']){
+  'unknownSimpleStatusCount','invalidWebIdCount','incompleteSimpleRowCount','pendingListTruncated','simplePendingListTruncated']){
   assert.ok(api.includes(key),'missing queue metric '+key);
  }
  assert.match(api,/Number\.isSafeInteger\(result\[key\]\)/);
