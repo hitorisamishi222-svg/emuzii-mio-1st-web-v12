@@ -497,8 +497,8 @@ try{
     const button=document.querySelector('#gasBackupCompare');
     const status=document.querySelector('#gasBackupStatus');
     const previous=File.prototype.arrayBuffer;
-    let release;
-    File.prototype.arrayBuffer=function(){return new Promise(resolve=>{release=resolve})};
+    const releases=[];
+    File.prototype.arrayBuffer=function(){return new Promise(resolve=>{releases.push(resolve)})};
     const assign=el=>{
      const data=new DataTransfer();
      data.items.add(new File(['function doPost(e){}'],'Code.gs',{type:'text/plain'}));
@@ -506,9 +506,9 @@ try{
     };
     try{
      assign(source);assign(copy);button.click();
-     if(typeof release!=='function')throw Error('backup reader did not begin');
+     if(releases.length!==2)throw Error('both file reads must begin');
      document.querySelector('#gasBackupClear').click();
-     release(new Uint8Array([1,2,3]).buffer);
+     releases.forEach(resolve=>resolve(new Uint8Array([1,2,3]).buffer));
      await new Promise(resolve=>setTimeout(resolve,50));
      return {cleared:status.textContent.includes('消去しました'),
       emptySource:source.value==='',emptyBackup:copy.value==='',
