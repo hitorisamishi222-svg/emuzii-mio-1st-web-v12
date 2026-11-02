@@ -92,6 +92,51 @@ test('grant updates only special count and writes idempotent audit',()=>{
  assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
  assert.equal(x.write.some(x=>x.name==='emuzii_当選履歴'),false);
 });
+test('confirmed grant rejects same operation ID with changed count or expected balance, even when sum is identical',()=>{
+ const x=sandbox(),operationId='a'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(grant);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec({...grant,count:1,expectedSpecial:3}),/操作IDの再利用は禁止/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes,'changed intent must not touch either ledger');
+ assert.equal(x.exec(grant).replayed,true,'unchanged operation must still be idempotent');
+});
+test('confirmed grant rejects reuse of same operation ID with another reason',()=>{
+ const x=sandbox(),operationId='b'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(grant);
+ const writes=x.write.length;
+ assert.throws(()=>x.exec({...grant,reason:'別の理由による追加付与'}),/操作IDの再利用は禁止/);
+ assert.equal(x.write.length,writes);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
+});
+test('interrupted grant never resumes a changed payload or a modified audit identity',()=>{
+ const x=sandbox(),operationId='d'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(grant);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec({...grant,count:1,expectedSpecial:3}),/操作IDの再利用は禁止/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+ // Audit identity was externally tampered with; never certify its replay.
+ x.rows['emuzii_Web管理操作履歴'][1][9]='別人の記録';
+ assert.throws(()=>x.exec(grant),/操作IDの再利用は禁止/);
+ assert.equal(x.write.length,writes);
+});
+test('both archived GAS candidate variants enforce identical grant replay identity checks',()=>{
+ const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ for(const code of [source,full]){
+  assert.match(code,/Number\(prev\.c\[5\]\)!==expected/);
+  assert.match(code,/mioAdminOpsStr_\(prev\.c\[8\]\)!==reason/);
+  assert.match(code,/mioAdminOpsName_\(prev\.c\[9\]\)!==mioAdminOpsName_\(name\)/);
+ }
+ assert.doesNotThrow(()=>new vm.Script(full));
+});
 test('approval requires exact name and linked MIO ID, preserves token',()=>{
  const x=sandbox(),key='a'.repeat(32),d={action:'webAdminOpsApprove',operationId:key,webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',memberConfirmed:true,expectedStatus:'承認待ち'};
  assert.equal(x.exec(d).status,'承認済み');
