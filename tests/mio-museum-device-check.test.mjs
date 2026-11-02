@@ -61,6 +61,6 @@ test('privacy guard exports only fixed failure codes, never arbitrary browser er
  assert.equal(safe(new Error('device key or auth token leaked')),'UNKNOWN');
  assert.equal(safe({message:'constructor'}),'UNKNOWN');
  assert.equal(safe(null),'UNKNOWN');
- assert.equal((js.match(/reason:safeReason\\(e\\)/g)||[]).length,2);
- assert.doesNotMatch(js,/reason:e\\?\\.message/);
+ assert.equal(js.split('reason:safeReason(e)').length-1,2);
+ assert.equal(js.includes('reason:e?.message'),false);
 });
