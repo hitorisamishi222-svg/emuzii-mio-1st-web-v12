@@ -67,3 +67,40 @@ test('mobile preflight blocks an invalid authentication / lock route in the exis
  assert.ok(result.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
  assert.equal(result.liveAdminWriteAllowed,false);
 });
+
+
+test('commented-out and quoted fake functions never alter real GAS function counts',()=>{
+ const before=inspectSources([full]);
+ const fakeComment=[
+  '/*',
+  'function doPost(e) {}',
+  'function mioAdminOpsGrant_() {}',
+  '*/',
+  '// function doPost(e) {}'
+ ].join(String.fromCharCode(10));
+ const fakeTemplate=['const note = `','function doPost(e) {}','function mioAdminOpsGrant_() {}','`;'].join(String.fromCharCode(10));
+ for(const fake of [fakeComment,fakeTemplate]){
+  const sample=[fake,full].join(String.fromCharCode(10));
+  const node=inspectSources([sample]),mobile=clientInspect([sample]);
+  assert.deepEqual(comparable(mobile),comparable(node));
+  assert.equal(node.doPostCount,before.doPostCount);
+  assert.equal(node.adminFunctionsPresent,before.adminFunctionsPresent);
+  assert.equal(node.duplicateFunctionDeclarationCount,before.duplicateFunctionDeclarationCount);
+  assert.equal(node.classification,before.classification);
+ }
+});
+test('commented-out safety tokens cannot hide a real missing GAS lock',()=>{
+ const broken=full.replace('LockService.getScriptLock()', 'LockService.notTheRealLock()');
+ assert.notEqual(broken,full);
+ const injected=[
+  '// LockService.getScriptLock()',
+  '// if(!lock.tryLock(10000))return json_({ok:false});',
+  '/* equal_(d.secret,secret) */'
+ ].join(String.fromCharCode(10));
+ const source=broken.replace('function doPost(e)',injected+String.fromCharCode(10)+'function doPost(e)');
+ const node=inspectSources([source]),mobile=clientInspect([source]);
+ assert.deepEqual(comparable(mobile),comparable(node));
+ assert.equal(node.classification,'BLOCKED_REVIEW');
+ assert.ok(node.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
+ assert.equal(node.webAdminWriteAllowed,false);
+});
