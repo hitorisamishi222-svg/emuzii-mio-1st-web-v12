@@ -25,7 +25,8 @@ const media={
 const museumPages=['museum.html','mio-profile.html','museum-archive.html','museum-approved-gallery.html','museum-device-check.html'];
 const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js'];
 const rehearsalFiles=['mio-admin-rehearsal.html','mio-admin-rehearsal.js'];
-const stagedAssets=[...museumFiles,...rehearsalFiles];
+const gasLocalFiles=['mio-gas-local-check.html','mio-gas-local-check.js'];
+const stagedAssets=[...museumFiles,...rehearsalFiles,...gasLocalFiles];
 const unchanged=[
  'index.html','app.js','style.css','bridge.js',
  'api-register.js','api-status.js','api-checkin.js',
@@ -113,6 +114,21 @@ test('admin rehearsal is a static, noindex fictional-data-only route with no liv
  const htmlRoute=config.routes.find(x=>x.src==='/mio-admin-rehearsal.html');
  assert.equal(htmlRoute.headers['X-Robots-Tag'],'noindex, nofollow');
  assert.equal(htmlRoute.headers['Cache-Control'],'private, no-store');
+});
+test('mobile GAS source inspector is offline-only, non-indexed, never grants release, and never shows private sources',()=>{
+ const page=read('mio-gas-local-check.html'),script=read('mio-gas-local-check.js');
+ const entry=read('gacha-web-gate.html');
+ assert.match(entry,/href="\/mio-gas-local-check.html"/);
+ assert.match(page,/<meta name="robots" content="noindex,nofollow">/);
+ assert.match(page,/端末内だけの検査/);
+ assert.doesNotMatch(script,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|indexedDB|\binnerHTML\s*=|\beval\s*\(/);
+ assert.doesNotMatch(script,/\/api\/|ScriptApp|SpreadsheetApp|google\.script\.run/);
+ assert.match(script,/liveAdminWriteAllowed:false/);
+ assert.match(script,/deployedVersionVerified:false/);
+ assert.match(script,/DEPLOYED_GAS_VERSION_AND_BACKUP_NOT_VERIFIED/);
+ assert.match(script,/pick\.value=''/);
+ assert.deepEqual(config.routes.find(x=>x.src==='/mio-gas-local-check.html').headers,
+  {'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'});
 });
 test('original approved video and audio remain visible in the static catalog with no session rights changed',()=>{
  const video=approvedGalleryItems.find(x=>x.id==='mio-awakening-video');
