@@ -846,11 +846,17 @@ function mioAdminOpsCreate_(ss,d){
  var people=mioAdminOpsSheet_(ss,'emuzii_参加者'),values=mioAdminOpsValues_(people,10);
  var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
  if(old){
-  if(old.c[2]!=='新規MIO-ID'||old.c[3]!==wid)throw new Error('操作IDの再利用は禁止です');
+  if(old.c[2]!=='新規MIO-ID'||old.c[3]!==wid||
+     mioAdminOpsName_(old.c[9])!==mioAdminOpsName_(name))
+    throw new Error('操作IDの再利用は禁止です');
   var oldId=mioAdminOpsStr_(old.c[4]);
-  if(old.c[7]==='確定')return {ok:true,replayed:true,mioId:oldId};
-  if(old.c[7]!=='処理中')throw new Error('新規ID操作の監査状態を手動確認してください');
+  if(!/^MIO-\d{4}$/.test(oldId))throw new Error('記録済み参加者IDが不正です');
   var saved=values.filter(function(x){return x[0]===oldId&&mioAdminOpsName_(x[1])===mioAdminOpsName_(name)});
+  if(old.c[7]==='確定'){
+    if(saved.length!==1)throw new Error('確定済み参加者IDの本人整合を確認できません');
+    return {ok:true,replayed:true,mioId:oldId};
+  }
+  if(old.c[7]!=='処理中')throw new Error('新規ID操作の監査状態を手動確認してください');
   if(saved.length===1){log.getRange(old.row,8).setValue('確定');return {ok:true,replayed:true,mioId:oldId};}
   throw new Error('保留中の新規登録を確認してください');
  }
@@ -894,8 +900,8 @@ function mioAdminOpsApprove_(ss,d){
   if(previous.c[2]!=='承認'||previous.c[3]!==wid||previous.c[4]!==id||
      mioAdminOpsStr_(previous.c[8])!==note)
     throw new Error('操作IDの再利用は禁止です');
-  if(previous.c[7]==='確定')return {ok:true,replayed:true};
-  if(previous.c[7]!=='処理中')throw new Error('承認操作の監査状態を手動確認してください');
+  if(previous.c[7]!=='確定'&&previous.c[7]!=='処理中')
+    throw new Error('承認操作の監査状態を手動確認してください');
   // A network error may occur after F=承認済み but before the audit is finalized.
   // Verify the same browser, ID, identity, and member state before closing it.
   var retryWeb=mioAdminOpsSheet_(ss,'emuzii_Web登録');
@@ -906,7 +912,8 @@ function mioAdminOpsApprove_(ss,d){
      confirmed[6]===(d.memberConfirmed?'確認済み':'未確認')&&
      confirmed[16]!=='旧端末'&&webIntegrityOk_(confirmed)&&
      !retryRows.some(function(r){return r[0]!==wid&&r[7]===id&&r[5]==='承認済み'})){
-    log.getRange(previous.row,8).setValue('確定');
+    // Confirmed audit: verify the live identity, but never rewrite the log.
+    if(previous.c[7]==='処理中')log.getRange(previous.row,8).setValue('確定');
     return {ok:true,replayed:true,mioId:id,status:'承認済み',member:confirmed[6]};
   }
   throw new Error('前の処理を管理者が確認中です');
