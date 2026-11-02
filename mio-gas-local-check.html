@@ -22,7 +22,7 @@ li{margin:5px 0;overflow-wrap:anywhere}code{color:#ffdcac}
 <main>
 <p class="warning" role="status"><strong>開発版・端末内だけの検査</strong>。この画面はApps Script・Googleシート・本番APIに接続せず、選択したファイルの内容を送信しません。ファイルに秘密鍵が含まれていても画面や結果JSONには表示しません。</p>
 <section><h2>① 現行GASから書き出したソースを選ぶ</h2>
-<p>稼働中の既存Apps Scriptの全ソース（<code>.gs</code> / <code>.txt</code>）を選択。新規プロジェクトを作成したり、稼働GASのコードを書き換えたりしません。</p>
+<p>現行Apps Scriptのコードファイル（<code>.gs</code> / <code>.txt</code>）を<strong>すべて</strong>選択して関数構造だけを照合します。HTML画面や <code>appsscript.json</code> はこの関数検査の対象ではなく、下のバックアップ照合で別途比較します。新規プロジェクトの作成や稼働GASの変更はしません。</p>
 <label for="gasSources">端末内のGASソースファイル（複数選択可）</label>
 <input id="gasSources" type="file" multiple accept=".gs,.txt,text/plain">
 <p>最大30ファイル・合計8MB。ファイル名・コード本文は診断結果に保存しません。</p>
