@@ -197,7 +197,9 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  if(matches.length===1){
   var h=matches[0];
   if(mioAdminOpsStr_(h[1])!==id||Number(h[3])!==count||
-     Number(h[5])!==before||Number(h[6])!==after)
+     Number(h[5])!==before||Number(h[6])!==after||
+     mioAdminOpsStr_(h[4])!==reason||
+     mioAdminOpsName_(h[2])!==mioAdminOpsName_(name))
     throw new Error('既存の付与履歴と操作内容が一致しません');
   return true;
  }
