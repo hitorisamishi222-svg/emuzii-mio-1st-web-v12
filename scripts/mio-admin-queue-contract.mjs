@@ -17,6 +17,11 @@ export function validateQueueSnapshot(value){
  if(value.totalPending!==value.pendingRegistrationCount+value.pendingIdentityCount)reject();
  if(typeof value.pendingListTruncated!=='boolean'||typeof value.simplePendingListTruncated!=='boolean')reject();
  if(value.pending.length>value.totalPending||value.simplePending.length>value.pendingSimpleCount)reject();
+ // The GAS candidate deliberately returns exactly the latest 80 Web
+ // applications and 60 simple applications. Fewer items with a larger
+ // claimed total means partial transport/corrupted response, not truncation.
+ if(value.pending.length!==Math.min(value.totalPending,80)||
+    value.simplePending.length!==Math.min(value.pendingSimpleCount,60))reject();
  if(value.pendingListTruncated!==(value.pending.length<value.totalPending)||
     value.simplePendingListTruncated!==(value.simplePending.length<value.pendingSimpleCount))reject();
  // Only non-identifying aggregates are returned. Never echo Web IDs,
