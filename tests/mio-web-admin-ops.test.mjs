@@ -51,6 +51,32 @@ test('safe read hides tokens and returns pending, roster and simple intake',()=>
  assert.equal(out.simple[0].name,'初訪問者');
  assert.equal(JSON.stringify(out).includes('token'),false);
 });
+test('read-only operator snapshot never writes, creates audit tabs, or adds the missing operation ID column',()=>{
+ const x=sandbox();
+ const before=JSON.stringify(x.rows);
+ assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
+ for(let i=0;i<2;i++){
+  const view=x.exec({action:'webAdminOpsRead'});
+  assert.equal(view.ok,true);
+  assert.equal(view.totalPending,1);
+  assert.equal(x.write.length,0,'read-only API must never write cells or headers');
+  assert.equal(JSON.stringify(x.rows),before,'read must not change the stored ledger or schema');
+  assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+  assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
+ }
+});
+test('read-only operator snapshot fails closed on absent required ledger without creating it',()=>{
+ const x=sandbox();
+ const before=JSON.stringify(x.rows);
+ delete x.rows['emuzii_ガチャ付与履歴'];
+ const afterDelete=JSON.stringify(x.rows);
+ assert.notEqual(afterDelete,before);
+ assert.throws(()=>x.exec({action:'webAdminOpsRead'}),/必要な管理シートがありません/);
+ assert.equal(JSON.stringify(x.rows),afterDelete);
+ assert.equal(x.write.length,0);
+ assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+});
 test('grant updates only special count and writes idempotent audit',()=>{
  const x=sandbox(),op='e'.repeat(32),grant={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
  const first=x.exec(grant);
