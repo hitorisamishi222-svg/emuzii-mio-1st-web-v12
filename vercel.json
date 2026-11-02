@@ -440,6 +440,14 @@
     {
       "src": "museum-device-check.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "mio-admin-rehearsal.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-admin-rehearsal.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -669,6 +677,23 @@
       "src": "/museum-device-check.js",
       "dest": "/museum-device-check.js",
       "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-admin-rehearsal.html",
+      "dest": "/mio-admin-rehearsal.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-admin-rehearsal.js",
+      "dest": "/mio-admin-rehearsal.js",
+      "headers": {
+        "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff"
       }
     },
