@@ -94,9 +94,13 @@ try{
      document.querySelector('#tryPhoto').click();ok(true)},'image/png'))})()`);
    await poll(()=>evaluate("document.querySelector('#photoStatus')?.textContent.includes('成功しました')"));
    assert.equal(await evaluate("document.querySelector('#photoPreview').naturalWidth>0"),true);
+   await mkdir('artifacts',{recursive:true});
+   await evaluate("document.querySelector('#photoPreview').scrollIntoView({block:'center',behavior:'instant'})");
+   const photoShot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-offline-mobile-photo-390.png',Buffer.from(photoShot.data,'base64'));
    await evaluate("document.querySelector('#clearPhoto').click()");
    assert.deepEqual(await evaluate(`(()=>({hidden:document.querySelector('#photoPreview').hidden,files:document.querySelector('#localPhoto').files.length}))()`),{hidden:true,files:0});
-   await mkdir('artifacts',{recursive:true});
+   await evaluate("window.scrollTo(0,0)");
    const shot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-offline-mobile-390.png',Buffer.from(shot.data,'base64'));
   }
