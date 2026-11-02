@@ -427,6 +427,32 @@ try{
    })()`);
    assert.deepEqual(cancelRace,{cleared:true,reportDisabled:true,noFileCount:true,inspectEnabled:true},
     'cleared source must not reappear when an old file-read promise later resolves');
+   const scanReselection=await evaluate(`(async()=>{
+    const fileInput=document.querySelector('#gasSources');
+    const checkButton=document.querySelector('#gasCheck');
+    const previous=File.prototype.text;
+    let done;
+    File.prototype.text=function(){return new Promise(resolve=>{done=resolve})};
+    const choose=name=>{
+     const selection=new DataTransfer();
+     selection.items.add(new File(['function doPost(e){}'],name,{type:'text/plain'}));
+     fileInput.files=selection.files;
+     fileInput.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    try{
+     choose('FIRST_Code.gs');checkButton.click();
+     if(typeof done!=='function')throw Error('first source read was not started');
+     choose('SECOND_Code.gs');
+     done('function doPost(e){}');
+     await new Promise(resolve=>setTimeout(resolve,50));
+     return {unverified:document.querySelector('#gasStatus').textContent.includes('未検査'),
+      reportDisabled:document.querySelector('#gasExport').disabled,
+      emptyCount:document.querySelector('#gasFiles').textContent==='—',
+      canInspect:!checkButton.disabled,stillSelected:fileInput.files[0]?.name==='SECOND_Code.gs'};
+    }finally{File.prototype.text=previous}
+   })()`);
+   assert.deepEqual(scanReselection,{unverified:true,reportDisabled:true,emptyCount:true,
+    canInspect:true,stillSelected:true},'new source must supersede late results from the old selection');
    // Two LOCAL file sets, same names and bytes. This is not a deployed GAS proof.
    const backupProof=await evaluate(`(async()=>{
     const src=document.querySelector('#gasBackupOriginal');
@@ -555,6 +581,32 @@ try{
    })()`);
    assert.deepEqual(backupRace,{cleared:true,emptySource:true,emptyBackup:true,enabled:true},
     'a late backup hash must never restore a cleared outcome');
+   const backupReselectionRace=await evaluate(`(async()=>{
+    const source=document.querySelector('#gasBackupOriginal');
+    const copy=document.querySelector('#gasBackupCopy');
+    const button=document.querySelector('#gasBackupCompare');
+    const previous=File.prototype.arrayBuffer;
+    const completes=[];
+    File.prototype.arrayBuffer=function(){return new Promise(resolve=>{completes.push(resolve)})};
+    const choose=(el,name)=>{
+     const files=new DataTransfer();
+     files.items.add(new File(['safe sample'],name,{type:'text/plain'}));
+     el.files=files.files;
+     el.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    try{
+     choose(source,'Code.gs');choose(copy,'Code.gs');button.click();
+     if(completes.length!==2)throw Error('both old hash reads were not started');
+     choose(copy,'UPDATED_Code.gs');
+     completes.forEach(resolve=>resolve(new Uint8Array([9,8,7]).buffer));
+     await new Promise(resolve=>setTimeout(resolve,50));
+     const status=document.querySelector('#gasBackupStatus').textContent;
+     return {unverified:status.includes('未照合'),noStalePass:!status.includes('完全一致'),
+      ready:!button.disabled,newFileSelected:copy.files[0]?.name==='UPDATED_Code.gs'};
+    }finally{File.prototype.arrayBuffer=previous}
+   })()`);
+   assert.deepEqual(backupReselectionRace,{unverified:true,noStalePass:true,ready:true,
+    newFileSelected:true},'new backup must supersede late SHA-256 from the old selection');
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
