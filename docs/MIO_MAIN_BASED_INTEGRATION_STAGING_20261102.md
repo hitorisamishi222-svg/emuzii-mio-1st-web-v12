@@ -88,3 +88,15 @@
 4. 実iPhone/Android/Safari/LINE/X、現行DB/Blobと既存作品の照合、回帰と切戻し、最終一括公開承認。
 
 **登録系回帰が緑でも、本番リリースの許可はゼロ。PR #76はDraft、本番alias・GAS・DB・スプレッドシートは一切変更なし。**
+
+
+## 2026-11-02：稼働Apps Script照合用オフライン判定を追加
+
+- Issue #66の現行未完ゲートを再点検。旧チェックリストの「保存済み管理19関数を無条件追加」「doPostに2行を無条件挿入」は**危険な一般化**だったため、[Issue #66](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/issues/66)の実施チェック欄を**稼働ソース・既存デプロイ・バックアップを確認してから必要な差分だけ**に修正。実GASの編集はしていない。
+- [オフライン照合CLI](../scripts/mio-gas-source-preflight.mjs)を新規追加。既存Apps Scriptの`Code.gs`ほか全ソースの**非公開バックアップファイル**を読取りだけで解析し、管理19関数、同名の重複、`doPost`重複、BRIDGE_SECRET認証順序、ScriptLockの存在を分類。秘密鍵・ソースの内容は一切ログに出さず、GAS/Google Sheets/DBへの接続や書込はない。
+- 保存済み候補`APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs`は管理関数なし（0/19）、保存済み統合`GAS_Code_FULL_WEB_OPS_20261030.gs`には**19/19関数＋管理ディスパッチ**あり、そこへ`GAS_WebAdminOps_20261030.gs`を追加すると**19関数重複**と判定。現行稼働GASがどれと一致するかは未判定。
+- [検査テスト](../tests/mio-gas-source-preflight.test.mjs)では旧版・統合版・部分実装・19関数の二重追加・`doPost`の二重・ロックや認証順序の欠落・出力非公開性を**7件**で確認。状態がよくても「稼働版未確認」として**終了コード0を返さず書込許可は常にfalse**。
+- [実稼働コードの非公開照合手順](MIO_GAS_LIVE_SOURCE_PREFLIGHT_20261102.md)を追加。取得した`.gs`ファイルや秘密鍵をGitHubへコミットしたりチャットに貼ったりしない。
+- [登録・回帰CI #41367369582](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41367369582)は従来197件＋新規7件で**204/204 PASS**。同コミットの管理・Face ID・登録・ガチャ演出など**8ワークフローはすべて成功**。まだ実GAS接続、実DB管理書込、Safariの検証とは無関係。
+- 実シートには`emuzii_ガチャ付与履歴`のJ列「Web操作ID」見出しがなく、`emuzii_Web管理操作履歴`タブもないことを読み取り専用で確認済み。**権限・バックアップ・スキーマ変更の明示承認なく作成しない。**
+- PR #76はDraftを維持。main、Production、既存GAS、Google Sheets、Neon、MIO-ID、皆勤、FA、抽選残数・当選履歴に書き込みなし。次は稼働GASのバックアップとデプロイ版・19関数・現`doPost`の現物照合が必要。
