@@ -130,6 +130,20 @@ test('mobile GAS source inspector is offline-only, non-indexed, never grants rel
  assert.deepEqual(config.routes.find(x=>x.src==='/mio-gas-local-check.html').headers,
   {'Cache-Control':'private, no-store','X-Robots-Tag':'noindex, nofollow','X-Content-Type-Options':'nosniff'});
 });
+test('GAS backup verifier compares bytes only in browser and cannot certify deployment',()=>{
+ const page=read('mio-gas-local-check.html'),js=read('mio-gas-local-check.js');
+ for(const id of ['gasBackupOriginal','gasBackupCopy','gasBackupCompare','gasBackupClear','gasBackupStatus']){
+  assert.match(page,new RegExp('id="'+id+'"'));
+ }
+ assert.match(js,/window\.crypto\.subtle\.digest\('SHA-256'/);
+ assert.match(js,/file\.arrayBuffer\(\)/);
+ assert.match(js,/backupRevision\+\+/);
+ assert.match(page,/稼働中のGASデプロイ版と一致する証明にはなりません/);
+ assert.match(js,/deployedVersionVerified:false/);
+ assert.match(js,/sourceBackupVerified:false/);
+ assert.match(js,/liveAdminWriteAllowed:false/);
+ assert.doesNotMatch(js,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|indexedDB/);
+});
 test('original approved video and audio remain visible in the static catalog with no session rights changed',()=>{
  const video=approvedGalleryItems.find(x=>x.id==='mio-awakening-video');
  const song=approvedGalleryItems.find(x=>x.id==='mio-awakening-song');
