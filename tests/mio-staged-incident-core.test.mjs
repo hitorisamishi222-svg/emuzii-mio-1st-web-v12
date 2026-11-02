@@ -136,9 +136,9 @@ function mockClient(){
    if(snapshot)throw Error('nested transaction');
    snapshot={current:state.current,writes:state.writes,
     audits:new Map([...state.audits].map(([key,a])=>[key,{...a}]))};
-   return {rowCount:0,rows:[]};
+   return {command:'BEGIN',rowCount:null,rows:[]};
   }
-  if(sql==='COMMIT'){snapshot=null;return {rowCount:0,rows:[]};}
+  if(sql==='COMMIT'){snapshot=null;return {command:'COMMIT',rowCount:null,rows:[]};}
   if(sql==='ROLLBACK'){
    if(snapshot){
     state.current=snapshot.current;state.writes=snapshot.writes;
@@ -314,6 +314,35 @@ test('ambiguous duplicate audit rows cannot be accepted as a successful replay',
  await assert.rejects(transitionIncident(db,d,'admin-code'),/ambiguous incident audit/);
  assert.equal(db.state.writes,1);
  assert.equal(db.state.rollback,1);
+});
+test('triage cannot report success without PostgreSQL BEGIN acknowledgement',async()=>{
+ const invalid=[undefined,null,{}, {rowCount:0,rows:[]},{command:'ROLLBACK'}];
+ for(const result of invalid){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'4'.repeat(32)};
+  const original=db.query.bind(db);
+  db.query=async(sql,args)=>sql==='BEGIN'?(await original(sql,args),result):original(sql,args);
+  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident transaction start unverified/);
+  assert.equal(db.state.current,'unhandled');
+  assert.equal(db.state.audits.size,0);
+  assert.equal(db.state.writes,0);
+  assert.equal(db.state.rollback,1);
+ }
+});
+test('triage reports unknown outcome, not success, when COMMIT reply is absent',async()=>{
+ for(const isReplay of [false,true]){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',
+   operationId:'5'.repeat(32)};
+  if(isReplay)await transitionIncident(db,d,'admin-code');
+  const original=db.query.bind(db);
+  db.query=async(sql,args)=>sql==='COMMIT'?(await original(sql,args),undefined):original(sql,args);
+  await assert.rejects(transitionIncident(db,d,'admin-code'),
+   /incident transaction outcome unknown/);
+  // After a lost response COMMIT may already have succeeded. Do not claim
+  // that ROLLBACK reversed a transaction whose commit was not acknowledged.
+  assert.equal(db.state.current,'working');
+  assert.equal(db.state.audits.size,1);
+  assert.equal(db.state.rollback,1);
+ }
 });
 test('triage refuses direct resolution before an admin has started handling the case',async()=>{
  const db=mockClient();
