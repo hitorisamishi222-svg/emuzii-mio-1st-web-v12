@@ -12,6 +12,9 @@ on:
       - tests/mio-gas-safe-onboarding.test.mjs
       - tests/mio-live-sheet-schema-preflight.test.mjs
       - tests/mio-gas-source-preflight.test.mjs
+      - tests/mio-staged-incident-core.test.mjs
+      - mio-incident-core.js
+      - db/mio-admin-incidents-20261031.sql
       - scripts/mio-gas-source-preflight.mjs
       - tests/fixtures/mio-live-sheet-schema-readonly-20261102.json
       - docs/MIO_GAS_FULL_REPLACE_SETUP.md
@@ -35,6 +38,9 @@ on:
       - tests/mio-gas-safe-onboarding.test.mjs
       - tests/mio-live-sheet-schema-preflight.test.mjs
       - tests/mio-gas-source-preflight.test.mjs
+      - tests/mio-staged-incident-core.test.mjs
+      - mio-incident-core.js
+      - db/mio-admin-incidents-20261031.sql
       - scripts/mio-gas-source-preflight.mjs
       - tests/fixtures/mio-live-sheet-schema-readonly-20261102.json
       - docs/MIO_GAS_FULL_REPLACE_SETUP.md
@@ -76,6 +82,7 @@ jobs:
           node --check museum-media-fallback.js
           node --check tests/mio-mainbased-museum-integration.test.mjs
           node --check scripts/mio-gas-source-preflight.mjs
+          node --check mio-incident-core.js
       - name: Verify all original login, check-in, gacha and gallery files remain identical to main
         run: node --test tests/mio-mainbased-museum-integration.test.mjs
       - name: Previously failing registration status mock only (no live requests)
@@ -98,6 +105,8 @@ jobs:
         run: node --test tests/mio-live-sheet-schema-preflight.test.mjs
       - name: Compare archived GAS candidates safely to confirm duplicate module and unknown live source
         run: node --test tests/mio-gas-source-preflight.test.mjs
+      - name: Classify incidents and verify same operationID without a DB or gacha call
+        run: node --test tests/mio-staged-incident-core.test.mjs
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
