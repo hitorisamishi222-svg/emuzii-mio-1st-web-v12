@@ -50,7 +50,16 @@ function checkDispatcher(source){
   secretBefore:secretCheckPosition>=0&&comparePosition>secretCheckPosition&&
       (actionPosition<0||comparePosition<actionPosition),
   identityAfter:actionPosition<0||participantPosition>actionPosition,
-  scriptLock:/getScriptLock\s*\(/.test(body)&&/tryLock\s*\(/.test(body)
+  // Lock acquisition MUST precede the first admin dispatch, not merely appear later.
+  // This is a conservative structural check, never a proof of runtime authentication.
+  scriptLock:(()=>{
+   const lockPosition=body.indexOf('LockService.getScriptLock(');
+   const tryPosition=body.indexOf('lock.tryLock(');
+   const gatedPosition=body.indexOf('if(!lock.tryLock(');
+   return lockPosition>=0&&tryPosition>lockPosition&&gatedPosition===tryPosition-4&&
+    (actionPosition<0||tryPosition<actionPosition)&&
+    (dispatchPosition<0||tryPosition<dispatchPosition);
+  })()
  };
 }
 
