@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {Script} from 'node:vm';
+import {Script,runInNewContext} from 'node:vm';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const html=read('museum-device-check.html');
 const js=read('museum-device-check.js');
@@ -43,4 +43,24 @@ test('downloaded report excludes photo contents and persistent client identity',
  assert.doesNotMatch(js,/JSON\.stringify\((?:file|encoded|bytes|image|canvas)/);
  assert.doesNotMatch(js,/userAgent|fingerprint|deviceId|phoneNumber|email/);
  assert.match(js,/a\.download='mio-museum-device-check\.json'/);
+});
+
+test('privacy guard exports only fixed failure codes, never arbitrary browser errors or local filenames',()=>{
+ const injected=js.replace(' const explain=e=>',
+  ' window.__testSafeReason=safeReason;\\n const explain=e=>'.replace('\\n',String.fromCharCode(10)));
+ assert.notEqual(injected,js,'test must execute the real privacy normalizer');
+ const context={
+  document:{getElementById(){return {files:[],addEventListener(){},disabled:false}}},
+  window:{addEventListener(){}},
+ };
+ runInNewContext(injected,context);
+ const safe=context.window.__testSafeReason;
+ assert.equal(typeof safe,'function');
+ assert.equal(safe(new Error('SOURCE_IMAGE_TOO_LARGE')),'SOURCE_IMAGE_TOO_LARGE');
+ assert.equal(safe(new Error('/private/photo/IMG-12345.HEIC')),'UNKNOWN');
+ assert.equal(safe(new Error('device key or auth token leaked')),'UNKNOWN');
+ assert.equal(safe({message:'constructor'}),'UNKNOWN');
+ assert.equal(safe(null),'UNKNOWN');
+ assert.equal((js.match(/reason:safeReason\\(e\\)/g)||[]).length,2);
+ assert.doesNotMatch(js,/reason:e\\?\\.message/);
 });
