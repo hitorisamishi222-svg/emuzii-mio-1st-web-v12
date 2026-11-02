@@ -20,7 +20,8 @@
     "gacha-web-gate.html": "6a0ee86da10a020739baedf76463948aa4180f60",
     "api-gallery-items.js": "a5be935bd70ff9edb95e251f72aa4adad1e9aa2b",
     "api-gallery-manage.js": "d4a9a433229346fa1a11c38f0b4804ab92e4a99a",
-    "api-gallery-moderate.js": "ce17b96eb54715f5b9df5cda339b1f7c09167d0e"
+    "api-gallery-moderate.js": "ce17b96eb54715f5b9df5cda339b1f7c09167d0e",
+    "APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs": "6dd7e5fc938fb0150c5067760f37972613f3075b"
   },
   "builds": [
     {
