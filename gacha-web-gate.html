@@ -57,6 +57,18 @@ small{color:#bbd8ed}
   <button type="button" id="opsIntakeCreate" disabled>初訪問を受付（停止中）</button>
   <div id="opsSimple" aria-label="簡易受付一覧">管理者の接続照合が完了するまで表示しません。</div>
  </div>
+ <section id="incidentPreviewPanel" aria-labelledby="incidentPreviewTitle" style="margin-top:18px;padding:14px;background:#101f3d;border:1px solid #8eaac9;border-radius:14px">
+  <h3 id="incidentPreviewTitle">🚨 障害・復旧状況（診断機能の準備中）</h3>
+  <p id="incidentPreviewState" role="status">実際の障害監視データベースには未接続です。ここには参加者名、抽選ID、Cookieや個人情報を表示しません。</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap" aria-label="障害の状態">
+   <div id="incidentUnmatched" style="flex:1;min-width:90px">未対応：未接続</div>
+   <div id="incidentWorking" style="flex:1;min-width:90px">対応中：未接続</div>
+   <div id="incidentResolved" style="flex:1;min-width:90px">解決：未接続</div>
+  </div>
+  <p id="incidentPreviewHelp">抽選結果が不明な場合は、確定済みの同じ結果の照合を優先。新しい抽選IDを発行したり、ガチャ券を自動消費する処理は接続しません。</p>
+  <button id="incidentPreviewRefresh" type="button" disabled>障害一覧の更新（停止中）</button>
+  <div id="incidentPreviewList" aria-label="障害一覧の表示準備">監査用DBの接続・権限・個人情報の保護が確認されるまで一覧を表示しません。</div>
+ </section>
  <details style="margin-top:18px"><summary>以前の操作結果を安全に照合するための欄</summary>
   <p id="opsRetryInfo" role="status">未接続：操作IDの再試行はできません。</p>
   <button id="opsRetry" type="button" hidden disabled>同じ操作IDで再照合（停止中）</button>
