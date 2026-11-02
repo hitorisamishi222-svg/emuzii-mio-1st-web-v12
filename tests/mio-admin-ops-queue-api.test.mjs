@@ -45,10 +45,10 @@ test('staging queue contract rejects negative, noninteger, inconsistent and trun
 test('staging queue contract retains correct totals and warns about corrupt or incomplete rows',()=>{
  const candidate=blank();
  candidate.totalPending=100;candidate.pendingRegistrationCount=99;candidate.pendingIdentityCount=1;
- candidate.pending=[{name:'PRIVATE_PERSON',token:'PRIVATE_TOKEN'}];
+ candidate.pending=Array.from({length:80},()=>({name:'PRIVATE_PERSON',token:'PRIVATE_TOKEN'}));
  candidate.pendingListTruncated=true;
  candidate.pendingSimpleCount=72;
- candidate.simplePending=[{name:'PRIVATE_PARTICIPANT',browserId:'PRIVATE_DEVICE_ID'}];
+ candidate.simplePending=Array.from({length:60},()=>({name:'PRIVATE_PARTICIPANT',browserId:'PRIVATE_DEVICE_ID'}));
  candidate.simplePendingListTruncated=true;
  candidate.unknownWebStatusCount=2;candidate.invalidWebIdCount=3;
  candidate.incompleteSimpleRowCount=4;
@@ -61,6 +61,20 @@ test('staging queue contract retains correct totals and warns about corrupt or i
  assert.equal(out.pendingListTruncated,true);
  assert.equal(out.simplePendingListTruncated,true);
  assert.equal(JSON.stringify(out).includes('PRIVATE_'),false,'contract must not echo identifiers or names');
+});
+test('staging contract forbids claims of truncated lists when items are silently dropped',()=>{
+ const x=blank();
+ x.totalPending=81;x.pendingRegistrationCount=81;
+ x.pending=Array.from({length:80},(_,i)=>({name:'架空'+i}));
+ x.pendingListTruncated=true;
+ x.pendingSimpleCount=61;
+ x.simplePending=Array.from({length:60},(_,i)=>({name:'架空簡易'+i}));
+ x.simplePendingListTruncated=true;
+ assert.equal(validateQueueSnapshot(x).totalPending,81);
+ for(const kind of ['pending','simplePending']){
+  const damaged={...x,[kind]:x[kind].slice(0,-1)};
+  assert.throws(()=>validateQueueSnapshot(damaged),guarded(),kind+' lost one item');
+ }
 });
 test('protected admin API remains unchanged while a separate draft contract is tested',()=>{
  const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
