@@ -802,6 +802,44 @@ test('actual 38 approved, 1 pending, 2 rejected never inflates approval queue to
  assert.equal(view.pending.length,1);
  assert.equal(view.pending[0].status,'承認待ち');
 });
+test('50-registration snapshot: rejected unverified row must not create a false pending alert',()=>{
+ // Only aggregate shape follows the read-only 2026-11-02 sheet check.
+ // All names, IDs, tokens and dates below are invented for isolated tests.
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ const template=[...web[1]];
+ web.splice(1);
+ for(let i=0;i<50;i++){
+  const row=[...template];
+  row[0]='MIO-W-'+(3000+i).toString(16).padStart(24,'0');
+  row[2]='架空の登録者'+i;
+  row[5]=i<48?'承認済み':'却下';
+  row[11]=i===48?'確認待ち':'確認済み';
+  web.push(row);
+ }
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple[1][4]='本人確認・登録承認済み';
+ simple.push(['','架空の簡易承認者','','フォーム・ギャラリー利用可','登録承認済み','']);
+ for(let i=0;i<4;i++){
+  simple.push(['','架空の動作確認'+i,'','フォーム・ギャラリー利用可','動作確認用','']);
+ }
+ const before=JSON.stringify(x.rows);
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(web.length-1,50);
+ assert.equal(web.slice(1).filter(r=>r[5]==='承認済み').length,48);
+ assert.equal(out.rejectedCount,2);
+ assert.equal(out.totalPending,0,'rejected but unverified row cannot be a live approval queue item');
+ assert.equal(out.pendingRegistrationCount,0);
+ assert.equal(out.pendingIdentityCount,0);
+ assert.equal(out.pending.length,0);
+ assert.equal(out.pendingSimpleCount,0,'completed registrations and smoke rows are not applicants');
+ assert.equal(out.simplePending.length,0);
+ assert.equal(out.simple.length,6);
+ assert.equal(out.unknownWebStatusCount,0);
+ assert.equal(out.unknownSimpleStatusCount,0);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before);
+});
 test('approved accounts with incomplete identity verification are still shown for review',()=>{
  const x=sandbox();
  x.rows['emuzii_Web登録'][1][5]='承認済み';
