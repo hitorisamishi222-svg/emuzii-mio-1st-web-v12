@@ -135,3 +135,11 @@ node scripts/mio-gas-source-preflight.mjs "/private/backup/Code.gs" "/private/ba
 - **既存本番由来API `api-gacha-admin-ops.js` は一時的に誤変更したが、mainのGit blob `d38a5f2de048b72b9e378eb0e59a431ba18a4ad6` と完全一致する状態へ復元**。変更を検知したCI失敗履歴は残し、保護テストを弱めない。重複した未配備API候補も削除し、`scripts/mio-admin-queue-contract.mjs` だけを純粋で副作用のない検証ロジックとして保持。Vercelへの新規管理APIルート追加や本番認証・GAS接続はしていない。
 - `tests/mio-web-admin-ops.test.mjs` と `tests/mio-admin-ops-queue-api.test.mjs` で混在した待機分類、大量登録による省略、不正ID/欠損名、不明ステータス、欠落した人数メタデータ、不完全な一覧レスポンスを検証。実Chromeで320/375/390/430pxの停止中画面の表記とボタン無効を確認する。
 - これらの改善は**管理センターの本番運用を開始したことを意味しない**。実稼働GAS正本/デプロイ版・復元バックアップ・承認済み監査スキーマ照合が終わるまではPR #76をDraft、管理書込OFF、個人情報の実接続なしで維持する。
+
+## 2026-11-02 17:32以降：同一IDの重複を削除せずに検出（開発版のみ）
+
+- `GAS_WebAdminOps_20261030.gs` と `GAS_Code_FULL_WEB_OPS_20261030.gs` の管理読取候補に、正常形式のWeb参加IDが複数行で使われている場合の `duplicateWebIdCount`、既存参加者表のMIO-IDが複数行で使われている場合の `duplicateMioIdCount` を追加。それぞれ**最初の1行を除く重複行数**。以前の不正/空欄ID件数と混ぜない。
+- 要確認として集計するだけで自動承認・再登録・統合・削除・参加者ID変更はしない。待機者件数には重複行もそのまま残るため、**件数＝ユニーク人数とは限らない**。本人確認が必要な状態を決め打ちしない。
+- ステージング専用 `scripts/mio-admin-queue-contract.mjs` に2つの件数を追加し、数値の欠落/負数/非整数を拒否。`hasUnclassifiedRows` に重複を含める。純粋な出力は件数だけで、ID、名前、端末情報、トークン等を返さない。
+- `tests/mio-web-admin-ops.test.mjs` に、同じWeb参加IDを3行・同じMIO-IDを3行にした架空データで、重複がそれぞれ2件と検出され、元の台帳に書込みがないことを検証。`tests/mio-admin-ops-queue-api.test.mjs` では契約の拒否条件・個人情報非出力を検証。統合GAS候補と非公開コピー用HTMLも同期。
+- **本番由来の `api-gacha-admin-ops.js` はmainの正本と同一のまま**。管理API新規接続、GASの本番反映、実シートやMIO-IDの変更なし。稼働GAS現物/デプロイ版と承認済み監査スキーマの確認が終わるまではPR #76 Draft、管理書込みOFF、Issue #66未完了。
