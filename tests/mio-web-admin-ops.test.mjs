@@ -30,7 +30,12 @@ function sandbox({schemaReady=true}={}){
    getMaxRows(){return 1000},
    getRange(row,col,rs=1,cs=1){
     return {
-     getValues(){return Array.from({length:rs},(_,ri)=>Array.from({length:cs},(_,ci)=>rows[name][row+ri-1]?.[col+ci-1]??''))},
+     getValues(){return Array.from({length:rs},(_,ri)=>Array.from({length:cs},(_,ci)=>{
+      // Model the existing participant A-column formula consistently for
+      // single-cell reads and rectangular readbacks.
+      if(name==='emuzii_参加者'&&row+ri===3&&col+ci===1&&rows[name][2]?.[1])return 'MIO-0002';
+      return rows[name][row+ri-1]?.[col+ci-1]??'';
+     }))},
      getValue(){if(name==='emuzii_参加者'&&col===1&&row===3&&rows[name][2]?.[1])return 'MIO-0002';return rows[name][row-1]?.[col-1]??''},
      getFormula(){return name==='emuzii_参加者'&&col===1&&row===3?'=IF(B3="","","MIO-"&TEXT(ROW()-1,"0000"))':''},
      setValue(v){if(!rows[name][row-1])rows[name][row-1]=[];rows[name][row-1][col-1]=v;write.push({name,row,col,v});return this},
