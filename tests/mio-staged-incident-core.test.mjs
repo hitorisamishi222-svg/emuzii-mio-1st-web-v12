@@ -107,7 +107,7 @@ function mockClient(){
    state.current=args[1];state.writes++;return {rowCount:1,rows:[{incident_id:args[0]}]};
   }
   if(sql.includes('INSERT INTO mio_admin_incident_audit')){
-   state.audits.set(args[0],{incident_id:args[1],action:args[3],before_state:args[4],payload_hash:args[6]});
+   state.audits.set(args[0],{incident_id:args[1],action:args[3],before_state:args[4],after_state:args[5],payload_hash:args[6]});
    return {rowCount:1,rows:[]};
   }
   throw Error('Unexpected SQL in isolated incident simulation');
@@ -145,6 +145,20 @@ test('inconsistent replay state fails closed and rolls back without an additiona
  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident replay state inconsistent/);
  assert.equal(db.state.writes,writes);
  assert.equal(db.state.rollback,1);
+});
+test('tampered or missing stored after-state cannot be replayed as a successful triage',async()=>{
+ for(const corrupted of ['resolved','unhandled',undefined]){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'a'.repeat(32)};
+  await transitionIncident(db,d,'admin-code');
+  const stored=db.state.audits.get(d.operationId);
+  if(corrupted===undefined)delete stored.after_state;
+  else stored.after_state=corrupted;
+  const writes=db.state.writes;
+  await assert.rejects(transitionIncident(db,d,'admin-code'),/operation id reuse conflict/);
+  assert.equal(db.state.writes,writes,'an invalid replay must never write again');
+  assert.equal(db.state.rollback,1);
+  assert.equal(db.state.current,'working');
+ }
 });
 test('ambiguous duplicate audit rows cannot be accepted as a successful replay',async()=>{
  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'f'.repeat(32)};
