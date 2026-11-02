@@ -16,6 +16,7 @@ const cwd=process.cwd(),allowed=new Map([
  ['/museum-archive.html',['museum-archive.html','text/html']],
  ['/museum-archive.js',['museum-archive.js','text/javascript']],
  ['/mio-admin-rehearsal.html',['mio-admin-rehearsal.html','text/html']],
+ ['/gacha-web-gate.html',['gacha-web-gate.html','text/html']],
  ['/mio-admin-rehearsal.js',['mio-admin-rehearsal.js','text/javascript']],
  ['/mio-gas-local-check.html',['mio-gas-local-check.html','text/html']],
  ['/mio-gas-local-check.js',['mio-gas-local-check.js','text/javascript']],
@@ -610,6 +611,32 @@ try{
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
+  }
+ }
+ // The real management landing page remains disconnected; test its three
+ // queue placeholders without invoking production switches or Web APIs.
+ for(const width of [320,375,390,430]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  await cdp('Page.navigate',{url:root+'/gacha-web-gate.html'});
+  await poll(()=>evaluate("document.readyState==='complete'&&!!document.querySelector('#opsPendingSimpleCount')"),18000);
+  const gate=await evaluate(`(()=>({
+   viewport:innerWidth,scroll:document.documentElement.scrollWidth,
+   queueIds:['opsPendingNewCount','opsPendingIdentityCount','opsPendingSimpleCount']
+    .map(id=>document.getElementById(id)?.textContent),
+   reloadDisabled:document.getElementById('opsReload').disabled,
+   grantDisabled:document.getElementById('opsGrant').disabled,
+   unknownText:document.getElementById('opsUnknownState').textContent
+  }))()`);
+  assert.ok(gate.scroll<=gate.viewport+2,'admin preview horizontal overflow '+JSON.stringify(gate));
+  assert.ok(gate.queueIds.every(x=>x&&x.includes('未接続')&&x.includes('0人とは限りません')),
+   'a disconnected administrator must never receive a false zero');
+  assert.equal(gate.reloadDisabled,true);
+  assert.equal(gate.grantDisabled,true);
+  assert.ok(gate.unknownText.includes('未分類の登録状態'));
+  if(width===390){
+   await mkdir('artifacts',{recursive:true});
+   const shot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-management-queue-390.png',Buffer.from(shot.data,'base64'));
   }
  }
  assert.equal(writes.length,0,'no HTTP writes permitted');
