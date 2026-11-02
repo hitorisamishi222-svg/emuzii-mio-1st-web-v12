@@ -118,6 +118,11 @@ export async function transitionIncident(client,values,actor){
   if(locked.rowCount!==1)throw Error('incident not found');
   const audit=await client.query(
    'SELECT incident_id,action,before_state,after_state,payload_hash FROM mio_admin_incident_audit WHERE operation_id=$1',[d.operationId]);
+  // The operation log is authoritative. If transport returned an incomplete
+  // row set, never mistake it for "no prior operation" and execute again.
+  if(!audit||!Number.isSafeInteger(audit.rowCount)||audit.rowCount<0||
+     !Array.isArray(audit.rows)||audit.rowCount!==audit.rows.length)
+   throw Error('incident audit read unavailable');
   if(audit.rowCount){
    if(audit.rowCount!==1||!audit.rows?.[0])throw Error('ambiguous incident audit');
    const a=audit.rows[0];
