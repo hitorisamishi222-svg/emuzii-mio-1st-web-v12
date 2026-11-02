@@ -522,6 +522,27 @@ test('interrupted approval does not finalize an inconsistent Web registration',(
  assert.equal(log[7],'処理中');
 });
 
+test('confirmed first-visit replay requires exactly one matching receipt and makes no changes',()=>{
+ const request={action:'webAdminOpsIntake',operationId:'c'.repeat(32),
+  name:'到着者D',note:'本人確認は未実施'};
+ for(const scenario of ['missing','changedNote','duplicate','rejected']){
+  const x=sandbox();x.exec(request);
+  const receipts=x.rows['emuzii_新規簡易登録'];
+  if(scenario==='missing')receipts.pop();
+  if(scenario==='changedNote')receipts.at(-1)[5]='別件のメモ';
+  if(scenario==='duplicate')receipts.push([...receipts.at(-1)]);
+  if(scenario==='rejected')receipts.at(-1)[4]='却下';
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),/同じ操作の受付状態を確認してください/,scenario);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes,'no confirmed replay can recreate the receipt: '+scenario);
+ }
+ const x=sandbox();x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
 test('first-visit receipt survives lost response and same-ID retry without duplicate row',()=>{
  const x=sandbox(),d={action:'webAdminOpsIntake',operationId:'1'.repeat(32),name:'到着者A',note:'ガチャのみ'};
  const result=x.exec(d);
