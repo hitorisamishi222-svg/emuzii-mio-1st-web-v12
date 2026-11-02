@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {buildIncident,classifiedFailure,normalizeEvent,recordIncident,
+import {buildIncident,classifiedFailure,normalizeEvent,recordIncident,listIncidents,
  normalizeTriage,transitionIncident,canRecord,canTriage,enabled} from '../mio-incident-core.js';
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -95,6 +95,29 @@ test('rate-limited and incomplete DB responses cannot claim a recorded incident'
   /incident persistence result unavailable/);
 });
 
+test('inbox does not render missing, partial or inconsistent DB results as zero incidents',async()=>{
+ for(const invalid of [undefined,null,{}, {rows:[]}, {rows:null,rowCount:0},
+  {rows:[],rowCount:1},{rows:[{}],rowCount:1},{rows:[],rowCount:0.5}]){
+  await assert.rejects(listIncidents(async()=>invalid),/incident inbox (read unavailable|row invalid)/);
+ }
+ assert.deepEqual(await listIncidents(async()=>({rowCount:0,rows:[]})),[]);
+});
+test('inbox rejects corrupted incident rows and only returns approved fields',async()=>{
+ const row={incident_id:incidentId,participant_ref:webId,source:'gacha',category:'DRAW_UNKNOWN',
+  stage:'draw',draw_id:draw,state:'unhandled',occurrence_count:1,
+  occurred_at:'2026-11-02T00:00:00Z',last_seen_at:'2026-11-02T00:00:00Z',updated_at:'2026-11-02T00:00:00Z',
+  raw_token:'PRIVATE_SECRET'};
+ const valid=await listIncidents(async()=>({rowCount:1,rows:[row]}));
+ assert.equal(valid.length,1);
+ assert.equal(valid[0].incidentId,incidentId);
+ assert.equal(valid[0].count,1);
+ assert.equal(JSON.stringify(valid).includes('PRIVATE_SECRET'),false);
+ for(const changed of [{state:'unexpected'},{incident_id:'bad'},{participant_ref:'personal-name'},
+  {occurrence_count:0},{occurrence_count:'1'},{category:'unknown'},{draw_id:'bad'}]){
+  await assert.rejects(listIncidents(async()=>({rowCount:1,rows:[{...row,...changed}]})),
+   /incident inbox row invalid/);
+ }
+});
 function mockClient(){
  const state={current:'unhandled',audits:new Map(),writes:0,rollback:0};
  return {state,async query(sql,args=[]){
