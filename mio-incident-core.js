@@ -73,15 +73,22 @@ export async function listIncidents(query){
  // A missing or partial DB response is never an empty inbox: no verified
  // result means UNKNOWN, not "0 unresolved incidents" in an operator UI.
  if(!r||!Array.isArray(r.rows)||!Number.isSafeInteger(r.rowCount)||
-    r.rowCount!==r.rows.length)throw Error('incident inbox read unavailable');
+    r.rowCount!==r.rows.length||r.rowCount>100)
+   throw Error('incident inbox read unavailable');
  for(const x of r.rows){
   if(!x||typeof x.incident_id!=='string'||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x.incident_id)||
-     !WEB.test(x.participant_ref||'')||!good(x.source,['gacha','status'])||
-     !good(x.category,CATEGORIES)||!good(x.stage,STAGES)||!good(x.state,STATES)||
-     !Number.isSafeInteger(x.occurrence_count)||x.occurrence_count<1||
-     (x.draw_id!=null&&!DRAW.test(x.draw_id)))
+     !good(x.state,STATES)||!Number.isSafeInteger(x.occurrence_count)||
+     x.occurrence_count<1)
    throw Error('incident inbox row invalid');
+  // Match the same source/stage/draw rules used for recording. A DRAW row
+  // without its draw ID or a STATUS row carrying a draw ID is not trustworthy.
+  try{
+   normalizeEvent({participantRef:x.participant_ref,source:x.source,
+    category:x.category,stage:x.stage,drawId:x.draw_id});
+  }catch{
+   throw Error('incident inbox row invalid');
+  }
  }
  return r.rows.map(x=>({
   incidentId:x.incident_id,participantRef:x.participant_ref,source:x.source,
