@@ -17,6 +17,8 @@ const cwd=process.cwd(),allowed=new Map([
  ['/museum-archive.js',['museum-archive.js','text/javascript']],
  ['/mio-admin-rehearsal.html',['mio-admin-rehearsal.html','text/html']],
  ['/mio-admin-rehearsal.js',['mio-admin-rehearsal.js','text/javascript']],
+ ['/mio-gas-local-check.html',['mio-gas-local-check.html','text/html']],
+ ['/mio-gas-local-check.js',['mio-gas-local-check.js','text/javascript']],
  ['/museum.css',['museum.css','text/css']],
  ['/museum-archive.css',['museum-archive.css','text/css']],
  ['/gallery-items.js',['gallery-items.js','text/javascript']],
@@ -323,6 +325,78 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true);
    assert.equal(await evaluate("document.querySelector('#demoVerify').disabled"),true);
 
+  }
+ }
+ // Browser-only examination of intentionally synthetic GAS files: never upload secrets.
+ for(const width of [320,375,390,430]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  await cdp('Page.navigate',{url:root+'/mio-gas-local-check.html'});
+  await poll(()=>evaluate("document.readyState==='complete'&&typeof MioGasLocalCheck?.inspect==='function'"),18000);
+  const size=await evaluate(`(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}))()`);
+  assert.ok(size.scroll<=size.width+2,'local GAS checker horizontal overflow '+JSON.stringify(size));
+  if(width===390){
+   const pass=await evaluate(`(async()=>{
+    const file=new File(['function doPost(e) { return {ok:true}; }'],'Code.gs',{type:'text/plain'});
+    const d=new DataTransfer();d.items.add(file);
+    document.querySelector('#gasSources').files=d.files;
+    document.querySelector('#gasCheck').click();
+    for(let i=0;i<150;i++){
+     if(!document.querySelector('#gasCheck').disabled)break;
+     await new Promise(resolve=>setTimeout(resolve,15));
+    }
+    return {files:document.querySelector('#gasFiles').textContent,
+     ops:document.querySelector('#gasOps').textContent,
+     doPost:document.querySelector('#gasPost').textContent,
+     canExport:!document.querySelector('#gasExport').disabled,
+     status:document.querySelector('#gasStatus').textContent,
+     inputEmpty:document.querySelector('#gasSources').value===''};
+   })()`);
+   assert.equal(pass.files,'1');assert.equal(pass.ops,'0/19');
+   assert.equal(pass.doPost,'1');assert.equal(pass.canExport,true);
+   assert.equal(pass.inputEmpty,true);
+   assert.ok(pass.status.includes('追加の許可ではありません'));
+   const blocked=await evaluate(`(async()=>{
+    const secret='FAKE-SECRET-EXACTLY-PRIVATE-12345';
+    const source='function doPost(e){}'+String.fromCharCode(10)+
+     'function doPost(e){}'+String.fromCharCode(10)+
+     'function mioAdminOps_(){}'+String.fromCharCode(10)+'// '+secret;
+    const dt=new DataTransfer();dt.items.add(new File([source],'PRIVATE_BACKUP_Code.gs',{type:'text/plain'}));
+    document.querySelector('#gasSources').files=dt.files;
+    document.querySelector('#gasCheck').click();
+    for(let i=0;i<150;i++){
+     if(!document.querySelector('#gasCheck').disabled)break;
+     await new Promise(resolve=>setTimeout(resolve,15));
+    }
+    const body=document.body.textContent;
+    const previous=URL.createObjectURL,click=HTMLAnchorElement.prototype.click;
+    let reportBlob=null;
+    URL.createObjectURL=b=>{reportBlob=b;return 'blob:local-redacted-report'};
+    HTMLAnchorElement.prototype.click=function(){};
+    try{
+     document.querySelector('#gasExport').click();
+     const report=JSON.parse(await reportBlob.text());
+     return {status:document.querySelector('#gasStatus').textContent,
+      posts:document.querySelector('#gasPost').textContent,
+      duplicate:document.querySelector('#gasDup').textContent,
+      leaked:body.includes(secret)||body.includes('PRIVATE_BACKUP_Code.gs')||
+       JSON.stringify(report).includes(secret)||JSON.stringify(report).includes('PRIVATE_BACKUP_Code.gs'),
+      exportAllowed:!report.liveAdminWriteAllowed,
+      classification:report.classification,
+      blocked:report.blockingReasons};
+    }finally{URL.createObjectURL=previous;HTMLAnchorElement.prototype.click=click}
+   })()`);
+   assert.equal(blocked.status.includes('導入停止'),true);
+   assert.equal(blocked.posts,'2');assert.equal(blocked.duplicate,'1');
+   assert.equal(blocked.leaked,false,'source code or filenames leaked into UI/report');
+   assert.equal(blocked.exportAllowed,true);
+   assert.equal(blocked.classification,'BLOCKED_REVIEW');
+   assert.ok(blocked.blocked.includes('DUPLICATE_FUNCTION_DECLARATIONS'));
+   await evaluate("document.querySelector('#gasClear').click()");
+   assert.equal(await evaluate("document.querySelector('#gasExport').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#gasFiles').textContent"),'—');
+   await mkdir('artifacts',{recursive:true});
+   const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
   }
  }
  assert.equal(writes.length,0,'no HTTP writes permitted');
