@@ -286,6 +286,20 @@ try{
     audits:document.querySelector('#demoAuditCount').textContent,
     tickets:document.querySelector('#demoRoster').textContent.includes('残数 3回')
    }))()`),{pending:'2',audits:'0',tickets:true});
+   // Rejecting an application must not create a participant. Invalid quantities
+   // and non-demo operation IDs must not increment the balance or audit trail.
+   await evaluate("document.querySelector('#demoPending .entry:last-child button.secondary').click()");
+   assert.equal(await evaluate("document.querySelector('#demoPendingCount').textContent"),'1');
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('デモ申請者B')"),false);
+   await evaluate("document.querySelector('#demoRoster button').click()");
+   for(const bad of ['0','51','1.5','-1']){
+    await evaluate(`(()=>{document.querySelector('#demoGrantAmount').value=${JSON.stringify(bad)};document.querySelector('#demoGrant').click()})()`);
+    assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true,'invalid quantity changed tickets');
+   }
+   await evaluate(`(()=>{document.querySelector('#demoGrantAmount').value='2';document.querySelector('#demoOperationId').value='LIVE-OPS-1000';document.querySelector('#demoGrant').click()})()`);
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true,'non-demo ID changed tickets');
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'1','only rejection should be audited');
+
   }
  }
  assert.equal(writes.length,0,'no HTTP writes permitted');
