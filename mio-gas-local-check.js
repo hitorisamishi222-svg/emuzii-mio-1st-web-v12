@@ -58,20 +58,22 @@ function maskInactiveGAS(source,maskStrings=false){
   const declarations=active.slice(found.index+found[0].length);
   const next=/^\s*(?:async\s+)?function\s+[A-Za-z_$][\w$]*\s*\(/gm.exec(declarations);
   const b=next?remaining.slice(0,next.index):remaining;
-  const action=b.indexOf('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
-  const dispatch=b.indexOf('mioAdminOps_(');
-  const secret=Math.max(b.indexOf("getProperty('BRIDGE_SECRET')"),b.indexOf('getProperty("BRIDGE_SECRET")'));
-  const match=b.indexOf('equal_(d.secret,secret)');
-  const getLock=b.indexOf('LockService.getScriptLock(');
-  const tryLock=b.indexOf('lock.tryLock(');
-  const guard=b.indexOf('if(!lock.tryLock(');
-  const guardReturns=guard>=0&&/^if\(!lock\.tryLock\([^)]*\)\)\s*return\b/.test(b.slice(guard));
+  const activeBody=maskInactiveGAS(b,true);
+  const action=activeBody.indexOf('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
+  const dispatch=activeBody.indexOf('mioAdminOps_(');
+  const secret=[...activeBody.matchAll(/getProperty\s*\(/g)]
+   .find(m=>/^getProperty\s*\(\s*(['"])BRIDGE_SECRET\1\s*\)/.test(b.slice(m.index)))?.index??-1;
+  const match=activeBody.indexOf('equal_(d.secret,secret)');
+  const getLock=activeBody.indexOf('LockService.getScriptLock(');
+  const tryLock=activeBody.indexOf('lock.tryLock(');
+  const guard=activeBody.indexOf('if(!lock.tryLock(');
+  const guardReturns=guard>=0&&/^if\(!lock\.tryLock\([^)]*\)\)\s*return\b/.test(activeBody.slice(guard));
   return {
    has:action>=0&&dispatch>action,
    secret:secret>=0&&match>secret&&(action<0||match<action),
    lock:getLock>=0&&tryLock>getLock&&guard===tryLock-4&&guardReturns&&
     (action<0||tryLock<action)&&(dispatch<0||tryLock<dispatch),
-   identity:action<0||b.indexOf('d.participantId')>action
+   identity:action<0||activeBody.indexOf('d.participantId')>action
   };
  };
  function inspect(texts){
