@@ -100,3 +100,13 @@
 - [登録・回帰CI #41367369582](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41367369582)は従来197件＋新規7件で**204/204 PASS**。同コミットの管理・Face ID・登録・ガチャ演出など**8ワークフローはすべて成功**。まだ実GAS接続、実DB管理書込、Safariの検証とは無関係。
 - 実シートには`emuzii_ガチャ付与履歴`のJ列「Web操作ID」見出しがなく、`emuzii_Web管理操作履歴`タブもないことを読み取り専用で確認済み。**権限・バックアップ・スキーマ変更の明示承認なく作成しない。**
 - PR #76はDraftを維持。main、Production、既存GAS、Google Sheets、Neon、MIO-ID、皆勤、FA、抽選残数・当選履歴に書き込みなし。次は稼働GASのバックアップとデプロイ版・19関数・現`doPost`の現物照合が必要。
+
+
+## 2026-11-02：障害受付・分析コアだけを先行して統合（DB/APIは未接続）
+
+- 管理センター開発Draft PR #74 `feature/mio-admin-center-phase1`にある`mio-incident-core.js`を、元のGit Blob`1fa369e6d973e19266b1e23cc4e31144c52e380e`と**同一内容**で現在のmainベースの統合コピーへ選択導入。将来の障害監査DB候補`db/mio-admin-incidents-20261031.sql`も未実行資料として保存。
+- 機能：`DRAW_UNKNOWN`、`GAS_TIMEOUT`、`AUTH_COOKIE_MISSING`等の区別、同一drawIdのHMAC重複集約、未対応→対応中→解決の操作ID冪等化、管理者認証なしの状態変更拒否。**実ユーザーの操作・抽選・DB書込は未実施**。
+- `gacha-web-gate.html`の**新規・無効な管理表示パネル内だけ**に「障害・復旧状況」を追加。未対応／対応中／解決の3欄は全て「未接続」、更新ボタン無効。データや実障害の値は出さない。
+- 既存Vercelに`/api/mio-incidents`・障害通報API・draw照合APIを導入しない。障害監視用のDB・レコーダー、`api-gacha.js`/ `api-status.js`への外部通報フックも**導入しない**。既存のガチャ/登録/Face ID/皆勤/GAS・参加者DBの本番コードは保護。
+- [障害分類・安全な冪等復旧の限定テスト](../tests/mio-staged-incident-core.test.mjs)9件新設。[登録全回帰 #41368329601](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41368329601)：**213/213 PASS、0 FAIL**。**実DBやiPhoneを検証した意味ではない**。
+- [障害センター段階導入の設計・STOP条件](MIO_INCIDENT_CENTER_STAGE_INTEGRATION_20261102.md)を追加。管理者本人認証・監査DB正本/権限/バックアップ・実GAS接続確認・本番データ前後一致・運営最終承認は未完。新DBテーブル作成、実管理URLや本番の変更はしていない。
