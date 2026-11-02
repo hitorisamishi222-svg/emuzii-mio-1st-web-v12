@@ -34,6 +34,7 @@ function harness(gasResult){
 const blank=()=>({ok:true,pending:[],roster:[],simple:[],simplePending:[],
  totalPending:0,pendingRegistrationCount:0,pendingIdentityCount:0,
  pendingSimpleCount:0,unknownWebStatusCount:0,unknownSimpleStatusCount:0,
+ invalidWebIdCount:0,incompleteSimpleRowCount:0,
  pendingListTruncated:false,simplePendingListTruncated:false,rejectedCount:0});
 test('admin read API distinguishes three empty queues without enabling any writes',async()=>{
  const res=await harness(blank()).request();
@@ -47,7 +48,8 @@ test('admin read API distinguishes three empty queues without enabling any write
 });
 test('admin read API refuses outdated GAS which omits a queue count',async()=>{
  for(const key of ['pendingRegistrationCount','pendingIdentityCount',
-  'pendingSimpleCount','unknownWebStatusCount','unknownSimpleStatusCount','simplePending']){
+  'pendingSimpleCount','unknownWebStatusCount','unknownSimpleStatusCount',
+  'invalidWebIdCount','incompleteSimpleRowCount','simplePending']){
   const candidate=blank();delete candidate[key];
   const res=await harness(candidate).request();
   assert.equal(res.code,424,'missing '+key);
@@ -61,6 +63,8 @@ test('admin read API fails closed for invalid counts or contradictory totals',as
   {...blank(),pendingSimpleCount:-1},
   {...blank(),pendingIdentityCount:0.5},
   {...blank(),unknownWebStatusCount:'0'},
+  {...blank(),invalidWebIdCount:-1},
+  {...blank(),incompleteSimpleRowCount:NaN},
   {...blank(),pendingRegistrationCount:Number.MAX_SAFE_INTEGER+1},
   {...blank(),pendingListTruncated:true},
   {...blank(),simplePendingListTruncated:true}
@@ -82,6 +86,8 @@ test('admin read API preserves truthful capped queue counts without inflating li
  candidate.simplePending=[{name:'架空の受付者',status:'管理確認待ち'}];
  candidate.simplePendingListTruncated=true;
  candidate.unknownWebStatusCount=2;
+ candidate.invalidWebIdCount=3;
+ candidate.incompleteSimpleRowCount=4;
  const res=await harness(candidate).request();
  assert.equal(res.code,200);
  assert.equal(res.data.totalPending,100);
@@ -89,6 +95,8 @@ test('admin read API preserves truthful capped queue counts without inflating li
  assert.equal(res.data.pendingIdentityCount,1);
  assert.equal(res.data.pendingSimpleCount,72);
  assert.equal(res.data.unknownWebStatusCount,2);
+ assert.equal(res.data.invalidWebIdCount,3);
+ assert.equal(res.data.incompleteSimpleRowCount,4);
  assert.equal(res.data.pendingListTruncated,true);
  assert.equal(res.data.simplePendingListTruncated,true);
  assert.equal(res.data.writeEnabled,false);
