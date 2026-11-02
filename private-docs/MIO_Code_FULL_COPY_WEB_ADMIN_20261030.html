@@ -835,12 +835,15 @@ function mioAdminOpsRequest_(d){
  return req;
 }
 function mioAdminOpsLog_(ss){
+ // Never change production Sheet structure as a side effect of an admin action.
+ // Migration requires a separately approved backup, owner review and rollback.
  var log=ss.getSheetByName('emuzii_Web管理操作履歴');
- if(!log){
-   log=ss.insertSheet('emuzii_Web管理操作履歴');
-   log.getRange(1,1,1,10).setValues([['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名']]);
-   log.setFrozenRows(1);
- }
+ if(!log)throw new Error('Web管理操作履歴タブが未整備です。管理者が別工程で確認してください');
+ var expected=['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名'];
+ var headers=log.getRange(1,1,1,10).getValues()[0];
+ if(!headers||headers.length!==expected.length||
+    expected.some(function(v,i){return mioAdminOpsStr_(headers[i])!==v;}))
+   throw new Error('Web管理操作履歴の列見出しが不一致です。管理者が確認してください');
  return log;
 }
 function mioAdminOpsExisting_(log,requestId){
@@ -962,7 +965,8 @@ function mioAdminOpsApprove_(ss,d){
 }
 function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
- if(!mioAdminOpsStr_(sh.getRange(1,10).getValue()))sh.getRange(1,10).setValue('Web操作ID');
+ if(mioAdminOpsStr_(sh.getRange(1,10).getValue())!=='Web操作ID')
+   throw new Error('ガチャ付与履歴のWeb操作ID列が未整備です。管理者が確認してください');
  // Scan the *entire* operation-id column, not only the first 499 records.
  var historyCount=Math.max(0,sh.getLastRow()-1),matches=[];
  if(historyCount&gt;50000)throw new Error('付与履歴が照合上限です。管理者に確認してください');
@@ -1004,6 +1008,10 @@ function mioAdminOpsGrant_(ss,d){
  var people=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id),name=mioAdminOpsStr_(people.c[1]);
  var sheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ'),g=mioAdminOpsOne_(mioAdminOpsValues_(sheet,17),0,id);
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!=='OK'||g.c[13]!=='OK')throw new Error('ガチャ管理行に要確認の項目があります');
+ // Read-only preflight BEFORE a grant can create an audit or increment credits.
+ var grantHistory=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
+ if(mioAdminOpsStr_(grantHistory.getRange(1,10).getValue())!=='Web操作ID')
+   throw new Error('ガチャ付与履歴のWeb操作ID列が未整備です。管理者が確認してください');
  var log=mioAdminOpsLog_(ss),prev=mioAdminOpsExisting_(log,op);
  if(prev){
    if(prev.c[2]!=='付与'||prev.c[4]!==id||
