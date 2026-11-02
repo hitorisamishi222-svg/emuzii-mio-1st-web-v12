@@ -78,10 +78,11 @@ export async function listIncidents(query){
 }
 export function normalizeTriage(d){
  if(!d||!good(d.action,['start','resolve'])||
-  typeof d.incidentId!=='string'||!/^[0-9a-f-]{36}$/i.test(d.incidentId)||
+  typeof d.incidentId!=='string'||
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(d.incidentId)||
   !OP.test(d.operationId||'')||!good(d.expectedState,STATES)||
   (d.action==='start'&&d.expectedState!=='unhandled')||
-  (d.action==='resolve'&&d.expectedState==='resolved'))
+  (d.action==='resolve'&&d.expectedState!=='working'))
    throw Error('invalid triage request');
  return {action:d.action,incidentId:d.incidentId,expectedState:d.expectedState,operationId:d.operationId};
 }
