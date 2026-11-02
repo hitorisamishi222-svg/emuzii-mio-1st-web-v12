@@ -489,6 +489,34 @@ try{
    assert.ok(multi.duplicate.includes('重複'),'duplicate filename cannot be called a verified backup');
    assert.ok(multi.collision.includes('重複'),'case-insensitive filename collision cannot be accepted');
    assert.ok(multi.altered.includes('不一致'),'a changed appsscript.json must be detected');
+   // Cancellation is a privacy property: clearing midway must never display
+   // a hash comparison outcome from an old asynchronous file read.
+   const backupRace=await evaluate(`(async()=>{
+    const source=document.querySelector('#gasBackupOriginal');
+    const copy=document.querySelector('#gasBackupCopy');
+    const button=document.querySelector('#gasBackupCompare');
+    const status=document.querySelector('#gasBackupStatus');
+    const previous=File.prototype.arrayBuffer;
+    let release;
+    File.prototype.arrayBuffer=function(){return new Promise(resolve=>{release=resolve})};
+    const assign=el=>{
+     const data=new DataTransfer();
+     data.items.add(new File(['function doPost(e){}'],'Code.gs',{type:'text/plain'}));
+     el.files=data.files;
+    };
+    try{
+     assign(source);assign(copy);button.click();
+     if(typeof release!=='function')throw Error('backup reader did not begin');
+     document.querySelector('#gasBackupClear').click();
+     release(new Uint8Array([1,2,3]).buffer);
+     await new Promise(resolve=>setTimeout(resolve,50));
+     return {cleared:status.textContent.includes('消去しました'),
+      emptySource:source.value==='',emptyBackup:copy.value==='',
+      enabled:!button.disabled};
+    }finally{File.prototype.arrayBuffer=previous}
+   })()`);
+   assert.deepEqual(backupRace,{cleared:true,emptySource:true,emptyBackup:true,enabled:true},
+    'a late backup hash must never restore a cleared outcome');
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
