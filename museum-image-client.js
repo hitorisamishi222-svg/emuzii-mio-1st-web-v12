@@ -45,9 +45,12 @@
      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height); // transparent source -> neutral background
      ctx.drawImage(img,0,0,width,height);
      for(const quality of [0.83,0.68,0.53]){
-      let blob=await toBlob(canvas,'image/webp',quality);
-      let format='webp';
-      if(blob.type!=='image/webp'){
+      // Some iOS Safari versions return a null Blob when WebP encoding is
+      // unsupported. Try JPEG rather than failing the entire local photo check.
+      let blob=null,format='webp';
+      try{blob=await toBlob(canvas,'image/webp',quality)}
+      catch(e){if(e?.message!=='IMAGE_ENCODE_FAILED')throw e}
+      if(!blob||blob.type!=='image/webp'){
        blob=await toBlob(canvas,'image/jpeg',quality);
        format='jpeg';
       }
