@@ -36,7 +36,27 @@ function card(item){
  }
  return article;
 }
-if(list&&status){
- list.replaceChildren(...approved.map(card));
- status.textContent=approved.length+'件の承認済み作品を表示しています。';
+const search=document.getElementById('approvedGallerySearch');
+const filterButtons=typeof document.querySelectorAll==='function'?
+ [...document.querySelectorAll('[data-gallery-kind]')]:[];
+let selected='all',keyword='';
+function render(){
+ if(!list||!status)return;
+ const shown=approved.filter(item=>{
+  if(selected!=='all'&&item.category!==selected)return false;
+  const haystack=[item.title,item.creator,item.description].filter(Boolean).join(' ').toLocaleLowerCase('ja');
+  return haystack.includes(keyword);
+ });
+ filterButtons.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.galleryKind===selected)));
+ list.replaceChildren(...shown.map(card));
+ status.textContent=shown.length?
+  shown.length+'件の承認済み作品を表示しています。':
+  '条件に一致する公開作品はありません。';
 }
+if(search)search.addEventListener('input',()=>{keyword=search.value.trim().toLocaleLowerCase('ja');render()});
+filterButtons.forEach(btn=>btn.addEventListener('click',()=>{
+ const next=btn.dataset.galleryKind;
+ if(next!=='all'&&next!=='動画'&&next!=='音声・楽曲')return;
+ selected=next;render();
+}));
+render();
