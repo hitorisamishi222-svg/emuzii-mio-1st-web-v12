@@ -873,6 +873,7 @@ function mioAdminOpsCreate_(ss,d){
   if(old.c[2]!=='新規MIO-ID'||old.c[3]!==wid)throw new Error('操作IDの再利用は禁止です');
   var oldId=mioAdminOpsStr_(old.c[4]);
   if(old.c[7]==='確定')return {ok:true,replayed:true,mioId:oldId};
+  if(old.c[7]!=='処理中')throw new Error('新規ID操作の監査状態を手動確認してください');
   var saved=values.filter(function(x){return x[0]===oldId&amp;&amp;mioAdminOpsName_(x[1])===mioAdminOpsName_(name)});
   if(saved.length===1){log.getRange(old.row,8).setValue('確定');return {ok:true,replayed:true,mioId:oldId};}
   throw new Error('保留中の新規登録を確認してください');
@@ -918,6 +919,7 @@ function mioAdminOpsApprove_(ss,d){
      mioAdminOpsStr_(previous.c[8])!==note)
     throw new Error('操作IDの再利用は禁止です');
   if(previous.c[7]==='確定')return {ok:true,replayed:true};
+  if(previous.c[7]!=='処理中')throw new Error('承認操作の監査状態を手動確認してください');
   // A network error may occur after F=承認済み but before the audit is finalized.
   // Verify the same browser, ID, identity, and member state before closing it.
   var retryWeb=mioAdminOpsSheet_(ss,'emuzii_Web登録');
@@ -1010,6 +1012,7 @@ function mioAdminOpsGrant_(ss,d){
       mioAdminOpsName_(prev.c[9])!==mioAdminOpsName_(name))
      throw new Error('操作IDの再利用は禁止です');
    if(prev.c[7]==='確定')return {ok:true,replayed:true,mioId:id};
+   if(prev.c[7]!=='処理中')throw new Error('付与操作の監査状態を手動確認してください');
    var current=Number(sheet.getRange(g.row,15).getValue());
    if(current===expected+count){mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count);log.getRange(prev.row,8).setValue('確定');return {ok:true,replayed:true,mioId:id};}
    if(current!==expected)throw new Error('保留中の付与記録を手動確認してください');
