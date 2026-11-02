@@ -154,6 +154,11 @@ try{
   assert.equal(gallery.cards,2,'previously approved works were lost');
   assert.equal(gallery.songs,1,'original memorial music disappeared');
   assert.deepEqual(gallery.videos,[{url:'https://vt.tiktok.com/ZSgFvmy7Q/',rel:'noopener noreferrer',target:'_blank'}]);
+  if(width===390){
+   await mkdir('artifacts',{recursive:true});
+   const galleryShot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-museum-approved-gallery-390.png',Buffer.from(galleryShot.data,'base64'));
+  }
 
   await cdp('Page.navigate',{url:root+'/museum-archive.html?kind=icons'});
   await poll(()=>evaluate("document.querySelector('#archiveStatus')?.textContent.includes('準備中')"),18000);
@@ -167,6 +172,11 @@ try{
   assert.deepEqual(archive.selected,['icons']);
   assert.equal(archive.items,0,'unverified or private exhibit appeared in staging');
   assert.ok(archive.status.includes('準備中'),'offline exhibit must say that content is not connected');
+  if(width===390){
+   await mkdir('artifacts',{recursive:true});
+   const archiveShot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-museum-archive-390.png',Buffer.from(archiveShot.data,'base64'));
+  }
   await evaluate("document.querySelector('.archive-filter[data-kind=events]').click()");
   assert.equal(await evaluate("new URLSearchParams(location.search).get('kind')"),'events');
   assert.equal(await evaluate("document.querySelector('.archive-filter[aria-pressed=true]').dataset.kind"),'events');
