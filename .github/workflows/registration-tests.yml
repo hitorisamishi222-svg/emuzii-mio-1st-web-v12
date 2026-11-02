@@ -17,3 +17,17 @@ jobs:
           node-version: '22'
       - run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - run: npm test
+      # Staging-only: verify local browser image conversion without live accounts or APIs.
+      - name: MIO offline mobile smoke (Chrome, 320/375/390/430px)
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/mio-v2-integration-mainbaseline-20261102'
+        run: |
+          node --check tests/mio-staging-mobile-chromium.mjs
+          node tests/mio-staging-mobile-chromium.mjs
+      - name: Keep local Chrome screenshot evidence (staging only)
+        if: always() && github.event_name == 'pull_request' && github.head_ref == 'feature/mio-v2-integration-mainbaseline-20261102'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mio-staging-mobile-chrome-evidence
+          path: artifacts/mio-offline-mobile-*.png
+          if-no-files-found: ignore
+          retention-days: 7
