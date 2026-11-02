@@ -299,6 +299,29 @@ try{
    await evaluate(`(()=>{document.querySelector('#demoGrantAmount').value='2';document.querySelector('#demoOperationId').value='LIVE-OPS-1000';document.querySelector('#demoGrant').click()})()`);
    assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true,'non-demo ID changed tickets');
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'1','only rejection should be audited');
+   // Lost-after-commit: source updates once, but the operator only sees an
+   // uncertain result. New operation IDs are blocked until the same ID is checked.
+   await evaluate(`(()=>{
+    document.querySelector('#demoGrantAmount').value='2';
+    document.querySelector('#demoOperationId').value='DEMO-OP-LOSS1';
+    document.querySelector('#demoDropReply').checked=true;
+    document.querySelector('#demoGrant').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 5回')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2');
+   assert.equal(await evaluate("document.querySelector('#demoVerify').disabled"),false);
+   assert.equal(await evaluate("document.querySelector('#demoMessage').textContent.includes('応答途絶')"),true);
+   await evaluate("document.querySelector('#demoOperationId').value='DEMO-OP-NEW2';document.querySelector('#demoGrant').click()");
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2','new operation must be blocked while old result uncertain');
+   await evaluate("document.querySelector('#demoVerify').click()");
+   assert.equal(await evaluate("document.querySelector('#demoVerify').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoMessage').textContent.includes('再付与していません')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 5回')"),true);
+   await evaluate("document.querySelector('#demoOperationId').value='DEMO-OP-LOSS1';document.querySelector('#demoGrant').click()");
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2','post-confirmation replay must not double credit');
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoVerify').disabled"),true);
 
   }
  }
