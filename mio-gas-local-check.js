@@ -168,6 +168,13 @@ function maskInactiveGAS(source,maskStrings=false){
   status.textContent='検査結果を消去しました。';
   draw();
  });
+ // A newly selected file invalidates the previous verdict, even if the operator
+ // never presses "inspect" again. It also cancels an in-flight older read.
+ pick.addEventListener('change',()=>{
+  revision++;report=null;save.disabled=true;check.disabled=false;
+  status.textContent='新しいファイルが選択されました。未検査です。';
+  draw();
+ });
  save.addEventListener('click',()=>{
   if(!report)return;
   const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
@@ -234,6 +241,12 @@ function maskInactiveGAS(source,maskStrings=false){
   backupRevision++;backupSource.value='';backupCopy.value='';
   backupCheck.disabled=false;
   backupStatus.textContent='バックアップ照合結果を消去しました。';
+ });
+ // Never show an old "matching" verdict against a newly selected original or
+ // backup. Cancel pending digest jobs on either side and require a fresh click.
+ for(const input of [backupSource,backupCopy])input.addEventListener('change',()=>{
+  backupRevision++;backupCheck.disabled=false;
+  backupStatus.textContent='比較ファイルが変更されました。新しい組み合わせは未照合です。';
  });
  draw();
 })();
