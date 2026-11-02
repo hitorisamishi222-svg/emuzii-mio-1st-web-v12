@@ -216,6 +216,20 @@ test('tampered or missing stored after-state cannot be replayed as a successful 
   assert.equal(db.state.current,'working');
  }
 });
+test('missing or truncated operation-audit responses never authorize a second update',async()=>{
+ const invalid=[undefined,null,{}, {rowCount:0}, {rowCount:0,rows:null},
+  {rowCount:1,rows:[]},{rowCount:0,rows:[{action:'start'}]},
+  {rowCount:-1,rows:[]},{rowCount:'0',rows:[]}];
+ for(const reply of invalid){
+  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'1'.repeat(32)};
+  const original=db.query.bind(db);
+  db.query=async(sql,args)=>sql.startsWith('SELECT incident_id,action')?reply:original(sql,args);
+  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident audit read unavailable/);
+  assert.equal(db.state.writes,0,'unknown audit is never treated as a new operation');
+  assert.equal(db.state.rollback,1);
+  assert.equal(db.state.current,'unhandled');
+ }
+});
 test('ambiguous duplicate audit rows cannot be accepted as a successful replay',async()=>{
  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'f'.repeat(32)};
  await transitionIncident(db,d,'admin-code');
