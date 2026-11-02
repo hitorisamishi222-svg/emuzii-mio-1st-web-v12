@@ -118,7 +118,9 @@ export async function transitionIncident(client,values,actor){
  try{
   const locked=await client.query(
    'SELECT state FROM mio_admin_incidents WHERE incident_id=$1 FOR UPDATE',[d.incidentId]);
-  if(locked.rowCount!==1)throw Error('incident not found');
+  if(!locked||locked.rowCount!==1||!Array.isArray(locked.rows)||
+     locked.rows.length!==1||!good(locked.rows[0]?.state,STATES))
+   throw Error('incident current state unavailable');
   const audit=await client.query(
    'SELECT incident_id,action,before_state,after_state,payload_hash FROM mio_admin_incident_audit WHERE operation_id=$1',[d.operationId]);
   // The operation log is authoritative. If transport returned an incomplete
@@ -159,11 +161,17 @@ export async function transitionIncident(client,values,actor){
           resolved_at=CASE WHEN $2='resolved' THEN now() ELSE NULL END
       WHERE incident_id=$1 AND state=$4 RETURNING incident_id`,
       [d.incidentId,after,actor,d.expectedState]);
-  if(update.rowCount!==1)throw Error('incident update conflict');
-  await client.query(`INSERT INTO mio_admin_incident_audit
+  if(!update||update.rowCount!==1||!Array.isArray(update.rows)||
+     update.rows.length!==1||update.rows[0]?.incident_id!==d.incidentId)
+   throw Error('incident update conflict');
+  const inserted=await client.query(`INSERT INTO mio_admin_incident_audit
    (operation_id,incident_id,actor,action,before_state,after_state,payload_hash)
    VALUES ($1,$2,$3,$4,$5,$6,$7)`,
    [d.operationId,d.incidentId,actor,d.action,d.expectedState,after,payloadHash]);
+  // PostgreSQL INSERT without RETURNING reports rowCount 1 and rows [].
+  // A missing/ambiguous reply must never be treated as a committed audit.
+  if(!inserted||inserted.rowCount!==1||!Array.isArray(inserted.rows)||
+     inserted.rows.length!==0)throw Error('incident audit insert unavailable');
   await client.query('COMMIT');
   return {replayed:false,incidentId:d.incidentId,state:after};
  }catch(e){
