@@ -64,6 +64,22 @@ test('missing script lock / misplaced secret comparison blocks candidate dispatc
  assert.ok(y.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
  checks(x);checks(y);
 });
+test('admin dispatch must remain after ScriptLock acquisition and gated tryLock',()=>{
+ const route=full.split('\\n').find(line=>line.includes('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)')&&line.includes('mioAdminOps_('));
+ const getter=full.split('\\n').find(line=>line.includes('var lock=LockService.getScriptLock();'));
+ const tryLine=full.split('\\n').find(line=>line.includes('if(!lock.tryLock(10000))'));
+ assert.ok(route&&getter&&tryLine,'archived source layout changed; review guard before migration');
+ const first=full.replace(getter,'').replace(route,route+'\\n'+getter);
+ const second=full.replace(tryLine,'').replace(route,route+'\\n'+tryLine);
+ for(const unsafe of [first,second]){
+  const result=inspectSources([unsafe],{liveHeaders:sheet});
+  assert.equal(result.classification,'BLOCKED_REVIEW');
+  assert.equal(result.auditedDispatcher,false);
+  assert.ok(result.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
+  checks(result);
+ }
+});
+
 test('export-only tool never displays private source or secret material and never writes to files or network',()=>{
  const code=read('scripts/mio-gas-source-preflight.mjs');
  assert.doesNotMatch(code,/\bfetch\s*\(|https?\.request|createWriteStream|writeFile|appendFile|unlinkSync|execSync|eval\s*\(/);
