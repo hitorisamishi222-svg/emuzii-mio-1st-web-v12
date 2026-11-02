@@ -16,17 +16,47 @@
   LIVE_WRITE_AUDIT_SCHEMA_NOT_VERIFIED:'Web操作ID列と操作監査タブの実台帳照合・変更承認が未完了です。',
   DEPLOYED_GAS_VERSION_AND_BACKUP_NOT_VERIFIED:'稼働デプロイの版と安全な復元バックアップは、この検査では証明できません。'
  };
+// Mask comments (and optionally quoted text) without changing offsets or line breaks.
+// This conservative scanner is not a JavaScript parser: a live GAS review is still mandatory.
+function maskInactiveGAS(source,maskStrings=false){
+ let out='',state='code',quote='',escaped=false;
+ const blank=ch=>ch.charCodeAt(0)===10||ch.charCodeAt(0)===13?ch:' ';
+ for(let i=0;i<source.length;i++){
+  const ch=source[i],next=source[i+1];
+  if(state==='line'){out+=blank(ch);if(ch.charCodeAt(0)===10)state='code';continue}
+  if(state==='block'){
+   if(ch==='*'&&next==='/'){out+='  ';i++;state='code'}else out+=blank(ch);
+   continue
+  }
+  if(state==='quoted'){
+   out+=maskStrings?blank(ch):ch;
+   if(escaped)escaped=false;
+   else if(ch.charCodeAt(0)===92)escaped=true;
+   else if(ch===quote)state='code';
+   continue
+  }
+  if(ch==='/'&&next==='/'){out+='  ';i++;state='line';continue}
+  if(ch==='/'&&next==='*'){out+='  ';i++;state='block';continue}
+  if(ch==="'"||ch==='"'||ch.charCodeAt(0)===96){
+   state='quoted';quote=ch;escaped=false;out+=maskStrings?blank(ch):ch;continue
+  }
+  out+=ch;
+ }
+ return out;
+}
  const countDefs=src=>{
   const m=new Map();
-  for(const hit of src.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm))
+  for(const hit of maskInactiveGAS(src,true).matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm))
    m.set(hit[1],(m.get(hit[1])||0)+1);
   return m;
  };
  const dispatcher=src=>{
-  const found=/^\s*function\s+doPost\s*\([^)]*\)\s*\{/gm.exec(src);
+  const active=maskInactiveGAS(src,true);
+  const found=/^\s*function\s+doPost\s*\([^)]*\)\s*\{/gm.exec(active);
   if(!found)return {has:false,secret:false,lock:false,identity:false};
-  const remaining=src.slice(found.index+found[0].length);
-  const next=/^\s*(?:async\s+)?function\s+[A-Za-z_$][\w$]*\s*\(/gm.exec(remaining);
+  const remaining=maskInactiveGAS(src).slice(found.index+found[0].length);
+  const declarations=active.slice(found.index+found[0].length);
+  const next=/^\s*(?:async\s+)?function\s+[A-Za-z_$][\w$]*\s*\(/gm.exec(declarations);
   const b=next?remaining.slice(0,next.index):remaining;
   const action=b.indexOf('webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
   const dispatch=b.indexOf('mioAdminOps_(');
