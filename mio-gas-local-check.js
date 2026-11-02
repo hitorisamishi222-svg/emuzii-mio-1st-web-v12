@@ -175,5 +175,58 @@ function maskInactiveGAS(source,maskStrings=false){
   a.href=u;a.download='mio-gas-redacted-preflight.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(u),1500);
  });
+ // The following comparison reads both file sets locally and never derives any
+ // production-release flag. It proves ONLY that the two selected local sets match.
+ const backupSource=document.getElementById('gasBackupOriginal');
+ const backupCopy=document.getElementById('gasBackupCopy');
+ const backupCheck=document.getElementById('gasBackupCompare');
+ const backupClear=document.getElementById('gasBackupClear');
+ const backupStatus=document.getElementById('gasBackupStatus');
+ let backupRevision=0;
+ const validSet=files=>files.length>0&&files.length<=30&&
+  files.every(f=>f.size>0&&/\\.(?:gs|txt)$/i.test(f.name))&&
+  files.reduce((sum,f)=>sum+f.size,0)<=8*1024*1024;
+ const digestFile=async file=>{
+  const bytes=await file.arrayBuffer();
+  const digest=await window.crypto.subtle.digest('SHA-256',bytes);
+  return Array.from(new Uint8Array(digest),x=>x.toString(16).padStart(2,'0')).join('');
+ };
+ const localManifest=async files=>{
+  const pairs=await Promise.all(files.map(async file=>[file.name,await digestFile(file)]));
+  return pairs.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1]));
+ };
+ backupCheck.addEventListener('click',async()=>{
+  const seq=++backupRevision,source=[...backupSource.files],copy=[...backupCopy.files];
+  if(!validSet(source)||!validSet(copy)){
+   backupStatus.textContent='比較元・バックアップの両方で、ファイル数・形式・容量を確認してください。';
+   backupSource.value='';backupCopy.value='';return;
+  }
+  if(!window.crypto?.subtle){
+   backupStatus.textContent='この端末では安全なSHA-256照合が利用できません。';
+   backupSource.value='';backupCopy.value='';return;
+  }
+  backupCheck.disabled=true;backupStatus.textContent='端末内で照合しています。ファイルは送信しません。';
+  try{
+   const [original,backup]=await Promise.all([localManifest(source),localManifest(copy)]);
+   if(seq!==backupRevision)return;
+   const equal=original.length===backup.length&&original.every((a,i)=>
+    a[0]===backup[i][0]&&a[1]===backup[i][1]);
+   backupStatus.textContent=equal?
+    '選択した'+original.length+'ファイルの名前と内容が完全一致しました。ただし稼働GASの版は未検証です。':
+    '不一致：選択した2組のファイル名または内容に差があります。GASの変更をしないでください。';
+  }catch{
+   if(seq!==backupRevision)return;
+   backupStatus.textContent='安全な照合を完了できませんでした。GASの変更をしないでください。';
+  }finally{
+   if(seq===backupRevision){
+    backupSource.value='';backupCopy.value='';backupCheck.disabled=false;
+   }
+  }
+ });
+ backupClear.addEventListener('click',()=>{
+  backupRevision++;backupSource.value='';backupCopy.value='';
+  backupCheck.disabled=false;
+  backupStatus.textContent='バックアップ照合結果を消去しました。';
+ });
  draw();
 })();
