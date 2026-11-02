@@ -1,0 +1,81 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {execFileSync,spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
+import {resolve} from 'node:path';
+import {inspectSources,OPS_NAMES} from '../scripts/mio-gas-source-preflight.mjs';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const full=read('GAS_Code_FULL_WEB_OPS_20261030.gs');
+const addon=read('GAS_WebAdminOps_20261030.gs');
+const old=read('APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs');
+const sheet=JSON.parse(read('tests/fixtures/mio-live-sheet-schema-readonly-20261102.json'));
+const checks=x=>assert.equal(x.webAdminWriteAllowed,false);
+test('old archived GAS has no admin functions, never classify as deployed or writable',()=>{
+ const x=inspectSources([old],{liveHeaders:sheet});
+ assert.equal(x.classification,'NO_OPS_CANDIDATE_ONLY');
+ assert.equal(x.doPostCount,1);assert.equal(x.adminFunctionsPresent,0);
+ assert.equal(x.adminFunctionsMissing,19);
+ assert.ok(x.blockingReasons.includes('LIVE_ADMIN_OPS_MISSING'));
+ checks(x);
+});
+test('integrated archived candidate contains 19 ops exactly once and secure dispatcher, but is not proof of current deploy',()=>{
+ const x=inspectSources([full],{liveHeaders:sheet});
+ assert.equal(OPS_NAMES.length,19);
+ assert.equal(x.classification,'ALL_OPS_IN_SOURCE_UNVERIFIED_DEPLOYMENT');
+ assert.equal(x.adminFunctionsPresent,19);assert.equal(x.adminFunctionsMissing,0);
+ assert.equal(x.doPostCount,1);assert.equal(x.dispatchersFound,1);
+ assert.equal(x.auditedDispatcher,true);
+ assert.ok(x.blockingReasons.includes('DEPLOYED_GAS_VERSION_AND_BACKUP_NOT_VERIFIED'));
+ assert.ok(x.blockingReasons.includes('LIVE_WRITE_AUDIT_SCHEMA_NOT_VERIFIED'));
+ checks(x);
+});
+test('old base plus single candidate module has only one doPost but dispatch missing; fail closed',()=>{
+ const x=inspectSources([old,addon],{liveHeaders:sheet});
+ assert.equal(x.adminFunctionsPresent,19);
+ assert.equal(x.dispatchersFound,0);
+ assert.equal(x.classification,'BLOCKED_REVIEW');
+ assert.ok(x.blockingReasons.includes('DISPATCH_FUNCTION_MISMATCH'));
+ checks(x);
+});
+test('integrated candidate plus 19-function module is a dangerous duplicate, never add blindly',()=>{
+ const x=inspectSources([full,addon],{liveHeaders:sheet});
+ assert.equal(x.adminFunctionsPresent,19);
+ assert.equal(x.duplicateFunctionDeclarationCount,19);
+ assert.ok(x.blockingReasons.includes('DUPLICATE_FUNCTION_DECLARATIONS'));
+ assert.equal(x.classification,'BLOCKED_REVIEW');checks(x);
+});
+test('duplicated original doPost / incomplete admin module is blocked even when no errors are thrown',()=>{
+ const oldDup=inspectSources([old,old],{liveHeaders:sheet});
+ assert.equal(oldDup.doPostCount,2);
+ assert.ok(oldDup.blockingReasons.includes('DO_POST_COUNT_NOT_ONE'));
+ const half=OPS_NAMES.slice(0,3).map(n=>'function '+n+'() {}').join('\n');
+ const x=inspectSources([old,half],{liveHeaders:sheet});
+ assert.ok(x.blockingReasons.includes('PARTIAL_ADMIN_FUNCTIONS'));
+ checks(oldDup);checks(x);
+});
+test('missing script lock / misplaced secret comparison blocks candidate dispatch',()=>{
+ const withoutLock=full.replace('LockService.getScriptLock()', 'LockService.unverifiedGetLock()');
+ const x=inspectSources([withoutLock],{liveHeaders:sheet});
+ assert.equal(x.classification,'BLOCKED_REVIEW');
+ assert.ok(x.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
+ const reordered=full.replace("if(!secret||!equal_(d.secret,secret))return json_({ok:false,error:'unauthorized'});","// authentication check omitted");
+ const y=inspectSources([reordered],{liveHeaders:sheet});
+ assert.ok(y.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
+ checks(x);checks(y);
+});
+test('export-only tool never displays private source or secret material and never writes to files or network',()=>{
+ const code=read('scripts/mio-gas-source-preflight.mjs');
+ assert.doesNotMatch(code,/\bfetch\s*\(|https?\.request|createWriteStream|writeFile|appendFile|unlinkSync|execSync|eval\s*\(/);
+ assert.match(code,/webAdminWriteAllowed:false/);
+ assert.match(code,/requiresHumanLiveDeploymentVerification:true/);
+ assert.doesNotMatch(code,/console\.log\s*\(\s*source|text\(source/);
+ const tool=resolve(fileURLToPath(new URL('../scripts/mio-gas-source-preflight.mjs',import.meta.url)));
+ const p=spawnSync(process.execPath,[tool,resolve(fileURLToPath(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url)))],{encoding:'utf8',timeout:10000});
+ assert.equal(p.status,1,'read-only analysis must never report a release-ready zero exit');
+ const result=JSON.parse(p.stdout);
+ assert.equal(result.classification,'ALL_OPS_IN_SOURCE_UNVERIFIED_DEPLOYMENT');
+ assert.equal(result.webAdminWriteAllowed,false);
+ assert.doesNotMatch(p.stdout,/BRIDGE_SECRET|SHEET_ID|tokenHash|MIO-W-/);
+ assert.equal(p.stderr,'');
+});
