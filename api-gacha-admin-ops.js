@@ -59,9 +59,28 @@ export default async function handler(req,res){
   const result=await bridge(operations[d.action],data);
   if(result.ok!==true)throw Error('操作結果の確認に失敗しました');
   if(d.action==='read'){
-   if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||!Array.isArray(result.simple))
-     throw Error('受付状態を読み取れません');
-   return res.status(200).json({ok:true,writeEnabled,pending:result.pending,roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0,rejectedCount:result.rejectedCount||0});
+   // Do not silently display "0 waiting" when the connected GAS is old
+   // or truncated; require explicit nonnegative counts for every queue.
+   const countKeys=['totalPending','pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount','unknownWebStatusCount','unknownSimpleStatusCount','rejectedCount'];
+   if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||
+      !Array.isArray(result.simple)||!Array.isArray(result.simplePending)||
+      countKeys.some(key=>!Number.isSafeInteger(result[key])||result[key]<0)||
+      result.totalPending!==result.pendingRegistrationCount+result.pendingIdentityCount||
+      typeof result.pendingListTruncated!=='boolean'||typeof result.simplePendingListTruncated!=='boolean'||
+      result.pending.length>result.totalPending||result.simplePending.length>result.pendingSimpleCount||
+      result.pendingListTruncated!==(result.pending.length<result.totalPending)||
+      result.simplePendingListTruncated!==(result.simplePending.length<result.pendingSimpleCount))
+     return reply(res,424,'管理台帳の待機人数を検証できません。既存GAS接続を確認してください');
+   return res.status(200).json({ok:true,writeEnabled,pending:result.pending,roster:result.roster,
+    simple:result.simple,simplePending:result.simplePending,
+    grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending,
+    pendingRegistrationCount:result.pendingRegistrationCount,
+    pendingIdentityCount:result.pendingIdentityCount,pendingSimpleCount:result.pendingSimpleCount,
+    unknownWebStatusCount:result.unknownWebStatusCount,
+    unknownSimpleStatusCount:result.unknownSimpleStatusCount,
+    pendingListTruncated:result.pendingListTruncated,
+    simplePendingListTruncated:result.simplePendingListTruncated,
+    rejectedCount:result.rejectedCount});
   }
   return res.status(200).json({ok:true,result:{replayed:!!result.replayed,mioId:result.mioId||null,status:result.status||null,granted:result.granted||null,special:result.special??null,member:result.member||null}});
  }catch(e){
