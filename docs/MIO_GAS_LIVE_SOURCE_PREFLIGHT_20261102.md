@@ -110,3 +110,16 @@ node scripts/mio-gas-source-preflight.mjs "/private/backup/Code.gs" "/private/ba
 - `tests/mio-web-admin-ops.test.mjs` に、これらの改変ケースを追加し、正常な同ID再送が書き込みゼロで成功することも検証する。単独/統合GAS候補/非公開コピー用HTMLは同じ修正版で維持する。
 - 繰り返し明記：**実GASの現行版は未照合・未更新**。この追加は開発用の保存済み候補だけであり、Issue #66の承認ゲートを解除しない。
 
+
+
+## 2026-11-02 17時台：新規待機者の取りこぼし防止・管理画面を3分類（開発版だけ）
+
+**2026-11-02の既存台帳読み取り時点**では、Web登録50件（承認済48・却下2）、新規承認待ち0・承認済み本人照合待ち0。新規簡易登録6件（承認済2・動作確認用4）で簡易確認待ち0だった。**この集計は取得時点のスナップショットであり、新しい登録が自動監視されている意味ではない**。
+
+- 保存済みの未配備GAS候補 `GAS_WebAdminOps_20261030.gs` と `GAS_Code_FULL_WEB_OPS_20261030.gs` の `mioAdminOpsSummary_` に、`pendingRegistrationCount`（新規Web承認待ち）、`pendingIdentityCount`（承認済み・本人照合待ち）、`pendingSimpleCount`（簡易登録の「未確認」または「管理確認待ち」）を独立集計する処理を追加。管理テスト用の`動作確認用`は待機に含めない。
+- `pending` 80件・`simplePending` 60件の表示上限を超えた場合、**実際の総人数は正しく保持**し、それぞれ `pendingListTruncated` / `simplePendingListTruncated` を返す。
+- 未知の承認状態・簡易受付状態、Web参加IDの欠損/不正形式、簡易登録の名前欠損も別々の**警告件数**にする。これらを正常な承認待ちとして自動承認せず、問題のない状態を示す「0人」と誤認しないための診断用集計とする。
+- 旧本番ソースと一致が必須の `api-gacha-admin-ops.js` を**元のmain blobへ完全復元**し、元デプロイAPIの変更・接続は行っていない。新しい検査用API候補 `staging/mio-admin-queue-api-candidate.js` は公開ルートへ接続せず保留、`scripts/mio-admin-queue-contract.mjs` では個人名・Web参加ID・認証情報を返さない集計スキーマだけを単体検証する。未対応のGASレスポンスで0人を自動補完しない。
+- `gacha-web-gate.html` の停止中管理プレビューパネルに、3つの待機カテゴリーを**「未接続（0人とは限りません）」**と明示。既存ガチャスイッチや管理操作の安全な無効化状態を保持。静的画面のモバイル幅と接続OFFをChromeで確認。
+- 既存の保護スナップショット `tests/mio-mainbased-museum-integration.test.mjs` は緩めない。保護APIを変更した途中のCI失敗は失敗として扱い、その後main原本に完全復元し合格を再確認した。
+- **公開停止**：これらの人数は実際の連携済み管理センターにまだ自動反映されない。稼働GAS全ファイルとデプロイ版/バックアップ/監査台帳の認可が完了するまで、運営管理API接続・承認・付与はONにしない。参加者/MIO-ID/皆勤/FA/ガチャ残数・当選履歴・Googleシートは変更しない。
