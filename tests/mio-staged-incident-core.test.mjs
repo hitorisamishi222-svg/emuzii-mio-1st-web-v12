@@ -149,8 +149,11 @@ function mockClient(){
   if(sql.startsWith('SELECT state FROM mio_admin_incidents'))return {rowCount:1,rows:[{state:state.current}]};
   if(sql.startsWith('SELECT incident_id,action'))return state.audits.has(args[0])?{rowCount:1,rows:[state.audits.get(args[0])]}:{rowCount:0,rows:[]};
   if(sql.startsWith('SELECT operation_id,payload_hash FROM mio_admin_incident_audit')){
+   const resolved=sql.includes("action='resolve'");
    const rows=[...state.audits.entries()].filter(([_,a])=>a.incident_id===args[0]&&
-    a.action==='resolve'&&a.before_state==='working'&&a.after_state==='resolved')
+    a.action===(resolved?'resolve':'start')&&
+    a.before_state===(resolved?'working':'unhandled')&&
+    a.after_state===(resolved?'resolved':'working'))
     .slice(0,2).map(([operation_id,a])=>({operation_id,payload_hash:a.payload_hash}));
    return {rowCount:rows.length,rows};
   }
@@ -342,6 +345,29 @@ test('triage reports unknown outcome, not success, when COMMIT reply is absent',
   assert.equal(db.state.current,'working');
   assert.equal(db.state.audits.size,1);
   assert.equal(db.state.rollback,1);
+ }
+});
+test('resolution and replay reject missing, tampered or duplicated start audits',async()=>{
+ for(const scenario of ['missing','corrupt-hash','duplicate']){
+  for(const replay of [false,true]){
+   const db=mockClient();
+   const start={incidentId,action:'start',expectedState:'unhandled',
+    operationId:'6'.repeat(32)};
+   const resolve={incidentId,action:'resolve',expectedState:'working',
+    operationId:'7'.repeat(32)};
+   await transitionIncident(db,start,'admin-code');
+   if(replay)await transitionIncident(db,resolve,'admin-passkey');
+   if(scenario==='missing')db.state.audits.delete(start.operationId);
+   if(scenario==='corrupt-hash')db.state.audits.get(start.operationId).payload_hash='0'.repeat(64);
+   if(scenario==='duplicate')db.state.audits.set('8'.repeat(32),
+    {...db.state.audits.get(start.operationId)});
+   const before=db.state.writes;
+   await assert.rejects(transitionIncident(db,resolve,'admin-passkey'),
+    /incident working state lacks valid start audit/);
+   assert.equal(db.state.writes,before,'invalid prior audit cannot change state');
+   assert.equal(db.state.current,replay?'resolved':'working');
+   assert.equal(db.state.rollback,1);
+  }
  }
 });
 test('triage refuses direct resolution before an admin has started handling the case',async()=>{
