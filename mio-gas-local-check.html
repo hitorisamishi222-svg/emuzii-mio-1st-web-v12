@@ -37,7 +37,19 @@ li{margin:5px 0;overflow-wrap:anywhere}code{color:#ffdcac}
 <h3>公開を止める確認事項</h3><ul id="gasReasons"><li>現行コードは未確認です。</li></ul>
 <button id="gasExport" type="button" disabled>個人情報を含まない診断結果JSONを保存</button>
 </section>
-<section><h2>③ 実機・本番接続の確認は別工程</h2>
+<section><h2>③ 復元用バックアップの同一性チェック</h2>
+<p>保存した元ファイルとバックアップの2組が、<strong>ファイル名・ファイル内容まで完全一致するか</strong>を端末内で照合します。原本・バックアップのファイル名とコード本文は送信・保存・表示しません。</p>
+<label for="gasBackupOriginal">比較元：既存GASから保存したファイル一式</label>
+<input id="gasBackupOriginal" type="file" multiple accept=".gs,.txt,text/plain">
+<label for="gasBackupCopy">比較先：復元用バックアップのファイル一式</label>
+<input id="gasBackupCopy" type="file" multiple accept=".gs,.txt,text/plain">
+<p>それぞれ最大30ファイル・合計8MB。照合する2組は同じ構成である必要があります。</p>
+<button id="gasBackupCompare" type="button">2組を端末内で照合する</button>
+<button id="gasBackupClear" type="button">バックアップ照合結果を消す</button>
+<p id="gasBackupStatus" role="status" aria-live="polite">まだバックアップを比較していません。</p>
+<p class="warning">2組が一致しても、稼働中のGASデプロイ版と一致する証明にはなりません。GAS本番の変更許可ではありません。</p>
+</section>
+<section><h2>④ 実機・本番接続の確認は別工程</h2>
 <p>この静的診断で管理関数19件が揃っても、<strong>稼働しているデプロイ版との一致、全ファイルの復元バックアップ、BRIDGE_SECRETの有効性、実シート監査台帳、管理者本人確認を保証できません。</strong></p>
 <p>結果が良好でも、現行GASの差し替えや管理機能の書き込みを自動実行することはありません。</p></section>
 </main><script defer src="/mio-gas-local-check.js"></script></body></html>
