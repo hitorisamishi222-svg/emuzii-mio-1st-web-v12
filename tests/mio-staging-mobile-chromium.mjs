@@ -15,6 +15,8 @@ const cwd=process.cwd(),allowed=new Map([
  ['/museum-approved-gallery.js',['museum-approved-gallery.js','text/javascript']],
  ['/museum-archive.html',['museum-archive.html','text/html']],
  ['/museum-archive.js',['museum-archive.js','text/javascript']],
+ ['/mio-admin-rehearsal.html',['mio-admin-rehearsal.html','text/html']],
+ ['/mio-admin-rehearsal.js',['mio-admin-rehearsal.js','text/javascript']],
  ['/museum.css',['museum.css','text/css']],
  ['/museum-archive.css',['museum-archive.css','text/css']],
  ['/gallery-items.js',['gallery-items.js','text/javascript']],
@@ -244,6 +246,47 @@ try{
   assert.equal(await evaluate("document.querySelector('.archive-filter[aria-pressed=true]').dataset.kind"),'events');
   await evaluate("history.back()");
   await poll(()=>evaluate("document.querySelector('.archive-filter[aria-pressed=true]')?.dataset.kind==='icons'"));
+ }
+ // Entire operator workflow is a fictional, disconnected rehearsal: real Chrome clicks.
+ for(const width of [320,375,390,430]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  await cdp('Page.navigate',{url:root+'/mio-admin-rehearsal.html'});
+  await poll(()=>evaluate("document.readyState==='complete'&&document.querySelector('#demoPendingCount')?.textContent==='2'"),18000);
+  const dims=await evaluate(`(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,
+   pending:document.querySelector('#demoPendingCount').textContent,
+   cards:document.querySelectorAll('#demoPending .entry').length}))()`);
+  assert.ok(dims.scroll<=dims.width+2,'operator demo horizontal overflow '+JSON.stringify(dims));
+  assert.equal(dims.pending,'2');assert.equal(dims.cards,2);
+  if(width===390){
+   await evaluate("document.querySelector('#demoPending .entry button').click()");
+   assert.equal(await evaluate("document.querySelector('#demoPendingCount').textContent"),'1');
+   await evaluate(`(()=>{
+    const search=document.querySelector('#demoSearch');search.value='DEMO-01';
+    search.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#demoRoster button').click();
+    document.querySelector('#demoGrantAmount').value='2';
+    document.querySelector('#demoGrant').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 5回')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2');
+   await evaluate("document.querySelector('#demoGrant').click()");
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2','repeated operation ID must not grant again');
+   await evaluate("document.querySelector('#demoGrantAmount').value='3';document.querySelector('#demoGrant').click()");
+   assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 5回')"),true,'same ID/different amount must reject');
+   await evaluate("document.querySelector('#demoIncidents .entry button').click()");
+   await evaluate("document.querySelector('#demoIncidents .entry button').click()");
+   assert.equal(await evaluate("document.querySelector('#demoIncidentCount').textContent"),'0');
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'4');
+   await mkdir('artifacts',{recursive:true});
+   const shot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-admin-rehearsal-390.png',Buffer.from(shot.data,'base64'));
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.deepEqual(await evaluate(`(()=>({
+    pending:document.querySelector('#demoPendingCount').textContent,
+    audits:document.querySelector('#demoAuditCount').textContent,
+    tickets:document.querySelector('#demoRoster').textContent.includes('残数 3回')
+   }))()`),{pending:'2',audits:'0',tickets:true});
+  }
  }
  assert.equal(writes.length,0,'no HTTP writes permitted');
  assert.ok(requests.length>=12,'local static fixtures were not exercised');
