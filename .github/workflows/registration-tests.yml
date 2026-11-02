@@ -38,5 +38,6 @@ jobs:
           path: |
             artifacts/mio-offline-mobile-*.png
             artifacts/mio-museum-*.png
+            artifacts/mio-admin-rehearsal-*.png
           if-no-files-found: ignore
           retention-days: 7
