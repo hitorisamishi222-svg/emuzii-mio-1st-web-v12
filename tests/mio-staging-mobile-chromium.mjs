@@ -451,6 +451,44 @@ try{
    assert.equal(backupProof.different.backupCleared,true);
    assert.equal(backupProof.leaked,false,'backup test exposed source content in the UI');
    assert.equal(backupProof.cleared,true);
+   // A deployable Apps Script backup is multi-file, not merely Code.gs.
+   // Check HTMLService and appsscript.json, unordered files, missing files,
+   // duplicate names, and case-only collisions in the actual Chrome UI.
+   const multi=await evaluate(`(async()=>{
+    const source=document.querySelector('#gasBackupOriginal');
+    const copy=document.querySelector('#gasBackupCopy');
+    const button=document.querySelector('#gasBackupCompare');
+    const status=document.querySelector('#gasBackupStatus');
+    const original=[
+     ['Code.gs','function doPost(e){}'],
+     ['Index.html','<h1>会員向け画面</h1>'],
+     ['appsscript.json','{"timeZone":"Asia/Tokyo"}']
+    ];
+    const fill=(el,rows)=>{
+     const dt=new DataTransfer();
+     for(const [name,body] of rows)dt.items.add(new File([body],name,{type:'text/plain'}));
+     el.files=dt.files;
+    };
+    const check=async (first,second)=>{
+     fill(source,first);fill(copy,second);button.click();
+     for(let i=0;i<150;i++){
+      if(!button.disabled)break;
+      await new Promise(ok=>setTimeout(ok,12));
+     }
+     return status.textContent;
+    };
+    const reordered=await check(original,[original[2],original[0],original[1]]);
+    const omitted=await check(original,original.slice(0,2));
+    const duplicate=await check(original,[original[0],original[0],original[1]]);
+    const collision=await check([original[0],['code.GS','different']],original.slice(0,2));
+    const altered=await check(original,[original[0],original[1],['appsscript.json','{"timeZone":"UTC"}']]);
+    return {reordered,omitted,duplicate,collision,altered};
+   })()`);
+   assert.ok(multi.reordered.includes('完全一致しました'),'3 files including HTML/JSON must match regardless of order');
+   assert.ok(multi.omitted.includes('不一致'),'missing HTML/JSON file must fail');
+   assert.ok(multi.duplicate.includes('重複'),'duplicate filename cannot be called a verified backup');
+   assert.ok(multi.collision.includes('重複'),'case-insensitive filename collision cannot be accepted');
+   assert.ok(multi.altered.includes('不一致'),'a changed appsscript.json must be detected');
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
