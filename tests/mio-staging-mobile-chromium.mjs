@@ -123,6 +123,24 @@ try{
    assert.equal(report.realAdminLoginTested,false);
    assert.equal(report.synthetic?.ok,true);
    assert.equal(report.photo?.ok,true);
+   // Emulate Safari returning null for WebP canvas.toBlob and verify actual
+   // Chrome falls back to JPEG without sending the selected photo anywhere.
+   const fallback=await evaluate(`(async()=>{
+    const proto=HTMLCanvasElement.prototype,original=proto.toBlob;
+    let webpAttempts=0;
+    proto.toBlob=function(done,type,quality){
+     if(type==='image/webp'){webpAttempts++;queueMicrotask(()=>done(null));return}
+     return original.call(this,done,type,quality)
+    };
+    try{
+     const file=document.querySelector('#localPhoto').files[0];
+     const r=await window.MioMuseumImage.encode(file);
+     return {format:r.format,bytes:r.bytes,webpAttempts};
+    }finally{proto.toBlob=original}
+   })()`);
+   assert.equal(fallback.format,'jpeg','Safari WebP failure must fallback to JPEG');
+   assert.ok(fallback.bytes>0&&fallback.bytes<=700000);
+   assert.ok(fallback.webpAttempts>=1);
    assert.ok(!JSON.stringify(report).includes('synthetic-only.png'),'photo filename leaked into report');
    assert.deepEqual(Object.keys(report).sort(),
      ['schema','screen','synthetic','photo','browserTestOnly','serverUploadTested','realAdminLoginTested'].sort());
