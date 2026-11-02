@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS mio_admin_incident_audit (
  action varchar(12) NOT NULL CHECK (action IN ('start','resolve')),
  before_state varchar(12) NOT NULL,
  after_state varchar(12) NOT NULL,
+ -- Defense in depth: audit rows must follow the same reviewed state transition contract.
+ CHECK ((action='start' AND before_state='unhandled' AND after_state='working')
+     OR (action='resolve' AND before_state='working' AND after_state='resolved')),
  payload_hash char(64) NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now()
 );
