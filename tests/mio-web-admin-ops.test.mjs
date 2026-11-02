@@ -188,12 +188,14 @@ test('confirmed approval replay requires unchanged live identity and performs no
  const request={action:'webAdminOpsApprove',operationId:'a'.repeat(32),
   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
   memberConfirmed:true,expectedStatus:'承認待ち'};
- for(const state of ['approvalRemoved','identityCorrupt','memberReverted','otherDevice']){
+ for(const state of ['approvalRemoved','identityCorrupt','memberReverted','otherDevice','renamedPerson','renamedWeb']){
   const x=sandbox();x.exec(request);
   if(state==='approvalRemoved')x.rows['emuzii_Web登録'][1][5]='承認待ち';
   if(state==='identityCorrupt')x.rows['emuzii_Web登録'][1][11]='未確認';
   if(state==='memberReverted')x.rows['emuzii_Web登録'][1][6]='未確認';
   if(state==='otherDevice')x.rows['emuzii_Web登録'][1][16]='旧端末';
+  if(state==='renamedPerson')x.rows['emuzii_参加者'][1][1]='別の人';
+  if(state==='renamedWeb')x.rows['emuzii_Web登録'][1][2]='別の人';
   const before=JSON.stringify(x.rows),writes=x.write.length;
   assert.throws(()=>x.exec(request),/前の処理を管理者が確認中です/,state);
   assert.equal(JSON.stringify(x.rows),before);
