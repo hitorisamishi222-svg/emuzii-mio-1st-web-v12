@@ -114,8 +114,12 @@ export async function transitionIncident(client,values,actor){
  if(!['admin-code','admin-passkey'].includes(actor))throw Error('invalid operator');
  const after=d.action==='start'?'working':'resolved';
  const payloadHash=sha([d.incidentId,d.action,d.expectedState].join(':'));
- await client.query('BEGIN');
  try{
+  // All queries in this operation must use one dedicated PostgreSQL session.
+  // BEGIN/COMMIT acknowledgements are not proof of app-level recovery, but
+  // an absent command acknowledgement must never be returned as success.
+  const begun=await client.query('BEGIN');
+  if(begun?.command!=='BEGIN')throw Error('incident transaction start unverified');
   const locked=await client.query(
    'SELECT state FROM mio_admin_incidents WHERE incident_id=$1 FOR UPDATE',[d.incidentId]);
   if(!locked||locked.rowCount!==1||!Array.isArray(locked.rows)||
@@ -151,7 +155,8 @@ export async function transitionIncident(client,values,actor){
        resolvedAudit.rows[0].payload_hash!==sha([d.incidentId,'resolve','working'].join(':')))
      throw Error('incident resolved state lacks valid audit');
    }
-   await client.query('COMMIT');
+   const committed=await client.query('COMMIT');
+   if(committed?.command!=='COMMIT')throw Error('incident transaction outcome unknown');
    return {replayed:true,incidentId:d.incidentId,state:current};
   }
   if(locked.rows[0].state!==d.expectedState)throw Error('incident state changed');
@@ -172,7 +177,8 @@ export async function transitionIncident(client,values,actor){
   // A missing/ambiguous reply must never be treated as a committed audit.
   if(!inserted||inserted.rowCount!==1||!Array.isArray(inserted.rows)||
      inserted.rows.length!==0)throw Error('incident audit insert unavailable');
-  await client.query('COMMIT');
+  const committed=await client.query('COMMIT');
+  if(committed?.command!=='COMMIT')throw Error('incident transaction outcome unknown');
   return {replayed:false,incidentId:d.incidentId,state:after};
  }catch(e){
   try{await client.query('ROLLBACK')}catch{}
