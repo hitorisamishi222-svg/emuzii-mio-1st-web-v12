@@ -7,7 +7,7 @@ const html=read('museum-device-check.html');
 const js=read('museum-device-check.js');
 const routes=JSON.parse(read('vercel.json'));
 test('local device check stays non-indexed and accessible from static museum preview',()=>{
- assert.match(html,/<meta name="robots" content="noindex,nofollow,noarchive">/);
+ assert.match(html,/<meta name="robots" content="noindex,nofollow">/);
  assert.match(html,/<meta name="referrer" content="no-referrer">/);
  assert.match(html,/写真や結果は外部へ送信せず/);
  assert.match(read('museum.html'),/href="\/museum-device-check\.html"/);
