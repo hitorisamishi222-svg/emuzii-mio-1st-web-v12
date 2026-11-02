@@ -113,7 +113,9 @@ test('inbox rejects corrupted incident rows and only returns approved fields',as
  assert.equal(valid[0].count,1);
  assert.equal(JSON.stringify(valid).includes('PRIVATE_SECRET'),false);
  for(const changed of [{state:'unexpected'},{incident_id:'bad'},{participant_ref:'personal-name'},
-  {occurrence_count:0},{occurrence_count:'1'},{category:'unknown'},{draw_id:'bad'}]){
+  {occurrence_count:0},{occurrence_count:'1'},{category:'unknown'},{draw_id:'bad'},
+  {stage:'draw',draw_id:null},{source:'status',stage:'status',draw_id:draw},
+  {source:'status',stage:'catalog',draw_id:null}]){
   await assert.rejects(listIncidents(async()=>({rowCount:1,rows:[{...row,...changed}]})),
    /incident inbox row invalid/);
  }
@@ -168,6 +170,12 @@ test('inconsistent replay state fails closed and rolls back without an additiona
  await assert.rejects(transitionIncident(db,d,'admin-code'),/incident replay state inconsistent/);
  assert.equal(db.state.writes,writes);
  assert.equal(db.state.rollback,1);
+});
+test('incident inbox rejects more rows than its SQL LIMIT allows',async()=>{
+ const row={incident_id:incidentId,participant_ref:webId,source:'gacha',category:'DRAW_UNKNOWN',
+  stage:'draw',draw_id:draw,state:'unhandled',occurrence_count:1};
+ const rows=Array.from({length:101},()=>row);
+ await assert.rejects(listIncidents(async()=>({rowCount:101,rows})),/incident inbox read unavailable/);
 });
 test('tampered or missing stored after-state cannot be replayed as a successful triage',async()=>{
  for(const corrupted of ['resolved','unhandled',undefined]){
