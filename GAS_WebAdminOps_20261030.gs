@@ -34,9 +34,17 @@ function mioAdminOpsOne_(items,idx,value){
 function mioAdminOpsPeople_(ss){return mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_参加者'),10)}
 function mioAdminOpsSummary_(ss,webRows){
  var people=mioAdminOpsPeople_(ss),gacha=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_ガチャ'),17),fresh=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_新規簡易登録'),6);
- var byId={};for(var i=0;i<people.length;i++){var id=mioAdminOpsStr_(people[i][0]);if(/^MIO-\d{4}$/.test(id))byId[id]={id:id,name:mioAdminOpsStr_(people[i][1])};}
+ var byId={},seenPeople=Object.create(null),duplicateMioIdCount=0;
+ for(var i=0;i<people.length;i++){
+  var id=mioAdminOpsStr_(people[i][0]);
+  if(!/^MIO-\d{4}$/.test(id))continue;
+  if(seenPeople[id])duplicateMioIdCount++;
+  else seenPeople[id]=true;
+  // Preserve existing summary compatibility while surfacing collisions.
+  byId[id]={id:id,name:mioAdminOpsStr_(people[i][1])};
+ }
  var grants={};for(var j=0;j<gacha.length;j++){var g=gacha[j],gid=mioAdminOpsStr_(g[0]);if(!/^MIO-\d{4}$/.test(gid))continue;if(!grants[gid])grants[gid]=[];grants[gid].push({mioId:gid,name:mioAdminOpsStr_(g[1]),total:Number(g[5]),remaining:Number(g[7]),special:Number(g[14]),checked:g[12]==='OK'&&g[13]==='OK'});}
- var web=[],invalidWebIdCount=0;
+ var web=[],invalidWebIdCount=0,duplicateWebIdCount=0,seenWeb=Object.create(null);
  for(var k=0;k<webRows.length;k++){
   var row=webRows[k],wid=mioAdminOpsStr_(row[0]);
   if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)){
@@ -45,6 +53,8 @@ function mioAdminOpsSummary_(ss,webRows){
       invalidWebIdCount++;
     continue;
   }
+  if(seenWeb[wid])duplicateWebIdCount++;
+  else seenWeb[wid]=true;
   var mioId=mioAdminOpsStr_(row[7]);web.push({webId:wid,name:mioAdminOpsStr_(row[2]),status:mioAdminOpsStr_(row[5]),member:mioAdminOpsStr_(row[6]),mioId:mioId,integrity:mioAdminOpsStr_(row[11]),linkedName:byId[mioId]?byId[mioId].name:'',gacha:(grants[mioId]||[]).length===1?grants[mioId][0]:null});}
  // New approvals and incomplete approved identities need different responses.
  var awaitingApproval=web.filter(function(r){return r.status==='承認待ち';});
@@ -71,6 +81,7 @@ function mioAdminOpsSummary_(ss,webRows){
   pendingSimpleCount:simplePending.length,unknownWebStatusCount:unknownWeb.length,
   unknownSimpleStatusCount:unknownSimple.length,invalidWebIdCount:invalidWebIdCount,
   incompleteSimpleRowCount:incompleteSimpleRowCount,
+  duplicateWebIdCount:duplicateWebIdCount,duplicateMioIdCount:duplicateMioIdCount,
   pendingListTruncated:awaitingApproval.length+awaitingIdentity.length>pending.length,
   simplePendingListTruncated:simplePending.length>60,
   rejectedCount:web.filter(function(x){return x.status==='却下';}).length};
