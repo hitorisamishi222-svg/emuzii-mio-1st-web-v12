@@ -183,9 +183,16 @@ function maskInactiveGAS(source,maskStrings=false){
  const backupClear=document.getElementById('gasBackupClear');
  const backupStatus=document.getElementById('gasBackupStatus');
  let backupRevision=0;
- const validSet=files=>files.length>0&&files.length<=30&&
-  files.every(f=>f.size>0&&['.gs','.txt'].some(ext=>f.name.toLowerCase().endsWith(ext)))&&
-  files.reduce((sum,f)=>sum+f.size,0)<=8*1024*1024;
+ // Apps Script projects can include HTMLService templates and appsscript.json.
+ // Reject duplicated names (including case/Unicode variants): a flattened browser
+ // FileList cannot prove which of two same-named files would be restored.
+ const validSet=files=>{
+  if(!files.length||files.length>30||files.some(f=>f.size<=0||
+    !['.gs','.txt','.html','.json'].some(ext=>f.name.toLowerCase().endsWith(ext)))||
+    files.reduce((sum,f)=>sum+f.size,0)>8*1024*1024)return false;
+  const keys=files.map(f=>f.name.normalize('NFC').toLocaleLowerCase('en'));
+  return new Set(keys).size===keys.length;
+ };
  const digestFile=async file=>{
   const bytes=await file.arrayBuffer();
   const digest=await window.crypto.subtle.digest('SHA-256',bytes);
@@ -198,7 +205,7 @@ function maskInactiveGAS(source,maskStrings=false){
  backupCheck.addEventListener('click',async()=>{
   const seq=++backupRevision,source=[...backupSource.files],copy=[...backupCopy.files];
   if(!validSet(source)||!validSet(copy)){
-   backupStatus.textContent='比較元・バックアップの両方で、ファイル数・形式・容量を確認してください。';
+   backupStatus.textContent='ファイル数・形式・容量、または同じ名前の重複を確認してください。同名ファイルを含む一式は照合しません。';
    backupSource.value='';backupCopy.value='';return;
   }
   if(!window.crypto?.subtle){
