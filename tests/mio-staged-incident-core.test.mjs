@@ -71,6 +71,25 @@ test('server candidate records only fixed-format opaque metadata and dedupes wit
  assert.equal(queryResult.args.includes(draw),true);
  assert.doesNotMatch(queryResult.sql,/UPDATE\s+emuzii_|INSERT INTO\s+mio_gacha|INSERT INTO\s+emuzii_/i);
 });
+test('duplicate incident resolves to the stored ticket UUID, not the discarded insert UUID',async()=>{
+ const persisted=incidentId;
+ const query=async()=>({rowCount:1,rows:[{incident_id:persisted}]});
+ const first=await recordIncident(query,data,secret,1000);
+ const duplicate=await recordIncident(query,data,secret,2000);
+ assert.deepEqual(first,{recorded:true,incidentId:persisted,category:'DRAW_UNKNOWN'});
+ assert.deepEqual(duplicate,first);
+});
+test('rate-limited and incomplete DB responses cannot claim a recorded incident',async()=>{
+ const blocked=await recordIncident(async()=>({rowCount:0,rows:[]}),data,secret);
+ assert.deepEqual(blocked,{recorded:false,incidentId:null,category:'DRAW_UNKNOWN'});
+ await assert.rejects(recordIncident(async()=>({rowCount:1,rows:[]}),data,secret),
+  /incident persistence result unavailable/);
+ await assert.rejects(recordIncident(async()=>({rowCount:1}),data,secret),
+  /incident persistence result unavailable/);
+ await assert.rejects(recordIncident(async()=>({rowCount:1,rows:[{incident_id:'invalid'}]}),data,secret),
+  /incident persistence result unavailable/);
+});
+
 function mockClient(){
  const state={current:'unhandled',audits:new Map(),writes:0,rollback:0};
  return {state,async query(sql,args=[]){
