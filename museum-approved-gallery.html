@@ -15,6 +15,13 @@
 .museum-approved-card a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:#ffe2a3;color:#071d38;padding:12px 16px;border-radius:14px;min-height:48px;font-weight:800}
 .museum-approved-card a:focus-visible{outline:3px solid #8ffaff;outline-offset:2px}
 .museum-approved-label{font-size:12px;color:#f8dca8;font-weight:800}
+.museum-approved-tools{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0}
+.museum-approved-tools label{font-size:15px;font-weight:700}
+.museum-approved-tools input{flex:1 1 240px;min-width:0;min-height:48px;font:16px system-ui,sans-serif;color:#fff;background:#102e51;border:1px solid #9ed9ff;border-radius:12px;padding:10px}
+.museum-approved-filters{display:flex;flex-wrap:wrap;gap:8px}
+.museum-approved-filters button{min-height:48px;border-radius:12px;padding:10px 16px;border:1px solid #9ed9ff;background:#11345d;color:#fff;font:700 15px system-ui,sans-serif;cursor:pointer}
+.museum-approved-filters button[aria-pressed="true"]{background:#ffe2a3;color:#071d38}
+.museum-approved-tools :focus-visible{outline:3px solid #8ffaff;outline-offset:2px}
 @media(max-width:620px){.museum-approved-grid{grid-template-columns:1fr}.museum-approved-card img{height:180px}}
 </style></head><body class="museum">
 <div role="status" style="padding:12px 16px;background:#0f3157;border-bottom:2px solid #ffe29b;text-align:center;color:#fff">
@@ -33,6 +40,15 @@
 <div class="museum-eyebrow">APPROVED WORKS • LEGACY RETAINED</div>
 <h1>🎵 以前からの公開作品</h1>
 <p>以前から掲載している動画・音楽を引き継いでいます。ここに表示されるのはコピーに取り込んだ公開作品のみで、管理中の新規作品や非公開作品は表示しません。</p>
+<div class="museum-approved-tools">
+ <label for="approvedGallerySearch">公開作品を探す</label>
+ <input id="approvedGallerySearch" type="search" placeholder="作品名・制作者で検索" autocomplete="off">
+ <div class="museum-approved-filters" role="group" aria-label="作品の種類">
+  <button type="button" data-gallery-kind="all" aria-pressed="true">すべて</button>
+  <button type="button" data-gallery-kind="動画" aria-pressed="false">動画</button>
+  <button type="button" data-gallery-kind="音声・楽曲" aria-pressed="false">音楽</button>
+ </div>
+</div>
 <div id="approvedGalleryStatus" role="status" aria-live="polite">公開済み作品の一覧を確認しています…</div>
 <section id="approvedGalleryItems" class="museum-approved-grid" aria-label="以前から公開している作品一覧"></section>
 <p style="margin-top:30px"><a class="museum-button secondary" href="/museum.html#mioAwakening">記念曲と動画の展示へ戻る</a></p>
