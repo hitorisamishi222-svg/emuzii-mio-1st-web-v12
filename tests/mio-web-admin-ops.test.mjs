@@ -164,6 +164,27 @@ test('both archived GAS candidate variants enforce identical grant replay identi
  }
  assert.doesNotThrow(()=>new vm.Script(full));
 });
+test('all 19 archived Web admin helpers stay byte-identical across standalone and integrated GAS candidates',()=>{
+ const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ const helperNames=[
+  'mioAdminOps_','mioAdminOpsStr_','mioAdminOpsName_','mioAdminOpsSheet_',
+  'mioAdminOpsValues_','mioAdminOpsOne_','mioAdminOpsPeople_',
+  'mioAdminOpsSummary_','mioAdminOpsRead_','mioAdminOpsRequest_',
+  'mioAdminOpsLog_','mioAdminOpsExisting_','mioAdminOpsWriteLog_',
+  'mioAdminOpsCreate_','mioAdminOpsApprove_','mioAdminOpsRecordGrant_',
+  'mioAdminOpsGrant_','mioAdminOpsReview_','mioAdminOpsIntake_'
+ ];
+ const extract=(code,name)=>{
+  const start=code.indexOf('function '+name+'(');
+  assert.notEqual(start,-1,'Missing '+name);
+  const end=code.indexOf('\\nfunction ',start+1);
+  return code.slice(start,end<0?code.length:end).trim();
+ };
+ assert.equal(helperNames.length,19);
+ for(const name of helperNames){
+  assert.equal(extract(source,name),extract(full,name),'Candidate source drift: '+name);
+ }
+});
 test('approval requires exact name and linked MIO ID, preserves token',()=>{
  const x=sandbox(),key='a'.repeat(32),d={action:'webAdminOpsApprove',operationId:key,webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',memberConfirmed:true,expectedStatus:'承認待ち'};
  assert.equal(x.exec(d).status,'承認済み');
