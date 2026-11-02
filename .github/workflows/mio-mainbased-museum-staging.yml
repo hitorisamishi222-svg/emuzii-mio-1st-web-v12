@@ -10,6 +10,8 @@ on:
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
       - tests/mio-gas-safe-onboarding.test.mjs
+      - tests/mio-live-sheet-schema-preflight.test.mjs
+      - tests/fixtures/mio-live-sheet-schema-readonly-20261102.json
       - docs/MIO_GAS_FULL_REPLACE_SETUP.md
       - tests/mio-gas-full-install.test.mjs
       - tests/mio-gas-connect-guidance.test.mjs
@@ -29,6 +31,8 @@ on:
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
       - tests/mio-gas-safe-onboarding.test.mjs
+      - tests/mio-live-sheet-schema-preflight.test.mjs
+      - tests/fixtures/mio-live-sheet-schema-readonly-20261102.json
       - docs/MIO_GAS_FULL_REPLACE_SETUP.md
       - tests/mio-gas-full-install.test.mjs
       - tests/mio-gas-connect-guidance.test.mjs
@@ -85,6 +89,8 @@ jobs:
         run: node --test tests/mio-gas-connect-guidance.test.mjs tests/mio-gas-full-install.test.mjs
       - name: Check previously failing visual-only SHA in both immutable release baselines
         run: node --test --test-name-pattern='visual-only and main-based candidates each' tests/gacha-release-visual-scope.test.mjs
+      - name: Read-only observed Sheet schema vs candidate GAS: keep mutation gate closed
+        run: node --test tests/mio-live-sheet-schema-preflight.test.mjs
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
