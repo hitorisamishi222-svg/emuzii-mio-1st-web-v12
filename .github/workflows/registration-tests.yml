@@ -35,6 +35,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mio-staging-mobile-chrome-evidence
-          path: artifacts/mio-offline-mobile-*.png
+          path: |
+            artifacts/mio-offline-mobile-*.png
+            artifacts/mio-museum-*.png
           if-no-files-found: ignore
           retention-days: 7
