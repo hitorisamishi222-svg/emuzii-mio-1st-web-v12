@@ -68,7 +68,7 @@ test('disabled integration has no incident server endpoints or DB migration exec
 });
 test('server candidate records only fixed-format opaque metadata and dedupes without touching drawing',async()=>{
  let queryResult;
- await recordIncident(async(sql,args)=>{queryResult={sql,args};return {rowCount:0}},data,secret);
+ await recordIncident(async(sql,args)=>{queryResult={sql,args};return {rowCount:0,rows:[]}},data,secret);
  assert.match(queryResult.sql,/ON CONFLICT \(fingerprint\) WHERE state <> 'resolved'/);
  assert.match(queryResult.sql,/WHERE participant_ref=\$3 AND occurred_at>now\(\)-interval '1 hour'/);
  assert.equal(queryResult.args.length,7);
@@ -95,6 +95,14 @@ test('rate-limited and incomplete DB responses cannot claim a recorded incident'
   /incident persistence result unavailable/);
 });
 
+test('contradictory recording replies do not claim success or a real rate limit',async()=>{
+ const malformed=[null,{}, {rowCount:0}, {rowCount:0,rows:[{incident_id:incidentId}]},
+  {rowCount:1,rows:[]},{rowCount:2,rows:[{incident_id:incidentId},{incident_id:incidentId}]},
+  {rowCount:1,rows:null},{rowCount:'1',rows:[{incident_id:incidentId}]}];
+ for(const reply of malformed)
+  await assert.rejects(recordIncident(async()=>reply,data,secret),
+   /incident persistence result unavailable/);
+});
 test('inbox does not render missing, partial or inconsistent DB results as zero incidents',async()=>{
  for(const invalid of [undefined,null,{}, {rows:[]}, {rows:null,rowCount:0},
   {rows:[],rowCount:1},{rows:[{}],rowCount:1},{rows:[],rowCount:0.5}]){
