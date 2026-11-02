@@ -56,7 +56,11 @@ function checkDispatcher(source){
    const lockPosition=body.indexOf('LockService.getScriptLock(');
    const tryPosition=body.indexOf('lock.tryLock(');
    const gatedPosition=body.indexOf('if(!lock.tryLock(');
+   // A failed tryLock must return before admin operations; a bare tryLock is insufficient.
+   const failedLockReturns=gatedPosition>=0&&
+    /^if\(!lock\.tryLock\([^)]*\)\)\s*return\b/.test(body.slice(gatedPosition));
    return lockPosition>=0&&tryPosition>lockPosition&&gatedPosition===tryPosition-4&&
+    failedLockReturns&&
     (actionPosition<0||tryPosition<actionPosition)&&
     (dispatchPosition<0||tryPosition<dispatchPosition);
   })()
