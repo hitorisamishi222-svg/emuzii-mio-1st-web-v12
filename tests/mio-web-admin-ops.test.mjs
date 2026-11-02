@@ -153,6 +153,32 @@ test('GAS candidate code never auto-creates admin audit tabs or operation-ID col
   assert.match(c,/ガチャ付与履歴のWeb操作ID列が未整備/);
  }
 });
+test('confirmed grant replay is read-only and requires the original grant history row',()=>{
+ const request={action:'webAdminOpsGrant',operationId:'4'.repeat(32),
+  mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'初回の模擬付与'};
+ for(const scenario of ['missing','changedReason','changedRecipient','duplicate']){
+  const x=sandbox();x.exec(request);
+  const history=x.rows['emuzii_ガチャ付与履歴'];
+  if(scenario==='missing')history.pop();
+  if(scenario==='changedReason')history[1][4]='別の理由';
+  if(scenario==='changedRecipient')history[1][1]='MIO-9999';
+  if(scenario==='duplicate')history.push([...history[1]]);
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),
+   scenario==='missing'?/確定済み付与の履歴が存在しません/:
+    scenario==='duplicate'?/付与履歴の操作IDが重複しています/:
+     /既存の付与履歴と操作内容が一致しません/,
+   'confirmed audit is not enough to claim a successful replay: '+scenario);
+  assert.equal(JSON.stringify(x.rows),before,'never repair an already confirmed ledger: '+scenario);
+  assert.equal(x.write.length,writes,'verified-only operation cannot write: '+scenario);
+  assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
+ }
+ const x=sandbox();x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
 test('grant updates only special count and writes idempotent audit',()=>{
  const x=sandbox(),op='e'.repeat(32),grant={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
  const first=x.exec(grant);
