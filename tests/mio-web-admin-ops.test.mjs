@@ -185,6 +185,48 @@ test('all 19 archived Web admin helpers stay byte-identical across standalone an
   assert.equal(extract(source,name),extract(full,name),'Candidate source drift: '+name);
  }
 });
+test('grant recovery refuses a non-pending, non-final audit state without touching credits',()=>{
+ for(const corrupted of ['要調査','失敗','']){
+  const x=sandbox(),d={action:'webAdminOpsGrant',operationId:'1'.repeat(32),
+   mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
+  x.exec(d);
+  x.rows['emuzii_Web管理操作履歴'][1][7]=corrupted;
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(d),/付与操作の監査状態を手動確認してください/);
+  assert.equal(JSON.stringify(x.rows),before,'unknown state must never mutate ledger');
+  assert.equal(x.write.length,writes,'unknown state must never write new credits');
+ }
+});
+test('approval recovery refuses a corrupted audit state without re-approving a device',()=>{
+ for(const corrupted of ['要調査','失敗','']){
+  const x=sandbox(),d={action:'webAdminOpsApprove',operationId:'2'.repeat(32),
+   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+   memberConfirmed:true,expectedStatus:'承認待ち'};
+  x.exec(d);
+  x.rows['emuzii_Web管理操作履歴'][1][7]=corrupted;
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(d),/承認操作の監査状態を手動確認してください/);
+  assert.equal(JSON.stringify(x.rows),before,'unknown approval status must remain unchanged');
+  assert.equal(x.write.length,writes);
+ }
+});
+test('new member-ID recovery refuses a corrupted audit state and never claims success',()=>{
+ for(const corrupted of ['要調査','失敗','']){
+  const x=sandbox(),webId='MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa';
+  x.rows['emuzii_参加者'].push(Array(10).fill(''));
+  x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),
+   '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+  const d={action:'webAdminOpsCreate',operationId:'3'.repeat(32),webId,
+   expectedStatus:'承認待ち'};
+  const created=x.exec(d);
+  assert.equal(created.mioId,'MIO-0002');
+  x.rows['emuzii_Web管理操作履歴'][1][7]=corrupted;
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(d),/新規ID操作の監査状態を手動確認してください/);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes);
+ }
+});
 test('approval requires exact name and linked MIO ID, preserves token',()=>{
  const x=sandbox(),key='a'.repeat(32),d={action:'webAdminOpsApprove',operationId:key,webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',memberConfirmed:true,expectedStatus:'承認待ち'};
  assert.equal(x.exec(d).status,'承認済み');
