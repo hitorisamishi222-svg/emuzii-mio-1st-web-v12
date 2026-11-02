@@ -187,7 +187,7 @@ function mioAdminOpsApprove_(ss,d){
  log.getRange(row,8).setValue('確定');
  return {ok:true,mioId:id,status:'承認済み',member:confirmed[6]};
 }
-function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
+function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after,verifyOnly){
  var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
  if(mioAdminOpsStr_(sh.getRange(1,10).getValue())!=='Web操作ID')
    throw new Error('ガチャ付与履歴のWeb操作ID列が未整備です。管理者が確認してください');
@@ -209,6 +209,7 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
     throw new Error('既存の付与履歴と操作内容が一致しません');
   return true;
  }
+ if(verifyOnly)throw new Error('確定済み付与の履歴が存在しません。手動確認してください');
  var row=sh.getLastRow()+1;
  if(row>sh.getMaxRows())throw new Error('ガチャ付与履歴の行数が上限です');
  // H: total entitled, I: remaining are taken from live gacha formulas.
@@ -243,7 +244,12 @@ function mioAdminOpsGrant_(ss,d){
       mioAdminOpsStr_(prev.c[8])!==reason||
       mioAdminOpsName_(prev.c[9])!==mioAdminOpsName_(name))
      throw new Error('操作IDの再利用は禁止です');
-   if(prev.c[7]==='確定')return {ok:true,replayed:true,mioId:id};
+   if(prev.c[7]==='確定'){
+     // A successful audit is insufficient without a matching persisted grant row.
+     // verifyOnly NEVER inserts or repairs history on replay.
+     mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count,true);
+     return {ok:true,replayed:true,mioId:id};
+   }
    if(prev.c[7]!=='処理中')throw new Error('付与操作の監査状態を手動確認してください');
    var current=Number(sheet.getRange(g.row,15).getValue());
    if(current===expected+count){mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count);log.getRange(prev.row,8).setValue('確定');return {ok:true,replayed:true,mioId:id};}
