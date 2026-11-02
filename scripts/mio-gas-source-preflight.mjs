@@ -19,22 +19,50 @@ export const OPS_NAMES = Object.freeze([
  'mioAdminOpsGrant_','mioAdminOpsReview_','mioAdminOpsIntake_'
 ]);
 
+// Mask comments (and optionally quoted text) without changing offsets or line breaks.
+// This conservative scanner is not a JavaScript parser: a live GAS review is still mandatory.
+function maskInactiveGAS(source,maskStrings=false){
+ let out='',state='code',quote='',escaped=false;
+ const blank=ch=>ch.charCodeAt(0)===10||ch.charCodeAt(0)===13?ch:' ';
+ for(let i=0;i<source.length;i++){
+  const ch=source[i],next=source[i+1];
+  if(state==='line'){out+=blank(ch);if(ch.charCodeAt(0)===10)state='code';continue}
+  if(state==='block'){
+   if(ch==='*'&&next==='/'){out+='  ';i++;state='code'}else out+=blank(ch);
+   continue
+  }
+  if(state==='quoted'){
+   out+=maskStrings?blank(ch):ch;
+   if(escaped)escaped=false;
+   else if(ch.charCodeAt(0)===92)escaped=true;
+   else if(ch===quote)state='code';
+   continue
+  }
+  if(ch==='/'&&next==='/'){out+='  ';i++;state='line';continue}
+  if(ch==='/'&&next==='*'){out+='  ';i++;state='block';continue}
+  if(ch==="'"||ch==='"'||ch.charCodeAt(0)===96){
+   state='quoted';quote=ch;escaped=false;out+=maskStrings?blank(ch):ch;continue
+  }
+  out+=ch;
+ }
+ return out;
+}
 // Count declarations only, never printed source content; do not treat calls as definitions.
 export function countDeclarations(source){
  const counts=new Map();
- for(const match of source.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)){
+ for(const match of maskInactiveGAS(source,true).matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)){
   const name=match[1];counts.set(name,(counts.get(name)||0)+1);
  }
  return counts;
 }
 function bodyOfDoPost(source){
- const hit=/^\s*function\s+doPost\s*\([^)]*\)\s*\{/gm.exec(source);
+ const active=maskInactiveGAS(source,true);
+ const hit=/^\s*function\s+doPost\s*\([^)]*\)\s*\{/gm.exec(active);
  if(!hit)return '';
- // Only require relative order, not emulate execution of private credentials.
- // Curly matching is deliberately conservative: use the next top-level declaration
- // boundary so strings / JSON are not interpreted as executed functions.
- const following=source.slice(hit.index+hit[0].length);
- const next=/^\s*(?:async\s+)?function\s+[A-Za-z_$][\w$]*\s*\(/gm.exec(following);
+ // Exclude commented-out dispatcher tokens while preserving quoted BRIDGE_SECRET.
+ const following=maskInactiveGAS(source).slice(hit.index+hit[0].length);
+ const definitionsAfter=active.slice(hit.index+hit[0].length);
+ const next=/^\s*(?:async\s+)?function\s+[A-Za-z_$][\w$]*\s*\(/gm.exec(definitionsAfter);
  return next?following.slice(0,next.index):following;
 }
 function checkDispatcher(source){
