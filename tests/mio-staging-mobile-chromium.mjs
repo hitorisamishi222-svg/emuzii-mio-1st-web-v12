@@ -154,15 +154,33 @@ try{
   assert.equal(gallery.cards,2,'previously approved works were lost');
   assert.equal(gallery.songs,1,'original memorial music disappeared');
   assert.deepEqual(gallery.videos,[{url:'https://vt.tiktok.com/ZSgFvmy7Q/',rel:'noopener noreferrer',target:'_blank'}]);
+  // The audio DOM node must survive search and category changes. The element
+  // remains mounted while visible, and is paused exactly when filtered out.
+  await evaluate(`(()=>{
+   window.__mioMusic=document.querySelector('.museum-approved-card audio');
+   window.__pauseCount=0;
+   window.__mioMusic.pause=()=>{window.__pauseCount++};
+  })()`);
   // New local-only viewer controls must not expose unpublished content or change account state.
   await evaluate("document.querySelector('[data-gallery-kind=\\\"動画\\\"]').click()");
-  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card').length"),1);
-  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card audio').length"),0);
+  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),1);
+  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden]) audio').length"),0);
+  assert.deepEqual(await evaluate(`(()=>({
+   sameNode:window.__mioMusic===document.querySelector('.museum-approved-card audio'),
+   paused:window.__pauseCount,
+   hidden:window.__mioMusic.closest('.museum-approved-card').hidden,
+   cssHidden:getComputedStyle(window.__mioMusic.closest('.museum-approved-card')).display==='none'
+  }))()`),{sameNode:true,paused:1,hidden:true,cssHidden:true});
   await evaluate(`(()=>{const i=document.querySelector('#approvedGallerySearch');i.value='存在しない秘密の作品';i.dispatchEvent(new Event('input',{bubbles:true}));})()`);
-  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card').length"),0);
+  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),0);
   assert.equal(await evaluate("document.querySelector('#approvedGalleryStatus').textContent.includes('一致する公開作品はありません')"),true);
   await evaluate(`(()=>{const i=document.querySelector('#approvedGallerySearch');i.value='';i.dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-gallery-kind=all]').click()})()`);
-  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card').length"),2);
+  assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),2);
+  assert.deepEqual(await evaluate(`(()=>({
+   sameNode:window.__mioMusic===document.querySelector('.museum-approved-card audio'),
+   paused:window.__pauseCount,
+   visible:!window.__mioMusic.closest('.museum-approved-card').hidden
+  }))()`),{sameNode:true,paused:1,visible:true});
   if(width===390){
    await mkdir('artifacts',{recursive:true});
    const galleryShot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
