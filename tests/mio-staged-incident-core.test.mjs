@@ -119,6 +119,27 @@ test('offline incident triage is idempotent, cannot reuse operationId and change
  assert.equal(done.state,'resolved');
  assert.equal(db.state.writes,2);assert.equal(db.state.audits.size,2);
 });
+test('triage refuses direct resolution before an admin has started handling the case',async()=>{
+ const db=mockClient();
+ const direct={incidentId,action:'resolve',expectedState:'unhandled',operationId:'e'.repeat(32)};
+ assert.throws(()=>normalizeTriage(direct),/invalid triage request/);
+ await assert.rejects(transitionIncident(db,direct,'admin-code'),/invalid triage request/);
+ assert.equal(db.state.current,'unhandled');
+ assert.equal(db.state.writes,0);
+ assert.equal(db.state.audits.size,0);
+});
+test('triage rejects malformed UUID shapes before any audit or database calls',async()=>{
+ const db=mockClient();
+ const valid={incidentId,action:'start',expectedState:'unhandled',operationId:'f'.repeat(32)};
+ assert.deepEqual(normalizeTriage(valid),valid);
+ for(const invalidId of ['-'.repeat(36),'a'.repeat(36),
+   '11111111-1111-4111-8111-11111111111z','11111111_1111_4111_8111_111111111111']){
+  assert.throws(()=>normalizeTriage({...valid,incidentId:invalidId}),/invalid triage request/);
+  await assert.rejects(transitionIncident(db,{...valid,incidentId:invalidId},'admin-code'),/invalid triage request/);
+ }
+ assert.equal(db.state.writes,0);
+ assert.equal(db.state.audits.size,0);
+});
 test('unapproved actor or stale state never creates an incident update',async()=>{
  const db=mockClient(),d={incidentId,action:'start',expectedState:'unhandled',operationId:'c'.repeat(32)};
  await assert.rejects(transitionIncident(db,d,'anonymous'),/invalid operator/);
