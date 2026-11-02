@@ -128,11 +128,38 @@ test('interrupted grant never resumes a changed payload or a modified audit iden
  assert.throws(()=>x.exec(grant),/操作IDの再利用は禁止/);
  assert.equal(x.write.length,writes);
 });
+test('interrupted grant rejects tampered history reason without completing audit',()=>{
+ const x=sandbox(),op='f'.repeat(32);
+ const request={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(request);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ x.rows['emuzii_ガチャ付与履歴'][1][4]='異なる付与理由';
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec(request),/既存の付与履歴と操作内容が一致しません/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
+test('interrupted grant rejects tampered grantee name in history without extra credits',()=>{
+ const x=sandbox(),op='0'.repeat(32);
+ const request={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(request);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ x.rows['emuzii_ガチャ付与履歴'][1][2]='別人';
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec(request),/既存の付与履歴と操作内容が一致しません/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
+});
 test('both archived GAS candidate variants enforce identical grant replay identity checks',()=>{
  const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
  for(const code of [source,full]){
   assert.match(code,/Number\(prev\.c\[5\]\)!==expected/);
   assert.match(code,/mioAdminOpsStr_\(prev\.c\[8\]\)!==reason/);
+  assert.match(code,/mioAdminOpsStr_\\(h\\[4\\]\\)!==reason/);
+  assert.match(code,/mioAdminOpsName_\\(h\\[2\\]\\)!==mioAdminOpsName_\\(name\\)/);
   assert.match(code,/mioAdminOpsName_\(prev\.c\[9\]\)!==mioAdminOpsName_\(name\)/);
  }
  assert.doesNotThrow(()=>new vm.Script(full));
