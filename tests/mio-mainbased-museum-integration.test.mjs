@@ -29,6 +29,7 @@ const unchanged=[
  'api-register.js','api-status.js','api-checkin.js',
  'api-gacha.js','gacha-page.js','gacha.html',
  'api-gacha-admin-ops.js',
+ 'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs',
  'api-gallery-items.js','api-gallery-manage.js','api-gallery-moderate.js',
  'gallery.html','gallery-items.js','mio-awakening.mp3',
  'assets/gallery-emuzii-mio-cover.svg'
