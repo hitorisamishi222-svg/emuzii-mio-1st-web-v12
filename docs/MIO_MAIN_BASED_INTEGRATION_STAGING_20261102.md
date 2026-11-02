@@ -110,3 +110,14 @@
 - 既存Vercelに`/api/mio-incidents`・障害通報API・draw照合APIを導入しない。障害監視用のDB・レコーダー、`api-gacha.js`/ `api-status.js`への外部通報フックも**導入しない**。既存のガチャ/登録/Face ID/皆勤/GAS・参加者DBの本番コードは保護。
 - [障害分類・安全な冪等復旧の限定テスト](../tests/mio-staged-incident-core.test.mjs)10件新設（未接続の表示・更新ボタン無効の検査を含む）。[登録全回帰 #41368547882](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41368547882)：**214/214 PASS、0 FAIL**。**実DBやiPhoneを検証した意味ではない**。
 - [障害センター段階導入の設計・STOP条件](MIO_INCIDENT_CENTER_STAGE_INTEGRATION_20261102.md)を追加。管理者本人認証・監査DB正本/権限/バックアップ・実GAS接続確認・本番データ前後一致・運営最終承認は未完。新DBテーブル作成、実管理URLや本番の変更はしていない。
+
+
+## 2026-11-02：チャット障害に左右されない連続開発・スマホ診断統合
+- 開発PR #76で障害復旧の再送時状態ずれを修復（解決済みの案件に古い開始操作が届いても解決状態を維持）。監査結果が矛盾・重複すると停止。抽選や本番APIは未変更。
+- 以前の記念館Draft PR #48から**端末単独で動く3静的ファイルのみ**選択導入：`museum-device-check.html`、`museum-device-check.js`、`museum-image-client.js`。最新main版の記念館フッターから「スマホ動作チェック（開発版）」を選択可能にした。
+- 診断は画面幅、操作部品、端末内の試験画像変換、任意の写真のローカル変換、個人識別情報のないJSON結果ダウンロード。API、Cookie、DB、参加者、ガチャ操作、写真アップロードなし。Safari/iPhone/Androidの実端末確認は**未実施**。
+- `vercel.json` の旧本番 **97ビルド・31ルートを順序含め変更せず**、記念館静的追加合計13件の構成にした（総110ビルド・44ルート）。`museum-device-check.html` も `noindex,nofollow` / `no-store`。新しいVercelプロジェクトは作っていない。
+- 既存PR #48の端末チェック4件を選択導入し、main版との差異を見直した。記念館保護テストでも旧本番ファイルのSHAとルートを維持したまま検証。
+- [Registration regression #41383392402](https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/actions/runs/41383392402) **230/230 PASS・0 FAIL**。Vercelの当該コミットのPreviewはREADY（`target=null`）。ブラウザHTTPアクセス・iPhone実機・写真変換を実地確認できた意味ではない。
+- **次の本当のブロッカー**：Issue #66の現行GASの全ファイル・稼働デプロイ版と復元用バックアップが未取得、管理19関数/既存`doPost`の現物照合、付与履歴J列`Web操作ID`と監査タブの追加許可、公開中DB/作品の読み取り照合、iPhone/Android検証、全体の切戻し計画。
+- **引き続きDraft、main/Production/GAS/Sheets/DB・MIO-ID/皆勤/FA/景品/ガチャ残数/当選履歴は変更せず、Web管理書き込み・実抽選の試行もしない。**
