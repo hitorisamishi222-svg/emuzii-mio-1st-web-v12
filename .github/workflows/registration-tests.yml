@@ -39,6 +39,7 @@ jobs:
             artifacts/mio-offline-mobile-*.png
             artifacts/mio-museum-*.png
             artifacts/mio-admin-rehearsal-*.png
+            artifacts/mio-management-queue-*.png
             artifacts/mio-gas-local-check-*.png
           if-no-files-found: ignore
           retention-days: 7
