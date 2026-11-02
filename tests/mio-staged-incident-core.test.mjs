@@ -54,6 +54,11 @@ test('candidate incident SQL is audit-only, never a participant, attendance, dra
  assert.doesNotMatch(schema,/\b(?:ALTER|UPDATE|DELETE|DROP|TRUNCATE)\s+(?:TABLE\s+)?(?:emuzii_|mio_registration|mio_draw|mio_gacha)/i);
  assert.doesNotMatch(schema,/\bINSERT INTO\s+(?:emuzii_|mio_registration|mio_draw|mio_gacha)/i);
 });
+test('future incident audit schema requires exactly ordered start and resolve transitions',()=>{
+ assert.match(schema,/action='start' AND before_state='unhandled' AND after_state='working'/);
+ assert.match(schema,/action='resolve' AND before_state='working' AND after_state='resolved'/);
+ assert.doesNotMatch(schema,/action='resolve' AND before_state='unhandled'/);
+});
 test('disabled integration has no incident server endpoints or DB migration execution path',()=>{
  const apiRoutes=config.routes.map(x=>x.src);
  assert.equal(apiRoutes.includes('/api/mio-incidents'),false);
