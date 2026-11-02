@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#101c34">
+<title>みお運営管理センター｜操作リハーサル</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:#081326;color:#f3f7ff;line-height:1.65}
+header,main,footer{max-width:1040px;margin:auto;padding:16px}
+h1{font-size:clamp(23px,4vw,32px);line-height:1.4;margin:8px 0}
+h2{font-size:20px;margin:0 0 10px}
+p{margin:8px 0 14px}
+.warn{background:#382b14;border:2px solid #e6c377;border-radius:14px;padding:12px 16px;color:#fff}
+nav{display:flex;flex-wrap:wrap;gap:12px}a{color:#b5e4ff}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+section{border:1px solid #4b779f;background:#122743;border-radius:18px;padding:17px;min-width:0}
+.full{grid-column:1/-1}
+dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0}
+dt{color:#bed8f4;font-size:13px}dd{font-weight:800;font-size:20px;margin:0}
+button,input{font:inherit}
+button{min-height:48px;border:1px solid #a4dafd;background:#d9efff;color:#09213b;font-weight:750;border-radius:10px;padding:9px 15px;cursor:pointer}
+button.secondary{background:#213d5f;color:#fff}
+button:disabled{opacity:.48;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid #ffe0a0;outline-offset:3px}
+input{color:#fff;background:#091c30;border:1px solid #97bddf;border-radius:9px;min-height:48px;padding:9px 12px;max-width:100%;width:100%;font-size:16px}
+label{display:block;font-weight:700;margin-top:10px}
+.actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.entries{display:grid;gap:9px}
+.entry{padding:11px;border-radius:10px;border:1px solid #476d8e;background:#0e2036}
+.entry p{margin:4px 0 9px}
+.mini{font-size:13px;color:#d0e2f5}
+.status{padding:10px;background:#091c30;border-radius:10px;min-height:42px}
+.audit{margin:0;padding-left:25px;max-height:260px;overflow:auto}
+.audit li{padding:5px 0;border-bottom:1px solid #33516f;overflow-wrap:anywhere}
+@media(max-width:690px){.grid{grid-template-columns:1fr}section.full{grid-column:auto}dl{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header>
+<p class="warn" role="status">🧪 <strong>開発版・操作リハーサル専用</strong>：表示される人物・ガチャ券・障害はすべて架空。管理者ログイン、既存GAS、参加者台帳、抽選、景品、メールとは一切接続していません。ここでの操作は実参加者に反映されません。</p>
+<h1>🐳 みお運営管理センター <small>操作リハーサル</small></h1>
+<nav><a href="/gacha-web-gate.html">既存の管理画面へ戻る</a><a href="/museum.html">翠央記念館へ</a></nav>
+</header>
+<main class="grid">
+<section class="full" aria-label="管理状態">
+<h2>管理状況・架空データ</h2>
+<dl>
+<div><dt>承認待ち</dt><dd id="demoPendingCount">—</dd></div>
+<div><dt>未対応の障害</dt><dd id="demoIncidentCount">—</dd></div>
+<div><dt>操作履歴</dt><dd id="demoAuditCount">—</dd></div>
+<div><dt>実管理接続</dt><dd>停止中</dd></div>
+</dl>
+</section>
+<section>
+<h2>参加申請の確認</h2><p class="mini">承認と却下を架空の申請で練習できます。</p>
+<div id="demoPending" class="entries"></div>
+</section>
+<section>
+<h2>参加者検索・ガチャ券の付与</h2>
+<label for="demoSearch">架空の参加者を検索</label><input id="demoSearch" type="search" autocomplete="off" placeholder="例：デモ、DEMO-01">
+<div id="demoRoster" class="entries" aria-label="検索結果"></div>
+<label for="demoGrantAmount">付与回数（1〜50）</label><input id="demoGrantAmount" type="number" min="1" max="50" value="1">
+<label for="demoOperationId">操作ID（同じIDで二重付与できない）</label>
+<input id="demoOperationId" type="text" maxlength="40" value="DEMO-OP-001" autocomplete="off">
+<div class="actions" style="margin-top:12px"><button id="demoGrant" type="button" disabled>選択した人へ模擬付与</button></div>
+</section>
+<section>
+<h2>障害・復旧対応</h2>
+<p class="mini">「未対応 → 対応中 → 解決済み」の順序のみ許可。</p>
+<div id="demoIncidents" class="entries"></div>
+</section>
+<section>
+<h2>管理操作ログ</h2>
+<p class="mini">この画面内の架空操作だけ。ページ更新すると消えます。</p>
+<ol id="demoAudit" class="audit" aria-label="架空の操作履歴"></ol>
+</section>
+<section class="full">
+<h2>模擬データを元に戻す</h2>
+<p>実際の参加者・ガチャ残数・当選履歴・皆勤データには一切影響しません。</p>
+<div class="actions"><button id="demoReset" type="button" class="secondary">リハーサルを初期状態へ戻す</button></div>
+<p role="status" aria-live="polite" id="demoMessage" class="status">操作リハーサルを開始しました。</p>
+</section>
+</main>
+<footer><small>安全条件：通信APIなし／ブラウザ保存なし／Cookie参照なし／架空データのみ。既存の本番運営とは切り離しています。</small></footer>
+<script defer src="/mio-admin-rehearsal.js"></script>
+</body></html>
