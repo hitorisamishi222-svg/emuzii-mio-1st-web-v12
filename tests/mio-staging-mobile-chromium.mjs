@@ -391,6 +391,18 @@ try{
    assert.equal(blocked.exportAllowed,true);
    assert.equal(blocked.classification,'BLOCKED_REVIEW');
    assert.ok(blocked.blocked.includes('DUPLICATE_FUNCTION_DECLARATIONS'));
+   // New source selection must erase the previous report immediately, before
+   // the user runs an inspection. A stale "validated" export is unsafe.
+   const changedSource=await evaluate(`(()=>{
+    const input=document.querySelector('#gasSources'),dt=new DataTransfer();
+    dt.items.add(new File(['function doPost(e){}'],'DIFFERENT_Code.gs',{type:'text/plain'}));
+    input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+    return {unverified:document.querySelector('#gasStatus').textContent.includes('未検査'),
+     exportDisabled:document.querySelector('#gasExport').disabled,
+     noOldCount:document.querySelector('#gasPost').textContent==='—',
+     newSelection:input.files.length===1};
+   })()`);
+   assert.deepEqual(changedSource,{unverified:true,exportDisabled:true,noOldCount:true,newSelection:true});
    await evaluate("document.querySelector('#gasClear').click()");
    assert.equal(await evaluate("document.querySelector('#gasExport').disabled"),true);
    assert.equal(await evaluate("document.querySelector('#gasFiles').textContent"),'—');
@@ -489,6 +501,32 @@ try{
    assert.ok(multi.duplicate.includes('重複'),'duplicate filename cannot be called a verified backup');
    assert.ok(multi.collision.includes('重複'),'case-insensitive filename collision cannot be accepted');
    assert.ok(multi.altered.includes('不一致'),'a changed appsscript.json must be detected');
+   // Selecting a different backup after a valid match must invalidate that
+   // verdict. It must never remain labelled "完全一致" for the new files.
+   const reselection=await evaluate(`(async()=>{
+    const original=document.querySelector('#gasBackupOriginal');
+    const backup=document.querySelector('#gasBackupCopy');
+    const button=document.querySelector('#gasBackupCompare');
+    const status=document.querySelector('#gasBackupStatus');
+    const choose=(el,text)=>{
+     const files=new DataTransfer();
+     files.items.add(new File([text],'Code.gs',{type:'text/plain'}));
+     el.files=files.files;
+     el.dispatchEvent(new Event('change',{bubbles:true}));
+    };
+    choose(original,'same');choose(backup,'same');button.click();
+    for(let i=0;i<150;i++){
+     if(!button.disabled)break;
+     await new Promise(resolve=>setTimeout(resolve,15));
+    }
+    const didMatch=status.textContent.includes('完全一致しました');
+    choose(backup,'NEW UNCHECKED FILE');
+    return {didMatch,newSelectionUnverified:status.textContent.includes('未照合'),
+     falseSuccessRetained:status.textContent.includes('完全一致しました'),
+     selectedFiles:backup.files.length};
+   })()`);
+   assert.deepEqual(reselection,{didMatch:true,newSelectionUnverified:true,
+    falseSuccessRetained:false,selectedFiles:1});
    // Cancellation is a privacy property: clearing midway must never display
    // a hash comparison outcome from an old asynchronous file read.
    const backupRace=await evaluate(`(async()=>{
