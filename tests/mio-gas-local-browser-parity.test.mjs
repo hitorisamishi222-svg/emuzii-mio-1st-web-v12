@@ -104,3 +104,26 @@ test('commented-out safety tokens cannot hide a real missing GAS lock',()=>{
  assert.ok(node.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
  assert.equal(node.webAdminWriteAllowed,false);
 });
+
+
+test('quoted authentication and script-lock examples never satisfy real authorization checks',()=>{
+ const cases=[
+  {name:'quoted credential comparison',
+   source:full.replace('equal_(d.secret,secret)','notAnAuthorizationCheck(d.secret,secret)'),
+   decoy:'equal_(d.secret,secret)'},
+  {name:'quoted lock getter',
+   source:full.replace('LockService.getScriptLock()','LockService.untrustedLock()'),
+   decoy:'LockService.getScriptLock()'}
+ ];
+ for(const scenario of cases){
+  assert.notEqual(scenario.source,full,scenario.name+' setup must remove real check');
+  const injected=scenario.source.replace(/function doPost\s*\(e\)\s*\{/,
+   hit=>hit+String.fromCharCode(10)+' const example = '+JSON.stringify(scenario.decoy)+';');
+  assert.notEqual(injected,scenario.source,scenario.name+' decoy must be in doPost');
+  const cli=inspectSources([injected]),browser=clientInspect([injected]);
+  assert.deepEqual(comparable(browser),comparable(cli));
+  assert.equal(cli.classification,'BLOCKED_REVIEW');
+  assert.ok(cli.blockingReasons.includes('DISPATCH_WITHOUT_CONFIRMED_LOCK_OR_SECRET_ORDER'));
+  assert.equal(browser.liveAdminWriteAllowed,false);
+ }
+});
