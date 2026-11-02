@@ -675,6 +675,31 @@ test('pending lists may truncate while authoritative total counters still show a
  assert.equal(out.simplePendingListTruncated,true);
  assert.equal(x.write.length,0);
 });
+test('malformed Web IDs and nameless simple rows are surfaced as explicit data-quality warnings',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ web.push(['bad-web-id','secret-should-not-leak','架空の来訪者','','2026-11-02',
+  '承認待ち','未確認','','','','','確認待ち']);
+ web.push(['','secret-blank-id','不完全登録','','2026-11-02',
+  '承認待ち','未確認','','','','','確認待ち']);
+ // Truly blank rows must not count as registration errors.
+ web.push(Array(21).fill(''));
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple.push(['2026-11-02','','','フォーム受付','管理確認待ち','メモがある']);
+ simple.push(['','','','','','']);
+ const before=JSON.stringify(x.rows);
+ const view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.invalidWebIdCount,2);
+ assert.equal(view.incompleteSimpleRowCount,1);
+ assert.equal(view.pendingRegistrationCount,1,'normal existing applicant is still counted');
+ assert.equal(view.pendingSimpleCount,1,'valid pending intake remains separate');
+ assert.equal(view.totalPending,1);
+ assert.equal(view.pending.some(r=>r.name==='不完全登録'),false);
+ assert.equal(JSON.stringify(view).includes('secret-should-not-leak'),false);
+ assert.equal(JSON.stringify(view).includes('secret-blank-id'),false);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before);
+});
 test('unknown sheet states are warnings, never silently counted as zero or processed as approval',()=>{
  const x=sandbox({schemaReady:false});
  const web=x.rows['emuzii_Web登録'];
