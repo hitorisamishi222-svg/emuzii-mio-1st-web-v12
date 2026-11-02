@@ -3,7 +3,7 @@
 const countFields=[
  'totalPending','pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount',
  'unknownWebStatusCount','unknownSimpleStatusCount','invalidWebIdCount',
- 'incompleteSimpleRowCount','rejectedCount'
+ 'incompleteSimpleRowCount','duplicateWebIdCount','duplicateMioIdCount','rejectedCount'
 ];
 function reject(){
  throw new Error('管理台帳の待機人数を検証できません。既存GAS接続を確認してください');
@@ -36,11 +36,14 @@ export function validateQueueSnapshot(value){
   unknownSimpleStatusCount:value.unknownSimpleStatusCount,
   invalidWebIdCount:value.invalidWebIdCount,
   incompleteSimpleRowCount:value.incompleteSimpleRowCount,
+  duplicateWebIdCount:value.duplicateWebIdCount,
+  duplicateMioIdCount:value.duplicateMioIdCount,
   pendingListTruncated:value.pendingListTruncated,
   simplePendingListTruncated:value.simplePendingListTruncated,
   hasUnclassifiedRows:(
    value.unknownWebStatusCount+value.unknownSimpleStatusCount+
-   value.invalidWebIdCount+value.incompleteSimpleRowCount
+   value.invalidWebIdCount+value.incompleteSimpleRowCount+
+   value.duplicateWebIdCount+value.duplicateMioIdCount
   )>0
  });
 }
