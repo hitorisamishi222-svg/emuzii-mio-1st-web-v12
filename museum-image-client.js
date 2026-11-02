@@ -39,22 +39,27 @@
     const height=Math.max(1,Math.round(img.naturalHeight*scale));
     const canvas=document.createElement('canvas');
     canvas.width=width;canvas.height=height;
-    const ctx=canvas.getContext('2d');
-    if(!ctx)throw Error('CANVAS_UNAVAILABLE');
-    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height); // transparent source -> neutral background
-    ctx.drawImage(img,0,0,width,height);
-    for(const quality of [0.83,0.68,0.53]){
-     let blob=await toBlob(canvas,'image/webp',quality);
-     let format='webp';
-     if(blob.type!=='image/webp'){
-      blob=await toBlob(canvas,'image/jpeg',quality);
-      format='jpeg';
+    try{
+     const ctx=canvas.getContext('2d');
+     if(!ctx)throw Error('CANVAS_UNAVAILABLE');
+     ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height); // transparent source -> neutral background
+     ctx.drawImage(img,0,0,width,height);
+     for(const quality of [0.83,0.68,0.53]){
+      let blob=await toBlob(canvas,'image/webp',quality);
+      let format='webp';
+      if(blob.type!=='image/webp'){
+       blob=await toBlob(canvas,'image/jpeg',quality);
+       format='jpeg';
+      }
+      if(blob.size<=MAX_OUTPUT){
+       return {base64:await base64(blob),format,bytes:blob.size,width,height};
+      }
      }
-     if(blob.size<=MAX_OUTPUT){
-      return {base64:await base64(blob),format,bytes:blob.size,width,height};
-     }
+    }finally{
+     // iOS Safari may retain the backing store until the canvas dimensions are reset.
+     // This must run even when a successful conversion returns early or encoding throws.
+     canvas.width=0;canvas.height=0;
     }
-    canvas.width=0;canvas.height=0;
    }
    throw Error('IMAGE_COMPRESS_FAILED');
   }finally{URL.revokeObjectURL(url);}
