@@ -6,6 +6,7 @@ on:
       - feature/mio-v2-integration-mainbaseline-20261102
     paths:
       - museum*
+      - tests/mio-staging-mobile-chromium.mjs
       - mio-profile.html
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
@@ -32,6 +33,7 @@ on:
       - main
     paths:
       - museum*
+      - tests/mio-staging-mobile-chromium.mjs
       - mio-profile.html
       - vercel.json
       - tests/mio-mainbased-museum-integration.test.mjs
@@ -110,3 +112,33 @@ jobs:
       - name: Confirm this test did not modify tracked files
         run: git diff --exit-code
       # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
+
+  offline-mobile-chrome:
+    name: Offline museum mobile Chromium (local fixture, no accounts)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax before running a real browser
+        run: |
+          node --check tests/mio-staging-mobile-chromium.mjs
+          node --check museum-device-check.js
+          node --check museum-image-client.js
+      - name: Exercise 320/375/390/430px; synthetic photo only; zero API writes
+        timeout-minutes: 3
+        run: |
+          command -v google-chrome || command -v chromium
+          node tests/mio-staging-mobile-chromium.mjs
+      - name: Save evidence of offline local browser state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mio-offline-mobile-browser-evidence
+          path: artifacts/mio-offline-mobile-*.png
+          if-no-files-found: ignore
+          retention-days: 7
