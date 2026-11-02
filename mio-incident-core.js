@@ -56,10 +56,13 @@ export async function recordIncident(query,data,secret,now=Date.now()){
   RETURNING incident_id`,
   [e.incidentId,e.fingerprint,e.participantRef,e.source,e.category,e.drawId,e.stage]);
  // RETURNING is the authoritative row ID: ON CONFLICT may have updated an older ticket.
- // Never expose a transient generated UUID or claim persistence when the DB reply is incomplete.
- if(result?.rowCount===0)return {recorded:false,incidentId:null,category:e.category};
- const storedId=result?.rows?.[0]?.incident_id;
- if(result?.rowCount!==1||typeof storedId!=='string'||
+ // A missing or contradictory result must never be called recorded OR rate-limited.
+ if(!result||!Number.isSafeInteger(result.rowCount)||!Array.isArray(result.rows)||
+    result.rowCount!==result.rows.length||result.rowCount<0||result.rowCount>1)
+  throw Error('incident persistence result unavailable');
+ if(result.rowCount===0)return {recorded:false,incidentId:null,category:e.category};
+ const storedId=result.rows[0]?.incident_id;
+ if(typeof storedId!=='string'||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storedId))
   throw Error('incident persistence result unavailable');
  return {recorded:true,incidentId:storedId,category:e.category};
