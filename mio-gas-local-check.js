@@ -184,7 +184,7 @@ function maskInactiveGAS(source,maskStrings=false){
  const backupStatus=document.getElementById('gasBackupStatus');
  let backupRevision=0;
  const validSet=files=>files.length>0&&files.length<=30&&
-  files.every(f=>f.size>0&&/\\.(?:gs|txt)$/i.test(f.name))&&
+  files.every(f=>f.size>0&&['.gs','.txt'].some(ext=>f.name.toLowerCase().endsWith(ext)))&&
   files.reduce((sum,f)=>sum+f.size,0)<=8*1024*1024;
  const digestFile=async file=>{
   const bytes=await file.arrayBuffer();
