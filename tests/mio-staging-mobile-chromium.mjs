@@ -415,6 +415,42 @@ try{
    })()`);
    assert.deepEqual(cancelRace,{cleared:true,reportDisabled:true,noFileCount:true,inspectEnabled:true},
     'cleared source must not reappear when an old file-read promise later resolves');
+   // Two LOCAL file sets, same names and bytes. This is not a deployed GAS proof.
+   const backupProof=await evaluate(`(async()=>{
+    const src=document.querySelector('#gasBackupOriginal');
+    const copy=document.querySelector('#gasBackupCopy');
+    const button=document.querySelector('#gasBackupCompare');
+    const status=document.querySelector('#gasBackupStatus');
+    const data='function doPost(e){}'+String.fromCharCode(10)+'// SECRET_FAKE_DO_NOT_EXPORT_900';
+    const assign=(el,text)=>{
+     const dt=new DataTransfer();
+     dt.items.add(new File([text],'Code.gs',{type:'text/plain'}));
+     el.files=dt.files;
+    };
+    const run=async text=>{
+     assign(src,data);assign(copy,text);button.click();
+     for(let i=0;i<150;i++){
+      if(!button.disabled)break;
+      await new Promise(done=>setTimeout(done,15));
+     }
+     return {status:status.textContent,
+      originalCleared:src.value==='',backupCleared:copy.value===''};
+    };
+    const matching=await run(data);
+    const different=await run(data.replace('doPost','doNotPost'));
+    const leaked=document.body.textContent.includes('SECRET_FAKE_DO_NOT_EXPORT_900');
+    document.querySelector('#gasBackupClear').click();
+    return {matching,different,leaked,
+     cleared:status.textContent.includes('消去しました')};
+   })()`);
+   assert.equal(backupProof.matching.status.includes('完全一致しました'),true);
+   assert.equal(backupProof.different.status.includes('不一致'),true);
+   assert.equal(backupProof.matching.originalCleared,true);
+   assert.equal(backupProof.matching.backupCleared,true);
+   assert.equal(backupProof.different.originalCleared,true);
+   assert.equal(backupProof.different.backupCleared,true);
+   assert.equal(backupProof.leaked,false,'backup test exposed source content in the UI');
+   assert.equal(backupProof.cleared,true);
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
