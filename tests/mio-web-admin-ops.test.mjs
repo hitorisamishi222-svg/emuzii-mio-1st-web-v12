@@ -710,8 +710,10 @@ test('duplicated valid Web IDs and participant MIO IDs become separate read-only
  // A different, valid Web ID must not count as a duplicate.
  const distinct=[...first];distinct[0]='MIO-W-ffffffffffffffffffffffff';
  web.push(distinct);
- people.push(['MIO-0001','同名の参加者重複']);
- people.push(['MIO-0001','別の重複']);
+ // Mock A3 is an existing formula-generated MIO-0002, not a literal MIO-0001.
+ people.push(['MIO-0001','自動式の行（表示IDはMIO-0002）']);
+ people.push(['MIO-0001','同一IDの重複その1']);
+ people.push(['MIO-0001','同一IDの重複その2']);
  people.push(['MIO-0007','独立した参加者']);
  const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
  assert.equal(out.duplicateWebIdCount,2,'count duplicate rows beyond first occurrence');
