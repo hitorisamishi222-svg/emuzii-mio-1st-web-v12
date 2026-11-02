@@ -28,9 +28,14 @@ test('write-specific audit tab and grant operation-ID header are NOT present in 
  assert.equal(grants.at10,null);
  assert.equal(live.requiredForWebAdminWrites.grantOperationColumn.column,'J');
  assert.equal(live.requiredForWebAdminWrites.grantOperationColumn.expectedHeader,'Web操作ID');
- // Candidate would mutate both the audit tab and the grant sheet J header.
- assert.match(candidate,/insertSheet\('emuzii_Web管理操作履歴'\)/);
- assert.match(candidate,/getRange\(1,10\)\.setValue\('Web操作ID'\)/);
+ // The actual live tab/header are absent. Candidate MUST refuse mutations
+ // until a separate owner-approved schema migration has been completed.
+ for(const source of [candidate,fullCandidate]){
+  assert.doesNotMatch(source,/insertSheet\('emuzii_Web管理操作履歴'\)/);
+  assert.doesNotMatch(source,/getRange\(1,10\)\.setValue\('Web操作ID'\)/);
+  assert.match(source,/Web管理操作履歴タブが未整備/);
+  assert.match(source,/ガチャ付与履歴のWeb操作ID列が未整備/);
+ }
  assert.equal(live.adminWriteRelease,'BLOCKED');
 });
 
