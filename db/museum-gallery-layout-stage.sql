@@ -39,7 +39,34 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_stage (
 CREATE TABLE IF NOT EXISTS museum_gallery_layout_audit_stage (
  audit_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
  layout_key text NOT NULL REFERENCES museum_gallery_layout_stage(layout_key),
- operation_id text NOT NULL UNIQUE CHECK(operation_id ~ '^[a-f0-9]{32}$'),
+ operation_id text NOT NULL UNIQUE CHECK(operation_id ~ '^[a-f0-9]{32}
+ action text NOT NULL CHECK(action IN ('draft','publish','rollback')),
+ prior_revision bigint NOT NULL CHECK(prior_revision>=0),
+ new_revision bigint NOT NULL CHECK(new_revision>prior_revision),
+ recorded_at timestamptz NOT NULL DEFAULT now()
+);
+-- No INSERT, UPDATE, ALTER, DELETE, DROP, GRANT or automatic activation.
+-- Future API must verify the approved IDs and all current hidden/deleted takedowns
+-- from the authoritative DB again inside ONE transaction before every publish.
+-- The JSON arrays alone MUST NEVER be interpreted as permission to publish.
+-- Future audit and draft persistence must use a dedicated transaction client.
+-- On uncertain COMMIT, recheck the same operation_id instead of retrying changes.
+-- No existing gallery schema is modified by this proposal.
+),
+ payload_hash text NOT NULL CHECK(payload_hash ~ '^[a-f0-9]{64}
+ action text NOT NULL CHECK(action IN ('draft','publish','rollback')),
+ prior_revision bigint NOT NULL CHECK(prior_revision>=0),
+ new_revision bigint NOT NULL CHECK(new_revision>prior_revision),
+ recorded_at timestamptz NOT NULL DEFAULT now()
+);
+-- No INSERT, UPDATE, ALTER, DELETE, DROP, GRANT or automatic activation.
+-- Future API must verify the approved IDs and all current hidden/deleted takedowns
+-- from the authoritative DB again inside ONE transaction before every publish.
+-- The JSON arrays alone MUST NEVER be interpreted as permission to publish.
+-- Future audit and draft persistence must use a dedicated transaction client.
+-- On uncertain COMMIT, recheck the same operation_id instead of retrying changes.
+-- No existing gallery schema is modified by this proposal.
+),
  actor_id uuid NOT NULL REFERENCES gallery_admin_users(id),
  action text NOT NULL CHECK(action IN ('draft','publish','rollback')),
  prior_revision bigint NOT NULL CHECK(prior_revision>=0),
