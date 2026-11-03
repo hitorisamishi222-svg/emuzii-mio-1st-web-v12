@@ -180,6 +180,18 @@ test('later hidden or deleted status blocks publication even if a saved draft pr
   assert.equal(db.persist.published_revision,null);
  }
 });
+test('unlocked moderation snapshots cannot be used to publish or restore',async()=>{
+ const first=new Mock(),unlocked={...authoritative(),mutationReadLocked:false};
+ await denied(()=>publish(first,{loadModeratedCatalog:async()=>unlocked}),
+  'MODERATION_SOURCE_UNVERIFIED');
+ assert.equal(first.persist.published_revision,null);
+ assert.equal(first.persist.history.length,0);
+ const db=await publishedTwice();
+ await denied(()=>rollback(db,{loadModeratedCatalog:async()=>unlocked}),
+  'MODERATION_SOURCE_UNVERIFIED');
+ assert.equal(db.persist.published_revision,2);
+ assert.equal(db.persist.history.length,2);
+});
 test('source metadata must be server-confirmed for publish and rollback',async()=>{
  const db=await publishedTwice();
  await denied(()=>rollback(db,{loadModeratedCatalog:async()=>({
