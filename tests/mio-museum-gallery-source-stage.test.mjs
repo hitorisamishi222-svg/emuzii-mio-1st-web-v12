@@ -38,7 +38,7 @@ test('published museum exhibits join reviewed legacy works without altering lega
  const db=fake(),result=await loadMuseumModeratedCatalogStage(db);
  assert.equal(result.sourceVerified,true);
  assert.equal(db.queries.length,2);
- assert.ok(db.queries[0].sql.includes('FOR SHARE'));
+ assert.equal(db.queries[0].sql.includes('FOR SHARE'),false,'public read must not lock rows');
  assert.equal(db.queries[0].args[0].length,2);
  assert.ok(result.verifiedApprovedIds.includes(NEW));
  assert.ok(!result.verifiedApprovedIds.includes(DRAFT));
@@ -69,6 +69,18 @@ test('authoritative source and public projection keep private drafts invisible a
  });
  assert.deepEqual(removed.items,[]);
  assert.equal(removed.revision,2);
+});
+test('a serializable management transaction may request FOR SHARE on moderation rows',async()=>{
+ const db=fake();
+ await loadMuseumModeratedCatalogStage(db,{lockModeration:true});
+ assert.ok(db.queries[0].sql.endsWith('FOR SHARE'));
+ assert.equal(db.queries[0].args[0].length,2);
+ assert.equal(db.queries[1].sql.includes('FOR SHARE'),false);
+});
+test('invalid locking options are rejected before touching a database',async()=>{
+ const db=fake();
+ await deny(()=>loadMuseumModeratedCatalogStage(db,{lockModeration:'yes'}),'LOCK_MODE_INVALID');
+ assert.equal(db.queries.length,0);
 });
 test('moderator takedown on an existing song wins over its checked-in allowlist',async()=>{
  const id='mio-awakening-song',db=fake({
