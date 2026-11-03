@@ -5,8 +5,8 @@
 .museum-archive .archive-filter[aria-pressed="true"]{color:#102844;background:#f1dcb3;border-color:#ffedc4}
 .museum-archive .archive-status{border:1px solid #83b6dd87;border-radius:14px;padding:17px;background:#102e52;margin:12px 0 24px;color:#e6f1fc;text-align:center}
 .museum-archive .archive-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:19px}
-.museum-archive .archive-entry{border:1px solid #90c7e57a;border-radius:17px;overflow:hidden;background:#0b2c4f;min-width:0;display:flex;flex-direction:column}
-.museum-archive .archive-image{aspect-ratio:4/3;background:linear-gradient(140deg,#102d56,#1f4b77);display:grid;place-items:center;overflow:hidden}
+.museum-archive .archive-entry{position:relative;border:1px solid #e7cf9b9c;border-radius:18px;overflow:hidden;background:radial-gradient(circle at 87% 11%,#bc98563b,transparent 29%),linear-gradient(145deg,#1a3d65,#092143);min-width:0;display:flex;flex-direction:column;box-shadow:inset 0 0 0 1px #b3e9fd1c,0 13px 34px #0006}
+.museum-archive .archive-image{aspect-ratio:4/3;background:radial-gradient(circle at 50% 40%,#98c5dd77,transparent 48%),linear-gradient(140deg,#123357,#21486f);display:grid;place-items:center;overflow:hidden;border-bottom:1px solid #e7cf9b85}
 .museum-archive .archive-image img{width:100%;height:100%;object-fit:contain}
 .museum-archive .archive-image-placeholder{font-size:54px}
 .museum-archive .archive-entry-body{padding:19px;flex:1;display:flex;flex-direction:column}
