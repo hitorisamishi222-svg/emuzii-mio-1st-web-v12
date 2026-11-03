@@ -9,8 +9,8 @@
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
   gallery:[
    {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',visible:true,featured:true,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,reviewed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',visible:false,featured:false,reviewed:true,archived:false,imageUrl:null}
+   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',visible:false,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null}
   ],
   ops:new Map(),log:[],selected:null,nextMember:2,nextExhibit:4,unconfirmed:null
  });
