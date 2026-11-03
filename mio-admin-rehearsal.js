@@ -16,9 +16,9 @@
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
   gallery:[
-   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',room:'gallery',visible:true,featured:true,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',room:'icons',visible:true,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',room:'moments',visible:false,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null}
+   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',room:'gallery',visible:true,featured:true,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,approvalEpoch:1,archived:false,imageUrl:null},
+   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',room:'icons',visible:true,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,approvalEpoch:1,archived:false,imageUrl:null},
+   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',room:'moments',visible:false,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,approvalEpoch:1,archived:false,imageUrl:null}
   ],
   ops:new Map(),log:[],selected:null,nextMember:2,nextExhibit:4,unconfirmed:null
  });
@@ -29,11 +29,12 @@
    item.privacyConfirmed&&!item.archived;
  const draftDisplay=()=>s.gallery.filter(eligible).map(item=>({
   id:item.id,title:item.title,category:item.category,room:item.room,
-  featured:item.featured,imageUrl:null // browser-selected photos are never published
+  featured:item.featured,approvalEpoch:item.approvalEpoch,imageUrl:null // browser-selected photos are never published
  }));
  const galleryFingerprint=()=>JSON.stringify(s.gallery.map(item=>[
   item.id,item.title,item.category,item.room,item.visible,item.featured,
-  item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.archived,item.imageUrl
+  item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.approvalEpoch,
+  item.archived,item.imageUrl
  ]));
  let galleryPublished=[],galleryReviewFingerprint=null,restoreSelectedRevision=null;
  let savedDraftRevision=1,savedDraftFingerprint=galleryFingerprint();
@@ -135,7 +136,8 @@
     },!item.reviewed||item.archived),
     button(item.reviewed?'確認済み':'模擬承認',()=>{
      if(!item.rightsConfirmed||!item.privacyConfirmed)return;
-     item.reviewed=true;audit(item.id+'：模擬公開確認');
+     item.reviewed=true;item.approvalEpoch++;
+     audit(item.id+'：模擬公開確認（審査世代 '+item.approvalEpoch+'）');
      setMessage('公開確認の操作を模擬しました。実際の掲載許可にはなりません。');render();
     },item.reviewed||item.archived||!item.rightsConfirmed||!item.privacyConfirmed),
     button(item.archived?'保管から戻す':'保管（非表示）',()=>{
@@ -178,6 +180,25 @@
      approval.append(reviewLabel);
     }
     approval.append(make('p','両方の模擬確認を終えるまで承認ボタンは使えません。','mini'));
+   }else{
+    approval.append(make('p','模擬確認：掲載許可と個人情報確認は有効です。取消時は即時非公開になります。','mini'));
+    const revoke=make('div',undefined,'actions');
+    for(const [key,label] of [
+     ['rightsConfirmed','掲載許可を取り消す（模擬）'],
+     ['privacyConfirmed','個人情報確認を取り消す（模擬）']
+    ]){
+     revoke.append(button(label,()=>{
+      // Emergency takedown affects mock visitors immediately without
+      // waiting for draft save or a publication revision.
+      item[key]=false;item.reviewed=false;
+      item.visible=false;item.featured=false;
+      if(item.imageUrl){URL.revokeObjectURL(item.imageUrl);item.imageUrl=null;}
+      audit(item.id+'：'+label+'・掲載を即時停止（模擬）');
+      setMessage('模擬展示を非公開にしました。再承認しても古い公開履歴は自動で復活しません。');
+      render();
+     },item.archived));
+    }
+    approval.append(revoke);
    }
    const roomLabel=make('label','配置する展示室（模擬）');
    roomLabel.htmlFor='demoGalleryRoom'+item.id;
@@ -220,7 +241,7 @@
   for(const exhibit of publication.items){
    const actual=byId.get(exhibit.id);
    // A later owner hide or revocation wins over every historical snapshot.
-   if(!actual||!eligible(actual)||
+   if(!actual||!eligible(actual)||actual.approvalEpoch!==exhibit.approvalEpoch||
       (previewRoom!=='all'&&exhibit.room!==previewRoom))continue;
    const card=make('article',undefined,'entry');
    card.append(galleryThumb(exhibit),make('strong',exhibit.title),
@@ -254,7 +275,7 @@
   const selected=history.find(v=>v.revision===restoreSelectedRevision);
   const restoreItems=(selected?.items||[]).filter(item=>{
    const actual=byId.get(item.id);
-   return actual&&eligible(actual);
+   return actual&&eligible(actual)&&actual.approvalEpoch===item.approvalEpoch;
   }).map(item=>({...item}));
   const restorePreview=$('demoGalleryRestorePreview');
   restorePreview.replaceChildren();
@@ -482,7 +503,7 @@
   const byId=new Map(s.gallery.map(item=>[item.id,item]));
   const items=selected.items.filter(item=>{
    const current=byId.get(item.id);
-   return current&&eligible(current);
+   return current&&eligible(current)&&current.approvalEpoch===item.approvalEpoch;
   }).map(item=>({...item}));
   if(JSON.stringify(items)===JSON.stringify(currentPublication().items)){
    $('demoGalleryDifference').textContent='選択した履歴は現在の公開版と同じです。復元は不要です。';
@@ -522,7 +543,7 @@
   if(s.gallery.length>=30){setMessage('模擬展示の上限は30件です。');return}
   const id='ART-DEMO-'+s.nextExhibit++;
   s.gallery.push({id,title,category,room,visible:false,featured:false,
-   reviewed:false,rightsConfirmed:false,privacyConfirmed:false,archived:false,imageUrl:null});
+   reviewed:false,rightsConfirmed:false,privacyConfirmed:false,approvalEpoch:0,archived:false,imageUrl:null});
   audit(id+'：非公開の模擬下書きを追加');
   $('demoGalleryNewTitle').value='';$('demoGalleryNewRoom').value='gallery';
   setMessage('模擬展示を非公開で追加しました。模擬確認前はプレビューには表示されません。');
