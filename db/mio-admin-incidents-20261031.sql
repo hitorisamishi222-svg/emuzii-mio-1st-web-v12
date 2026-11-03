@@ -9,7 +9,10 @@ CREATE TABLE IF NOT EXISTS mio_admin_incidents (
  source varchar(24) NOT NULL CHECK (source IN ('gacha','status')),
  category varchar(32) NOT NULL CHECK (category IN ('DRAW_UNKNOWN','DRAW_CLIENT_UNCONFIRMED','AUTH_COOKIE_MISSING','AUTH_LEGACY_REJECTED','GAS_TIMEOUT','UPSTREAM_FAILED','STATUS_UNAVAILABLE')),
  draw_id char(32),
- stage varchar(24) NOT NULL,
+ stage varchar(24) NOT NULL CHECK (stage IN ('draw','catalog','history','status')),
+ -- Match normalizeEvent: status events carry no draw ID; draw events require one.
+ CHECK ((source='status' AND stage='status' AND draw_id IS NULL)
+     OR (source='gacha' AND (stage<>'draw' OR draw_id IS NOT NULL))),
  state varchar(12) NOT NULL DEFAULT 'unhandled' CHECK (state IN ('unhandled','working','resolved')),
  occurrence_count integer NOT NULL DEFAULT 1 CHECK (occurrence_count>0),
  occurred_at timestamptz NOT NULL DEFAULT now(),
