@@ -87,6 +87,30 @@ test('missing, unvalidated, or partial rights/privacy publication checks block r
   assert.equal(report(p).allReady,false);
  }
 });
+test('a status CHECK that merely mentions each status never passes publication preflight',()=>{
+ const forged=[
+  "CHECK (status <> 'invalid' AND description <> 'draft' AND description <> 'published' AND description <> 'hidden' AND description <> 'trash')",
+  "CHECK (status NOT IN ('draft','published','hidden','trash'))",
+  "CHECK (status='draft' OR status='published' OR status='hidden' OR status='trash')"
+ ];
+ for(const definition of forged){
+  const p=valid();
+  p.constraints[0].definition=definition;
+  assert.equal(report(p).statusConstraintComplete,false,definition);
+  assert.equal(report(p).allReady,false);
+ }
+});
+test('review checks must require proof when published, not allow missing review with OR',()=>{
+ for(const definition of [
+  "CHECK (status = 'published' OR (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))",
+  "CHECK (status <> 'hidden' OR (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))"
+ ]){
+  const p=valid();
+  p.constraints[1].definition=definition;
+  assert.equal(report(p).publicationReviewConstraintComplete,false,definition);
+  assert.equal(report(p).allReady,false);
+ }
+});
 test('every required role/session and reviewed-by foreign key must be verified',()=>{
  for(let i=0;i<keys.length;i++){
   const p=valid();p.constraints=[status,review,...keys.filter((_,j)=>i!==j)];
