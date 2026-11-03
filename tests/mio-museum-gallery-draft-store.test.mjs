@@ -115,6 +115,13 @@ test('same operation ID with different payload is rejected',async()=>{
  assert.equal(db.persist.featuredId,video.id);
  assert.equal(db.persist.revision,1);
 });
+test('an idempotent replay rejects extra fields that could hide publishing requests',async()=>{
+ const db=new MockClient();await ctx(db);
+ await rejected(()=>ctx(db,{proposal:{...proposed(),publish:true}}),'PROPOSAL_INVALID');
+ await rejected(()=>ctx(db,{proposal:{...proposed(),rightsApproved:true}}),'PROPOSAL_INVALID');
+ assert.equal(db.persist.revision,1);
+ assert.equal(Object.keys(db.persist.audit).length,1);
+});
 test('same operation ID from a different authenticated owner is rejected',async()=>{
  const db=new MockClient();await ctx(db);
  await rejected(()=>ctx(db,{verifyAdmin:async()=>({
