@@ -8,11 +8,11 @@
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
   gallery:[
-   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音楽',visible:true,featured:true,imageUrl:null},
-   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,imageUrl:null},
-   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'写真',visible:false,featured:false,imageUrl:null}
+   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音楽',visible:true,featured:true,reviewed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,reviewed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'写真',visible:false,featured:false,reviewed:true,archived:false,imageUrl:null}
   ],
-  ops:new Map(),log:[],selected:null,nextMember:2,unconfirmed:null
+  ops:new Map(),log:[],selected:null,nextMember:2,nextExhibit:4,unconfirmed:null
  });
  let s=initial();
  const make=(tag,content,cls)=>{
@@ -54,7 +54,7 @@
    const row=make('div',undefined,'entry gallery-row');
    const details=make('div');
    details.append(make('strong',item.title),
-    make('p',item.category+' ・ '+(item.visible?'公開予定':'非公開')+
+    make('p',item.category+' ・ '+(item.archived?'保管済み':item.visible?'公開予定':item.reviewed?'非公開':'公開確認待ち')+
       (item.featured?' ・ 注目作品':''),'mini'));
    const label=make('label','展示タイトル（仮）');
    label.htmlFor='demoGalleryTitle'+item.id;
@@ -77,11 +77,12 @@
      audit(item.id+'：展示順を下へ');render();
     },index===s.gallery.length-1),
     button(item.visible?'非公開にする':'公開予定にする',()=>{
+     if(!item.reviewed||item.archived)return;
      item.visible=!item.visible;
      if(!item.visible)item.featured=false;
      audit(item.id+'：模擬展示'+(item.visible?'公開予定':'非公開'));
      render();
-    }),
+    },!item.reviewed||item.archived),
     button(item.featured?'注目を解除':'注目にする',()=>{
      if(item.featured)item.featured=false;
      else {
@@ -89,12 +90,21 @@
       item.visible=true;item.featured=true;
      }
      audit(item.id+'：注目作品を変更');render();
+    },!item.reviewed||item.archived),
+    button(item.reviewed?'確認済み':'模擬承認',()=>{
+     item.reviewed=true;audit(item.id+'：模擬公開確認');
+     setMessage('公開確認の操作を模擬しました。実際の掲載許可にはなりません。');render();
+    },item.reviewed||item.archived),
+    button(item.archived?'保管から戻す':'保管（非表示）',()=>{
+     item.archived=!item.archived;item.visible=false;item.featured=false;
+     audit(item.id+'：'+(item.archived?'非破壊で保管':'保管から復元'));
+     setMessage('模擬作品は削除されず、元の一覧に保持されます。');render();
     })
    );
    const fileLabel=make('label','端末内の画像を仮プレビューで差し替える');
    fileLabel.htmlFor='demoGalleryImage'+item.id;
    const file=make('input');file.id=fileLabel.htmlFor;file.type='file';
-   file.accept='image/jpeg,image/png,image/webp';
+   file.accept='image/jpeg,image/png,image/webp';file.disabled=item.archived;
    file.addEventListener('change',()=>{
     const chosen=file.files&&file.files[0];
     if(!chosen)return;
@@ -111,7 +121,7 @@
    details.append(label,title,actions,fileLabel,file);
    row.append(galleryThumb(item),details);editor.append(row);
   });
-  const visible=s.gallery.filter(x=>x.visible);
+  const visible=s.gallery.filter(x=>x.visible&&x.reviewed&&!x.archived);
   for(const item of visible){
    const card=make('article',undefined,'entry');
    card.append(galleryThumb(item),make('strong',item.title),
@@ -232,6 +242,22 @@
   }else setMessage(member.name+'へ'+amount+'回模擬付与しました。実際のガチャ回数には反映しません。');
   render();
  }
+ $('demoGalleryAdd').addEventListener('click',()=>{
+  const title=$('demoGalleryNewTitle').value.trim();
+  const category=$('demoGalleryNewCategory').value;
+  if(!title||title.length>60){setMessage('模擬作品名は1〜60文字で入力してください。');return}
+  if(!['イラスト','動画','音声・楽曲','ファンアート','その他'].includes(category)){
+   setMessage('展示の種類を確認してください。');return
+  }
+  if(s.gallery.length>=30){setMessage('模擬展示の上限は30件です。');return}
+  const id='ART-DEMO-'+s.nextExhibit++;
+  s.gallery.push({id,title,category,visible:false,featured:false,
+   reviewed:false,archived:false,imageUrl:null});
+  audit(id+'：非公開の模擬下書きを追加');
+  $('demoGalleryNewTitle').value='';
+  setMessage('模擬展示を非公開で追加しました。模擬確認前はプレビューには表示されません。');
+  render();
+ });
  $('demoSearch').addEventListener('input',render);
  $('demoGrant').addEventListener('click',grant);
  $('demoVerify').addEventListener('click',()=>{
@@ -246,7 +272,7 @@
  });
  $('demoReset').addEventListener('click',()=>{
   releaseGalleryImages(s.gallery);
-  s=initial();$('demoSearch').value='';$('demoGrantAmount').value='1';
+  s=initial();$('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';$('demoSearch').value='';$('demoGrantAmount').value='1';
   $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
   setMessage('リハーサルを初期状態へ戻しました。実データは変更していません。');
   render();
