@@ -28,10 +28,13 @@
   item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.archived,item.imageUrl
  ]));
  let galleryPublished=[],galleryReviewFingerprint=null;
+ let savedDraftRevision=1,savedDraftFingerprint=galleryFingerprint();
  const currentPublication=()=>galleryPublished[galleryPublished.length-1];
  const resetPublication=()=>{
   galleryPublished=[{revision:1,items:draftDisplay()}];
   galleryReviewFingerprint=null;
+  savedDraftRevision=1;
+  savedDraftFingerprint=galleryFingerprint();
  };
  resetPublication();
  const make=(tag,content,cls)=>{
@@ -206,8 +209,13 @@
   }
   const target=draftDisplay();
   const identical=JSON.stringify(publication.items)===JSON.stringify(target);
+  const hasUnsavedChanges=savedDraftFingerprint!==galleryFingerprint();
+  $('demoGalleryDraftStatus').textContent='非公開の模擬下書き 第'+savedDraftRevision+
+   '版／'+(hasUnsavedChanges?'未保存の編集があります':'編集中の内容は仮保存済み')+
+   '。実DBには保存していません。';
+  $('demoGallerySaveDraft').disabled=!hasUnsavedChanges;
   $('demoGalleryCommit').disabled=!galleryReviewFingerprint||identical||
-   s.gallery.some(item=>item.visible&&!eligible(item));
+   hasUnsavedChanges||s.gallery.some(item=>item.visible&&!eligible(item));
   $('demoGalleryRollback').disabled=galleryPublished.length<2;
   $('demoGalleryStatus').textContent=
    '模擬公開 '+visible.length+'件／全'+s.gallery.length+'件。'+
@@ -324,7 +332,23 @@
  const validForPublication=()=>!s.gallery.some(item=>item.visible&&!eligible(item))&&
   s.gallery.filter(item=>item.featured).every(item=>eligible(item))&&
   s.gallery.filter(item=>item.featured).length<=1;
+ $('demoGallerySaveDraft').addEventListener('click',()=>{
+  const signature=galleryFingerprint();
+  if(signature===savedDraftFingerprint){render();return;}
+  savedDraftRevision++;
+  savedDraftFingerprint=signature;
+  galleryReviewFingerprint=null;
+  audit('ギャラリー非公開下書きを第'+savedDraftRevision+'版へ模擬保存');
+  $('demoGalleryDifference').textContent='下書きを仮保存しました。公開版への変更には内容の確認が必要です。';
+  setMessage('端末内の非公開下書きを模擬保存しました。本番には送信していません。');
+  render();
+ });
  $('demoGalleryReview').addEventListener('click',()=>{
+  if(savedDraftFingerprint!==galleryFingerprint()){
+   galleryReviewFingerprint=null;
+   $('demoGalleryDifference').textContent='未保存の編集があります。先に下書きを仮保存してください。';
+   render();return;
+  }
   if(!validForPublication()){
    galleryReviewFingerprint=null;
    $('demoGalleryDifference').textContent='公開条件がそろっていない展示があります。掲載許可・個人情報確認と公開対象を再確認してください。';
@@ -356,6 +380,7 @@
  $('demoGalleryCommit').addEventListener('click',()=>{
   if(galleryReviewFingerprint===null||
      galleryReviewFingerprint!==galleryFingerprint()||
+     savedDraftFingerprint!==galleryFingerprint()||
      !validForPublication()){
    galleryReviewFingerprint=null;
    $('demoGalleryDifference').textContent='確認後に変更されたか、公開条件が満たされていません。再確認してください。';
