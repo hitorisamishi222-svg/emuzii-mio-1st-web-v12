@@ -4,7 +4,7 @@
 -- Do not store private vault, MIO-ID, attendance, gacha, contact details or raw screenshots without privacy clearance.
 CREATE TABLE IF NOT EXISTS museum_public_exhibits (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- kind text NOT NULL CHECK(kind IN ('icons','moments','events')),
+ kind text NOT NULL CHECK(kind IN ('gallery','icons','moments','events')),
  title text NOT NULL CHECK(char_length(title) BETWEEN 1 AND 120),
  description text NOT NULL DEFAULT '' CHECK(char_length(description) <= 2000),
  credit text NOT NULL DEFAULT '' CHECK(char_length(credit) <= 80),
