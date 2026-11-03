@@ -109,8 +109,12 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
  const validated=constraints.filter(row=>row?.validated===true);
  const statusConstraintComplete=validated.some(row=>{
   const s=normalized(row.definition);
+  // A CHECK merely mentioning the four state names is NOT sufficient:
+  // require a positive membership constraint specifically on "status".
+  const stateColumn=/\bstatus\b(?:\s*::\s*[a-z_]+)?/i;
+  const membership=/\bstatus\b(?:\s*::\s*[a-z_]+)?\s*(?:IN\s*\(|=\s*ANY\s*\()/i;
   return row.table_name==='museum_public_exhibits'&&row.contype==='c'&&
-   /\bCHECK\b/i.test(s)&&/\bstatus\b/i.test(s)&&
+   /\bCHECK\b/i.test(s)&&stateColumn.test(s)&&membership.test(s)&&
    REQUIRED_STATUS.every(v=>s.includes("'"+v+"'"));
  });
  // A private draft needs nullable review fields, whereas publishing must
@@ -119,8 +123,10 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
  const publicationReviewConstraintComplete=validated.some(row=>{
   if(row.table_name!=='museum_public_exhibits'||row.contype!=='c')return false;
   const def=normalized(row.definition);
-  return /\bCHECK\b/i.test(def)&&/\bstatus\b/i.test(def)&&
-   def.includes("'published'")&&/\bOR\b/i.test(def)&&
+  // Only "status <> 'published' OR (all review proofs present)" is
+  // conservative enough. CHECK(status='published' OR ...) is bypassable.
+  const notPublished=/\bstatus\b(?:\s*::\s*[a-z_]+)?\s*(?:<>|!=)\s*'published'(?:\s*::\s*[a-z_]+)?/i;
+  return /\bCHECK\b/i.test(def)&&notPublished.test(def)&&/\bOR\b/i.test(def)&&
    ['rights_checked_at','privacy_checked_at','reviewed_by','published_at']
     .every(name=>new RegExp('\\b'+name+'\\s+IS\\s+NOT\\s+NULL\\b','i').test(def));
  });
