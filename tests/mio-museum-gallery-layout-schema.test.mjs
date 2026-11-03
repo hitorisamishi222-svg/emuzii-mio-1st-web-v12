@@ -40,6 +40,7 @@ test('metadata counts cannot grow without bounds or be arbitrarily structured',(
 });
 test('owner-linked audit records exactly track approved draft, publish and rollback actions',()=>{
  assert.match(statements,/operation_id text NOT NULL UNIQUE CHECK\(operation_id ~/);
+ assert.match(statements,/payload_hash text NOT NULL CHECK\(payload_hash ~/);
  assert.match(statements,/actor_id uuid NOT NULL REFERENCES gallery_admin_users\(id\)/);
  assert.match(statements,/action IN \('draft','publish','rollback'\)/);
  assert.match(statements,/new_revision bigint NOT NULL CHECK\(new_revision>prior_revision\)/);
