@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {loadMuseumModeratedCatalogStage} from '../museum-gallery-source-stage.mjs';
 import {planMuseumCuration} from '../museum-curation-plan.mjs';
+import {projectPublishedMuseumGallery} from '../museum-gallery-published-core.mjs';
 import {approvedGalleryItems} from '../gallery-items.js';
 
 const ID='a4ad9cb3-153d-4fc4-aaea-1342965d14c2';
@@ -47,6 +48,27 @@ test('published museum exhibits join reviewed legacy works without altering lega
  assert.deepEqual(approvedGalleryItems,before);
  assert.equal(Object.isFrozen(result),true);
  assert.equal(Object.isFrozen(result.catalog),true);
+});
+test('authoritative source and public projection keep private drafts invisible after museum publication',async()=>{
+ const source=await loadMuseumModeratedCatalogStage(fake());
+ const publishedLayout={
+  revision:2,order:[NEW,...approvedGalleryItems.map(x=>x.id),DRAFT],
+  visibleIds:[NEW],featuredId:NEW
+ };
+ const visible=projectPublishedMuseumGallery({
+  authoritativeCatalog:source.catalog,verifiedApprovedIds:source.verifiedApprovedIds,
+  sourceVerified:source.sourceVerified,publishedLayout
+ });
+ assert.deepEqual(visible.items.map(x=>x.id),[NEW]);
+ assert.equal(JSON.stringify(visible).includes('未承認の思い出画像'),false);
+ const exhibits=SRC();exhibits[0].status='hidden';
+ const after=await loadMuseumModeratedCatalogStage(fake({exhibits}));
+ const removed=projectPublishedMuseumGallery({
+  authoritativeCatalog:after.catalog,verifiedApprovedIds:after.verifiedApprovedIds,
+  sourceVerified:after.sourceVerified,publishedLayout
+ });
+ assert.deepEqual(removed.items,[]);
+ assert.equal(removed.revision,2);
 });
 test('moderator takedown on an existing song wins over its checked-in allowlist',async()=>{
  const id='mio-awakening-song',db=fake({
