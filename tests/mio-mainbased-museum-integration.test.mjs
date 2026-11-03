@@ -232,6 +232,12 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.match(script,/gallery:\[/);
  for(const label of ['↑ 上へ','↓ 下へ','注目にする','非公開にする','公開予定にする','名前を変更'])
   assert.ok(script.includes(label),'missing curator action: '+label);
+ for(const id of ['demoGalleryAdd','demoGalleryNewTitle','demoGalleryNewCategory'])
+  assert.match(page,new RegExp('id="'+id+'"'));
+ assert.match(page,/最初は必ず非公開・確認待ち/);
+ assert.match(script,/reviewed:false,archived:false/);
+ assert.match(script,/item\.archived=!item\.archived/);
+ assert.match(script,/x=>x\.visible&&x\.reviewed&&!x\.archived/);
  assert.match(script,/URL\.revokeObjectURL/);
  assert.match(script,/file\.accept='image\/jpeg,image\/png,image\/webp'/);
  assert.doesNotMatch(script,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|indexedDB|\binnerHTML\s*=/);
