@@ -119,7 +119,7 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
  const exhibits=rows(await client.query(
   'SELECT id,kind,title,description,credit,image_url,external_url,'+
   'status,revision,updated_at,rights_checked_at,privacy_checked_at,reviewed_by,published_at '+
-  'FROM museum_public_exhibits ORDER BY created_at,id LIMIT 501',[]
+  'FROM museum_public_exhibits ORDER BY created_at,id LIMIT 501'+lockClause,[]
  ),500);
  const approvedIds=approvedGalleryItems.map(item=>item.id);
  const seen=new Set(staticIds);
@@ -158,6 +158,9 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
  }
  return Object.freeze({
   sourceVerified:true,
+  // This marker is supplied only after both legacy and museum moderation
+  // tables were read with FOR SHARE in the same supplied transaction client.
+  mutationReadLocked:lockModeration,
   catalog:Object.freeze(catalog.map(i=>Object.freeze(i))),
   verifiedApprovedIds:Object.freeze(approvedIds),
   currentReviewHashes:Object.freeze(currentReviewHashes)
