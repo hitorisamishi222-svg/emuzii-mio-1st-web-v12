@@ -87,6 +87,39 @@ test('moderator takedown on an existing song wins over its checked-in allowlist'
   currentRevision:0,proposal
  }),/MUSEUM_PLAN_VISIBILITY_UNAPPROVED/);
 });
+test('unapproved museum metadata stays private even in the intermediate server-side catalog',async()=>{
+ const exhibits=SRC();
+ const secret='PRIVATE_NOT_FOR_VISITORS_4863';
+ exhibits[1].title=secret;
+ exhibits[1].description=secret;
+ exhibits[1].credit=secret;
+ exhibits[1].external_url='https://example.com/'+secret;
+ const original=structuredClone(exhibits);
+ const result=await loadMuseumModeratedCatalogStage(fake({exhibits}));
+ const privateItem=result.catalog.find(x=>x.id===DRAFT);
+ assert.equal(privateItem.hidden,true);
+ assert.equal(privateItem.title,'非公開の展示');
+ assert.equal(privateItem.creator,'翠央記念館');
+ assert.equal(privateItem.url,'');
+ assert.equal(privateItem.thumbnail,'');
+ assert.equal(privateItem.description,'');
+ assert.equal(JSON.stringify(result).includes(secret),false);
+ assert.deepEqual(exhibits,original,'redaction must not mutate or delete the saved original');
+});
+test('a hidden legacy override cannot leak a staged private title or URL',async()=>{
+ const secret='PRIVATE_LEGACY_OVERRIDE_7639';
+ const result=await loadMuseumModeratedCatalogStage(fake({overrides:[{
+  item_id:'mio-awakening-video',hidden:true,deleted:false,
+  title:secret,creator:secret,description:secret,category:null,
+  external_url:'https://example.com/'+secret,thumbnail_url:null
+ }]}));
+ const item=result.catalog.find(x=>x.id==='mio-awakening-video');
+ assert.equal(item.hidden,true);
+ assert.equal(item.title,'非公開の展示');
+ assert.equal(item.url,'');
+ assert.equal(item.description,'');
+ assert.equal(JSON.stringify(result).includes(secret),false);
+});
 test('historical trash and drafts remain non-public but retain stable catalog IDs',async()=>{
  const exhibits=SRC();exhibits[1].status='trash';
  const result=await loadMuseumModeratedCatalogStage(fake({exhibits}));
