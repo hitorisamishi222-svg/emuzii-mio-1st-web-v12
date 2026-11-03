@@ -232,7 +232,8 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.match(script,/gallery:\[/);
  for(const label of ['↑ 上へ','↓ 下へ','注目にする','非公開にする','公開予定にする','名前を変更'])
   assert.ok(script.includes(label),'missing curator action: '+label);
- for(const id of ['demoGalleryAdd','demoGalleryNewTitle','demoGalleryNewCategory'])
+ for(const id of ['demoGalleryAdd','demoGalleryNewTitle','demoGalleryNewCategory',
+  'demoGalleryNewRoom','demoGalleryRoomFilter','demoGalleryPreviewRoom'])
   assert.match(page,new RegExp('id="'+id+'"'));
  assert.match(page,/最初は必ず非公開・確認待ち/);
  assert.match(script,/reviewed:false,rightsConfirmed:false,privacyConfirmed:false,archived:false/);
@@ -240,7 +241,7 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.match(script,/公開確認の操作を模擬しました/);
  assert.match(page,/gallery-review-checks input\[type=checkbox\]/);
  assert.match(script,/item\.archived=!item\.archived/);
- assert.match(script,/x=>x\.visible&&x\.reviewed&&!x\.archived/);
+ assert.match(script,/const visible=s\.gallery\.filter\(x=>eligible\(x\)&&/);
  for(const id of ['demoGalleryDifference','demoGalleryReview','demoGalleryCommit',
   'demoGalleryRollback','demoGalleryPublished','demoGalleryPublishedStatus',
   'demoGallerySearch','demoGalleryFilter','demoGalleryMatchCount',
@@ -249,6 +250,15 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.match(page,/編集中の展示プレビュー（下書き）/);
  assert.match(page,/過去の展示順・タイトルを版として保存します/);
  assert.match(script,/galleryPublished\.push\(\{revision,items\}\)/);
+ assert.match(script,/room:item\.room/);
+ assert.match(script,/item\.room=roomSelect\.value/);
+ assert.match(script,/item\.id,item\.title,item\.category,item\.room/);
+ for(const room of ["gallery","icons","moments","events"]){
+  assert.match(page,new RegExp('value="'+room+'"'));
+  assert.match(script,new RegExp(room+":'"));
+ }
+ assert.match(script,/demoGalleryRoomFilter'\)\.addEventListener\('change',render\)/);
+ assert.match(script,/demoGalleryPreviewRoom'\)\.addEventListener\('change',render\)/);
  assert.match(script,/galleryReviewFingerprint!==galleryFingerprint\(\)/);
  assert.match(script,/savedDraftFingerprint!==galleryFingerprint\(\)/);
  assert.match(script,/savedDraftRevision\+\+/);
