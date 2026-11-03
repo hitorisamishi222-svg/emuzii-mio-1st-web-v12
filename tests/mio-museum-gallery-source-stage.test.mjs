@@ -40,6 +40,7 @@ test('published museum exhibits join reviewed legacy works without altering lega
  const before=structuredClone(approvedGalleryItems);
  const db=fake(),result=await loadMuseumModeratedCatalogStage(db);
  assert.equal(result.sourceVerified,true);
+ assert.equal(result.mutationReadLocked,false);
  assert.equal(db.queries.length,2);
  assert.equal(db.queries[0].sql.includes('FOR SHARE'),false,'public read must not lock rows');
  assert.equal(db.queries[0].args[0].length,2);
@@ -81,10 +82,12 @@ test('authoritative source and public projection keep private drafts invisible a
 });
 test('a serializable management transaction may request FOR SHARE on moderation rows',async()=>{
  const db=fake();
- await loadMuseumModeratedCatalogStage(db,{lockModeration:true});
+ const locked=await loadMuseumModeratedCatalogStage(db,{lockModeration:true});
+ assert.equal(locked.mutationReadLocked,true);
  assert.ok(db.queries[0].sql.endsWith('FOR SHARE'));
  assert.equal(db.queries[0].args[0].length,2);
- assert.equal(db.queries[1].sql.includes('FOR SHARE'),false);
+ assert.ok(db.queries[1].sql.endsWith('FOR SHARE'));
+ assert.equal(db.queries[1].sql.includes('LIMIT 501 FOR SHARE'),true);
 });
 test('invalid locking options are rejected before touching a database',async()=>{
  const db=fake();
