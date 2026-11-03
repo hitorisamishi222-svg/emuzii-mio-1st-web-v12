@@ -44,7 +44,10 @@ test('published museum exhibits join reviewed legacy works without altering lega
  assert.ok(!result.verifiedApprovedIds.includes(DRAFT));
  assert.equal(result.catalog.length,4);
  assert.equal(result.catalog.find(x=>x.id===DRAFT).hidden,true);
+ assert.equal(result.catalog.find(x=>x.id===DRAFT).room,'moments');
  assert.equal(result.catalog.find(x=>x.id===NEW).hidden,false);
+ assert.equal(result.catalog.find(x=>x.id===NEW).room,'icons');
+ assert.equal(result.catalog.find(x=>x.id==='mio-awakening-song').room,'gallery');
  assert.deepEqual(approvedGalleryItems,before);
  assert.equal(Object.isFrozen(result),true);
  assert.equal(Object.isFrozen(result.catalog),true);
@@ -131,6 +134,32 @@ test('a hidden legacy override cannot leak a staged private title or URL',async(
  assert.equal(item.url,'');
  assert.equal(item.description,'');
  assert.equal(JSON.stringify(result).includes(secret),false);
+});
+test('an approved future fan-art exhibit may be assigned to the primary gallery room',async()=>{
+ const exhibits=SRC();
+ exhibits[0].kind='gallery';
+ const report=await loadMuseumModeratedCatalogStage(fake({exhibits}));
+ const art=report.catalog.find(x=>x.id===NEW);
+ assert.equal(art.room,'gallery');
+ assert.equal(art.category,'ギャラリー');
+ assert.equal(art.hidden,false);
+ assert.ok(report.verifiedApprovedIds.includes(NEW));
+ const projection=projectPublishedMuseumGallery({
+  authoritativeCatalog:report.catalog,
+  verifiedApprovedIds:report.verifiedApprovedIds,
+  sourceVerified:report.sourceVerified,
+  publishedLayout:{revision:2,order:[NEW],visibleIds:[NEW],featuredId:NEW}
+ });
+ assert.equal(projection.items[0].room,'gallery');
+});
+test('hidden exhibit metadata is still redacted when room allocation is retained',async()=>{
+ const result=await loadMuseumModeratedCatalogStage(fake());
+ const hidden=result.catalog.find(x=>x.id===DRAFT);
+ assert.equal(hidden.room,'moments');
+ assert.equal(hidden.title,'非公開の展示');
+ assert.equal(hidden.url,'');
+ assert.equal(hidden.thumbnail,'');
+ assert.ok(!result.verifiedApprovedIds.includes(DRAFT));
 });
 test('historical trash and drafts remain non-public but retain stable catalog IDs',async()=>{
  const exhibits=SRC();exhibits[1].status='trash';
