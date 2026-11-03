@@ -93,7 +93,10 @@ test('invalid published metadata blocks response before reading private exhibits
   {published_order:'not-an-array'},
   {published_visible_ids:null},
   {published_by:null},
-  {published_at:null}
+  {published_by:'malformed-owner-id'},
+  {published_at:null},
+  {published_at:new Date(NaN)},
+  {published_at:'yesterday'}
  ]){
   const db=new FakeClient({layout:{...validLayout(),...patch}});
   await assert.rejects(()=>readPublishedMuseumGalleryStage(db));
