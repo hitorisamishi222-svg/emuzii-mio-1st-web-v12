@@ -14,10 +14,15 @@ CREATE TABLE IF NOT EXISTS museum_public_exhibits (
  status text NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','published','hidden','trash')),
  trashed_at timestamptz,
  revision integer NOT NULL DEFAULT 0 CHECK(revision >= 0),
- rights_checked_at timestamptz NOT NULL,
- privacy_checked_at timestamptz NOT NULL,
- reviewed_by uuid NOT NULL REFERENCES gallery_admin_users(id),
+ -- Draft exhibits must be saved without pretending rights and privacy review
+ -- already happened. Publishing requires the four reviewed fields below.
+ rights_checked_at timestamptz,
+ privacy_checked_at timestamptz,
+ reviewed_by uuid REFERENCES gallery_admin_users(id),
  published_at timestamptz,
+ CHECK (status <> 'published' OR
+   (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL
+    AND reviewed_by IS NOT NULL AND published_at IS NOT NULL)),
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now()
 );
