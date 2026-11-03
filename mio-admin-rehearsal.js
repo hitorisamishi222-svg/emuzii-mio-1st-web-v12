@@ -7,6 +7,11 @@
   roster:[{id:'DEMO-01',name:'デモ参加者',tickets:3}],
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
+  gallery:[
+   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音楽',visible:true,featured:true,imageUrl:null},
+   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,imageUrl:null},
+   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'写真',visible:false,featured:false,imageUrl:null}
+  ],
   ops:new Map(),log:[],selected:null,nextMember:2,unconfirmed:null
  });
  let s=initial();
@@ -21,6 +26,104 @@
   s.log.unshift('操作 '+(s.log.length+1)+'：'+what);
   if(s.log.length>150)s.log.length=150;
  };
+ // This curator is a browser-memory-only interaction rehearsal with fictional
+ // works. No upload, network, storage, publication, permissions or live gallery data.
+ const releaseGalleryImages=gallery=>{
+  for(const item of gallery)if(item.imageUrl){
+   URL.revokeObjectURL(item.imageUrl);
+   item.imageUrl=null;
+  }
+ };
+ const galleryThumb=item=>{
+  const thumb=make('div',undefined,'gallery-thumb');
+  if(item.imageUrl){
+   const img=make('img');img.src=item.imageUrl;img.alt='選択した端末内の仮画像';
+   thumb.append(img);
+  }else thumb.append(make('span','💎'));
+  return thumb;
+ };
+ function renderGallery(){
+  const editor=$('demoGallery'),preview=$('demoGalleryPreview');
+  editor.replaceChildren();preview.replaceChildren();
+  const button=(label,action,disabled=false,cls='secondary')=>{
+   const el=make('button',label,cls);el.type='button';el.disabled=disabled;
+   if(!disabled)el.addEventListener('click',action);
+   return el;
+  };
+  s.gallery.forEach((item,index)=>{
+   const row=make('div',undefined,'entry gallery-row');
+   const details=make('div');
+   details.append(make('strong',item.title),
+    make('p',item.category+' ・ '+(item.visible?'公開予定':'非公開')+
+      (item.featured?' ・ 注目作品':''),'mini'));
+   const label=make('label','展示タイトル（仮）');
+   label.htmlFor='demoGalleryTitle'+item.id;
+   const title=make('input');title.type='text';title.id=label.htmlFor;
+   title.value=item.title;title.maxLength=60;
+   const actions=make('div',undefined,'actions gallery-actions');
+   actions.append(
+    button('名前を変更',()=>{
+     const next=title.value.trim();
+     if(!next||next.length>60){setMessage('展示名は1〜60文字で入力してください。');return}
+     item.title=next;audit(item.id+'：模擬展示名の変更');
+     setMessage('展示名を変更しました。端末内だけの模擬編集です。');render();
+    }),
+    button('↑ 上へ',()=>{
+     [s.gallery[index-1],s.gallery[index]]=[item,s.gallery[index-1]];
+     audit(item.id+'：展示順を上へ');render();
+    },index===0),
+    button('↓ 下へ',()=>{
+     [s.gallery[index],s.gallery[index+1]]=[s.gallery[index+1],item];
+     audit(item.id+'：展示順を下へ');render();
+    },index===s.gallery.length-1),
+    button(item.visible?'非公開にする':'公開予定にする',()=>{
+     item.visible=!item.visible;
+     if(!item.visible)item.featured=false;
+     audit(item.id+'：模擬展示'+(item.visible?'公開予定':'非公開'));
+     render();
+    }),
+    button(item.featured?'注目を解除':'注目にする',()=>{
+     if(item.featured)item.featured=false;
+     else {
+      s.gallery.forEach(other=>other.featured=false);
+      item.visible=true;item.featured=true;
+     }
+     audit(item.id+'：注目作品を変更');render();
+    })
+   );
+   const fileLabel=make('label','端末内の画像を仮プレビューで差し替える');
+   fileLabel.htmlFor='demoGalleryImage'+item.id;
+   const file=make('input');file.id=fileLabel.htmlFor;file.type='file';
+   file.accept='image/jpeg,image/png,image/webp';
+   file.addEventListener('change',()=>{
+    const chosen=file.files&&file.files[0];
+    if(!chosen)return;
+    if(!['image/jpeg','image/png','image/webp'].includes(chosen.type)||chosen.size>4*1024*1024||chosen.size<1){
+     setMessage('JPEG／PNG／WebP、4MB以下の画像だけ選択してください。');file.value='';return;
+    }
+    const imageUrl=URL.createObjectURL(chosen);
+    if(item.imageUrl)URL.revokeObjectURL(item.imageUrl);
+    item.imageUrl=imageUrl;
+    audit(item.id+'：端末内画像の仮差し替え');
+    setMessage('画像を仮プレビューに反映しました。アップロード・保存はしていません。');
+    render();
+   });
+   details.append(label,title,actions,fileLabel,file);
+   row.append(galleryThumb(item),details);editor.append(row);
+  });
+  const visible=s.gallery.filter(x=>x.visible);
+  for(const item of visible){
+   const card=make('article',undefined,'entry');
+   card.append(galleryThumb(item),make('strong',item.title),
+    make('p',item.category,'mini'));
+   if(item.featured)card.append(make('p','✦ 注目作品','gallery-featured'));
+   preview.append(card);
+  }
+  if(!visible.length)preview.append(make('p','公開する模擬展示はありません。'));
+  $('demoGalleryStatus').textContent=
+   '模擬公開 '+visible.length+'件／全'+s.gallery.length+'件。'+
+   'このプレビューは保存されず、実ギャラリーには反映されません。';
+ }
  function render(){
   $('demoPendingCount').textContent=s.pending.length;
   $('demoIncidentCount').textContent=s.incidents.filter(x=>x.state==='unhandled').length;
@@ -69,6 +172,7 @@
    }
    incidents.append(row);
   }
+  renderGallery();
   const log=$('demoAudit');log.replaceChildren();
   for(const line of s.log)log.append(make('li',line));
   if(!s.log.length)log.append(make('li','まだ模擬操作はありません。'));
@@ -141,10 +245,12 @@
   render();
  });
  $('demoReset').addEventListener('click',()=>{
+  releaseGalleryImages(s.gallery);
   s=initial();$('demoSearch').value='';$('demoGrantAmount').value='1';
   $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
   setMessage('リハーサルを初期状態へ戻しました。実データは変更していません。');
   render();
  });
+ window.addEventListener('pagehide',()=>releaseGalleryImages(s.gallery));
  render();
 })();
