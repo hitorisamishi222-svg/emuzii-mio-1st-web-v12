@@ -8,7 +8,7 @@
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
   gallery:[
-   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',visible:true,featured:true,reviewed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',visible:true,featured:true,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
    {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,reviewed:true,archived:false,imageUrl:null},
    {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',visible:false,featured:false,reviewed:true,archived:false,imageUrl:null}
   ],
@@ -92,9 +92,10 @@
      audit(item.id+'：注目作品を変更');render();
     },!item.reviewed||item.archived),
     button(item.reviewed?'確認済み':'模擬承認',()=>{
+     if(!item.rightsConfirmed||!item.privacyConfirmed)return;
      item.reviewed=true;audit(item.id+'：模擬公開確認');
      setMessage('公開確認の操作を模擬しました。実際の掲載許可にはなりません。');render();
-    },item.reviewed||item.archived),
+    },item.reviewed||item.archived||!item.rightsConfirmed||!item.privacyConfirmed),
     button(item.archived?'保管から戻す':'保管（非表示）',()=>{
      item.archived=!item.archived;item.visible=false;item.featured=false;
      audit(item.id+'：'+(item.archived?'非破壊で保管':'保管から復元'));
@@ -118,7 +119,25 @@
     setMessage('画像を仮プレビューに反映しました。アップロード・保存はしていません。');
     render();
    });
-   details.append(label,title,actions,fileLabel,file);
+   const approval=make('div',undefined,'gallery-review-checks');
+   if(!item.reviewed){
+    for(const [key,text] of [
+     ['rightsConfirmed','作品の使用・掲載許可を確認した（模擬）'],
+     ['privacyConfirmed','画像・説明に個人情報がないことを確認した（模擬）']
+    ]){
+     const reviewLabel=make('label');
+     const check=make('input');check.type='checkbox';check.checked=item[key]===true;
+     check.addEventListener('change',()=>{
+      item[key]=check.checked;
+      setMessage('模擬確認を更新しました。実際の許可記録にはなりません。');
+      render();
+     });
+     reviewLabel.append(check,make('span',text));
+     approval.append(reviewLabel);
+    }
+    approval.append(make('p','両方の模擬確認を終えるまで承認ボタンは使えません。','mini'));
+   }
+   details.append(label,title,approval,actions,fileLabel,file);
    row.append(galleryThumb(item),details);editor.append(row);
   });
   const visible=s.gallery.filter(x=>x.visible&&x.reviewed&&!x.archived);
@@ -252,7 +271,7 @@
   if(s.gallery.length>=30){setMessage('模擬展示の上限は30件です。');return}
   const id='ART-DEMO-'+s.nextExhibit++;
   s.gallery.push({id,title,category,visible:false,featured:false,
-   reviewed:false,archived:false,imageUrl:null});
+   reviewed:false,rightsConfirmed:false,privacyConfirmed:false,archived:false,imageUrl:null});
   audit(id+'：非公開の模擬下書きを追加');
   $('demoGalleryNewTitle').value='';
   setMessage('模擬展示を非公開で追加しました。模擬確認前はプレビューには表示されません。');
