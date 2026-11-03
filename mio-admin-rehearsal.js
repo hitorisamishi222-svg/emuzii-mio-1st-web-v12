@@ -218,9 +218,9 @@
   let publishedCount=0;
   for(const exhibit of publication.items){
    const actual=byId.get(exhibit.id);
-   if(!actual||actual.archived||!actual.reviewed||
-      (previewRoom!=='all'&&exhibit.room!==previewRoom)||
-      !actual.rightsConfirmed||!actual.privacyConfirmed)continue;
+   // A later owner hide or revocation wins over every historical snapshot.
+   if(!actual||!eligible(actual)||
+      (previewRoom!=='all'&&exhibit.room!==previewRoom))continue;
    const card=make('article',undefined,'entry');
    card.append(galleryThumb(exhibit),make('strong',exhibit.title),
     make('p',galleryRooms[exhibit.room]+' ・ '+exhibit.category,'gallery-room-label'));
@@ -435,8 +435,7 @@
   const byId=new Map(s.gallery.map(item=>[item.id,item]));
   const items=previous.items.filter(item=>{
    const current=byId.get(item.id);
-   return current&&current.reviewed&&current.rightsConfirmed&&
-    current.privacyConfirmed&&!current.archived;
+   return current&&eligible(current);
   }).map(item=>({...item}));
   const revision=currentPublication().revision+1;
   galleryPublished.push({revision,items});
