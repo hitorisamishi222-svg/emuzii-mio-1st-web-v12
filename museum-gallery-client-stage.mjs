@@ -26,6 +26,7 @@ export async function withDedicatedMuseumStageClient(pool,{verifyBinding,perform
   // not that an unapplied .sql file exists on GitHub.
   const binding=await verifyBinding(client);
   if(!binding||binding.identityVerified!==true||binding.schemaReady!==true||
+     binding.sourceReady!==true||binding.layoutReady!==true||
      binding.backupVerified!==true||binding.ownerApproved!==true)
    throw Error('MUSEUM_CLIENT_BINDING_NOT_VERIFIED');
   return await perform(client);
