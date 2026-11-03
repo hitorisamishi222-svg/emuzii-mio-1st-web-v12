@@ -7,7 +7,8 @@ import {museumSchemaReport} from './museum-preflight-core.js';
 
 const REQUIRED=Object.freeze({
  gallery_live_overrides:{
-  item_id:'text',hidden:'boolean',deleted:'boolean'
+  item_id:'text',hidden:'boolean',deleted:'boolean',
+  revision:'bigint',updated_at:'timestamp with time zone'
  },
  museum_gallery_layout_stage:{
   layout_key:'text',draft_revision:'bigint',draft_order:'jsonb',
@@ -29,7 +30,7 @@ const REQUIRED=Object.freeze({
  }
 });
 const NOT_NULL=Object.freeze({
- gallery_live_overrides:['item_id','hidden','deleted'],
+ gallery_live_overrides:['item_id','hidden','deleted','revision','updated_at'],
  museum_gallery_layout_stage:['layout_key','draft_revision','draft_order','draft_visible_ids'],
  museum_gallery_layout_history_stage:['layout_key','published_revision',
   'source_draft_revision','snapshot_order','snapshot_visible_ids','snapshot_review_hashes',
