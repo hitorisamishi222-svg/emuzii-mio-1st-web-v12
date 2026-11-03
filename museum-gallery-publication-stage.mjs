@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {planMuseumCuration} from './museum-curation-plan.mjs';
 
 const OP=/^[a-f0-9]{32}$/;
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fail=code=>{throw Error('MUSEUM_STAGE_'+code)};
 const rev=x=>{
  if(typeof x==='number'&&Number.isSafeInteger(x)&&x>=0)return x;
