@@ -133,10 +133,12 @@ label{display:block;font-weight:700;margin-top:10px}
 <p id="demoGalleryStatus" role="status" aria-live="polite" class="status">架空展示を準備しています。</p>
 <div class="gallery-release-rehearsal" aria-label="模擬公開・差分確認と復元">
  <h3>✦ 公開前に確認 → 模擬公開 → 復元</h3>
- <p class="mini">下の「公開済みの模擬展示」は編集中の変更では変わりません。変更点を確認してから、模擬公開版に反映してください。<strong>これは実サイトへの公開ではありません。</strong></p>
+ <p class="mini">下の「公開済みの模擬展示」は編集中の変更では変わりません。下書きを仮保存し、変更点を確認してから模擬公開版に反映してください。<strong>これは実サイトへの公開ではありません。</strong></p>
+ <p id="demoGalleryDraftStatus" role="status" aria-live="polite" class="status">非公開の模擬下書き・第1版</p>
  <p id="demoGalleryDifference" role="status" aria-live="polite" class="status">公開済みの版との差分はまだ確認していません。</p>
  <div class="actions" style="margin:12px 0">
-  <button id="demoGalleryReview" type="button" class="secondary">変更内容を確認</button>
+  <button id="demoGallerySaveDraft" type="button" class="secondary" disabled>編集中の下書きを仮保存</button>
+  <button id="demoGalleryReview" type="button" class="secondary">保存済み下書きの変更内容を確認</button>
   <button id="demoGalleryCommit" type="button" disabled>確認済みの内容を模擬公開</button>
   <button id="demoGalleryRollback" type="button" class="secondary" disabled>直前の模擬公開版に戻す</button>
  </div>
