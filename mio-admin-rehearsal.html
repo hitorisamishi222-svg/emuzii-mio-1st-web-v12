@@ -46,6 +46,11 @@ label{display:block;font-weight:700;margin-top:10px}
 .gallery-curator .gallery-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .gallery-curator .gallery-preview .entry{border-color:#d9bd81}
 .gallery-curator .gallery-featured{color:#ffe7ac;font-weight:800}
+.gallery-curator .gallery-release-rehearsal{margin-top:18px;padding:16px;border:1px solid #e4c889;border-radius:16px;background:radial-gradient(circle at top right,#deb76b2c,transparent 48%),linear-gradient(140deg,#0c2848,#182c46);box-shadow:inset 0 0 0 1px #e3c98935}
+.gallery-curator .gallery-release-rehearsal h3{color:#ffebc8;margin:8px 0 10px}
+.gallery-curator #demoGalleryPublished .entry{border:1px solid #e7cd90;background:linear-gradient(145deg,#173653,#0a1d36);box-shadow:0 5px 16px #0004}
+.gallery-curator #demoGalleryDifference{overflow-wrap:anywhere}
+.gallery-curator .gallery-release-rehearsal button:focus-visible{outline-color:#ffdc92}
 .gallery-curator .gallery-review-checks{padding:9px 0}
 .gallery-curator .gallery-review-checks label{display:flex;align-items:flex-start;gap:10px;font-weight:600;line-height:1.5}
 .gallery-curator .gallery-review-checks input[type=checkbox]{width:24px;min-height:24px;height:24px;flex:none;margin:2px 0 0;accent-color:#edce8f}
@@ -108,9 +113,23 @@ label{display:block;font-weight:700;margin-top:10px}
  <button id="demoGalleryAdd" type="button" class="secondary" style="margin-top:12px">非公開の模擬下書きを追加</button>
 </div>
 <div id="demoGallery" class="entries" aria-label="模擬ギャラリー編集一覧"></div>
-<h3 style="margin:20px 0 9px">来場者側の見え方（模擬プレビュー）</h3>
-<div id="demoGalleryPreview" class="gallery-preview" aria-label="公開状態だけを表示する模擬プレビュー"></div>
+<h3 style="margin:20px 0 9px">編集中の展示プレビュー（下書き）</h3>
+<div id="demoGalleryPreview" class="gallery-preview" aria-label="編集中の架空展示プレビュー"></div>
 <p id="demoGalleryStatus" role="status" aria-live="polite" class="status">架空展示を準備しています。</p>
+<div class="gallery-release-rehearsal" aria-label="模擬公開・差分確認と復元">
+ <h3>✦ 公開前に確認 → 模擬公開 → 復元</h3>
+ <p class="mini">下の「公開済みの模擬展示」は編集中の変更では変わりません。変更点を確認してから、模擬公開版に反映してください。<strong>これは実サイトへの公開ではありません。</strong></p>
+ <p id="demoGalleryDifference" role="status" aria-live="polite" class="status">公開済みの版との差分はまだ確認していません。</p>
+ <div class="actions" style="margin:12px 0">
+  <button id="demoGalleryReview" type="button" class="secondary">変更内容を確認</button>
+  <button id="demoGalleryCommit" type="button" disabled>確認済みの内容を模擬公開</button>
+  <button id="demoGalleryRollback" type="button" class="secondary" disabled>直前の模擬公開版に戻す</button>
+ </div>
+ <h3>来場者に公開済みの展示（模擬）</h3>
+ <p class="mini">過去の展示順・タイトルを版として保存します。保管・権利停止した作品は旧版でも表示しません。端末で選んだ仮画像は公開版へコピーしません。</p>
+ <div id="demoGalleryPublished" class="gallery-preview" aria-label="保存済み模擬公開版"></div>
+ <p id="demoGalleryPublishedStatus" role="status" aria-live="polite" class="status">初期公開版を準備しています。</p>
+</div>
 </section>
 <section>
 <h2>管理操作ログ</h2>
