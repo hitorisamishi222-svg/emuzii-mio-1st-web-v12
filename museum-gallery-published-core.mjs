@@ -12,7 +12,9 @@ const safeWeb=x=>{
  try{const u=new URL(x);return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash;}
  catch{return false}
 };
-const safeLink=x=>safePath(x)||safeWeb(x);
+// Images in a curated museum exhibit may have no destination link.
+// Empty is safe; a nonempty link still needs a vetted path or HTTPS URL.
+const safeLink=x=>x===''||safePath(x)||safeWeb(x);
 const safeThumbnail=x=>x===''||(
  typeof x==='string'&&x.length<=1024&&(
  /^\/assets\/[A-Za-z0-9_/-]+\.(?:png|jpe?g|webp|gif|svg)$/i.test(x)&&!x.includes('..')||
