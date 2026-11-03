@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_stage (
  CHECK (published_from_draft_revision IS NULL OR published_from_draft_revision<=draft_revision),
  published_order jsonb,
  published_visible_ids jsonb,
+ published_review_hashes jsonb CHECK (published_review_hashes IS NULL OR
+  (jsonb_typeof(published_review_hashes)='object' AND jsonb_object_length(published_review_hashes)<=500)),
  published_featured_id text CHECK (published_featured_id IS NULL OR char_length(published_featured_id)<=70),
  CHECK (published_order IS NULL OR published_visible_ids IS NULL OR published_order @> published_visible_ids),
  CHECK (published_featured_id IS NULL OR published_visible_ids ? published_featured_id),
@@ -29,14 +31,14 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_stage (
  CHECK (
   (published_revision IS NULL AND published_from_draft_revision IS NULL
    AND published_order IS NULL AND published_visible_ids IS NULL
-   AND published_featured_id IS NULL AND published_by IS NULL AND published_at IS NULL)
+   AND published_review_hashes IS NULL AND published_featured_id IS NULL AND published_by IS NULL AND published_at IS NULL)
   OR
   (published_revision IS NOT NULL AND published_from_draft_revision IS NOT NULL
    AND published_order IS NOT NULL AND jsonb_typeof(published_order)='array'
    AND jsonb_array_length(published_order)<=500
    AND published_visible_ids IS NOT NULL AND jsonb_typeof(published_visible_ids)='array'
    AND jsonb_array_length(published_visible_ids)<=500
-   AND published_by IS NOT NULL AND published_at IS NOT NULL)
+   AND published_review_hashes IS NOT NULL AND published_by IS NOT NULL AND published_at IS NOT NULL)
  )
 );
 
@@ -51,6 +53,8 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_history_stage (
   CHECK (jsonb_typeof(snapshot_order)='array' AND jsonb_array_length(snapshot_order)<=500),
  snapshot_visible_ids jsonb NOT NULL
   CHECK (jsonb_typeof(snapshot_visible_ids)='array' AND jsonb_array_length(snapshot_visible_ids)<=500),
+ snapshot_review_hashes jsonb NOT NULL CHECK
+  (jsonb_typeof(snapshot_review_hashes)='object' AND jsonb_object_length(snapshot_review_hashes)<=500),
  snapshot_featured_id text CHECK (snapshot_featured_id IS NULL OR char_length(snapshot_featured_id)<=70),
  CHECK (snapshot_order @> snapshot_visible_ids),
  CHECK (snapshot_featured_id IS NULL OR snapshot_visible_ids ? snapshot_featured_id),
