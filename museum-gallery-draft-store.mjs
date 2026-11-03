@@ -27,8 +27,11 @@ export async function saveMuseumGalleryDraft(client,{request,operationId,proposa
  if(!client||typeof client.query!=='function')die('DEDICATED_CLIENT_REQUIRED');
  if(typeof verifyAdmin!=='function'||typeof loadModeratedCatalog!=='function')die('VERIFIER_REQUIRED');
  if(typeof operationId!=='string'||!OP.test(operationId))die('OPERATION_ID_INVALID');
- if(!proposal||typeof proposal!=='object'||Array.isArray(proposal))die('PROPOSAL_INVALID');
- // The exact proposal field set is verified again by planMuseumCuration.
+ if(!proposal||typeof proposal!=='object'||Array.isArray(proposal)||
+    Object.keys(proposal).sort().join(',')!=='expectedRevision,featuredId,order,visibleIds')
+  die('PROPOSAL_INVALID');
+ // Validate the exact field set before checking idempotent operation replay;
+ // otherwise an extra field could silently disappear from the payload hash.
  if(!Number.isSafeInteger(proposal.expectedRevision)||proposal.expectedRevision<0)die('REVISION_INVALID');
  let inTransaction=false,commitAttempted=false;
  try{
