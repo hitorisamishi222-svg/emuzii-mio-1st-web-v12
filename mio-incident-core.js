@@ -67,6 +67,10 @@ export async function recordIncident(query,data,secret,now=Date.now()){
   throw Error('incident persistence result unavailable');
  return {recorded:true,incidentId:storedId,category:e.category};
 }
+// PostgreSQL normally returns timestamptz as Date; accept strict ISO text for
+// isolated adapters, but never expose missing or unparsable chronology as valid.
+const validTimestamp=x=>x instanceof Date?Number.isFinite(x.getTime()):
+ typeof x==='string'&&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(x)&&Number.isFinite(Date.parse(x));
 export async function listIncidents(query){
  const r=await query(`SELECT incident_id,participant_ref,source,category,draw_id,stage,
    state,occurrence_count,occurred_at,last_seen_at,updated_at
@@ -82,7 +86,9 @@ export async function listIncidents(query){
   if(!x||typeof x.incident_id!=='string'||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x.incident_id)||
      !good(x.state,STATES)||!Number.isSafeInteger(x.occurrence_count)||
-     x.occurrence_count<1)
+     x.occurrence_count<1||!validTimestamp(x.occurred_at)||
+     !validTimestamp(x.last_seen_at)||!validTimestamp(x.updated_at)||
+     new Date(x.last_seen_at).getTime()<new Date(x.occurred_at).getTime())
    throw Error('incident inbox row invalid');
   // Match the same source/stage/draw rules used for recording. A DRAW row
   // without its draw ID or a STATUS row carrying a draw ID is not trustworthy.
