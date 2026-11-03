@@ -360,6 +360,13 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),4);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(6)').disabled"),true);
+   // A rights-only acknowledgement must still leave review and publishing blocked.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-review-checks input[type=checkbox]:first-child').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(6)').disabled"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   await evaluate("document.querySelectorAll('#demoGallery .gallery-row:last-child .gallery-review-checks input[type=checkbox]')[1].click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(6)').disabled"),false);
    await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(6)').click()");
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').disabled"),false);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
