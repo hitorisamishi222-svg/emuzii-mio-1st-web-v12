@@ -1,0 +1,117 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {loadMuseumModeratedCatalogStage} from '../museum-gallery-source-stage.mjs';
+import {planMuseumCuration} from '../museum-curation-plan.mjs';
+import {approvedGalleryItems} from '../gallery-items.js';
+
+const ID='a4ad9cb3-153d-4fc4-aaea-1342965d14c2';
+const DRAFT_ID='102ecf25-1c7c-4a0c-92fb-01b8e394d673';
+const NEW='museum-'+ID;
+const DRAFT='museum-'+DRAFT_ID;
+const SRC=()=>[
+ {id:ID,kind:'icons',title:'公開済みの架空イラスト',description:'展示説明',
+  credit:'権利確認済',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
+  status:'published',rights_checked_at:new Date('2026-11-01T00:00:00Z'),
+  privacy_checked_at:new Date('2026-11-01T00:00:00Z'),
+  reviewed_by:'11111111-2222-4333-8444-555555555555'},
+ {id:DRAFT_ID,kind:'moments',title:'未承認の思い出画像',description:'非公開',
+  credit:'非公開の作成者',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
+  status:'draft',rights_checked_at:null,privacy_checked_at:null,
+  reviewed_by:null}
+];
+const success=(rows)=>({command:'SELECT',rowCount:rows.length,rows});
+function fake({overrides=[],exhibits=SRC(),errorAt=null}={}){
+ return {queries:[],async query(sql,args){
+  this.queries.push({sql,args});
+  if(this.queries.length===errorAt)throw Error('unavailable museum database');
+  if(sql.includes('gallery_live_overrides'))return success(overrides);
+  if(sql.includes('museum_public_exhibits'))return success(exhibits);
+  throw Error('Unexpected SQL');
+ }};
+}
+const deny=(run,code)=>assert.rejects(run,new RegExp('MUSEUM_SOURCE_'+code));
+test('published museum exhibits join reviewed legacy works without altering legacy entries',async()=>{
+ const before=structuredClone(approvedGalleryItems);
+ const db=fake(),result=await loadMuseumModeratedCatalogStage(db);
+ assert.equal(result.sourceVerified,true);
+ assert.equal(db.queries.length,2);
+ assert.ok(db.queries[0].sql.includes('FOR SHARE'));
+ assert.equal(db.queries[0].args[0].length,2);
+ assert.ok(result.verifiedApprovedIds.includes(NEW));
+ assert.ok(!result.verifiedApprovedIds.includes(DRAFT));
+ assert.equal(result.catalog.length,4);
+ assert.equal(result.catalog.find(x=>x.id===DRAFT).hidden,true);
+ assert.equal(result.catalog.find(x=>x.id===NEW).hidden,false);
+ assert.deepEqual(approvedGalleryItems,before);
+ assert.equal(Object.isFrozen(result),true);
+ assert.equal(Object.isFrozen(result.catalog),true);
+});
+test('moderator takedown on an existing song wins over its checked-in allowlist',async()=>{
+ const id='mio-awakening-song',db=fake({
+  overrides:[{item_id:id,hidden:true,deleted:false,
+   title:null,creator:null,description:null,category:null,
+   external_url:null,thumbnail_url:null}]
+ });
+ const result=await loadMuseumModeratedCatalogStage(db);
+ assert.equal(result.catalog.find(i=>i.id===id).hidden,true);
+ const proposal={
+  expectedRevision:0,order:result.catalog.map(i=>i.id),
+  visibleIds:[id],featuredId:id
+ };
+ assert.throws(()=>planMuseumCuration({
+  catalog:result.catalog,verifiedApprovedIds:result.verifiedApprovedIds,
+  currentRevision:0,proposal
+ }),/MUSEUM_PLAN_VISIBILITY_UNAPPROVED/);
+});
+test('historical trash and drafts remain non-public but retain stable catalog IDs',async()=>{
+ const exhibits=SRC();exhibits[1].status='trash';
+ const result=await loadMuseumModeratedCatalogStage(fake({exhibits}));
+ assert.equal(result.catalog.find(i=>i.id===DRAFT).deleted,true);
+ assert.equal(result.catalog.find(i=>i.id===DRAFT).hidden,true);
+ assert.equal(result.verifiedApprovedIds.includes(DRAFT),false);
+});
+test('reviewed-by UUID and both rights checks are mandatory for a published exhibit',async()=>{
+ for(const key of ['rights_checked_at','privacy_checked_at','reviewed_by']){
+  const rows=SRC();rows[0][key]=null;
+  await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits:rows})),'EXHIBIT_REVIEW_UNVERIFIED');
+ }
+});
+test('invalid hidden/deleted data does not silently become a visible work',async()=>{
+ for(const invalid of [null,'false',undefined,1]){
+  const overrides=[{item_id:'mio-awakening-song',hidden:invalid,deleted:false}];
+  await deny(()=>loadMuseumModeratedCatalogStage(fake({overrides})),'OVERRIDE_INVALID');
+ }
+});
+test('unknown override IDs and duplicate museum IDs are refused',async()=>{
+ await deny(()=>loadMuseumModeratedCatalogStage(fake({
+  overrides:[{item_id:'unknown-gallery-entry',hidden:false,deleted:false}]
+ })),'OVERRIDE_INVALID');
+ const e=SRC();e[1].id=e[0].id;
+ await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits:e})),'EXHIBIT_DUPLICATE');
+});
+test('database query faults never fall back to unverified static content',async()=>{
+ for(const errorAt of [1,2]){
+  await assert.rejects(()=>loadMuseumModeratedCatalogStage(fake({errorAt})),
+   /unavailable museum database/);
+ }
+ const bad=fake();
+ bad.query=async()=>({command:'SELECT',rowCount:2,rows:[]});
+ await deny(()=>loadMuseumModeratedCatalogStage(bad),'READ_UNVERIFIED');
+});
+test('inconsistent museum exhibit schema is rejected, never coerced to approval',async()=>{
+ for(const patch of [
+  {status:'unexpected'}, {kind:'private'}, {id:'bad'},
+  {image_url:'\u0000bad'}, {title:''}, {description:null}
+ ]){
+  const rows=SRC();Object.assign(rows[0],patch);
+  await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits:rows})),'EXHIBIT_INVALID');
+ }
+});
+test('server-only catalog bridge never sends cookies or performs writes',()=>{
+ const text=readFileSync(new URL('../museum-gallery-source-stage.mjs',import.meta.url),'utf8');
+ const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+ assert.doesNotMatch(text,/INSERT INTO|UPDATE gallery_|DELETE FROM|DROP TABLE|TRUNCATE|process\.env|document\.cookie|fetch\s*\(/);
+ assert.equal(config.builds.some(x=>x.src==='museum-gallery-source-stage.mjs'),false);
+ assert.equal(config.routes.some(x=>x.dest==='/museum-gallery-source-stage.mjs'),false);
+});
