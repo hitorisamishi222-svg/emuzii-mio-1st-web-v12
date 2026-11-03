@@ -26,6 +26,16 @@ const catalogEntry=(item)=>({
  thumbnail:item.thumbnail??'',url:item.url,
  hidden:item.hidden===true,deleted:item.deleted===true
 });
+// A moderation/catalog bridge is never an editor. Keep record IDs so a
+// curator's saved ordering can still be validated, but redact the entire
+// nonpublic work before it reaches a public-read projection or error trace.
+// This is an in-memory view only: original DB rows and backups are retained.
+const redactNonpublic=item=>
+ item.hidden||item.deleted?{
+  id:item.id,title:'非公開の展示',creator:'翠央記念館',
+  description:'',category:item.category,thumbnail:'',url:'',
+  hidden:true,deleted:item.deleted===true
+ }:item;
 
 export async function loadMuseumModeratedCatalogStage(client){
  if(!client||typeof client.query!=='function')fail('DEDICATED_CLIENT_REQUIRED');
@@ -64,7 +74,7 @@ export async function loadMuseumModeratedCatalogStage(client){
  const catalog=approvedGalleryItems.map(base=>{
   const row=byId.get(base.id);
   const get=(column,fallback)=>row?.[column]??fallback;
-  return catalogEntry({
+  return redactNonpublic(catalogEntry({
    ...base,
    title:get('title',base.title),creator:get('creator',base.creator),
    description:get('description',base.description??''),
@@ -73,7 +83,7 @@ export async function loadMuseumModeratedCatalogStage(client){
    thumbnail:get('thumbnail_url',base.thumbnail??''),
    hidden:base.hidden||row?.hidden===true,
    deleted:row?.deleted===true
-  });
+  }));
  });
  // New museum records are deliberately distinct from the legacy gallery:
  // every record has a stable namespace; no overwrite of an old ID.
@@ -105,7 +115,7 @@ export async function loadMuseumModeratedCatalogStage(client){
    thumbnail:row.image_url,url:row.external_url||row.image_url||'',
    hidden:!reviewed,deleted:row.status==='trash'
   };
-  catalog.push(Object.freeze(item));
+  catalog.push(Object.freeze(redactNonpublic(item)));
   if(reviewed)approvedIds.push(id);
  }
  return Object.freeze({
