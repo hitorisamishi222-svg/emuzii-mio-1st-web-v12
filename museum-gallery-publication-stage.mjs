@@ -5,6 +5,7 @@
 // Release flags, production admin approval and rollback drills remain separate.
 import {createHash} from 'node:crypto';
 import {planMuseumCuration} from './museum-curation-plan.mjs';
+import {captureMuseumReviewHashes,selectCurrentlyReviewedMuseumIds} from './museum-gallery-review-hashes-stage.mjs';
 
 const OP=/^[a-f0-9]{32}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -87,7 +88,7 @@ async function changePublication(client,{action,request,operationId,expectedPubl
   }
   if(currentPublished!==expectedPublishedRevision)fail('PUBLISHED_REVISION_CONFLICT');
   if(currentPublished===Number.MAX_SAFE_INTEGER)fail('REVISION_EXHAUSTED');
-  let order,visibleIds,featuredId,sourceDraftRevision;
+  let order,visibleIds,featuredId,sourceDraftRevision,previousReviewHashes=null;
   if(action==='publish'){
    if(currentDraft!==expectedDraftRevision)fail('DRAFT_REVISION_CONFLICT');
    if(row.published_from_draft_revision!=null&&
@@ -98,13 +99,14 @@ async function changePublication(client,{action,request,operationId,expectedPubl
   }else{
    if(targetRevision>=currentPublished)fail('HISTORY_REVISION_INVALID');
    const history=exactly(await client.query(
-    "SELECT published_revision,source_draft_revision,snapshot_order,snapshot_visible_ids,snapshot_featured_id "+
+    "SELECT published_revision,source_draft_revision,snapshot_order,snapshot_visible_ids,snapshot_featured_id,snapshot_review_hashes "+
     "FROM museum_gallery_layout_history_stage WHERE layout_key='main' AND published_revision=$1",
     [targetRevision]),1)[0];
    if(rev(history.published_revision)!==targetRevision)fail('HISTORY_UNVERIFIED');
    sourceDraftRevision=rev(history.source_draft_revision);
    order=history.snapshot_order;visibleIds=history.snapshot_visible_ids;
    featuredId=history.snapshot_featured_id;
+   previousReviewHashes=history.snapshot_review_hashes;
   }
   // These values come from locked DB rows, not from the user's HTTP body.
   if(!Array.isArray(order)||!Array.isArray(visibleIds)||
@@ -112,7 +114,8 @@ async function changePublication(client,{action,request,operationId,expectedPubl
    fail('SNAPSHOT_INVALID');
   const source=await loadModeratedCatalog(client);
   if(!source||source.sourceVerified!==true||!Array.isArray(source.catalog)||
-     !Array.isArray(source.verifiedApprovedIds))fail('MODERATION_SOURCE_UNVERIFIED');
+     !Array.isArray(source.verifiedApprovedIds)||!source.currentReviewHashes)
+   fail('MODERATION_SOURCE_UNVERIFIED');
   // Recheck CURRENT rights/takedowns; a once-approved saved snapshot is not
   // authorization to display a work that was removed in the meantime.
   const candidate=planMuseumCuration({
@@ -120,22 +123,35 @@ async function changePublication(client,{action,request,operationId,expectedPubl
    currentRevision:currentDraft,
    proposal:{expectedRevision:currentDraft,order,visibleIds,featuredId}
   });
+  if(action==='rollback'){
+   // A historical publication cannot transfer consent from an old review
+   // generation to a new one, even when a moderator has reapproved the work.
+   selectCurrentlyReviewedMuseumIds({
+    visibleIds, publishedReviewHashes:previousReviewHashes,
+    currentReviewHashes:source.currentReviewHashes,requireEvery:true
+   });
+  }
+  const reviewHashes=captureMuseumReviewHashes({
+   visibleIds:candidate.visibleIds,currentReviewHashes:source.currentReviewHashes
+  });
   const next=currentPublished+1;
   const result=await client.query(
    "UPDATE museum_gallery_layout_stage SET published_revision=$1,published_from_draft_revision=$2,"+
    "published_order=$3::jsonb,published_visible_ids=$4::jsonb,published_featured_id=$5,"+
-   "published_by=$6,published_at=now() WHERE layout_key='main' AND draft_revision=$7 "+
-   "AND COALESCE(published_revision,0)=$8 RETURNING published_revision",
+   "published_review_hashes=$6::jsonb,published_by=$7,published_at=now() "+
+   "WHERE layout_key='main' AND draft_revision=$8 "+
+   "AND COALESCE(published_revision,0)=$9 RETURNING published_revision",
    [next,sourceDraftRevision,JSON.stringify(candidate.orderedIds),
-    JSON.stringify(candidate.visibleIds),candidate.featuredId,authUser,currentDraft,currentPublished]
+    JSON.stringify(candidate.visibleIds),candidate.featuredId,
+    JSON.stringify(reviewHashes),authUser,currentDraft,currentPublished]
   );
   if(rev(exactly(result,1)[0].published_revision)!==next)fail('PUBLISH_WRITE_UNVERIFIED');
   const snapshot=await client.query(
    "INSERT INTO museum_gallery_layout_history_stage(layout_key,published_revision,source_draft_revision,"+
-   "snapshot_order,snapshot_visible_ids,snapshot_featured_id,published_by) "+
-   "VALUES('main',$1,$2,$3::jsonb,$4::jsonb,$5,$6) RETURNING published_revision",
+   "snapshot_order,snapshot_visible_ids,snapshot_featured_id,snapshot_review_hashes,published_by) "+
+   "VALUES('main',$1,$2,$3::jsonb,$4::jsonb,$5,$6::jsonb,$7) RETURNING published_revision",
    [next,sourceDraftRevision,JSON.stringify(candidate.orderedIds),
-    JSON.stringify(candidate.visibleIds),candidate.featuredId,authUser]
+    JSON.stringify(candidate.visibleIds),candidate.featuredId,JSON.stringify(reviewHashes),authUser]
   );
   if(rev(exactly(snapshot,1)[0].published_revision)!==next)fail('HISTORY_WRITE_UNVERIFIED');
   const audit=await client.query(
