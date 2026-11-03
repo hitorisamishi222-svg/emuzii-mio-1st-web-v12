@@ -324,7 +324,31 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2','post-confirmation replay must not double credit');
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true);
-   assert.equal(await evaluate("document.querySelector('#demoVerify').disabled"),true);
+   // Museum-curator rehearsal: only synthetic works, browser-memory edits,
+   // with a faithful public-view preview and a reset to the original mock list.
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:nth-child(2) .gallery-actions button:nth-child(2)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品B')"),true);
+   await evaluate(`(()=>{
+    const field=document.querySelector('#demoGallery .gallery-row input[type=text]');
+    field.value='架空作品B・展示名変更';
+    document.querySelector('#demoGallery .gallery-row .gallery-actions button:first-child').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示名変更')"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(5)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview .gallery-featured').closest('.entry').textContent.includes('展示名変更')"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),3);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),0);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品A')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'0');
 
   }
  }
