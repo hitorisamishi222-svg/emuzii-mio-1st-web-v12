@@ -38,6 +38,17 @@ test('metadata counts cannot grow without bounds or be arbitrarily structured',(
  }
  assert.match(statements,/char_length\(draft_featured_id\)<=70/);
 });
+test('SQL rejects out-of-order or unfeatured visibility references',()=>{
+ for(const expr of [
+  'draft_order @> draft_visible_ids',
+  'draft_visible_ids ? draft_featured_id',
+  'published_order @> published_visible_ids',
+  'published_visible_ids ? published_featured_id',
+  'snapshot_order @> snapshot_visible_ids',
+  'snapshot_visible_ids ? snapshot_featured_id',
+  'published_from_draft_revision<=draft_revision'
+ ])assert.ok(statements.includes(expr),'missing stage SQL constraint: '+expr);
+});
 test('owner-linked audit records exactly track approved draft, publish and rollback actions',()=>{
  assert.match(statements,/operation_id text NOT NULL UNIQUE CHECK\s*\(operation_id ~/);
  assert.match(statements,/payload_hash text NOT NULL CHECK\s*\(payload_hash ~/);
