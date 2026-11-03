@@ -113,8 +113,9 @@ async function changePublication(client,{action,request,operationId,expectedPubl
      !(featuredId===null||typeof featuredId==='string'))
    fail('SNAPSHOT_INVALID');
   const source=await loadModeratedCatalog(client);
-  if(!source||source.sourceVerified!==true||!Array.isArray(source.catalog)||
-     !Array.isArray(source.verifiedApprovedIds)||!source.currentReviewHashes)
+  if(!source||source.sourceVerified!==true||source.mutationReadLocked!==true||
+     !Array.isArray(source.catalog)||!Array.isArray(source.verifiedApprovedIds)||
+     !source.currentReviewHashes)
    fail('MODERATION_SOURCE_UNVERIFIED');
   // Recheck CURRENT rights/takedowns; a once-approved saved snapshot is not
   // authorization to display a work that was removed in the meantime.
