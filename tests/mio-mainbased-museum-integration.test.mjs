@@ -190,6 +190,39 @@ test('static approved-work view rejects hidden works and renders existing track/
  assert.equal(nodes.filter(x=>x.tag==='a')[0].href,media.video);
  assert.equal(nodes.filter(x=>x.textContent==='未公開作品').length,0);
 });
+test('museum large update is gallery-first, hides attendance navigation without deleting legacy assets and defers chat',()=>{
+ const top=read('museum.html');
+ assert.ok(top.indexOf('id="exhibits"')>0);
+ assert.ok(top.indexOf('id="exhibits"')<top.indexOf('id="mioAwakening"'));
+ assert.ok(top.indexOf('id="exhibits"')<top.indexOf('id="latest"'));
+ assert.match(top,/museum-featured-gallery/);
+ assert.match(read('museum.css'),/museum-gallery-first/);
+ for(const path of ['museum.html','mio-profile.html','museum-approved-gallery.html','museum-archive.html']){
+  const page=read(path);
+  assert.doesNotMatch(page,/href="\/"|href='\/'/,'staging museum may not expose legacy attendance entry: '+path);
+  assert.doesNotMatch(page,/皆勤賞|チャット機能|\/api\/chat/,'no attendance prize/chat promoted: '+path);
+ }
+ // Retention check: old production attendance/checkin code and user media are protected,
+ // NOT deleted or moved just because the new visitor navigation hides its entry.
+ for(const path of ['index.html','app.js','api-checkin.js']){
+  assert.ok(exists(path));
+  assert.equal(shaOfFile(path),baseline.productionFileBlobs[path]);
+ }
+});
+test('offline rehearsal has SEIRA-style curator controls without live gallery mutation',()=>{
+ const page=read('mio-admin-rehearsal.html'),script=read('mio-admin-rehearsal.js');
+ for(const id of ['demoGallery','demoGalleryPreview','demoGalleryStatus'])
+  assert.match(page,new RegExp('id="'+id+'"'));
+ assert.match(page,/並び替え|入れ替え/);
+ assert.match(page,/保存・アップロード・本番反映はできません/);
+ assert.match(script,/gallery:\[/);
+ for(const label of ['↑ 上へ','↓ 下へ','注目にする','非公開にする','公開予定にする','名前を変更'])
+  assert.ok(script.includes(label),'missing curator action: '+label);
+ assert.match(script,/URL\.revokeObjectURL/);
+ assert.match(script,/file\.accept='image\/jpeg,image\/png,image\/webp'/);
+ assert.doesNotMatch(script,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|indexedDB|\binnerHTML\s*=/);
+ assert.doesNotMatch(script,/\/api\/gallery|\/api\/museum/);
+});
 test('all local museum navigation targets and static media assets exist in the main-based copy',()=>{
  for(const path of museumPages){
   const html=read(path);
