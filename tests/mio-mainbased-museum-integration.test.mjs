@@ -242,12 +242,15 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.match(script,/item\.archived=!item\.archived/);
  assert.match(script,/x=>x\.visible&&x\.reviewed&&!x\.archived/);
  for(const id of ['demoGalleryDifference','demoGalleryReview','demoGalleryCommit',
-  'demoGalleryRollback','demoGalleryPublished','demoGalleryPublishedStatus'])
+  'demoGalleryRollback','demoGalleryPublished','demoGalleryPublishedStatus',
+  'demoGallerySearch','demoGalleryFilter','demoGalleryMatchCount'])
   assert.match(page,new RegExp('id="'+id+'"'),'missing release rehearsal control '+id);
  assert.match(page,/編集中の展示プレビュー（下書き）/);
  assert.match(page,/過去の展示順・タイトルを版として保存します/);
  assert.match(script,/galleryPublished\.push\(\{revision,items\}\)/);
  assert.match(script,/galleryReviewFingerprint!==galleryFingerprint\(\)/);
+ assert.match(script,/demoGallerySearch'\)\.addEventListener\('input',render\)/);
+ assert.match(script,/demoGalleryFilter'\)\.addEventListener\('change',render\)/);
  assert.match(script,/current\.privacyConfirmed&&!current\.archived/);
  assert.match(script,/imageUrl:null \/\/ browser-selected photos are never published/);
  assert.match(script,/URL\.revokeObjectURL/);
