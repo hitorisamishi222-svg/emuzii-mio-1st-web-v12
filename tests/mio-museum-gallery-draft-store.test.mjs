@@ -168,6 +168,14 @@ test('unverified catalog source cannot be persisted',async()=>{
  assert.equal(db.persist.revision,0);
  assert.equal(db.rollbackCount,1);
 });
+test('draft writing refuses current moderation inspected without a row lock',async()=>{
+ const db=new MockClient();
+ await rejected(()=>ctx(db,{loadModeratedCatalog:async()=>({
+  ...source(),mutationReadLocked:false
+ })}),'CATALOG_SOURCE_UNVERIFIED');
+ assert.equal(db.persist.revision,0);
+ assert.equal(db.rollbackCount,1);
+});
 test('catalog approval must be explicitly confirmed by the server in the same transaction',async()=>{
  for(const value of [false,undefined,null]){
   const db=new MockClient();
