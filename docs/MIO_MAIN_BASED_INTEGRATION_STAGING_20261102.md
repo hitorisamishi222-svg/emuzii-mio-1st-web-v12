@@ -242,3 +242,15 @@
 - SQL側にも、展示順に無い作品を公開対象にすることや非表示の作品を注目指定することを防ぐ JSONB 包含/存在チェックを追加。**静的構文チェックとモックは実DBの移行成功を保証しない。**
 - `tests/mio-museum-gallery-publication-stage.test.mjs` と `tests/mio-museum-gallery-owner-stage.test.mjs` に、owner/端末/Origin拒否、下書きと公開の分離、複数版、権利撤回、同時編集、操作IDの重複、履歴付き復元、監査/COMMIT不明/途中エラーの検証を追加。
 - **一括公開の停止条件は継続**：DBの実体・保護設定・バックアップ/復元テスト、GAS現行原本とデプロイ版・権限/監査照合、iPhone実機、公開URLの切替手順、復旧操作、最終オーナー承認が必要。Previewのnoindexは認証ではない。チャット保留・皆勤記録保存・ギャラリー最優先。
+
+
+### 2026-11-03：Neonの読み取り専用メタデータ調査（本番接続先とは**未照合**）
+
+- 接続可能なNeonプロジェクト `dry-feather-67791501` について、**branch/table/column/constraintのメタデータのみ**確認。SQL書込・データ行の取得・シークレット読取・新規Branch作成は行っていない。
+- `main`（`br-winter-forest-b7eq6rpz`）の `neondb` には、現時点で `mio_registration_v2` 等の登録関連テーブル4つが確認された。**`gallery_admin_*`、`museum_public_exhibits`、`museum_gallery_layout_stage` は一覧で確認できなかった**。
+- `gallery-admin-isolated`（`br-bold-credit-b7y6frdo`）には `gallery_admin_users` / `gallery_admin_sessions` / `gallery_admin_devices` / `gallery_admin_audit` / `gallery_live_overrides` / `gallery_published_items` 等が存在。`gallery-passkey-auth-review-isolated` も同種の管理テーブルあり。ただし**両ブランチとも `museum_public_exhibits` と新しいlayout/history/audit stageテーブルは一覧で確認できない**。
+- `gallery_published_items` は既存の隔離ブランチにあるが、確認できた列は `id/title/category/creator/external_url/thumbnail_url/created_by/created_at/updated_at` 等で、公開権利確認・表示停止・プライバシー審査の独立状態はこの表の列からは証明できない。**この表が存在するだけで新規作品の公開を許可しない**。
+- `gallery_live_overrides` の `hidden/deleted` はBOOLEAN・NOT NULL、`item_id` は現在の静的ギャラリーと整合する形式。新しい `museum-gallery-source-stage.mjs` は既存の静的許可リストと、この表示停止指定、および将来の `museum_public_exhibits` を読み取り専用で照合する設計。
+- Vercelの `GALLERY_DATABASE_URL` は存在確認のみで、**接続先Project/Branch/Databaseの実体は未照合**。したがって上記Neonメタデータが稼働中の公開ギャラリーDBであるとは断定しない。稼働DB識別子の正式照合・バックアップ・復元試験まで、**DBマイグレーション、管理操作APIの有効化、作品アップロード、一括公開は禁止**。
+- `db/museum-public-exhibits.sql` を未承認の非公開下書きを保存できる構造へ修正。権利・個人情報の確認、承認者、公開日時はドラフト時NULL可能だが、`status='published'` に進むときには全4条件を満たすDB CHECKが必要。これを `museum-preflight-core.js` で検査する。
+- `museum-gallery-source-stage.mjs` はミュージアム展示が未適用なら例外で停止するため、未確認DBから適当に公開カタログを組み立てない。公開ページにもまだ接続していない。
