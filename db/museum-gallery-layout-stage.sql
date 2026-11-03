@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_stage (
  published_order jsonb,
  published_visible_ids jsonb,
  published_review_hashes jsonb CHECK (published_review_hashes IS NULL OR
-  (jsonb_typeof(published_review_hashes)='object' AND jsonb_object_length(published_review_hashes)<=500)),
+  (jsonb_typeof(published_review_hashes)='object')),
  published_featured_id text CHECK (published_featured_id IS NULL OR char_length(published_featured_id)<=70),
  CHECK (published_order IS NULL OR published_visible_ids IS NULL OR published_order @> published_visible_ids),
  CHECK (published_featured_id IS NULL OR published_visible_ids ? published_featured_id),
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_history_stage (
  snapshot_visible_ids jsonb NOT NULL
   CHECK (jsonb_typeof(snapshot_visible_ids)='array' AND jsonb_array_length(snapshot_visible_ids)<=500),
  snapshot_review_hashes jsonb NOT NULL CHECK
-  (jsonb_typeof(snapshot_review_hashes)='object' AND jsonb_object_length(snapshot_review_hashes)<=500),
+  (jsonb_typeof(snapshot_review_hashes)='object'),
  snapshot_featured_id text CHECK (snapshot_featured_id IS NULL OR char_length(snapshot_featured_id)<=70),
  CHECK (snapshot_order @> snapshot_visible_ids),
  CHECK (snapshot_featured_id IS NULL OR snapshot_visible_ids ? snapshot_featured_id),
