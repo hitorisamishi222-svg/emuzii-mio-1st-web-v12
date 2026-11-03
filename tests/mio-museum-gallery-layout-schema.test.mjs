@@ -22,7 +22,7 @@ test('schema creates only two new tables and does not touch the live gallery sch
  assert.doesNotMatch(statements,/\b(?:gallery_live_overrides|mio_registration|attendance|gacha|checkin)\b/i);
 });
 test('one shared museum layout with separate draft and published versions',()=>{
- assert.match(statements,/layout_key text PRIMARY KEY CHECK\(layout_key='main'\)/);
+ assert.match(statements,/layout_key text PRIMARY KEY CHECK\s*\(layout_key='main'\)/);
  for(const name of ['draft_revision','draft_order','draft_visible_ids','draft_featured_id',
   'published_revision','published_order','published_visible_ids','published_featured_id']){
   assert.ok(statements.includes(name),name);
@@ -39,8 +39,8 @@ test('metadata counts cannot grow without bounds or be arbitrarily structured',(
  assert.match(statements,/char_length\(draft_featured_id\)<=70/);
 });
 test('owner-linked audit records exactly track approved draft, publish and rollback actions',()=>{
- assert.match(statements,/operation_id text NOT NULL UNIQUE CHECK\(operation_id ~/);
- assert.match(statements,/payload_hash text NOT NULL CHECK\(payload_hash ~/);
+ assert.match(statements,/operation_id text NOT NULL UNIQUE CHECK\s*\(operation_id ~/);
+ assert.match(statements,/payload_hash text NOT NULL CHECK\s*\(payload_hash ~/);
  assert.match(statements,/actor_id uuid NOT NULL REFERENCES gallery_admin_users\(id\)/);
  assert.match(statements,/action IN \('draft','publish','rollback'\)/);
  assert.match(statements,/new_revision bigint NOT NULL CHECK\(new_revision>prior_revision\)/);
