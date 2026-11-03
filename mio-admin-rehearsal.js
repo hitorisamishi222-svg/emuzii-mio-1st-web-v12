@@ -122,7 +122,11 @@
     button(item.visible?'非公開にする':'公開予定にする',()=>{
      if(!item.reviewed||item.archived)return;
      item.visible=!item.visible;
-     if(!item.visible)item.featured=false;
+     if(!item.visible){
+      // Re-enabling a temporarily hidden work cannot silently resurrect
+      // its old published snapshots; it requires a new reviewed release.
+      item.featured=false;item.approvalEpoch++;
+     }
      audit(item.id+'：模擬展示'+(item.visible?'公開予定':'非公開'));
      render();
     },!item.reviewed||item.archived),
@@ -141,7 +145,9 @@
      setMessage('公開確認の操作を模擬しました。実際の掲載許可にはなりません。');render();
     },item.reviewed||item.archived||!item.rightsConfirmed||!item.privacyConfirmed),
     button(item.archived?'保管から戻す':'保管（非表示）',()=>{
-     item.archived=!item.archived;item.visible=false;item.featured=false;
+     item.archived=!item.archived;
+     if(item.archived)item.approvalEpoch++;
+     item.visible=false;item.featured=false;
      audit(item.id+'：'+(item.archived?'非破壊で保管':'保管から復元'));
      setMessage('模擬作品は削除されず、元の一覧に保持されます。');render();
     })
