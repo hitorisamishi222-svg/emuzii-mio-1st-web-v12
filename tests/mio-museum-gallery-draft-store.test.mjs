@@ -17,7 +17,7 @@ const proposed=(revision=0)=>({
  expectedRevision:revision,order:[video.id,song.id,hidden.id],
  visibleIds:[video.id,song.id],featuredId:video.id
 });
-const source=()=>({catalog:[{...song},{...video},{...hidden}],
+const source=()=>({sourceVerified:true,catalog:[{...song},{...video},{...hidden}],
  verifiedApprovedIds:[song.id,video.id]});
 const admin=()=>({user_id:ID,role:'owner'});
 const success=(rows,command='SELECT')=>({command,rowCount:rows.length,rows});
@@ -29,7 +29,7 @@ class MockClient {
  }
  async query(sql,args=[]){
   this.calls.push({sql,args});
-  if(sql==='BEGIN'){
+  if(sql==='BEGIN ISOLATION LEVEL SERIALIZABLE'){
    if(this.tx)throw Error('already in tx');
    this.tx=structuredClone(this.persist);
    return {command:'BEGIN'};
@@ -92,6 +92,7 @@ test('a verified operator can store a private draft, with audit, without changin
  assert.equal(db.persist.audit[OP].payload_hash.length,64);
  assert.equal(db.rollbackCount,0);
  assert.equal(db.commitCount,1);
+ assert.equal(db.calls[0].sql,'BEGIN ISOLATION LEVEL SERIALIZABLE');
 });
 test('separate revisions prevent stale edits from clobbering the current draft',async()=>{
  const db=new MockClient();await ctx(db);
@@ -166,6 +167,39 @@ test('unverified catalog source cannot be persisted',async()=>{
  await rejected(()=>ctx(db,{loadModeratedCatalog:async()=>null}),'CATALOG_SOURCE_UNVERIFIED');
  assert.equal(db.persist.revision,0);
  assert.equal(db.rollbackCount,1);
+});
+test('catalog approval must be explicitly confirmed by the server in the same transaction',async()=>{
+ for(const value of [false,undefined,null]){
+  const db=new MockClient();
+  const unverified={...source(),sourceVerified:value};
+  await rejected(()=>ctx(db,{loadModeratedCatalog:async(client)=>{
+   assert.equal(client,db);
+   assert.ok(client.tx,'moderation read must share the active transaction');
+   return unverified;
+  }}),'CATALOG_SOURCE_UNVERIFIED');
+  assert.equal(db.persist.initialized,false);
+  assert.equal(db.persist.revision,0);
+  assert.equal(db.rollbackCount,1);
+ }
+});
+test('invalid audit receipt cannot report a future draft as saved',async()=>{
+ const db=new MockClient();
+ await ctx(db);
+ db.persist.audit[OP].new_revision='999';
+ await rejected(()=>ctx(db),'AUDIT_REVISION_MISMATCH');
+ assert.equal(db.persist.revision,1);
+});
+test('verified admin and moderation checks use the same dedicated transaction client',async()=>{
+ const db=new MockClient();
+ let authCalled=0,sourceCalled=0;
+ await ctx(db,{verifyAdmin:async(client)=>{
+  assert.equal(client,db);assert.ok(client.tx);authCalled++;return admin();
+ },loadModeratedCatalog:async(client)=>{
+  assert.equal(client,db);assert.ok(client.tx);sourceCalled++;return source();
+ }});
+ assert.equal(authCalled,1);
+ assert.equal(sourceCalled,1);
+ assert.equal(db.persist.revision,1);
 });
 test('takedown and unapproved gallery work cannot be included in draft visibility',async()=>{
  const db=new MockClient();
