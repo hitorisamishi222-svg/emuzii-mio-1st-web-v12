@@ -505,6 +505,26 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row:nth-child(2) .gallery-review-checks input[type=checkbox]').length"),2);
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   // A reversible hide/archive must still require deliberate publication
+   // before reintroducing a work previously included in an old snapshot.
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品A')"),true);
+   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+   await evaluate("document.querySelector('#demoGalleryReview').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryCommit').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(7)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(7)').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品A')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),false);
+   await evaluate("document.querySelector('#demoReset').click()");
    // Owner can find a single work or only works awaiting review on a phone.
    await evaluate(`(()=>{
     const input=document.querySelector('#demoGallerySearch');
