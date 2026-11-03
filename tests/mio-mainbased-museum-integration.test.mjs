@@ -235,7 +235,10 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  for(const id of ['demoGalleryAdd','demoGalleryNewTitle','demoGalleryNewCategory'])
   assert.match(page,new RegExp('id="'+id+'"'));
  assert.match(page,/最初は必ず非公開・確認待ち/);
- assert.match(script,/reviewed:false,archived:false/);
+ assert.match(script,/reviewed:false,rightsConfirmed:false,privacyConfirmed:false,archived:false/);
+ assert.match(script,/if\(!item\.rightsConfirmed\|\|!item\.privacyConfirmed\)return/);
+ assert.match(script,/公開確認の操作を模擬しました/);
+ assert.match(page,/gallery-review-checks input\[type=checkbox\]/);
  assert.match(script,/item\.archived=!item\.archived/);
  assert.match(script,/x=>x\.visible&&x\.reviewed&&!x\.archived/);
  assert.match(script,/URL\.revokeObjectURL/);
