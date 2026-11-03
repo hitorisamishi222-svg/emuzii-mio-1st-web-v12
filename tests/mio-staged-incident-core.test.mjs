@@ -147,10 +147,22 @@ test('inbox rejects corrupted incident rows and only returns approved fields',as
  for(const changed of [{state:'unexpected'},{incident_id:'bad'},{participant_ref:'personal-name'},
   {occurrence_count:0},{occurrence_count:'1'},{category:'unknown'},{draw_id:'bad'},
   {stage:'draw',draw_id:null},{source:'status',stage:'status',draw_id:draw},
-  {source:'status',stage:'catalog',draw_id:null}]){
+  {source:'status',stage:'catalog',draw_id:null},
+  {occurred_at:null},{last_seen_at:'not-a-date'},{updated_at:'2026-13-02T00:00:00Z'},
+  {last_seen_at:'2026-11-01T23:59:59Z'}]){
   await assert.rejects(listIncidents(async()=>({rowCount:1,rows:[{...row,...changed}]})),
    /incident inbox row invalid/);
  }
+});
+
+test('incident inbox accepts native PostgreSQL Date timestamps',async()=>{
+ const at=new Date('2026-11-02T00:00:00Z');
+ const row={incident_id:incidentId,participant_ref:webId,source:'gacha',category:'DRAW_UNKNOWN',
+  stage:'draw',draw_id:draw,state:'unhandled',occurrence_count:1,
+  occurred_at:at,last_seen_at:at,updated_at:at};
+ const rows=await listIncidents(async()=>({rowCount:1,rows:[row]}));
+ assert.equal(rows.length,1);
+ assert.equal(rows[0].occurredAt,at);
 });
 function mockClient(){
  const state={current:'unhandled',audits:new Map(),writes:0,rollback:0};
