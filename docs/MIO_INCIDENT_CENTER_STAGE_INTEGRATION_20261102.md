@@ -57,3 +57,10 @@
 - 新たに `resolve` を受け付ける前、および `resolve` の同じ操作IDを再送する際、同一障害に対する `start` 監査が**正確に1件**あり、対応開始のペイロードハッシュが一致することを読む。単にDBの状態が `working` であることだけでは解決可能と扱わない。
 - 模擬DBテストは `BEGIN`/ `COMMIT` 欠損応答、欠けた/改変された/重複した `start` 監査、解決済み操作の再送を検査。追加コードは開発ブランチの `mio-incident-core.js` と `tests/mio-staged-incident-core.test.mjs` のみ。SQL候補や実Neonには変更を加えない。
 - **残るゲート**：実稼働GASのソース/デプロイ・バックアップ、正本DBの確認、専有された1接続上でのトランザクション実機試験、権限確認、監査スキーマの正式レビュー、通信断時の実運用復旧、主催者実端末。これらが揃うまでリリースフラグと管理画面の実操作はOFF。CI成功のみで公開しない。
+
+## 2026-11-03：未適用DB候補の制約と最新CI判定
+
+- SQL候補に、source/stage/drawIdの整合性、fingerprint・監査ハッシュの小文字16進64桁、管理操作のactor許可値、監査start/resolveの順序をCHECKとして明示。さらに `state='resolved'` には `resolved_at` 必須、その他の状態にはNULLを要求し、`last_actor` も許可値のみとした。**未適用の設計候補であり、既存DBへALTER・CREATEは行っていない。**
+- `transitionIncident` のクライアント形状チェックは `query` メソッドの存在のみを確認する。**同一PostgreSQLセッションへの固定を証明しない**ため、将来のAPI接続側でpoolから専用clientを取得・保持・releaseする実装と接続実機テストが必要。
+- コミット `9a07bb97d39a8671697ca4b27fd757c9fc93c17d` のGitHub Actions **8ワークフローすべてsuccess**を確認。これは静的検査とモック/回帰テストの結果であり、実DB・実GAS・実機での合格ではない。
+- 現在もPR #76はDraft、管理者の障害管理APIは未接続、各リリースフラグOFF。正本DB・既存GAS原本とデプロイ版・復元バックアップ・既存管理操作監査スキーマが確認されるまで本番公開しない。
