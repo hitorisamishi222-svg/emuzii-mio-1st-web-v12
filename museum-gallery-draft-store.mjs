@@ -35,7 +35,9 @@ export async function saveMuseumGalleryDraft(client,{request,operationId,proposa
  if(!Number.isSafeInteger(proposal.expectedRevision)||proposal.expectedRevision<0)die('REVISION_INVALID');
  let inTransaction=false,commitAttempted=false;
  try{
-  const start=await client.query('BEGIN');
+  // The moderation snapshot must be read on this dedicated client under
+  // serializable isolation, so concurrent rights changes cannot silently race.
+  const start=await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
   if(start?.command!=='BEGIN')die('BEGIN_UNVERIFIED');
   inTransaction=true;
   const admin=await verifyAdmin(client,request);
@@ -67,6 +69,9 @@ export async function saveMuseumGalleryDraft(client,{request,operationId,proposa
    if(a?.actor_id!==admin.user_id||a.action!=='draft'||a.payload_hash!==payloadHash)
     die('OPERATION_CONFLICT');
    const r=revision(a.new_revision);
+   // An audit row that points into an uncommitted or impossible future
+   // revision is not proof of an already saved draft.
+   if(r>current||r<=proposal.expectedRevision)die('AUDIT_REVISION_MISMATCH');
    commitAttempted=true;
    const commit=await client.query('COMMIT');
    if(commit?.command!=='COMMIT')die('COMMIT_UNCONFIRMED');
@@ -78,7 +83,8 @@ export async function saveMuseumGalleryDraft(client,{request,operationId,proposa
   // Future caller must provide a validated, server-side source and must reread
   // moderation/rights on the same DB session. No caller-supplied ids are trusted.
   const source=await loadModeratedCatalog(client);
-  if(!source||!Array.isArray(source.catalog)||!Array.isArray(source.verifiedApprovedIds))
+  if(!source||source.sourceVerified!==true||
+     !Array.isArray(source.catalog)||!Array.isArray(source.verifiedApprovedIds))
    die('CATALOG_SOURCE_UNVERIFIED');
   const candidate=planMuseumCuration({
    catalog:source.catalog,verifiedApprovedIds:source.verifiedApprovedIds,
