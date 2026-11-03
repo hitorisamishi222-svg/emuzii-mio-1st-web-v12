@@ -236,7 +236,16 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
   'demoGalleryNewRoom','demoGalleryRoomFilter','demoGalleryPreviewRoom'])
   assert.match(page,new RegExp('id="'+id+'"'));
  assert.match(page,/最初は必ず非公開・確認待ち/);
- assert.match(script,/reviewed:false,rightsConfirmed:false,privacyConfirmed:false,archived:false/);
+ assert.match(script,/reviewed:false,rightsConfirmed:false,privacyConfirmed:false,approvalEpoch:0,archived:false/);
+ assert.match(script,/approvalEpoch:item\.approvalEpoch/);
+ assert.match(script,/item\.reviewed=true;item\.approvalEpoch\+\+/);
+ for(const label of ['掲載許可を取り消す（模擬）','個人情報確認を取り消す（模擬）'])
+  assert.ok(script.includes(label),'missing reviewed-item takedown control');
+ assert.match(script,/item\[key\]=false;item\.reviewed=false/);
+ assert.match(script,/item\.visible=false;item\.featured=false/);
+ assert.match(script,/actual\.approvalEpoch!==exhibit\.approvalEpoch/);
+ assert.match(script,/actual\.approvalEpoch===item\.approvalEpoch/);
+ assert.match(script,/current\.approvalEpoch===item\.approvalEpoch/);
  assert.match(script,/if\(!item\.rightsConfirmed\|\|!item\.privacyConfirmed\)return/);
  assert.match(script,/公開確認の操作を模擬しました/);
  assert.match(page,/gallery-review-checks input\[type=checkbox\]/);
