@@ -15,7 +15,8 @@ const hidden={id:'mio-private-work',title:'非公開の絵',category:'イラス�
  thumbnail:'',hidden:true,deleted:false};
 const authoritative=()=>({sourceVerified:true,
  catalog:[{...video},{...song},{...hidden}],
- verifiedApprovedIds:[video.id,song.id]});
+ verifiedApprovedIds:[video.id,song.id],
+ currentReviewHashes:{[video.id]:'a'.repeat(64),[song.id]:'b'.repeat(64)}});
 const ok=(rows,command='SELECT')=>({command,rowCount:rows.length,rows});
 class Mock {
  constructor({failHistory=false,failAudit=false,commitLost=false}={}){
@@ -24,6 +25,7 @@ class Mock {
    draft_visible_ids:[video.id,song.id],draft_featured_id:video.id,
    published_revision:null,published_from_draft_revision:null,
    published_order:null,published_visible_ids:null,published_featured_id:null,
+   published_review_hashes:null,
    history:[],audit:{},legacyGachaData:'protected'};
   this.tx=null;this.calls=[];this.commits=0;this.rollbacks=0;
  }
@@ -53,18 +55,18 @@ class Mock {
    return ok(hit?[hit]:[]);
   }
   if(sql.startsWith('UPDATE museum_gallery_layout_stage SET published_revision=')){
-   if(this.tx.draft_revision!==args[6]||(this.tx.published_revision??0)!==args[7])
+   if(this.tx.draft_revision!==args[7]||(this.tx.published_revision??0)!==args[8])
     return ok([], 'UPDATE');
    Object.assign(this.tx,{published_revision:args[0],published_from_draft_revision:args[1],
     published_order:JSON.parse(args[2]),published_visible_ids:JSON.parse(args[3]),
-    published_featured_id:args[4]});
+    published_featured_id:args[4],published_review_hashes:JSON.parse(args[5])});
    return ok([{published_revision:String(args[0])}],'UPDATE');
   }
   if(sql.startsWith('INSERT INTO museum_gallery_layout_history_stage')){
    if(this.error.failHistory)throw Error('history insert rejected');
    const row={published_revision:args[0],source_draft_revision:args[1],
     snapshot_order:JSON.parse(args[2]),snapshot_visible_ids:JSON.parse(args[3]),
-    snapshot_featured_id:args[4]};
+    snapshot_featured_id:args[4],snapshot_review_hashes:JSON.parse(args[5])};
    this.tx.history.push(row);return ok([{published_revision:String(args[0])}],'INSERT');
   }
   if(sql.startsWith('INSERT INTO museum_gallery_layout_audit_stage')){
@@ -108,6 +110,8 @@ test('owner can promote approved draft to stage-only publication with versioned 
  assert.equal(db.persist.published_revision,1);
  assert.equal(db.persist.published_from_draft_revision,2);
  assert.deepEqual(db.persist.published_visible_ids,[video.id,song.id]);
+ assert.deepEqual(db.persist.published_review_hashes,{[video.id]:'a'.repeat(64),[song.id]:'b'.repeat(64)});
+ assert.deepEqual(db.persist.history[0].snapshot_review_hashes,db.persist.published_review_hashes);
  assert.equal(db.persist.history.length,1);
  assert.equal(Object.keys(db.persist.audit).length,1);
  assert.equal(db.persist.audit[OP1].payload_hash.length,64);
@@ -203,6 +207,25 @@ test('a rollback restores a historical snapshot as a NEW publication revision',a
  assert.equal(db.persist.history[2].source_draft_revision,2);
  assert.equal(db.persist.audit[OP3].action,'rollback');
  assert.equal(db.persist.draft_revision,3,'restoring public snapshot must not change drafts');
+});
+test('rollback refuses a reapproved exhibition with a different review generation',async()=>{
+ const db=await publishedTwice();
+ const current=authoritative();
+ current.currentReviewHashes[video.id]='c'.repeat(64);
+ await assert.rejects(()=>rollback(db,{loadModeratedCatalog:async()=>current}),
+  /MUSEUM_REVIEW_HISTORICAL_APPROVAL_CHANGED/);
+ assert.equal(db.persist.published_revision,2);
+ assert.equal(db.persist.history.length,2);
+ assert.equal(db.rollbacks>0,true);
+});
+test('publication requires the server to supply proof of each currently reviewed work',async()=>{
+ const db=new Mock();
+ const unverified=authoritative();delete unverified.currentReviewHashes;
+ await denied(()=>publish(db,{loadModeratedCatalog:async()=>unverified}),'MODERATION_SOURCE_UNVERIFIED');
+ const missing=authoritative();delete missing.currentReviewHashes[video.id];
+ await assert.rejects(()=>publish(db,{loadModeratedCatalog:async()=>missing}),
+  /MUSEUM_REVIEW_CURRENT_APPROVAL_MISSING/);
+ assert.equal(db.persist.history.length,0);
 });
 test('rollback does not restore a work whose rights were revoked',async()=>{
  const db=await publishedTwice(),source=authoritative();
