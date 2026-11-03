@@ -66,7 +66,7 @@ test('public reader never tries SELECT FOR SHARE or UPDATE inside a read-only tr
  const queries=db.calls.map(x=>x.sql);
  assert.equal(queries[0],'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
  assert.ok(queries.some(q=>q.includes('gallery_live_overrides')));
- assert.equal(queries.some(q=>/FOR\\s+(?:SHARE|UPDATE)\\b/i.test(q)),false);
+ assert.equal(queries.some(q=>/FOR\s+(?:SHARE|UPDATE)\b/i.test(q)),false);
 });
 test('no published layout never falls back to static gallery',async()=>{
  for(const layout of [null,{
