@@ -67,10 +67,14 @@ test('unapplied incident schema rejects invalid source, stage and draw relations
  ])assert.throws(()=>normalizeEvent(event));
 });
 test('unapplied audit schema validates operator mode and fingerprint/hash shapes',()=>{
- assert.match(schema,/fingerprint char\(64\) NOT NULL CHECK \(fingerprint ~ '\^\[a-f0-9\]\{64\}\
- assert.match(schema,/action='start' AND before_state='unhandled' AND after_state='working'/);
- assert.match(schema,/action='resolve' AND before_state='working' AND after_state='resolved'/);
- assert.doesNotMatch(schema,/action='resolve' AND before_state='unhandled'/);
+ assert.ok(schema.includes("fingerprint char(64) NOT NULL CHECK (fingerprint ~ '^[a-f0-9]{64}$')"));
+ assert.ok(schema.includes("actor varchar(24) NOT NULL CHECK (actor IN ('admin-code','admin-passkey'))"));
+ assert.ok(schema.includes("payload_hash char(64) NOT NULL CHECK (payload_hash ~ '^[a-f0-9]{64}$')"));
+});
+test('future incident audit schema requires exactly ordered start and resolve transitions',()=>{
+ assert.ok(schema.includes("action='start' AND before_state='unhandled' AND after_state='working'"));
+ assert.ok(schema.includes("action='resolve' AND before_state='working' AND after_state='resolved'"));
+ assert.ok(!schema.includes("action='resolve' AND before_state='unhandled'"));
 });
 test('disabled integration has no incident server endpoints or DB migration execution path',()=>{
  const apiRoutes=config.routes.map(x=>x.src);
