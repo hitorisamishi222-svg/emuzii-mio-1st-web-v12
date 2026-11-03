@@ -5,6 +5,7 @@ import {loadMuseumModeratedCatalogStage} from '../museum-gallery-source-stage.mj
 import {planMuseumCuration} from '../museum-curation-plan.mjs';
 import {projectPublishedMuseumGallery} from '../museum-gallery-published-core.mjs';
 import {approvedGalleryItems} from '../gallery-items.js';
+import {captureMuseumReviewHashes,selectCurrentlyReviewedMuseumIds} from '../museum-gallery-review-hashes-stage.mjs';
 
 const ID='a4ad9cb3-153d-4fc4-aaea-1342965d14c2';
 const DRAFT_ID='102ecf25-1c7c-4a0c-92fb-01b8e394d673';
@@ -165,6 +166,57 @@ test('hidden exhibit metadata is still redacted when room allocation is retained
  assert.equal(hidden.url,'');
  assert.equal(hidden.thumbnail,'');
  assert.ok(!result.verifiedApprovedIds.includes(DRAFT));
+});
+test('legacy gallery hide and later reapproval cannot reuse the old publication proof',async()=>{
+ const id='mio-awakening-song';
+ const makeOverride=(when,hidden)=>({
+  item_id:id,title:null,creator:null,description:null,category:null,
+  external_url:null,thumbnail_url:null,hidden,deleted:false,updated_at:new Date(when)
+ });
+ const first=await loadMuseumModeratedCatalogStage(fake({
+  overrides:[makeOverride('2026-11-01T00:00:00Z',false)]
+ }));
+ const approved=captureMuseumReviewHashes({
+  visibleIds:[id],currentReviewHashes:first.currentReviewHashes
+ });
+ const hidden=await loadMuseumModeratedCatalogStage(fake({
+  overrides:[makeOverride('2026-11-02T00:00:00Z',true)]
+ }));
+ assert.equal(hidden.currentReviewHashes[id],undefined);
+ assert.deepEqual(selectCurrentlyReviewedMuseumIds({
+  visibleIds:[id],publishedReviewHashes:approved,
+  currentReviewHashes:hidden.currentReviewHashes
+ }),[]);
+ const newApproval=await loadMuseumModeratedCatalogStage(fake({
+  overrides:[makeOverride('2026-11-03T00:00:00Z',false)]
+ }));
+ assert.notEqual(newApproval.currentReviewHashes[id],first.currentReviewHashes[id]);
+ assert.deepEqual(selectCurrentlyReviewedMuseumIds({
+  visibleIds:[id],publishedReviewHashes:approved,
+  currentReviewHashes:newApproval.currentReviewHashes
+ }),[]);
+ const newSnapshot=captureMuseumReviewHashes({
+  visibleIds:[id],currentReviewHashes:newApproval.currentReviewHashes
+ });
+ assert.deepEqual(selectCurrentlyReviewedMuseumIds({
+  visibleIds:[id],publishedReviewHashes:newSnapshot,
+  currentReviewHashes:newApproval.currentReviewHashes
+ }),[id]);
+});
+test('published museum exhibit re-review creates a new approval proof, not a historical grant',async()=>{
+ const first=await loadMuseumModeratedCatalogStage(fake());
+ const edited=SRC();
+ edited[0].revision++;
+ edited[0].updated_at=new Date('2026-11-03T09:00:00Z');
+ const next=await loadMuseumModeratedCatalogStage(fake({exhibits:edited}));
+ assert.notEqual(first.currentReviewHashes[NEW],next.currentReviewHashes[NEW]);
+ const snapshot=captureMuseumReviewHashes({
+  visibleIds:[NEW],currentReviewHashes:first.currentReviewHashes
+ });
+ assert.deepEqual(selectCurrentlyReviewedMuseumIds({
+  visibleIds:[NEW],publishedReviewHashes:snapshot,
+  currentReviewHashes:next.currentReviewHashes
+ }),[]);
 });
 test('historical trash and drafts remain non-public but retain stable catalog IDs',async()=>{
  const exhibits=SRC();exhibits[1].status='trash';
