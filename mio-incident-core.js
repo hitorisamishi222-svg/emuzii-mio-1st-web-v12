@@ -76,7 +76,7 @@ export async function listIncidents(query){
  // A missing or partial DB response is never an empty inbox: no verified
  // result means UNKNOWN, not "0 unresolved incidents" in an operator UI.
  if(!r||!Array.isArray(r.rows)||!Number.isSafeInteger(r.rowCount)||
-    r.rowCount!==r.rows.length||r.rowCount>100)
+    r.rowCount<0||r.rowCount!==r.rows.length||r.rowCount>100)
    throw Error('incident inbox read unavailable');
  for(const x of r.rows){
   if(!x||typeof x.incident_id!=='string'||
