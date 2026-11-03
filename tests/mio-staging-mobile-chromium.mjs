@@ -432,6 +432,43 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第1版')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・歌の記憶')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
+   // Restore ANY historical version: after two publishes, the owner may
+   // select version 1 rather than only the immediately preceding version.
+   for(const name of ['架空作品A・履歴2','架空作品A・履歴3']){
+    await evaluate(`(()=>{
+     const input=document.querySelector('#demoGallery .gallery-row:first-child input[type=text]');
+     input.value=${JSON.stringify(name)};
+     document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
+    })()`);
+    await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+    await evaluate("document.querySelector('#demoGalleryReview').click()");
+    assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
+    await evaluate("document.querySelector('#demoGalleryCommit').click()");
+   }
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第3版')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryHistoryVersion option').length"),2);
+   await evaluate(`(()=>{
+    const select=document.querySelector('#demoGalleryHistoryVersion');
+    select.value='1';select.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRestorePreview').textContent.includes('架空作品A・歌の記憶')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・履歴3')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryRollback').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第4版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・歌の記憶')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryHistoryVersion option').length"),3);
+   // A current hide overrides old versions, both in public view and in the
+   // selected historical restore preview, and cannot be resurrected.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),false);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRestorePreview').textContent.includes('架空作品A')"),false);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryRollback').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第5版')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
    // Owner can find a single work or only works awaiting review on a phone.
    await evaluate(`(()=>{
     const input=document.querySelector('#demoGallerySearch');
