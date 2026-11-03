@@ -110,6 +110,9 @@ export function normalizeTriage(d){
  return {action:d.action,incidentId:d.incidentId,expectedState:d.expectedState,operationId:d.operationId};
 }
 export async function transitionIncident(client,values,actor){
+ // This function requires a dedicated transaction client, never a pool.query
+ // shortcut that may route BEGIN, SELECT and COMMIT to different sessions.
+ if(!client||typeof client.query!=='function')throw Error('incident transaction client required');
  const d=normalizeTriage(values);
  if(!['admin-code','admin-passkey'].includes(actor))throw Error('invalid operator');
  const after=d.action==='start'?'working':'resolved';
