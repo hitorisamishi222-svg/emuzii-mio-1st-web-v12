@@ -33,6 +33,7 @@ export const REQUIRED_COLUMN_TYPES=Object.freeze({
  'museum_public_exhibits.rights_checked_at':'timestamp with time zone',
  'museum_public_exhibits.privacy_checked_at':'timestamp with time zone',
  'museum_public_exhibits.updated_at':'timestamp with time zone',
+ 'museum_public_exhibits.published_at':'timestamp with time zone',
  'gallery_live_overrides.thumbnail_url':'text'
 });
 export const REQUIRED_STATUS=Object.freeze(['draft','published','hidden','trash']);
@@ -55,14 +56,27 @@ export const REQUIRED_NOT_NULL=Object.freeze({
  ]
 });
 
+// Review evidence is optional while writing a non-public draft.
+// A nullable column + a validated conditional CHECK are both required.
+export const REQUIRED_DRAFT_NULLABLE=Object.freeze({
+ museum_public_exhibits:[
+  'rights_checked_at','privacy_checked_at','reviewed_by','published_at'
+ ]
+});
 const resultFor=(schema,present)=>{
  return Object.entries(schema).map(([table,required])=>{
   const actual=present.get(table)||new Map();
   const missing=required.filter(field=>!actual.has(field));
-  const wrongNullability=(REQUIRED_NOT_NULL[table]||[]).filter(field=>{
-   const column=actual.get(field);
-   return column&&column.nullable!==false;
-  });
+  const wrongNullability=[
+   ...(REQUIRED_NOT_NULL[table]||[]).filter(field=>{
+    const column=actual.get(field);
+    return column&&column.nullable!==false;
+   }),
+   ...(REQUIRED_DRAFT_NULLABLE[table]||[]).filter(field=>{
+    const column=actual.get(field);
+    return column&&column.nullable!==true;
+   })
+  ];
   const wrongTypes=required.flatMap(field=>{
    if(!actual.has(field))return [];
    const expected=REQUIRED_COLUMN_TYPES[table+'.'+field];
