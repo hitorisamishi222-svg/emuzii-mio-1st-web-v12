@@ -79,7 +79,7 @@ export async function loadMuseumModeratedCatalogStage(client){
  // every record has a stable namespace; no overwrite of an old ID.
  const exhibits=rows(await client.query(
   'SELECT id,kind,title,description,credit,image_url,external_url,'+
-  'status,rights_checked_at,privacy_checked_at,reviewed_by '+
+  'status,rights_checked_at,privacy_checked_at,reviewed_by,published_at '+
   'FROM museum_public_exhibits ORDER BY created_at,id LIMIT 501',[]
  ),500);
  const approvedIds=approvedGalleryItems.map(item=>item.id);
@@ -95,7 +95,7 @@ export async function loadMuseumModeratedCatalogStage(client){
   seen.add(id);
   const reviewed=row.status==='published'&&
    checkedTime(row.rights_checked_at)&&checkedTime(row.privacy_checked_at)&&
-   typeof row.reviewed_by==='string'&&UUID.test(row.reviewed_by);
+   checkedTime(row.published_at)&&typeof row.reviewed_by==='string'&&UUID.test(row.reviewed_by);
   // A stored 'published' state without a complete rights/privacy trail is
   // invalid; never silently manufacture that approval.
   if(row.status==='published'&&!reviewed)fail('EXHIBIT_REVIEW_UNVERIFIED');
