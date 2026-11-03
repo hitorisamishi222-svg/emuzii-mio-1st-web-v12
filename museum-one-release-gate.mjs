@@ -25,6 +25,7 @@ const REQUIREMENTS=Object.freeze([
  ['current_gas_backed_up','Active GAS source and deployment version matched to backup'],
  ['gallery_rights_reviewed','Exhibits and imported works have current permission/privacy review'],
  ['gallery_admin_reviewed','Owner login, approvals, revisions and audit checked with real data'],
+ ['legacy_gallery_audit_consistent','Read-only legacy gallery audit counts match persisted revisions'],
  ['single_release_route_reviewed','Museum root route and legacy-entry handling reviewed'],
  ['attendance_page_hidden','New public site hides the attendance-prize page without deleting data'],
  ['chat_deferred','Chat functionality remains disabled for this release'],
@@ -69,6 +70,12 @@ export function evaluateMioMuseumReleaseGate(evidence={}){
  });
  for(const item of preserved)status['legacy_'+item.name+'_preserved']=
   boolean(checks['legacy_'+item.name+'_preserved'])&&item.matched;
+ const audit=src.galleryAuditReport;
+ status.legacy_gallery_audit_consistent=
+  boolean(checks.legacy_gallery_audit_consistent)&&
+  audit?.auditCountsConsistent===true&&
+  Number.isSafeInteger(audit.checkedWorks)&&audit.checkedWorks>0&&
+  Number.isSafeInteger(audit.mismatchCount)&&audit.mismatchCount===0;
  const details=freeze(REQUIREMENTS.map(([key,description])=>
   freeze({key,label:description,passed:status[key]===true})));
  const blockers=freeze(details.filter(x=>!x.passed).map(x=>x.key));
