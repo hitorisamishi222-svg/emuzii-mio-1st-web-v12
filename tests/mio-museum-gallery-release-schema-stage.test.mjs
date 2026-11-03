@@ -40,13 +40,16 @@ const extra={
   action:'text',prior_revision:'bigint',new_revision:'bigint'
  }
 };
-const nullable=new Set(['draft_featured_id','drafted_by','published_revision',
- 'published_from_draft_revision','published_order','published_visible_ids',
- 'published_featured_id','published_by','published_at','snapshot_featured_id']);
+const nullable=Object.freeze({
+ museum_gallery_layout_stage:new Set(['draft_featured_id','drafted_by',
+  'published_revision','published_from_draft_revision','published_order',
+  'published_visible_ids','published_featured_id','published_by','published_at']),
+ museum_gallery_layout_history_stage:new Set(['snapshot_featured_id'])
+});
 const extraCols=Object.entries(extra).flatMap(([table_name,cols])=>
  Object.entries(cols).map(([column_name,data_type])=>({
   table_name,column_name,data_type,
-  is_nullable:nullable.has(column_name)?'YES':'NO'
+  is_nullable:nullable[table_name]?.has(column_name)?'YES':'NO'
  })));
 const moreConstraints=[
  {table_name:'museum_gallery_layout_stage',contype:'p',validated:true,
