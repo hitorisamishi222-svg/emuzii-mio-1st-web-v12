@@ -73,7 +73,7 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
  // payloads or participant information from unrelated tables.
  const overrides=rows(await client.query(
   'SELECT item_id,title,creator,description,category,external_url,'+
-  'thumbnail_url,hidden,deleted,updated_at FROM gallery_live_overrides '+
+  'thumbnail_url,hidden,deleted,revision,updated_at FROM gallery_live_overrides '+
   'WHERE item_id=ANY($1::text[])'+lockClause,
   [[...staticIds]]
  ),500);
@@ -106,7 +106,8 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
    // A changed override timestamp creates a new approval generation after
    // hide/review/restore. The future writer MUST update this atomically.
    currentReviewHashes[base.id]=sha([
-    'reviewed-legacy-v1',base.id,row?iso(row.updated_at):'reviewed-static',
+    'reviewed-legacy-v1',base.id,
+    row?rev(row.revision):0,row?iso(row.updated_at):'reviewed-static',
     entry.title,entry.category,entry.thumbnail,entry.url,entry.creator,
     entry.description
    ]);
