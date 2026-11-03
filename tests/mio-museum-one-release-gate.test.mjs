@@ -11,6 +11,7 @@ const all=()=>{
  const keys=evaluateMioMuseumReleaseGate().checks.map(x=>x.key);
  return {
   candidateSha:head,productionSha:prod,
+  galleryAuditReport:{auditCountsConsistent:true,checkedWorks:2,mismatchCount:0},
   checks:Object.fromEntries(keys.map(k=>[k,true]).concat([['ciCandidateSha',head]])),
   protectedBaseline:fingerprints(),
   rehearsalSnapshot:fingerprints()
@@ -22,7 +23,7 @@ test('empty evidence never authorizes any production release',()=>{
  assert.equal(result.readyForOwnerReview,false);
  assert.equal(result.canDeploy,false);
  assert.equal(result.didModifyProduction,false);
- assert.equal(result.blockers.length,25);
+ assert.equal(result.blockers.length,26);
  assert.equal(result.preservedFingerprints.every(x=>x.matched===false),true);
 });
 test('even complete claimed evidence is only a staging review report, not a deploy token',()=>{
@@ -33,6 +34,19 @@ test('even complete claimed evidence is only a staging review report, not a depl
  assert.equal(result.didModifyProduction,false);
  assert.ok(Object.isFrozen(result));
  assert.ok(Object.isFrozen(result.checks));
+});
+test('gallery audit mismatch or absence blocks release readiness independently of a green CI',()=>{
+ for(const galleryAuditReport of [
+  null,undefined,{}, {auditCountsConsistent:false,checkedWorks:2,mismatchCount:1},
+  {auditCountsConsistent:true,checkedWorks:2,mismatchCount:1},
+  {auditCountsConsistent:true,checkedWorks:0,mismatchCount:0}
+ ]){
+  const input=all();input.galleryAuditReport=galleryAuditReport;
+  const report=evaluateMioMuseumReleaseGate(input);
+  assert.ok(report.blockers.includes('legacy_gallery_audit_consistent'));
+  assert.equal(report.readyForOwnerReview,false);
+  assert.equal(report.canDeploy,false);
+ }
 });
 test('production SHA must be a distinct verified SHA, not a branch or fabricated string',()=>{
  const input=all();input.productionSha='main';
