@@ -209,6 +209,20 @@ test('museum large update is gallery-first, hides attendance navigation without 
   assert.equal(shaOfFile(path),baseline.productionFileBlobs[path]);
  }
 });
+test('gallery layout planning stays off public routes and leaves production catalog untouched',()=>{
+ const plan='museum-curation-plan.mjs';
+ assert.ok(exists(plan));
+ assert.equal(config.builds.some(build=>build.src===plan),false);
+ assert.equal(config.routes.some(route=>route.src==='/'+plan),false);
+ for(const path of ['museum.html','museum-approved-gallery.html','museum-archive.html']){
+  assert.equal(read(path).includes(plan),false,'public page must not load draft layout module');
+ }
+ for(const path of ['gallery-items.js','api-gallery-items.js','api-gallery-manage.js']){
+  assert.equal(shaOfFile(path),baseline.productionFileBlobs[path],'existing public gallery changed');
+ }
+ assert.equal(config.routes.find(route=>route.src==='/')?.dest,'/index.html',
+   'one-time frontpage switch needs separate approval; cannot happen in staging');
+});
 test('offline rehearsal has SEIRA-style curator controls without live gallery mutation',()=>{
  const page=read('mio-admin-rehearsal.html'),script=read('mio-admin-rehearsal.js');
  for(const id of ['demoGallery','demoGalleryPreview','demoGalleryStatus'])
