@@ -344,3 +344,15 @@
 - 後から**「公開予定にする」「保管から戻す」**を操作しても、古い公開版に残った世代と一致しないため作品は即時には復活しない。改めて下書きを仮保存して公開前確認を行い、模擬公開版の更新が必要。旧版そのものは保持する。
 - Chrome 320/375/390/430pxで、掲載許可取消・再承認・公開前確認、新しい版への掲載、旧版復元の遮断、非公開→再表示・保管→復元の再表示遮断を実操作で検証。**すべて架空データで本番DB/本番URL/GASと無接続**。
 - 実DBでは類似の承認世代と公開スナップショットの照合をトランザクション内部へ組み込む必要があり、模擬画面の世代数は本番公開の条件を充足しない。既存の参加者・皆勤・ガチャ・当選/履歴データは保護を維持。
+
+
+### 2026-11-04：公開時の承認世代を固定し、古い版からの作品自動復活を遮断（Draftのみ）
+
+- `museum-gallery-review-hashes-stage.mjs` を追加。公開対象作品のIDごとに**その時点の承認審査ハッシュ**を固定し、来場者読み取り時は現在の検証済み承認ハッシュと比較する。失効・不一致の作品を表示から除き、不正な/不足した保存済みハッシュはエラーで止める。歴史復元は、対象に含まれる全作品の当時の承認世代が現在も一致する場合に限る。
+- `museum-gallery-source-stage.mjs` で、従来の承認済み静的作品は許可済みの内容、既存 `gallery_live_overrides` の追加・変更分は**実DBの改訂番号 `revision` と `updated_at` を含めたハッシュ**を生成。新ミュージアム展示は `revision` / `updated_at` / 掲載許可・個人情報確認日時 / 承認者 / 公開日時 / 展示メタデータを照合対象とする。非公開・削除作品のタイトル・URLは引き続き非公開化し、ハッシュ公開APIを作らない。
+- `museum-gallery-publication-stage.mjs` は候補公開版へ `published_review_hashes`、版履歴へ `snapshot_review_hashes` を保存する候補SQLに変更。旧版復元時には古い承認世代と現在の審査情報の不一致を**トランザクション内で拒否**し、別の公開改訂番号で復元する従来のルールを保持。純粋・架空DBモックのみで検証した。
+- `museum-gallery-public-read-stage.mjs` は保存された公開版のハッシュと、同一読取り専用DBスナップショット内で再取得した現在の審査ハッシュを比較する。不一致作品は公開結果から除き、注目作品だった場合も自動で代役を設定しない。ハッシュ行の不正・欠落は全件表示の代替を作らず停止。
+- 未適用 `db/museum-gallery-layout-stage.sql` に新しいJSONB列を追加。`museum-gallery-release-schema-stage.mjs` の必須カラム/型検査にも反映。JSONB内の作品ID/64桁ハッシュ/最大500件の厳密な形式検査はサーバーの純粋関数で行う。**既存Neon/PostgresへのDDL実行やGASの変更は0件**。
+- Vercel環境変数の**名前とスコープだけ**を読み取り専用確認。本番用・プレビュー用の `GALLERY_DATABASE_URL` は登録済み。ただし値は復号せず、実DBのNeon project/branch/databaseは未一致。確認した隔離Neonブランチ `gallery_live_overrides` に `revision` bigint NOT NULL / `updated_at` timestamptz NOT NULL があるが、**本番と同じブランチとは未断定**。
+- **公開停止条件を継続**：現行の本番管理APIとすべての外部書込経路が、掲載停止・再公開・修正時に改訂番号/日時を確実に更新することを実DBで確認する。承認世代の巻戻し・レビュー情報の無確認上書き・オーバーライド行の物理削除などで古いハッシュを再利用できないことを、DB側の制約・権限・監査とともに証明する必要がある。バックアップ復元、実端末、実DB接続先の確認、管理者本人の承認まではAPI接続/一括公開しない。
+- テスト：`tests/mio-museum-gallery-review-hashes-stage.test.mjs` / `tests/mio-museum-gallery-source-stage.test.mjs` / `tests/mio-museum-gallery-publication-stage.test.mjs` / `tests/mio-museum-gallery-public-read-stage.test.mjs` / `tests/mio-museum-gallery-release-schema-stage.test.mjs`。承認取り消し→再承認、旧版復元拒否、ハッシュの欠落・破損、現行権利停止、履歴保持を架空データで検査。
