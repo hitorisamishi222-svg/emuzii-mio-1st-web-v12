@@ -9,6 +9,8 @@ const status={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK (status = ANY (ARRAY['draft'::text,'published'::text,'hidden'::text,'trash'::text]))"};
 const review={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK ((status <> 'published'::text) OR (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))"};
+const roomKinds={table_name:'museum_public_exhibits',contype:'c',validated:true,
+ definition:"CHECK (kind = ANY (ARRAY['gallery'::text,'icons'::text,'moments'::text,'events'::text]))"};
 const baseColumns=Object.entries(REQUIRED_MUSEUM_SCHEMA).flatMap(([table_name,cols])=>
  cols.map(column_name=>({table_name,column_name,
   data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text',
@@ -73,7 +75,7 @@ const moreConstraints=[
 ];
 const good=()=>({identityVerified:true,
  columns:structuredClone([...baseColumns,...extraCols]),
- constraints:structuredClone([status,review,...baseKeys,...moreConstraints])
+ constraints:structuredClone([status,review,roomKinds,...baseKeys,...moreConstraints])
 });
 const report=input=>museumGalleryReleaseSchemaReport(input);
 test('a staged release can be reviewed only when base museum, live overrides and all layout tables exist',()=>{
@@ -81,11 +83,27 @@ test('a staged release can be reviewed only when base museum, live overrides and
  assert.equal(result.identityVerified,true);
  assert.equal(result.baseMuseumReady,true);
  assert.equal(result.sourceReady,true);
+ assert.equal(result.roomKindReady,true);
  assert.equal(result.layoutReady,true);
  assert.equal(result.allReady,true);
  assert.equal(result.canPublish,false);
  assert.equal(result.canDeploy,false);
  assert.equal(result.tables.every(x=>x.ready),true);
+});
+test('an actual checked DB must accept all four owner-curated exhibition rooms',()=>{
+ for(const definition of [
+  "CHECK (kind = ANY (ARRAY['icons','moments','events']))",
+  "CHECK (kind <> 'invalid' AND title <> 'gallery' AND title <> 'icons' AND title <> 'moments' AND title <> 'events')",
+  "CHECK (kind NOT IN ('gallery','icons','moments','events'))"
+ ]){
+  const x=good();x.constraints[2].definition=definition;
+  assert.equal(report(x).roomKindReady,false,definition);
+  assert.equal(report(x).allReady,false,definition);
+ }
+ const unvalidated=good();unvalidated.constraints[2].validated=false;
+ assert.equal(report(unvalidated).roomKindReady,false);
+ const absent=good();absent.constraints.splice(2,1);
+ assert.equal(report(absent).roomKindReady,false);
 });
 test('the prior museum-only preflight is insufficient when the layout tables are missing',()=>{
  for(const table of ['museum_gallery_layout_stage',
