@@ -15,6 +15,25 @@
   ops:new Map(),log:[],selected:null,nextMember:2,nextExhibit:4,unconfirmed:null
  });
  let s=initial();
+ // All following snapshots are fictional, memory-only rehearsal data.
+ // They are NOT the real gallery DB, release state, rights or authentication.
+ const eligible=item=>item.visible&&item.reviewed&&item.rightsConfirmed&&
+   item.privacyConfirmed&&!item.archived;
+ const draftDisplay=()=>s.gallery.filter(eligible).map(item=>({
+  id:item.id,title:item.title,category:item.category,
+  featured:item.featured,imageUrl:null // browser-selected photos are never published
+ }));
+ const galleryFingerprint=()=>JSON.stringify(s.gallery.map(item=>[
+  item.id,item.title,item.category,item.visible,item.featured,
+  item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.archived,item.imageUrl
+ ]));
+ let galleryPublished=[],galleryReviewFingerprint=null;
+ const currentPublication=()=>galleryPublished[galleryPublished.length-1];
+ const resetPublication=()=>{
+  galleryPublished=[{revision:1,items:draftDisplay()}];
+  galleryReviewFingerprint=null;
+ };
+ resetPublication();
  const make=(tag,content,cls)=>{
   const n=document.createElement(tag);
   if(content!==undefined)n.textContent=String(content);
@@ -149,6 +168,37 @@
    preview.append(card);
   }
   if(!visible.length)preview.append(make('p','公開する模擬展示はありません。'));
+  // Render the last "published" snapshot separately from the working draft.
+  // A moderation/archive takedown wins even against an older published version.
+  const publication=currentPublication(),published=$('demoGalleryPublished');
+  published.replaceChildren();
+  const byId=new Map(s.gallery.map(item=>[item.id,item]));
+  let publishedCount=0;
+  for(const exhibit of publication.items){
+   const actual=byId.get(exhibit.id);
+   if(!actual||actual.archived||!actual.reviewed||
+      !actual.rightsConfirmed||!actual.privacyConfirmed)continue;
+   const card=make('article',undefined,'entry');
+   card.append(galleryThumb(exhibit),make('strong',exhibit.title),
+    make('p',exhibit.category,'mini'));
+   if(exhibit.featured)card.append(make('p','✦ 注目作品','gallery-featured'));
+   published.append(card);publishedCount++;
+  }
+  if(!publishedCount)published.append(make('p','この模擬公開版に表示可能な作品はありません。'));
+  $('demoGalleryPublishedStatus').textContent=
+   '模擬公開版 第'+publication.revision+'版・表示可能 '+publishedCount+
+   '件／版内 '+publication.items.length+'件。実際の公開サイトは変わりません。';
+  const changed=galleryReviewFingerprint!==null&&
+   galleryReviewFingerprint!==galleryFingerprint();
+  if(changed){
+   galleryReviewFingerprint=null;
+   $('demoGalleryDifference').textContent='編集内容が変わりました。公開前に変更点を再確認してください。';
+  }
+  const target=draftDisplay();
+  const identical=JSON.stringify(publication.items)===JSON.stringify(target);
+  $('demoGalleryCommit').disabled=!galleryReviewFingerprint||identical||
+   s.gallery.some(item=>item.visible&&!eligible(item));
+  $('demoGalleryRollback').disabled=galleryPublished.length<2;
   $('demoGalleryStatus').textContent=
    '模擬公開 '+visible.length+'件／全'+s.gallery.length+'件。'+
    'このプレビューは保存されず、実ギャラリーには反映されません。';
@@ -261,6 +311,74 @@
   }else setMessage(member.name+'へ'+amount+'回模擬付与しました。実際のガチャ回数には反映しません。');
   render();
  }
+ const validForPublication=()=>!s.gallery.some(item=>item.visible&&!eligible(item))&&
+  s.gallery.filter(item=>item.featured).every(item=>eligible(item))&&
+  s.gallery.filter(item=>item.featured).length<=1;
+ $('demoGalleryReview').addEventListener('click',()=>{
+  if(!validForPublication()){
+   galleryReviewFingerprint=null;
+   $('demoGalleryDifference').textContent='公開条件がそろっていない展示があります。掲載許可・個人情報確認と公開対象を再確認してください。';
+   render();return;
+  }
+  const target=draftDisplay(),previous=currentPublication().items;
+  if(JSON.stringify(target)===JSON.stringify(previous)){
+   galleryReviewFingerprint=null;
+   $('demoGalleryDifference').textContent='公開済みの模擬版と変更がありません。';
+   render();return;
+  }
+  const previousIds=new Set(previous.map(item=>item.id));
+  const targetIds=new Set(target.map(item=>item.id));
+  const additions=target.filter(item=>!previousIds.has(item.id)).length;
+  const hidden=previous.filter(item=>!targetIds.has(item.id)).length;
+  const changed=target.filter(item=>{
+   const old=previous.find(x=>x.id===item.id);
+   return old&&JSON.stringify(old)!==JSON.stringify(item);
+  }).length;
+  galleryReviewFingerprint=galleryFingerprint();
+  $('demoGalleryDifference').textContent='確認結果：追加 '+additions+
+   '件／非表示 '+hidden+'件／内容・順序などの変更 '+changed+
+   '件。内容が正しければ「模擬公開」を押してください。';
+  render();
+ });
+ $('demoGalleryCommit').addEventListener('click',()=>{
+  if(galleryReviewFingerprint===null||
+     galleryReviewFingerprint!==galleryFingerprint()||
+     !validForPublication()){
+   galleryReviewFingerprint=null;
+   $('demoGalleryDifference').textContent='確認後に変更されたか、公開条件が満たされていません。再確認してください。';
+   render();return;
+  }
+  const items=draftDisplay();
+  if(JSON.stringify(items)===JSON.stringify(currentPublication().items)){
+   galleryReviewFingerprint=null;render();return;
+  }
+  const revision=currentPublication().revision+1;
+  galleryPublished.push({revision,items});
+  galleryReviewFingerprint=null;
+  audit('ギャラリーの模擬公開版を第'+revision+'版へ変更');
+  $('demoGalleryDifference').textContent='第'+revision+'版へ模擬公開しました。実サイトや保存先には反映されません。';
+  setMessage('展示の模擬公開を確認しました。本番は一切変更していません。');
+  render();
+ });
+ $('demoGalleryRollback').addEventListener('click',()=>{
+  if(galleryPublished.length<2){render();return;}
+  const previous=galleryPublished[galleryPublished.length-2];
+  // Recheck the current moderation state: never resurrect a revoked exhibit.
+  const byId=new Map(s.gallery.map(item=>[item.id,item]));
+  const items=previous.items.filter(item=>{
+   const current=byId.get(item.id);
+   return current&&current.reviewed&&current.rightsConfirmed&&
+    current.privacyConfirmed&&!current.archived;
+  }).map(item=>({...item}));
+  const revision=currentPublication().revision+1;
+  galleryPublished.push({revision,items});
+  galleryReviewFingerprint=null;
+  audit('ギャラリー模擬公開版を第'+previous.revision+'版から復元 → 第'+revision+'版');
+  $('demoGalleryDifference').textContent='過去の版を第'+revision+
+   '版として模擬復元しました。保管・権利停止の作品は再掲載していません。';
+  setMessage('公開版の復元を模擬しました。本番や旧データへの変更はありません。');
+  render();
+ });
  $('demoGalleryAdd').addEventListener('click',()=>{
   const title=$('demoGalleryNewTitle').value.trim();
   const category=$('demoGalleryNewCategory').value;
@@ -291,7 +409,9 @@
  });
  $('demoReset').addEventListener('click',()=>{
   releaseGalleryImages(s.gallery);
-  s=initial();$('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';$('demoSearch').value='';$('demoGrantAmount').value='1';
+  s=initial();resetPublication();
+  $('demoGalleryDifference').textContent='公開済みの版との差分はまだ確認していません。';
+  $('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';$('demoSearch').value='';$('demoGrantAmount').value='1';
   $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
   setMessage('リハーサルを初期状態へ戻しました。実データは変更していません。');
   render();
