@@ -13,13 +13,13 @@ const REQUIRED=Object.freeze({
   layout_key:'text',draft_revision:'bigint',draft_order:'jsonb',
   draft_visible_ids:'jsonb',draft_featured_id:'text',drafted_by:'uuid',
   published_revision:'bigint',published_from_draft_revision:'bigint',
-  published_order:'jsonb',published_visible_ids:'jsonb',
+  published_order:'jsonb',published_visible_ids:'jsonb',published_review_hashes:'jsonb',
   published_featured_id:'text',published_by:'uuid',
   published_at:'timestamp with time zone'
  },
  museum_gallery_layout_history_stage:{
   layout_key:'text',published_revision:'bigint',source_draft_revision:'bigint',
-  snapshot_order:'jsonb',snapshot_visible_ids:'jsonb',
+  snapshot_order:'jsonb',snapshot_visible_ids:'jsonb',snapshot_review_hashes:'jsonb',
   snapshot_featured_id:'text',published_by:'uuid',
   published_at:'timestamp with time zone'
  },
@@ -32,7 +32,8 @@ const NOT_NULL=Object.freeze({
  gallery_live_overrides:['item_id','hidden','deleted'],
  museum_gallery_layout_stage:['layout_key','draft_revision','draft_order','draft_visible_ids'],
  museum_gallery_layout_history_stage:['layout_key','published_revision',
-  'source_draft_revision','snapshot_order','snapshot_visible_ids','published_by','published_at'],
+  'source_draft_revision','snapshot_order','snapshot_visible_ids','snapshot_review_hashes',
+  'published_by','published_at'],
  museum_gallery_layout_audit_stage:['operation_id','payload_hash','actor_id',
   'action','prior_revision','new_revision']
 });
