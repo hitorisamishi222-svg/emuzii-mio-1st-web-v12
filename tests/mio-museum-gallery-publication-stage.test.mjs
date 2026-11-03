@@ -29,7 +29,7 @@ class Mock {
  }
  async query(sql,args=[]){
   this.calls.push({sql,args});
-  if(sql==='BEGIN'){if(this.tx)throw Error('already started');this.tx=structuredClone(this.persist);return {command:'BEGIN'}}
+  if(sql==='BEGIN ISOLATION LEVEL SERIALIZABLE'){if(this.tx)throw Error('already started');this.tx=structuredClone(this.persist);return {command:'BEGIN'}}
   if(!this.tx)throw Error('query outside transaction');
   if(sql==='ROLLBACK'){this.tx=null;this.rollbacks++;return {command:'ROLLBACK'}}
   if(sql==='COMMIT'){
@@ -113,6 +113,7 @@ test('owner can promote approved draft to stage-only publication with versioned 
  assert.equal(db.persist.audit[OP1].payload_hash.length,64);
  assert.equal(db.persist.legacyGachaData,'protected');
  assert.equal(db.commits,1);
+ assert.equal(db.calls[0].sql,'BEGIN ISOLATION LEVEL SERIALIZABLE');
 });
 test('stage publish does not overwrite a newer private draft and does not grant external release',async()=>{
  const db=new Mock();
