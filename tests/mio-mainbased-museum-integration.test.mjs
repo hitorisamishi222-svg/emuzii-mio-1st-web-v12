@@ -246,6 +246,8 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.match(script,/actual\.approvalEpoch!==exhibit\.approvalEpoch/);
  assert.match(script,/actual\.approvalEpoch===item\.approvalEpoch/);
  assert.match(script,/current\.approvalEpoch===item\.approvalEpoch/);
+ assert.match(script,/if\(!item\.visible\)\{[\s\S]*?item\.featured=false;item\.approvalEpoch\+\+/);
+ assert.match(script,/if\(item\.archived\)item\.approvalEpoch\+\+/);
  assert.match(script,/if\(!item\.rightsConfirmed\|\|!item\.privacyConfirmed\)return/);
  assert.match(script,/公開確認の操作を模擬しました/);
  assert.match(page,/gallery-review-checks input\[type=checkbox\]/);
