@@ -424,6 +424,32 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第1版')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・歌の記憶')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
+   // Owner can find a single work or only works awaiting review on a phone.
+   await evaluate(`(()=>{
+    const input=document.querySelector('#demoGallerySearch');
+    input.value='架空作品B';input.dispatchEvent(new Event('input',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryMatchCount').textContent.includes('1件を表示中')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2,
+      'searching curator drafts may not change the published gallery');
+   await evaluate(`(()=>{
+    document.querySelector('#demoGallerySearch').value='';
+    document.querySelector('#demoGallerySearch').dispatchEvent(new Event('input',{bubbles:true}));
+    const filter=document.querySelector('#demoGalleryFilter');
+    filter.value='hidden';filter.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row').textContent.includes('架空作品C')"),true);
+   await evaluate(`(()=>{
+    const filter=document.querySelector('#demoGalleryFilter');
+    filter.value='review';filter.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),0);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
+   assert.equal(await evaluate("document.querySelector('#demoGallerySearch').value"),'');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryFilter').value"),'all');
 
   }
  }
