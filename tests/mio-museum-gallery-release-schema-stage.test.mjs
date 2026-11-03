@@ -27,13 +27,13 @@ const extra={
   layout_key:'text',draft_revision:'bigint',draft_order:'jsonb',
   draft_visible_ids:'jsonb',draft_featured_id:'text',drafted_by:'uuid',
   published_revision:'bigint',published_from_draft_revision:'bigint',
-  published_order:'jsonb',published_visible_ids:'jsonb',
+  published_order:'jsonb',published_visible_ids:'jsonb',published_review_hashes:'jsonb',
   published_featured_id:'text',published_by:'uuid',
   published_at:'timestamp with time zone'
  },
  museum_gallery_layout_history_stage:{
   layout_key:'text',published_revision:'bigint',source_draft_revision:'bigint',
-  snapshot_order:'jsonb',snapshot_visible_ids:'jsonb',
+  snapshot_order:'jsonb',snapshot_visible_ids:'jsonb',snapshot_review_hashes:'jsonb',
   snapshot_featured_id:'text',published_by:'uuid',
   published_at:'timestamp with time zone'
  },
@@ -104,6 +104,17 @@ test('an actual checked DB must accept all four owner-curated exhibition rooms',
  assert.equal(report(unvalidated).roomKindReady,false);
  const absent=good();absent.constraints.splice(2,1);
  assert.equal(report(absent).roomKindReady,false);
+});
+test('publication and history review fingerprints are necessary for release readiness',()=>{
+ for(const [table,column] of [
+  ['museum_gallery_layout_stage','published_review_hashes'],
+  ['museum_gallery_layout_history_stage','snapshot_review_hashes']
+ ]){
+  const x=good();
+  x.columns=x.columns.filter(c=>!(c.table_name===table&&c.column_name===column));
+  assert.equal(report(x).allReady,false);
+  assert.ok(report(x).tables.find(t=>t.table===table).missing.includes(column));
+ }
 });
 test('the prior museum-only preflight is insufficient when the layout tables are missing',()=>{
  for(const table of ['museum_gallery_layout_stage',
