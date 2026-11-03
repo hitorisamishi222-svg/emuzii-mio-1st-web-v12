@@ -69,7 +69,15 @@
    if(!disabled)el.addEventListener('click',action);
    return el;
   };
+  const needle=$('demoGallerySearch').value.trim().toLocaleLowerCase('ja');
+  const filter=$('demoGalleryFilter').value;
+  let matches=0;
   s.gallery.forEach((item,index)=>{
+   if(needle&&!(item.title+' '+item.id).toLocaleLowerCase('ja').includes(needle))return;
+   if(filter==='visible'&&(!item.visible||item.archived))return;
+   if(filter==='review'&&item.reviewed)return;
+   if(filter==='hidden'&&item.visible&&!item.archived)return;
+   matches++;
    const row=make('div',undefined,'entry gallery-row');
    const details=make('div');
    details.append(make('strong',item.title),
@@ -159,6 +167,8 @@
    details.append(label,title,approval,actions,fileLabel,file);
    row.append(galleryThumb(item),details);editor.append(row);
   });
+  $('demoGalleryMatchCount').textContent='全'+s.gallery.length+'件のうち'+matches+'件を表示中。';
+  if(!matches)editor.append(make('p','条件に合う架空展示はありません。','mini'));
   const visible=s.gallery.filter(x=>x.visible&&x.reviewed&&!x.archived);
   for(const item of visible){
    const card=make('article',undefined,'entry');
@@ -334,10 +344,13 @@
    const old=previous.find(x=>x.id===item.id);
    return old&&JSON.stringify(old)!==JSON.stringify(item);
   }).length;
+  const orderChanged=target.map(item=>item.id).join('|')!==
+   previous.map(item=>item.id).join('|');
   galleryReviewFingerprint=galleryFingerprint();
   $('demoGalleryDifference').textContent='確認結果：追加 '+additions+
-   '件／非表示 '+hidden+'件／内容・順序などの変更 '+changed+
-   '件。内容が正しければ「模擬公開」を押してください。';
+   '件／非表示 '+hidden+'件／表示内容変更 '+changed+
+   '件／並び順変更 '+(orderChanged?'あり':'なし')+
+   '。内容が正しければ「模擬公開」を押してください。';
   render();
  });
  $('demoGalleryCommit').addEventListener('click',()=>{
@@ -379,6 +392,8 @@
   setMessage('公開版の復元を模擬しました。本番や旧データへの変更はありません。');
   render();
  });
+ $('demoGallerySearch').addEventListener('input',render);
+ $('demoGalleryFilter').addEventListener('change',render);
  $('demoGalleryAdd').addEventListener('click',()=>{
   const title=$('demoGalleryNewTitle').value.trim();
   const category=$('demoGalleryNewCategory').value;
@@ -411,7 +426,8 @@
   releaseGalleryImages(s.gallery);
   s=initial();resetPublication();
   $('demoGalleryDifference').textContent='公開済みの版との差分はまだ確認していません。';
-  $('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';$('demoSearch').value='';$('demoGrantAmount').value='1';
+  $('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';
+  $('demoGallerySearch').value='';$('demoGalleryFilter').value='all';$('demoSearch').value='';$('demoGrantAmount').value='1';
   $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
   setMessage('リハーサルを初期状態へ戻しました。実データは変更していません。');
   render();
