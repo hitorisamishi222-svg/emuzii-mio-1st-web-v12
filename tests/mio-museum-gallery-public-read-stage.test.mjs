@@ -31,7 +31,11 @@ class FakeClient{
  }
  async query(sql,args=[]){
   this.calls.push({sql,args});
-  if(sql==='BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')return {command:'BEGIN'};
+  if(sql==='BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'){
+   this.readOnly=true;return {command:'BEGIN'};
+  }
+  if(this.readOnly&&/FOR\s+(?:UPDATE|SHARE)\b/i.test(sql))
+   throw Error('cannot execute SELECT FOR SHARE in a read-only transaction');
   if(sql==='COMMIT')return {command:'COMMIT'};
   if(sql==='ROLLBACK'){this.rollbacks++;return {command:'ROLLBACK'}}
   if(sql.includes('FROM museum_gallery_layout_stage')){
@@ -55,6 +59,14 @@ test('public reader exposes only confirmed published layout and current approved
  assert.equal(db.calls.at(-1).sql,'COMMIT');
  assert.equal(db.calls.length,5);
  assert.equal(db.rollbacks,0);
+});
+test('public reader never tries SELECT FOR SHARE or UPDATE inside a read-only transaction',async()=>{
+ const db=new FakeClient();
+ await readPublishedMuseumGalleryStage(db);
+ const queries=db.calls.map(x=>x.sql);
+ assert.equal(queries[0],'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+ assert.ok(queries.some(q=>q.includes('gallery_live_overrides')));
+ assert.equal(queries.some(q=>/FOR\\s+(?:SHARE|UPDATE)\\b/i.test(q)),false);
 });
 test('no published layout never falls back to static gallery',async()=>{
  for(const layout of [null,{
