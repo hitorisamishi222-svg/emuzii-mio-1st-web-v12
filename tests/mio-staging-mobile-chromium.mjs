@@ -469,6 +469,42 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
+   // Rights withdrawal is an immediate takedown independent of draft save.
+   // Reapproval MUST NOT resurrect an older publication: it gets a new
+   // approval generation and needs an explicit newly confirmed publication.
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks .actions button:first-child').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),false);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品A')"),false);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row:first-child .gallery-review-checks input[type=checkbox]').length"),2);
+   await evaluate(`(()=>{
+    const check=document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks input[type=checkbox]');
+    check.checked=true;check.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品A')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),false);
+   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+   await evaluate("document.querySelector('#demoGalleryReview').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryCommit').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第2版')"),true);
+   // The historical first version had an earlier approval generation; it
+   // cannot restore revoked content even though it still records the title.
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRestorePreview').textContent.includes('架空作品A')"),false);
+   await evaluate("document.querySelector('#demoGalleryRollback').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第3版')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   // Independent privacy check revocation must also take down a live work.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:nth-child(2) .gallery-review-checks .actions button:nth-child(2)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),0);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品B')"),false);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row:nth-child(2) .gallery-review-checks input[type=checkbox]').length"),2);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
    // Owner can find a single work or only works awaiting review on a phone.
    await evaluate(`(()=>{
     const input=document.querySelector('#demoGallerySearch');
