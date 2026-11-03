@@ -69,6 +69,10 @@ const moreConstraints=[
   definition:'CHECK (snapshot_order @> snapshot_visible_ids)'},
  {table_name:'museum_gallery_layout_stage',contype:'f',validated:true,
   definition:'FOREIGN KEY (drafted_by) REFERENCES gallery_admin_users(id)'},
+ {table_name:'museum_gallery_layout_stage',contype:'c',validated:true,
+  definition:"CHECK ((published_review_hashes IS NULL) OR (jsonb_typeof(published_review_hashes) = 'object'))"},
+ {table_name:'museum_gallery_layout_history_stage',contype:'c',validated:true,
+  definition:"CHECK (jsonb_typeof(snapshot_review_hashes) = 'object')"},
  {table_name:'museum_gallery_layout_history_stage',contype:'f',validated:true,
   definition:'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)'},
  {table_name:'museum_gallery_layout_audit_stage',contype:'f',validated:true,
@@ -115,6 +119,15 @@ test('publication and history review fingerprints are necessary for release read
   x.columns=x.columns.filter(c=>!(c.table_name===table&&c.column_name===column));
   assert.equal(report(x).allReady,false);
   assert.ok(report(x).tables.find(t=>t.table===table).missing.includes(column));
+ }
+});
+test('review fingerprints require a validated JSONB-object check in both tables',()=>{
+ for(const name of ['published_review_hashes','snapshot_review_hashes']){
+  const x=good();
+  x.constraints=x.constraints.filter(c=>!String(c.definition).includes('jsonb_typeof('+name+')'));
+  const result=report(x);
+  assert.equal(result.layoutReady,false,name);
+  assert.equal(result.allReady,false,name);
  }
 });
 test('the prior museum-only preflight is insufficient when the layout tables are missing',()=>{
