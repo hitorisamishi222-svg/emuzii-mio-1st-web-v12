@@ -458,6 +458,73 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
    assert.equal(await evaluate("document.querySelector('#demoGallerySearch').value"),'');
    assert.equal(await evaluate("document.querySelector('#demoGalleryFilter').value"),'all');
+   // A curator may arrange works into the museum's existing gallery rooms.
+   // The preview room filter changes ONLY the view, not saved publications.
+   await evaluate(`(()=>{
+    const select=document.querySelector('#demoGalleryRoomFilter');
+    select.value='icons';select.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品B')"),true);
+   await evaluate(`(()=>{
+    const select=document.querySelector('#demoGalleryPreviewRoom');
+    select.value='icons';select.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),1);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   // Reassign a work to a different room: draft changes immediately, but
+   // the published icon exhibition must stay on its previous version.
+   await evaluate(`(()=>{
+    const select=document.querySelector('#demoGallery .gallery-row .gallery-room-select');
+    select.value='events';select.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),0);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),0);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   await evaluate(`(()=>{
+    const select=document.querySelector('#demoGalleryPreviewRoom');
+    select.value='events';select.dispatchEvent(new Event('change',{bubbles:true}));
+    const filter=document.querySelector('#demoGalleryRoomFilter');
+    filter.value='events';filter.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),1);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),1);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),0);
+   assert.equal(await evaluate("document.querySelector('#demoGallerySaveDraft').disabled"),false);
+   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+   await evaluate("document.querySelector('#demoGalleryReview').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryCommit').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished .gallery-room-label').textContent.includes('イベントの記録')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第2版')"),true);
+   // Restoring the original version relocates the work to the icon room and
+   // never deletes the newer draft or a previous publication history record.
+   await evaluate("document.querySelector('#demoGalleryRollback').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),0);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第3版')"),true);
+   await evaluate(`(()=>{
+    const select=document.querySelector('#demoGalleryPreviewRoom');
+    select.value='icons';select.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished .gallery-room-label').textContent.includes('歴代アイコン館')"),true);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRoomFilter').value"),'all');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreviewRoom').value"),'all');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewRoom').value"),'gallery');
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   // New exhibits can be prepared for an archive room without publishing.
+   await evaluate(`(()=>{
+    document.querySelector('#demoGalleryNewTitle').value='架空のイベント思い出';
+    document.querySelector('#demoGalleryNewRoom').value='events';
+    document.querySelector('#demoGalleryAdd').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),4);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-room-select').value"),'events');
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   await evaluate("document.querySelector('#demoReset').click()");
 
   }
  }
