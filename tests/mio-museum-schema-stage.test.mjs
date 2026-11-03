@@ -21,7 +21,7 @@ const keys=REQUIRED_FOREIGN_KEYS.map(([table,column,refTable,refColumn])=>({
  table_name:table,contype:'f',validated:true,
  definition:'FOREIGN KEY ('+column+') REFERENCES '+refTable+'('+refColumn+')'
 }));
-const valid=()=>({columns:structuredClone(columns),constraints:[status,...keys],identityVerified:true});
+const valid=()=>({columns:structuredClone(columns),constraints:structuredClone([status,...keys]),identityVerified:true});
 const report=x=>museumSchemaReport(x);
 
 test('existing phase2 museum schema preflight is reusable in current Draft without writes',()=>{
