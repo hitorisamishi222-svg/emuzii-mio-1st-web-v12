@@ -415,3 +415,10 @@ test('the incident panel is diagnostic-only, shows no unverified counts and cann
  assert.doesNotMatch(panel,/<script|<form|onclick=|onchange=|fetch\s*\(|\/api\/mio-incidents/);
  assert.doesNotMatch(panel,/MIO-W-[a-f0-9]{24}|id="incidentPreviewRefresh"[^>]*\benabled\b/);
 });
+
+test('triage rejects missing transaction client before any DB operation',async()=>{
+ const d={incidentId,action:'start',expectedState:'unhandled',operationId:'9'.repeat(32)};
+ for(const client of [undefined,null,{}, {query:null}]){
+  await assert.rejects(transitionIncident(client,d,'admin-code'),/incident transaction client required/);
+ }
+});
