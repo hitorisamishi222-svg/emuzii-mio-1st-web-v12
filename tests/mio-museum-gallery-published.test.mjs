@@ -103,6 +103,22 @@ test('image-only museum records may omit a click-through link without being made
  assert.equal(record.url,'');
  assert.equal(record.featured,true);
 });
+test('approved public output keeps independent exhibition-room placement',()=>{
+ const input=fixture();
+ input.authoritativeCatalog[0].room='gallery';
+ input.authoritativeCatalog[1].room='icons';
+ const result=projectPublishedMuseumGallery(input);
+ assert.equal(result.items.find(x=>x.id===video.id).room,'icons');
+ assert.equal(result.items.find(x=>x.id===video.id).category,'動画');
+ assert.equal(result.items.find(x=>x.id===song.id).room,'gallery');
+ const legacyDefault=view();
+ assert.equal(legacyDefault.items.every(x=>x.room==='gallery'),true);
+});
+test('invented exhibition rooms cannot pass the approved catalog projection',()=>{
+ const input=fixture();
+ input.authoritativeCatalog[1].room='private-vault';
+ rejects({authoritativeCatalog:input.authoritativeCatalog},'CATALOG_INVALID');
+});
 test('malicious or malformed gallery metadata never reaches public cards',()=>{
  const bad=key=>fixture().authoritativeCatalog.map(x=>x.id===video.id?{...x,[key]:
   key==='url'?'javascript:alert(1)':key==='thumbnail'?'https://evil.invalid/x.png':x[key]}:x);
@@ -125,7 +141,7 @@ test('public cards exclude device/session/admin and internal metadata',()=>{
  assert.equal(json.includes('sensitive'),false);
  assert.equal(json.includes('not-for-public'),false);
  assert.deepEqual(Object.keys(out.items[0]).sort(),
-  ['category','creator','description','featured','id','thumbnail','title','url']);
+  ['category','creator','description','featured','id','room','thumbnail','title','url']);
 });
 test('results are detached, immutable and have no runtime side effects',()=>{
  const input=fixture();
