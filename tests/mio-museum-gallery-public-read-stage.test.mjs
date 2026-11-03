@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {readPublishedMuseumGalleryStage} from '../museum-gallery-public-read-stage.mjs';
+import {loadMuseumModeratedCatalogStage} from '../museum-gallery-source-stage.mjs';
 
 const museumId='e4b063d0-a393-4d15-b653-c2243e38c6a8';
 const id='museum-'+museumId;
@@ -10,6 +11,7 @@ const validLayout=()=>({
  published_order:[id,'mio-awakening-video','mio-awakening-song'],
  published_visible_ids:[id,'mio-awakening-video','mio-awakening-song'],
  published_featured_id:id,
+ published_review_hashes:Object.fromEntries([id,'mio-awakening-video','mio-awakening-song'].map(key=>[key,baselineHashes[key]])),
  published_by:'11111111-2222-4333-8444-555555555555',
  published_at:new Date('2026-11-03T08:00:00Z')
 });
@@ -25,6 +27,9 @@ const exhibit=()=>({
  reviewed_by:'11111111-2222-4333-8444-555555555555'
 });
 const rows=entries=>({command:'SELECT',rowCount:entries.length,rows:entries});
+const baselineHashes=(await loadMuseumModeratedCatalogStage({async query(sql){
+ return rows(sql.includes('gallery_live_overrides')?[]:[exhibit()]);
+}})).currentReviewHashes;
 class FakeClient{
  constructor({layout=validLayout(),overrides=[],exhibits=[exhibit()],missingMuseum=false}={}){
   this.layout=layout;this.overrides=overrides;this.exhibits=exhibits;
@@ -73,7 +78,7 @@ test('no published layout never falls back to static gallery',async()=>{
  for(const layout of [null,{
   published_revision:null,published_from_draft_revision:null,
   published_order:null,published_visible_ids:null,published_featured_id:null,
-  published_by:null,published_at:null
+  published_review_hashes:null,published_by:null,published_at:null
  }]){
   const db=new FakeClient({layout});
   const result=await readPublishedMuseumGalleryStage(db);
@@ -98,6 +103,30 @@ test('revoked museum item stays unpublished even when a previous published snaps
  const result=await readPublishedMuseumGalleryStage(db);
  assert.deepEqual(result.items.map(x=>x.id),['mio-awakening-video','mio-awakening-song']);
  assert.equal(result.items.some(x=>x.featured),false);
+});
+test('previously published museum item cannot reappear after a newer confirmed review',async()=>{
+ const renewed=exhibit();renewed.revision=3;
+ renewed.updated_at=new Date('2026-11-03T10:00:00Z');
+ const db=new FakeClient({exhibits:[renewed]});
+ const result=await readPublishedMuseumGalleryStage(db);
+ assert.equal(result.items.some(item=>item.id===id),false,
+  'old approval fingerprint may not authorize content after a new review');
+ assert.deepEqual(result.items.map(item=>item.id),['mio-awakening-video','mio-awakening-song']);
+ assert.equal(result.items.some(item=>item.featured),false);
+});
+test('missing or tampered publication approval proof cannot display any partial gallery',async()=>{
+ for(const published_review_hashes of [null,{}, {[id]:'bad'},{
+  [id]:'f'.repeat(64),
+  'mio-awakening-video':'f'.repeat(64),
+  'mio-awakening-song':'f'.repeat(64),
+  'extra-public':'f'.repeat(64)
+ }]){
+  const db=new FakeClient({layout:{...validLayout(),published_review_hashes}});
+  await assert.rejects(()=>readPublishedMuseumGalleryStage(db),
+   /MUSEUM_REVIEW_(HASHES_INVALID|SNAPSHOT_INCOMPLETE)/);
+  assert.equal(db.rollbacks,1);
+  assert.equal(db.calls.at(-1).sql,'ROLLBACK');
+ }
 });
 test('invalid published metadata blocks response before reading private exhibits',async()=>{
  for(const patch of [
