@@ -34,6 +34,20 @@ label{display:block;font-weight:700;margin-top:10px}
 .status{padding:10px;background:#091c30;border-radius:10px;min-height:42px}
 .audit{margin:0;padding-left:25px;max-height:260px;overflow:auto}
 .audit li{padding:5px 0;border-bottom:1px solid #33516f;overflow-wrap:anywhere}
+
+.gallery-curator{border-color:#cdb57f;background:linear-gradient(145deg,#213955,#14243a)}
+.gallery-curator h2{color:#fff0cf}
+.gallery-curator .gallery-row{display:grid;grid-template-columns:66px minmax(0,1fr);gap:13px;align-items:start}
+.gallery-curator .gallery-thumb{display:grid;place-items:center;min-height:65px;border-radius:9px;
+ background:linear-gradient(150deg,#1d5277,#081e40);border:1px solid #cdb57f;color:#ffe5b5}
+.gallery-curator .gallery-thumb img{display:block;width:100%;height:65px;object-fit:cover;border-radius:8px}
+.gallery-curator .gallery-actions{margin-top:9px}
+.gallery-curator button{font-size:14px}
+.gallery-curator .gallery-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.gallery-curator .gallery-preview .entry{border-color:#d9bd81}
+.gallery-curator .gallery-featured{color:#ffe7ac;font-weight:800}
+.gallery-curator input[type=file]{font-size:14px;min-height:48px}
+.gallery-curator input[type=text]{min-height:42px}
 @media(max-width:690px){.grid{grid-template-columns:1fr}section.full{grid-column:auto}dl{grid-template-columns:1fr 1fr}}
 </style></head><body>
 <header>
@@ -74,6 +88,14 @@ label{display:block;font-weight:700;margin-top:10px}
 <h2>障害・復旧対応</h2>
 <p class="mini">「未対応 → 対応中 → 解決済み」の順序のみ許可。</p>
 <div id="demoIncidents" class="entries"></div>
+</section>
+<section class="full gallery-curator" aria-label="ギャラリー作品管理の模擬編集">
+<h2>💎 ギャラリーを簡単に入れ替える（模擬編集）</h2>
+<p class="mini">SEIRAサイト型の操作を試すための<strong>架空展示だけ</strong>の画面です。並び替え・注目作品・公開切替・タイトルと画像の差し替えを端末内で確認できます。<strong>保存・アップロード・本番反映はできません。</strong></p>
+<div id="demoGallery" class="entries" aria-label="模擬ギャラリー編集一覧"></div>
+<h3 style="margin:20px 0 9px">来場者側の見え方（模擬プレビュー）</h3>
+<div id="demoGalleryPreview" class="gallery-preview" aria-label="公開状態だけを表示する模擬プレビュー"></div>
+<p id="demoGalleryStatus" role="status" aria-live="polite" class="status">架空展示を準備しています。</p>
 </section>
 <section>
 <h2>管理操作ログ</h2>
