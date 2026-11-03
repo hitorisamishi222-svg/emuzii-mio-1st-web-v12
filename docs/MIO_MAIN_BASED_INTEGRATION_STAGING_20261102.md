@@ -264,3 +264,12 @@
 - `db/museum-public-exhibits.sql` の下書き審査列をNULL許容とし、`status='published'` 時だけ権利/個人情報確認・承認者・公開日時の全条件をDBで必須とする。検査用 `museum-preflight-core.js` は、**非公開下書きを書けるNULL許容性と、公開条件を強制する実DB制約**の双方を必須に変更。
 - 各純粋／モック検査は `tests/mio-museum-gallery-source-stage.test.mjs`, `tests/mio-museum-gallery-public-read-stage.test.mjs`, `tests/mio-museum-schema-stage.test.mjs`, `tests/mio-museum-gallery-published.test.mjs` に追加。DB読み取り連動テストは架空レコードのみで、実Vercel認証情報や秘密の作品を使わない。
 - **公開を止める条件：** 実Vercel `GALLERY_DATABASE_URL` とNeon project/branch/databaseの照合、正本テーブルの存在、バックアップ/復元、既存GAS・参加者データ保護の実確認、管理者による権利審査と最終承認、実iPhone/Android/PC確認、ロールバック確認が未完了。今のCI合格は本番実装完了ではない。
+
+
+### 2026-11-03：非公開展示の読み取り遮断・専用DB接続の安全性改善（本番未反映）
+
+- `museum-gallery-source-stage.mjs` の**非公開展示の中間データを匿名化**。未承認の新規展示だけでなく、既存ギャラリーで後から非表示・削除指定された作品についても、公開用カタログには元タイトル・説明・権利者・画像URL・リンクURLを渡さない。配置履歴検証のためのID/種類/表示状態のみ残す。**実DB原本と運営用バックアップには書き込まず、作品の削除はしていない**。
+- 現行 `museum-gallery-public-read-stage.mjs` は `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` を使用。旧候補の `gallery_live_overrides ... FOR SHARE` がこの読み取り専用トランザクションと両立しない問題を修正した。`loadMuseumModeratedCatalogStage(client,{lockModeration:false})` は閲覧用のロックなし照会、`lockModeration:true` は**直列化可能な管理書き込み側の専用接続**でのみ使う。公開/復元のサーバー配線は未実装であり、管理更新時にロックオプションを選ぶことは今後のレビュー必須。
+- `museum-gallery-client-stage.mjs` を追加。`pool.query` によるトランザクションの分断を防ぐため、既存プールから**一つの専用clientをチェックアウト**する。`verifyBinding` のサーバー側照合が `identityVerified/schemaReady/backupVerified/ownerApproved` の全真を返した場合のみ、同じclientで作業を実行。失敗・結果不明の接続は `release(error)` で破棄する。**この照合を実際に実行するアダプターと本番環境の正本DB照合は未完了**。これらの真偽をブラウザ入力から受け取らない。
+- `tests/mio-museum-gallery-source-stage.test.mjs`・`tests/mio-museum-gallery-public-read-stage.test.mjs` に、未承認タイトル/説明/URLのレダクション、閲覧側の行ロック禁止、管理側の明示的なロック許可を追加。`tests/mio-museum-gallery-client-stage.test.mjs` に、pool.connectだけの専用セッション、検証不足時の完全拒否、障害発生時の接続破棄とシークレット非露出を追加。
+- 実PostgreSQL `READ ONLY`/トランザクションの動作・Vercel Preview保護、復元可能バックアップ・GAS稼働コード・iPhone実機などは未検証。**Draft PR #76のまま、既存Vercel Production/ネイティブGAS/DB/皆勤・ガチャ・当選履歴/参加者データには操作していない**。一括公開ゲートもOFFのまま。
