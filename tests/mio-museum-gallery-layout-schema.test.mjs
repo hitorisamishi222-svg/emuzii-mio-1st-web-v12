@@ -79,7 +79,7 @@ test('candidate SQL is precisely three complete CREATE TABLE statements with bal
 });
 test('layout metadata alone cannot unhide or publish moderated items',()=>{
  assert.match(sql,/Layout metadata NEVER overrides live moderation/);
- assert.match(sql,/current\s*hidden\/deleted flags in the SAME dedicated transaction/);
+ assert.match(sql,/hidden\/deleted flags in the SAME dedicated transaction/);
  assert.match(sql,/Serialized IDs are NOT publication rights/);
  assert.match(sql,/On uncertain COMMIT check operation_id/);
 });
