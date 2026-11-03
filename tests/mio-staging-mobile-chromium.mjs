@@ -397,6 +397,14 @@ try{
    })()`);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示を更新')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),false);
+   // Unsaved drafts cannot be approved or moved into a publication revision.
+   await evaluate("document.querySelector('#demoGalleryReview').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryDifference').textContent.includes('先に下書きを仮保存')"),true);
+   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第2版')"),true);
+   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第3版')"),true);
    await evaluate("document.querySelector('#demoGalleryReview').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
    await evaluate("document.querySelector('#demoGalleryCommit').click()");
