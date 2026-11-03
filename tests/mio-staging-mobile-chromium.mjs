@@ -461,6 +461,45 @@ try{
 
   }
  }
+ // Render the actual new museum gallery section and its real CSS in an
+ // inert data: fixture. No scripts, external image requests, live API or real DB.
+ // This is a layout smoke, NOT a full production browser/URL test.
+ const museumHtml=await readFile(resolve(cwd,'museum.html'),'utf8');
+ const museumCss=await readFile(resolve(cwd,'museum.css'),'utf8');
+ const galleryStart=museumHtml.indexOf('<section class="museum-section museum-gallery-first"');
+ const galleryEnd=museumHtml.indexOf('<section class="museum-section" id="mioAwakening"',galleryStart);
+ assert.ok(galleryStart>=0&&galleryEnd>galleryStart,'missing museum gallery section for responsive check');
+ const galleryFixture='<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+  '<style>'+museumCss+'</style></head><body class="museum"><main>'+
+  museumHtml.slice(galleryStart,galleryEnd)+'</main></body></html>';
+ const fixtureUrl='data:text/html;charset=utf-8,'+encodeURIComponent(galleryFixture);
+ for(const width of [320,375,390,430]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  await cdp('Page.navigate',{url:fixtureUrl});
+  await poll(()=>evaluate("document.readyState==='complete'&&document.querySelectorAll('.museum-showcase-item').length===2"));
+  const sizes=await evaluate(`(()=>({
+   viewport:innerWidth,scroll:document.documentElement.scrollWidth,
+   highlighted:document.querySelectorAll('.museum-showcase-item').length,
+   columns:getComputedStyle(document.querySelector('.museum-showcase-grid')).gridTemplateColumns,
+   cardMinHeight:Math.min(...[...document.querySelectorAll('.museum-showcase-item')].map(el=>el.getBoundingClientRect().height)),
+   visibleTitle:!!document.querySelector('.museum-showcase-heading h3')?.textContent.includes('今、楽しめる'),
+   ctas:[...document.querySelectorAll('.museum-showcase-item')].map(el=>el.getAttribute('href'))
+  }))()`);
+  assert.ok(sizes.scroll<=sizes.viewport+2,'museum showcase horizontal overflow '+JSON.stringify(sizes));
+  assert.equal(sizes.highlighted,2);
+  assert.ok(sizes.cardMinHeight>=100,'showcase card became too small '+JSON.stringify(sizes));
+  assert.equal(sizes.visibleTitle,true);
+  assert.deepEqual(sizes.ctas,[
+   '/museum-approved-gallery.html?kind=music',
+   '/museum-approved-gallery.html?kind=video'
+  ]);
+  if(width===390){
+   await mkdir('artifacts',{recursive:true});
+   const picture=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-museum-showcase-390.png',Buffer.from(picture.data,'base64'));
+  }
+ }
  // Browser-only examination of intentionally synthetic GAS files: never upload secrets.
  for(const width of [320,375,390,430]){
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
