@@ -70,7 +70,7 @@ export async function recordIncident(query,data,secret,now=Date.now()){
 // PostgreSQL normally returns timestamptz as Date; accept strict ISO text for
 // isolated adapters, but never expose missing or unparsable chronology as valid.
 const validTimestamp=x=>x instanceof Date?Number.isFinite(x.getTime()):
- typeof x==='string'&&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$/.test(x)&&Number.isFinite(Date.parse(x));
+ typeof x==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(x)&&Number.isFinite(Date.parse(x));
 export async function listIncidents(query){
  const r=await query(`SELECT incident_id,participant_ref,source,category,draw_id,stage,
    state,occurrence_count,occurred_at,last_seen_at,updated_at
