@@ -14,7 +14,8 @@ const SRC=()=>[
   credit:'権利確認済',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
   status:'published',rights_checked_at:new Date('2026-11-01T00:00:00Z'),
   privacy_checked_at:new Date('2026-11-01T00:00:00Z'),
-  reviewed_by:'11111111-2222-4333-8444-555555555555'},
+  reviewed_by:'11111111-2222-4333-8444-555555555555',
+  published_at:new Date('2026-11-01T00:00:00Z')},
  {id:DRAFT_ID,kind:'moments',title:'未承認の思い出画像',description:'非公開',
   credit:'非公開の作成者',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
   status:'draft',rights_checked_at:null,privacy_checked_at:null,
@@ -72,7 +73,7 @@ test('historical trash and drafts remain non-public but retain stable catalog ID
  assert.equal(result.verifiedApprovedIds.includes(DRAFT),false);
 });
 test('reviewed-by UUID and both rights checks are mandatory for a published exhibit',async()=>{
- for(const key of ['rights_checked_at','privacy_checked_at','reviewed_by']){
+ for(const key of ['rights_checked_at','privacy_checked_at','reviewed_by','published_at']){
   const rows=SRC();rows[0][key]=null;
   await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits:rows})),'EXHIBIT_REVIEW_UNVERIFIED');
  }
