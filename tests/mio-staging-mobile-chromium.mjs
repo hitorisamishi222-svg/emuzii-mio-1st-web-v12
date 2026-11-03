@@ -385,6 +385,45 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
    assert.equal(await evaluate("document.querySelector('#demoGalleryNewTitle').value"),'');
+   // Two distinct mock views: draft edits do not change the published snapshot
+   // until review and confirmation; rollback creates a NEW version, not a delete.
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第1版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),true);
+   await evaluate(`(()=>{
+     const title=document.querySelector('#demoGallery .gallery-row:first-child input[type=text]');
+     title.value='架空作品A・展示を更新';
+     document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示を更新')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),false);
+   await evaluate("document.querySelector('#demoGalleryReview').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryCommit').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第2版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),true);
+   await evaluate(`(()=>{
+     const title=document.querySelector('#demoGallery .gallery-row:first-child input[type=text]');
+     title.value='架空作品A・第3版';
+     document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
+   })()`);
+   await evaluate("document.querySelector('#demoGalleryReview').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryCommit').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第3版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('第3版')"),true);
+   await evaluate("document.querySelector('#demoGalleryRollback').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第4版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・第3版')"),false);
+   // Takedowns override older published snapshots, including restored revisions.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(7)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第1版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・歌の記憶')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
 
   }
  }
