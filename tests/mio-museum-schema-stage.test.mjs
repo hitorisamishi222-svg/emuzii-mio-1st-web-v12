@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  REQUIRED_MUSEUM_SCHEMA, OPTIONAL_ASSET_SCHEMA, REQUIRED_COLUMN_TYPES,
- REQUIRED_FOREIGN_KEYS, REQUIRED_NOT_NULL, museumSchemaReport
+ REQUIRED_FOREIGN_KEYS, REQUIRED_NOT_NULL, REQUIRED_DRAFT_NULLABLE, museumSchemaReport
 } from '../museum-preflight-core.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -17,11 +17,15 @@ const status={
  table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'hidden'::text, 'trash'::text])))"
 };
+const review={
+ table_name:'museum_public_exhibits',contype:'c',validated:true,
+ definition:"CHECK ((status <> 'published'::text) OR (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))"
+};
 const keys=REQUIRED_FOREIGN_KEYS.map(([table,column,refTable,refColumn])=>({
  table_name:table,contype:'f',validated:true,
  definition:'FOREIGN KEY ('+column+') REFERENCES '+refTable+'('+refColumn+')'
 }));
-const valid=()=>({columns:structuredClone(columns),constraints:structuredClone([status,...keys]),identityVerified:true});
+const valid=()=>({columns:structuredClone(columns),constraints:structuredClone([status,review,...keys]),identityVerified:true});
 const report=x=>museumSchemaReport(x);
 
 test('existing phase2 museum schema preflight is reusable in current Draft without writes',()=>{
@@ -58,26 +62,36 @@ test('missing or wrongly typed columns are rejected',()=>{
  assert.ok(report(bad).tables.find(x=>x.table==='museum_public_exhibits').wrongTypes.includes('revision'));
  assert.equal(report(bad).allReady,false);
 });
-test('nullable review, identity or audit columns prevent readiness',()=>{
- for(const column of ['rights_checked_at','privacy_checked_at','reviewed_by']){
+test('draft review columns must remain nullable; publishing is protected by validated CHECK',()=>{
+ for(const column of REQUIRED_DRAFT_NULLABLE.museum_public_exhibits){
   const p=valid();
-  p.columns.find(x=>x.table_name==='museum_public_exhibits'&&x.column_name===column).is_nullable='YES';
-  assert.equal(report(p).allReady,false,column);
+  p.columns.find(x=>x.table_name==='museum_public_exhibits'&&x.column_name===column).is_nullable='NO';
+  assert.equal(report(p).allReady,false,column+' cannot be NOT NULL in the base draft schema');
  }
+ assert.equal(report(valid()).publicationReviewConstraintComplete,true);
 });
 test('invalid, unvalidated or missing public status check cannot pass',()=>{
  for(const constraint of [null,{...status,validated:false},
   {...status,definition:"CHECK (description <> 'draft' AND title <> 'published')"}]){
-  const p=valid();p.constraints=[...keys,...(constraint?[constraint]:[])];
+  const p=valid();p.constraints=[review,...keys,...(constraint?[constraint]:[])];
   assert.equal(report(p).statusConstraintComplete,false);
+  assert.equal(report(p).allReady,false);
+ }
+});
+test('missing, unvalidated, or partial rights/privacy publication checks block readiness',()=>{
+ for(const check of [null,{...review,validated:false},
+  {...review,definition:"CHECK (status <> 'published' OR reviewed_by IS NOT NULL)"}]){
+  const p=valid();
+  p.constraints=[status,...(check?[check]:[]),...keys];
+  assert.equal(report(p).publicationReviewConstraintComplete,false);
   assert.equal(report(p).allReady,false);
  }
 });
 test('every required role/session and reviewed-by foreign key must be verified',()=>{
  for(let i=0;i<keys.length;i++){
-  const p=valid();p.constraints=[status,...keys.filter((_,j)=>i!==j)];
+  const p=valid();p.constraints=[status,review,...keys.filter((_,j)=>i!==j)];
   assert.equal(report(p).allReady,false,'missing FK '+i);
-  const unvalidated=valid();unvalidated.constraints[i+1].validated=false;
+  const unvalidated=valid();unvalidated.constraints[i+2].validated=false;
   assert.equal(report(unvalidated).allReady,false,'unvalidated FK '+i);
  }
 });
@@ -110,7 +124,10 @@ test('candidate museum migration is additive, retains trash, and is never applie
  assert.match(sql,/CREATE TABLE IF NOT EXISTS museum_public_exhibits/);
  assert.match(sql,/status IN \('draft','published','hidden','trash'\)/);
  assert.match(sql,/trashed_at timestamptz/);
- assert.match(sql,/reviewed_by uuid NOT NULL REFERENCES gallery_admin_users\(id\)/);
+ assert.match(sql,/reviewed_by uuid REFERENCES gallery_admin_users\(id\)/);
+ assert.match(sql,/status <> 'published' OR/);
+ for(const field of ['rights_checked_at','privacy_checked_at','reviewed_by','published_at'])
+  assert.match(sql,new RegExp(field+' IS NOT NULL'));
  assert.doesNotMatch(sql,/\b(?:DROP|DELETE|TRUNCATE|INSERT|UPDATE|ALTER)\s+(?:TABLE|FROM|INTO|museum_public_exhibits)\b/i);
  assert.match(sql,/NEVER run from the public API/);
  const config=JSON.parse(read('vercel.json'));
