@@ -96,6 +96,13 @@ test('only the published visible IDs, not merely order, become visible',()=>{
  rejects({publishedLayout:{...fixture().publishedLayout,visibleIds:[song.id,'unlisted'],
   featuredId:null}},'LAYOUT_INVALID');
 });
+test('image-only museum records may omit a click-through link without being made clickable',()=>{
+ const catalog=fixture().authoritativeCatalog.map(x=>x.id===video.id?{...x,url:''}:x);
+ const result=view({authoritativeCatalog:catalog});
+ const record=result.items.find(x=>x.id===video.id);
+ assert.equal(record.url,'');
+ assert.equal(record.featured,true);
+});
 test('malicious or malformed gallery metadata never reaches public cards',()=>{
  const bad=key=>fixture().authoritativeCatalog.map(x=>x.id===video.id?{...x,[key]:
   key==='url'?'javascript:alert(1)':key==='thumbnail'?'https://evil.invalid/x.png':x[key]}:x);
