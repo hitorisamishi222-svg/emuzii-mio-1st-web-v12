@@ -6,6 +6,7 @@
 import {loadMuseumModeratedCatalogStage} from './museum-gallery-source-stage.mjs';
 import {projectPublishedMuseumGallery} from './museum-gallery-published-core.mjs';
 
+const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const fail=code=>{throw Error('MUSEUM_READ_'+code)};
 const revision=x=>{
  if(typeof x==='number'&&Number.isSafeInteger(x)&&x>=0)return x;
@@ -52,8 +53,9 @@ export async function readPublishedMuseumGalleryStage(client){
        !Array.isArray(row.published_visible_ids)||
        !(row.published_featured_id===null||
          typeof row.published_featured_id==='string')||
-       typeof row.published_by!=='string'||row.published_by.length===0||
-       !(row.published_at instanceof Date||typeof row.published_at==='string'))
+       typeof row.published_by!=='string'||!UUID.test(row.published_by)||
+       !(row.published_at instanceof Date)||
+       !Number.isFinite(row.published_at.getTime()))
      fail('PUBLISHED_LAYOUT_INVALID');
     // This function accesses the current moderation source only when an
     // actual published layout exists. A draft can never trigger disclosure.
