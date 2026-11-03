@@ -44,7 +44,7 @@ function awaitAssertHistoryChange(before,reapproved){
  }),/MUSEUM_REVIEW_HISTORICAL_APPROVAL_CHANGED/);
 }
 test('owner rollback cannot republish a work with a changed or removed review',()=>{
- for(const current of [ {[song]:h3,[video]:h2],{[song]:h1} ]){
+ for(const current of [ {[song]:h3,[video]:h2}, {[song]:h1} ]){
   assert.throws(()=>selectCurrentlyReviewedMuseumIds({
    visibleIds:[song,video],publishedReviewHashes:published(),
    currentReviewHashes:current,requireEvery:true
