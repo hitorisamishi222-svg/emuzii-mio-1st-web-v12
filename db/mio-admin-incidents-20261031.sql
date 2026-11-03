@@ -17,7 +17,10 @@ CREATE TABLE IF NOT EXISTS mio_admin_incidents (
  occurred_at timestamptz NOT NULL DEFAULT now(),
  last_seen_at timestamptz NOT NULL DEFAULT now(),
  resolved_at timestamptz,
- last_actor varchar(24),
+ last_actor varchar(24) CHECK (last_actor IS NULL OR last_actor IN ('admin-code','admin-passkey')),
+ -- A resolved ticket requires an actual resolution timestamp. No other state may carry one.
+ CHECK ((state='resolved' AND resolved_at IS NOT NULL)
+     OR (state<>'resolved' AND resolved_at IS NULL)),
  updated_at timestamptz NOT NULL DEFAULT now(),
  CHECK (participant_ref ~ '^MIO-W-[a-f0-9]{24}$'),
  CHECK (draw_id IS NULL OR draw_id ~ '^[a-f0-9]{32}$')
