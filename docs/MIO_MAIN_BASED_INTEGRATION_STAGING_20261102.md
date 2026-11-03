@@ -254,3 +254,13 @@
 - Vercelの `GALLERY_DATABASE_URL` は存在確認のみで、**接続先Project/Branch/Databaseの実体は未照合**。したがって上記Neonメタデータが稼働中の公開ギャラリーDBであるとは断定しない。稼働DB識別子の正式照合・バックアップ・復元試験まで、**DBマイグレーション、管理操作APIの有効化、作品アップロード、一括公開は禁止**。
 - `db/museum-public-exhibits.sql` を未承認の非公開下書きを保存できる構造へ修正。権利・個人情報の確認、承認者、公開日時はドラフト時NULL可能だが、`status='published'` に進むときには全4条件を満たすDB CHECKが必要。これを `museum-preflight-core.js` で検査する。
 - `museum-gallery-source-stage.mjs` はミュージアム展示が未適用なら例外で停止するため、未確認DBから適当に公開カタログを組み立てない。公開ページにもまだ接続していない。
+
+
+### 2026-11-03：実ギャラリーの読み取り契約・公開スナップショットの仕上げ（未配備）
+
+- `museum-gallery-source-stage.mjs` を追加。静的に掲載承認済みの既存2作品と、権限・公開停止指定を保持する `gallery_live_overrides`、将来の `museum_public_exhibits` を、**同一の専用DB接続**で読み取る候補。重複ID・壊れたレスポンス・未承認状態・権利/個人情報/公開日時の欠落は拒否し、DBテーブル未導入・停止時は**静的作品へ無断フォールバックしない**。今は未ルーティングで本番から実行されない。
+- `museum-gallery-published-core.mjs` を画像だけの展示（リンクなし）にも対応させる。未承認作品、後からの公開停止や削除指定は従来どおり非表示。
+- `museum-gallery-public-read-stage.mjs` を追加。公開済み版の配置だけを `BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY` の一貫したDBスナップショットで読み、新しい展示と既存作品の最新公開停止情報を再照合。公開版が無ければ空の展示を返す。公開担当者UUIDと公開日時が破損していれば拒否。下書きは読み取らない。**本番API・公開URLにはまだ未接続**。
+- `db/museum-public-exhibits.sql` の下書き審査列をNULL許容とし、`status='published'` 時だけ権利/個人情報確認・承認者・公開日時の全条件をDBで必須とする。検査用 `museum-preflight-core.js` は、**非公開下書きを書けるNULL許容性と、公開条件を強制する実DB制約**の双方を必須に変更。
+- 各純粋／モック検査は `tests/mio-museum-gallery-source-stage.test.mjs`, `tests/mio-museum-gallery-public-read-stage.test.mjs`, `tests/mio-museum-schema-stage.test.mjs`, `tests/mio-museum-gallery-published.test.mjs` に追加。DB読み取り連動テストは架空レコードのみで、実Vercel認証情報や秘密の作品を使わない。
+- **公開を止める条件：** 実Vercel `GALLERY_DATABASE_URL` とNeon project/branch/databaseの照合、正本テーブルの存在、バックアップ/復元、既存GAS・参加者データ保護の実確認、管理者による権利審査と最終承認、実iPhone/Android/PC確認、ロールバック確認が未完了。今のCI合格は本番実装完了ではない。
