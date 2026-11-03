@@ -273,3 +273,14 @@
 - `museum-gallery-client-stage.mjs` を追加。`pool.query` によるトランザクションの分断を防ぐため、既存プールから**一つの専用clientをチェックアウト**する。`verifyBinding` のサーバー側照合が `identityVerified/schemaReady/backupVerified/ownerApproved` の全真を返した場合のみ、同じclientで作業を実行。失敗・結果不明の接続は `release(error)` で破棄する。**この照合を実際に実行するアダプターと本番環境の正本DB照合は未完了**。これらの真偽をブラウザ入力から受け取らない。
 - `tests/mio-museum-gallery-source-stage.test.mjs`・`tests/mio-museum-gallery-public-read-stage.test.mjs` に、未承認タイトル/説明/URLのレダクション、閲覧側の行ロック禁止、管理側の明示的なロック許可を追加。`tests/mio-museum-gallery-client-stage.test.mjs` に、pool.connectだけの専用セッション、検証不足時の完全拒否、障害発生時の接続破棄とシークレット非露出を追加。
 - 実PostgreSQL `READ ONLY`/トランザクションの動作・Vercel Preview保護、復元可能バックアップ・GAS稼働コード・iPhone実機などは未検証。**Draft PR #76のまま、既存Vercel Production/ネイティブGAS/DB/皆勤・ガチャ・当選履歴/参加者データには操作していない**。一括公開ゲートもOFFのまま。
+
+
+### 2026-11-03：大型更新の一括公開ゲート・ルート切替予行・DB構造全体検査
+
+- `museum-one-release-gate.mjs`：**判定だけを行う純粋関数**を追加。GitHubの対象コミット一致、実機検証、Neon接続先/バックアップ復元、GASの稼働版原本、ギャラリー権利/個人情報、承認端末/運営操作、Preview保護、チャット保留、皆勤ページ非表示、旧URL復元を**それぞれ独立した確認項目**にした。参加者・皆勤・ガチャ・当選・履歴の5種は、隔離されたリハーサル前後の件数とSHA-256照合値が一致しない場合に停止する。**今は実データの照合値を取得していないため合格扱いしない**。全項目が報告上合格でも `canDeploy:false` 固定で、人による本番承認とは別。
+- `museum-cutover-routes-stage.mjs`：現行 `vercel.json` を変更せず、最終公開時に `/` を `museum.html` へ切り替え、`/index.html` の旧皆勤ページ直リンクを一時リダイレクトする**差分候補**を生成。逆向きの `rollbackConfig` も用意。旧 `index.html` のソース、参加者/皆勤チェックイン・ガチャAPI、ギャラリーの本番ルートや既存DB記録を削除しない。**未配備であり、Vercel上でのリダイレクト挙動は最終Previewと実機で別途検証必須**。
+- `museum-preflight-core.js`：公開状態のCHECKは、状態名を単に文字列として記載しているだけでは合格しないよう強化。掲載許可/個人情報のCHECKも `status <> 'published' OR (全確認がある)` の方向を要求し、逆向きの不安全な条件は拒否。SQL式の文字列照合は構文/論理の完全な証明ではないため、**本物のDB制約とサンプルのINSERT/UPDATE拒否試験**を独立リハーサルで実施するまで公開しない。
+- `museum-gallery-release-schema-stage.mjs`：従来の `museumSchemaReport` だけでは、公開レイアウトに必要な `museum_gallery_layout_stage` / `museum_gallery_layout_history_stage` / `museum_gallery_layout_audit_stage` や、既存の `gallery_live_overrides` の存在を十分に保証できなかった。そこで列名・型・NOT NULL・一意制約・参照制約・作品非表示用制約を含む追加検査を実装。`museum-gallery-client-stage.mjs` も `sourceReady/layoutReady` 両方を必要とするよう修正。
+- `museum-gallery-schema-inspect-stage.mjs`：専用DB client上の `REPEATABLE READ READ ONLY` で `current_database()`・`information_schema.columns`・`pg_constraint` の**メタデータだけ**を収集し、新しい構造検査を実行する未公開アダプター。DB名一致だけではNeonのプロジェクト/ブランチを証明できないので、独立した接続先確認がなければ `identityVerified:false`。DB例外は秘匿情報を表示せず停止、SQLや運営データの書込なし。
+- 追加テスト：`tests/mio-museum-one-release-gate.test.mjs`、`tests/mio-museum-cutover-routes-stage.test.mjs`、`tests/mio-museum-gallery-release-schema-stage.test.mjs`、`tests/mio-museum-gallery-schema-inspect-stage.test.mjs`、`tests/mio-museum-schema-stage.test.mjs`。CIとブラウザスモークを継続。**模擬メタデータに対する合格は、実DB照合や一括公開の許可を意味しない**。
+- **未完了の公開条件**：本番Vercelの `GALLERY_DATABASE_URL` とNeon project/branch/databaseの正式照合、全テーブルと制約の実確認、退避・復元を実演、稼働GASソース/デプロイ版のバックアップ、既存参加者・皆勤・ガチャの隔離差分一致、管理者本人操作/権利確認、iPhone Safari・Android・PC実機、ルート切替/復元の実URL試験。PR #76はDraft・未マージのまま、本番書込とデプロイを停止。
