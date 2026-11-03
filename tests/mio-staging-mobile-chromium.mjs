@@ -324,6 +324,7 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'2','post-confirmation replay must not double credit');
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelector('#demoRoster').textContent.includes('残数 3回')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoVerify').disabled"),true);
    // Museum-curator rehearsal: only synthetic works, browser-memory edits,
    // with a faithful public-view preview and a reset to the original mock list.
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
