@@ -105,7 +105,8 @@ export async function listIncidents(query){
      !good(x.state,STATES)||!Number.isSafeInteger(x.occurrence_count)||
      x.occurrence_count<1||!validTimestamp(x.occurred_at)||
      !validTimestamp(x.last_seen_at)||!validTimestamp(x.updated_at)||
-     new Date(x.last_seen_at).getTime()<new Date(x.occurred_at).getTime())
+     (new Date(x.last_seen_at).getTime()<new Date(x.occurred_at).getTime()||
+      new Date(x.updated_at).getTime()<new Date(x.last_seen_at).getTime()))
    throw Error('incident inbox row invalid');
   // Match the same source/stage/draw rules used for recording. A DRAW row
   // without its draw ID or a STATUS row carrying a draw ID is not trustworthy.
