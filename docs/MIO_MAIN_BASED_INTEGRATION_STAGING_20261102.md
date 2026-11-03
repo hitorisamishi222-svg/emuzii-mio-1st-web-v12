@@ -356,3 +356,12 @@
 - Vercel環境変数の**名前とスコープだけ**を読み取り専用確認。本番用・プレビュー用の `GALLERY_DATABASE_URL` は登録済み。ただし値は復号せず、実DBのNeon project/branch/databaseは未一致。確認した隔離Neonブランチ `gallery_live_overrides` に `revision` bigint NOT NULL / `updated_at` timestamptz NOT NULL があるが、**本番と同じブランチとは未断定**。
 - **公開停止条件を継続**：現行の本番管理APIとすべての外部書込経路が、掲載停止・再公開・修正時に改訂番号/日時を確実に更新することを実DBで確認する。承認世代の巻戻し・レビュー情報の無確認上書き・オーバーライド行の物理削除などで古いハッシュを再利用できないことを、DB側の制約・権限・監査とともに証明する必要がある。バックアップ復元、実端末、実DB接続先の確認、管理者本人の承認まではAPI接続/一括公開しない。
 - テスト：`tests/mio-museum-gallery-review-hashes-stage.test.mjs` / `tests/mio-museum-gallery-source-stage.test.mjs` / `tests/mio-museum-gallery-publication-stage.test.mjs` / `tests/mio-museum-gallery-public-read-stage.test.mjs` / `tests/mio-museum-gallery-release-schema-stage.test.mjs`。承認取り消し→再承認、旧版復元拒否、ハッシュの欠落・破損、現行権利停止、履歴保持を架空データで検査。
+
+
+### 2026-11-04：既存ギャラリーの改訂管理照合と、保存処理に必要な審査ロック
+
+- 既存の `api-gallery-manage.js` を読み取り確認。静的公開作品に対する `save` / `hide` / `show` / `delete` / `restore` は `saveOperation` を共有し、既存の `gallery_live_overrides` 行を `FOR UPDATE` で取得、期待改訂番号と照合して `revision+1` の更新/追加を実行する。既存行への `UPDATE` は `updated_at=now()`、初回 `INSERT` はDB定義の既定日時を使用し、同じ処理で監査ログを挿入してCOMMITする。**このAPIは行の物理削除を行わない**。ただしこれだけで別の外部SQL/管理ツールも含めた不変性を証明できない。
+- `museum-gallery-source-stage.mjs` の `lockModeration=true` が、既存 `gallery_live_overrides` に加えて `museum_public_exhibits` の読み取りも `FOR SHARE` で実施するよう修正。ステージ専用の `mutationReadLocked` 結果フラグを追加。訪問者の `REPEATABLE READ READ ONLY` では従来どおりロックせず一致する読み取りスナップショットを使う。
+- `museum-gallery-draft-store.mjs` と `museum-gallery-publication-stage.mjs` は `mutationReadLocked===true` でない審査結果を拒否。**公開・復元・下書きの全保存操作**が現在の審査テーブルを確認し、後続の更新を阻止できる同一トランザクションであることを必要条件にする。今ある実APIとの直結は行っていない。
+- 模擬DBの既存ケースに加え、「審査情報が真とされていてもロックしていない」場合の保存拒否テストを追加。`tests/mio-museum-gallery-source-stage.test.mjs` では、両テーブルへの `FOR SHARE` と来場者読取時の非ロック動作を分けて確認する。
+- **未解決の本番公開ブロッカー**：静的ギャラリー作品に対してまだオーバーライド行がない場合、並行する初回INSERTを `FOR SHARE` だけで完全に防げるとは限らない。将来のサーバー統合では、既存管理APIを含めた全書込経路と同期するロック方式を、隔離DBで同時実行試験して確定する必要がある。また実DBプロジェクト/ブランチの照合、復元可能バックアップ、本人承認、実端末検証が必要。**公開・本番マージは停止したまま**。
