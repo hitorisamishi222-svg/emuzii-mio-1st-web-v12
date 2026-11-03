@@ -1,6 +1,7 @@
 // DRAFT ONLY, UNROUTED. Server-side adapter for the existing MIO gallery.
-// Reads one checked-out PostgreSQL client; caller must BEGIN a serializable
-// transaction and verify the gallery DB identity before calling this function.
+// Reads one checked-out PostgreSQL client; caller must establish the
+// appropriate transaction (read-only snapshot or serializable moderation)
+// and verify the gallery DB identity before calling this function.
 // Never sends private records to visitors, writes DB, or infers approval from
 // the browser. The proposed museum_public_exhibits table is NOT yet installed.
 import {approvedGalleryItems} from './gallery-items.js';
@@ -37,8 +38,13 @@ const redactNonpublic=item=>
   hidden:true,deleted:item.deleted===true
  }:item;
 
-export async function loadMuseumModeratedCatalogStage(client){
+export async function loadMuseumModeratedCatalogStage(client,{lockModeration=false}={}){
  if(!client||typeof client.query!=='function')fail('DEDICATED_CLIENT_REQUIRED');
+ if(typeof lockModeration!=='boolean')fail('LOCK_MODE_INVALID');
+ // A READ ONLY transaction cannot run SELECT ... FOR SHARE. Management
+ // transactions should request a share lock; read-only visitor snapshots
+ // get consistent results from REPEATABLE READ without locking rows.
+ const lockClause=lockModeration?' FOR SHARE':'';
  // This import is an explicit *reviewed static allowlist*, not blanket
  // approval for unknown DB records or unreviewed uploads.
  if(!Array.isArray(approvedGalleryItems)||approvedGalleryItems.length>500)
@@ -57,7 +63,7 @@ export async function loadMuseumModeratedCatalogStage(client){
  const overrides=rows(await client.query(
   'SELECT item_id,title,creator,description,category,external_url,'+
   'thumbnail_url,hidden,deleted FROM gallery_live_overrides '+
-  'WHERE item_id=ANY($1::text[]) FOR SHARE',
+  'WHERE item_id=ANY($1::text[])'+lockClause,
   [[...staticIds]]
  ),500);
  const byId=new Map();
