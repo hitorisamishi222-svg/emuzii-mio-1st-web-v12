@@ -8,9 +8,9 @@
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
   gallery:[
-   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音楽',visible:true,featured:true,reviewed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',visible:true,featured:true,reviewed:true,archived:false,imageUrl:null},
    {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,reviewed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'写真',visible:false,featured:false,reviewed:true,archived:false,imageUrl:null}
+   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',visible:false,featured:false,reviewed:true,archived:false,imageUrl:null}
   ],
   ops:new Map(),log:[],selected:null,nextMember:2,nextExhibit:4,unconfirmed:null
  });
