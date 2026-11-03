@@ -71,6 +71,12 @@ test('unapplied audit schema validates operator mode and fingerprint/hash shapes
  assert.ok(schema.includes("actor varchar(24) NOT NULL CHECK (actor IN ('admin-code','admin-passkey'))"));
  assert.ok(schema.includes("payload_hash char(64) NOT NULL CHECK (payload_hash ~ '^[a-f0-9]{64}$')"));
 });
+test('unapplied schema enforces resolved timestamp and approved last actor',()=>{
+ assert.ok(schema.includes("last_actor varchar(24) CHECK (last_actor IS NULL OR last_actor IN ('admin-code','admin-passkey'))"));
+ assert.ok(schema.includes("state='resolved' AND resolved_at IS NOT NULL"));
+ assert.ok(schema.includes("state<>'resolved' AND resolved_at IS NULL"));
+ assert.match(candidate,/resolved_at=CASE WHEN \$2='resolved' THEN now\(\) ELSE NULL END/);
+});
 test('future incident audit schema requires exactly ordered start and resolve transitions',()=>{
  assert.ok(schema.includes("action='start' AND before_state='unhandled' AND after_state='working'"));
  assert.ok(schema.includes("action='resolve' AND before_state='working' AND after_state='resolved'"));
