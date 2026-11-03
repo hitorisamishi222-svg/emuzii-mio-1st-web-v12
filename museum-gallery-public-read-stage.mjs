@@ -5,6 +5,7 @@
 // preview files if the DB is missing or moderation cannot be read.
 import {loadMuseumModeratedCatalogStage} from './museum-gallery-source-stage.mjs';
 import {projectPublishedMuseumGallery} from './museum-gallery-published-core.mjs';
+import {selectCurrentlyReviewedMuseumIds} from './museum-gallery-review-hashes-stage.mjs';
 
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const fail=code=>{throw Error('MUSEUM_READ_'+code)};
@@ -27,7 +28,7 @@ export async function readPublishedMuseumGalleryStage(client){
   begun=true;
   const response=await client.query(
    "SELECT published_revision,published_from_draft_revision,published_order,"+
-   "published_visible_ids,published_featured_id,published_by,published_at "+
+   "published_visible_ids,published_featured_id,published_review_hashes,published_by,published_at "+
    "FROM museum_gallery_layout_stage WHERE layout_key='main' LIMIT 2",[]
   );
   if(!response||response.command!=='SELECT'||![0,1].includes(response.rowCount)||
@@ -42,7 +43,7 @@ export async function readPublishedMuseumGalleryStage(client){
    if(row.published_revision==null){
     if([row.published_from_draft_revision,row.published_order,
         row.published_visible_ids,row.published_featured_id,
-        row.published_by,row.published_at].some(x=>x!==null))
+        row.published_review_hashes,row.published_by,row.published_at].some(x=>x!==null))
      fail('LAYOUT_ROW_INVALID');
     result=empty();
    }else{
@@ -60,10 +61,19 @@ export async function readPublishedMuseumGalleryStage(client){
     // This function accesses the current moderation source only when an
     // actual published layout exists. A draft can never trigger disclosure.
     const source=await loadMuseumModeratedCatalogStage(client);
-    if(source?.sourceVerified!==true)fail('MODERATION_READ_UNVERIFIED');
+    if(source?.sourceVerified!==true||!source.currentReviewHashes)
+     fail('MODERATION_READ_UNVERIFIED');
+    // Saved consent is not transferable to a newly reviewed generation.
+    // Missing or malformed stored proofs fail closed; changed proofs remove
+    // only those exhibits from visitor results, never reveal their metadata.
+    const reviewedIds=selectCurrentlyReviewedMuseumIds({
+     visibleIds:row.published_visible_ids,
+     publishedReviewHashes:row.published_review_hashes,
+     currentReviewHashes:source.currentReviewHashes
+    });
     result=projectPublishedMuseumGallery({
      authoritativeCatalog:source.catalog,
-     verifiedApprovedIds:source.verifiedApprovedIds,
+     verifiedApprovedIds:reviewedIds,
      sourceVerified:source.sourceVerified,
      publishedLayout:{
       revision:current,order:row.published_order,
