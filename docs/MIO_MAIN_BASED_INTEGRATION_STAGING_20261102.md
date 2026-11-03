@@ -284,3 +284,14 @@
 - `museum-gallery-schema-inspect-stage.mjs`：専用DB client上の `REPEATABLE READ READ ONLY` で `current_database()`・`information_schema.columns`・`pg_constraint` の**メタデータだけ**を収集し、新しい構造検査を実行する未公開アダプター。DB名一致だけではNeonのプロジェクト/ブランチを証明できないので、独立した接続先確認がなければ `identityVerified:false`。DB例外は秘匿情報を表示せず停止、SQLや運営データの書込なし。
 - 追加テスト：`tests/mio-museum-one-release-gate.test.mjs`、`tests/mio-museum-cutover-routes-stage.test.mjs`、`tests/mio-museum-gallery-release-schema-stage.test.mjs`、`tests/mio-museum-gallery-schema-inspect-stage.test.mjs`、`tests/mio-museum-schema-stage.test.mjs`。CIとブラウザスモークを継続。**模擬メタデータに対する合格は、実DB照合や一括公開の許可を意味しない**。
 - **未完了の公開条件**：本番Vercelの `GALLERY_DATABASE_URL` とNeon project/branch/databaseの正式照合、全テーブルと制約の実確認、退避・復元を実演、稼働GASソース/デプロイ版のバックアップ、既存参加者・皆勤・ガチャの隔離差分一致、管理者本人操作/権利確認、iPhone Safari・Android・PC実機、ルート切替/復元の実URL試験。PR #76はDraft・未マージのまま、本番書込とデプロイを停止。
+
+
+### 2026-11-03：運営者向け展示編集の一連操作を模擬画面で実装（公開版とは分離）
+
+- `mio-admin-rehearsal.html/js` に、展示タイトル/ID検索、公開予定・確認待ち・非公開/保管済みの絞り込みを追加。管理操作は最大30件の**架空展示のみ**で行われ、入力内容や検索状態は端末内メモリだけで保持する。APIやCookie、実ギャラリー、GAS、参加者DBとは接続しない。
+- 一つの画面に **編集中の展示（下書きプレビュー）** と **現在の模擬公開版** を別々に表示。並び替え・タイトル変更・注目指定・表示変更で公開版が即時に書き換わることはない。新規作品は模擬承認/権利・個人情報確認前は公開候補にできない。
+- 編集後は **「編集中の下書きを仮保存」→「保存済み下書きの変更内容を確認」→「確認済みの内容を模擬公開」** の順に操作する。編集指紋が変わったら以前の確認は無効化し、未保存のまま公開操作を通さない。下書き版と模擬公開版は別々の改訂番号で追跡する。
+- 模擬公開後は以前の版を削除せず保持し、「直前の模擬公開版に戻す」と**新しい版番号**で復元する。保管・権利/個人情報確認が失効した作品は、古い版からも再表示しない。実権限の判定やDBトランザクションの代わりではない。
+- 端末から選択した仮画像は模擬公開版の履歴にコピーしない。画像の本番アップロード/保存や許諾は一切していない。画像URLはページ終了/リセット時に破棄する。再起動時には架空展示の初期状態に戻る。
+- `tests/mio-staging-mobile-chromium.mjs` でChromeスマホ幅320/375/390/430pxを検査し、架空作品の編集・下書き保存・公開前確認・模擬公開・履歴復元・保管を実操作で検証。`tests/mio-mainbased-museum-integration.test.mjs` で通信API/ブラウザ保存がないこと、管理画面に全操作とプレビュー領域が存在することを静的に確認。
+- **まだ本番の管理画面ではない。** 実DBへの下書き保存、リアル作品の掲載権限、管理者本人の認証、複数端末の競合、実メディアのアップロード、公開/復元の操作監査、復元可能バックアップ、Previewアクセス保護、iPhone実機と最終公開切替は別ゲートとして未完了。実管理APIのフラグON/DB移行/Productionデプロイは実施しない。
