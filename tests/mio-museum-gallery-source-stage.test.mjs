@@ -13,13 +13,15 @@ const DRAFT='museum-'+DRAFT_ID;
 const SRC=()=>[
  {id:ID,kind:'icons',title:'公開済みの架空イラスト',description:'展示説明',
   credit:'権利確認済',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
-  status:'published',rights_checked_at:new Date('2026-11-01T00:00:00Z'),
+  status:'published',revision:1,updated_at:new Date('2026-11-01T01:00:00Z'),
+  rights_checked_at:new Date('2026-11-01T00:00:00Z'),
   privacy_checked_at:new Date('2026-11-01T00:00:00Z'),
   reviewed_by:'11111111-2222-4333-8444-555555555555',
   published_at:new Date('2026-11-01T00:00:00Z')},
  {id:DRAFT_ID,kind:'moments',title:'未承認の思い出画像',description:'非公開',
   credit:'非公開の作成者',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
-  status:'draft',rights_checked_at:null,privacy_checked_at:null,
+  status:'draft',revision:0,updated_at:new Date('2026-11-01T01:00:00Z'),
+  rights_checked_at:null,privacy_checked_at:null,
   reviewed_by:null}
 ];
 const success=(rows)=>({command:'SELECT',rowCount:rows.length,rows});
@@ -51,6 +53,9 @@ test('published museum exhibits join reviewed legacy works without altering lega
  assert.deepEqual(approvedGalleryItems,before);
  assert.equal(Object.isFrozen(result),true);
  assert.equal(Object.isFrozen(result.catalog),true);
+ assert.equal(Object.keys(result.currentReviewHashes).length,3);
+ assert.equal(result.currentReviewHashes[NEW].length,64);
+ assert.equal(result.currentReviewHashes[DRAFT],undefined);
 });
 test('authoritative source and public projection keep private drafts invisible after museum publication',async()=>{
  const source=await loadMuseumModeratedCatalogStage(fake());
