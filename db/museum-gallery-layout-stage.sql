@@ -12,13 +12,18 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_stage (
  draft_visible_ids jsonb NOT NULL DEFAULT '[]'::jsonb
   CHECK (jsonb_typeof(draft_visible_ids)='array' AND jsonb_array_length(draft_visible_ids)<=500),
  draft_featured_id text CHECK (draft_featured_id IS NULL OR char_length(draft_featured_id)<=70),
+ CHECK (draft_order @> draft_visible_ids),
+ CHECK (draft_featured_id IS NULL OR draft_visible_ids ? draft_featured_id),
  drafted_by uuid REFERENCES gallery_admin_users(id),
  drafted_at timestamptz,
  published_revision bigint CHECK (published_revision IS NULL OR published_revision>=1),
  published_from_draft_revision bigint CHECK (published_from_draft_revision IS NULL OR published_from_draft_revision>=1),
+ CHECK (published_from_draft_revision IS NULL OR published_from_draft_revision<=draft_revision),
  published_order jsonb,
  published_visible_ids jsonb,
  published_featured_id text CHECK (published_featured_id IS NULL OR char_length(published_featured_id)<=70),
+ CHECK (published_order IS NULL OR published_visible_ids IS NULL OR published_order @> published_visible_ids),
+ CHECK (published_featured_id IS NULL OR published_visible_ids ? published_featured_id),
  published_by uuid REFERENCES gallery_admin_users(id),
  published_at timestamptz,
  CHECK (
@@ -47,6 +52,8 @@ CREATE TABLE IF NOT EXISTS museum_gallery_layout_history_stage (
  snapshot_visible_ids jsonb NOT NULL
   CHECK (jsonb_typeof(snapshot_visible_ids)='array' AND jsonb_array_length(snapshot_visible_ids)<=500),
  snapshot_featured_id text CHECK (snapshot_featured_id IS NULL OR char_length(snapshot_featured_id)<=70),
+ CHECK (snapshot_order @> snapshot_visible_ids),
+ CHECK (snapshot_featured_id IS NULL OR snapshot_visible_ids ? snapshot_featured_id),
  published_by uuid NOT NULL REFERENCES gallery_admin_users(id),
  published_at timestamptz NOT NULL DEFAULT now(),
  UNIQUE (layout_key,published_revision)
