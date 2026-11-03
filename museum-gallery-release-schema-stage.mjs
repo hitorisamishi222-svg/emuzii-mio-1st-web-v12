@@ -63,6 +63,15 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
    ready:actual.size>0&&!missing.length&&!wrongTypes.length&&!wrongNullability.length
   });
  });
+ // A gallery-only checked-in migration is insufficient: the real database
+ // must permit all four exact exhibition destinations used by the curator.
+ const roomKindReady=constraints.some(row=>{
+  if(row?.table_name!=='museum_public_exhibits'||
+     row.contype!=='c'||row.validated!==true)return false;
+  const expr=normalized(row.definition);
+  return /\bkind\b\s*(?:in\s*\(|=\s*any\s*\()/i.test(expr)&&
+   ['gallery','icons','moments','events'].every(kind=>expr.includes("'"+kind+"'"));
+ });
  const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true;
  const layoutTablesReady=tables.filter(x=>x.table!=='gallery_live_overrides')
   .every(x=>x.ready);
@@ -89,8 +98,9 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   identityVerified:identityVerified===true,
   baseMuseumReady:base.schemaReady,
   sourceReady,
+  roomKindReady,
   layoutReady,
-  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&layoutReady,
+  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&layoutReady,
   tables:Object.freeze(tables),
   constraintChecks,
   // This report does NOT assert backup, owner signoff, or authorization.
