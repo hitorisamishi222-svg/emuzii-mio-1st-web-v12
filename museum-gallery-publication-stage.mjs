@@ -40,7 +40,10 @@ async function changePublication(client,{action,request,operationId,expectedPubl
  if(confirmation!==confirmText[action])fail('CONFIRMATION_REQUIRED');
  let begun=false,commitAttempted=false;
  try{
-  const start=await client.query('BEGIN');
+  // Serializable isolation prevents a concurrent moderation change from
+  // silently racing the verification and published snapshot write.
+  // Future moderation reads MUST use this same dedicated transaction client.
+  const start=await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
   if(start?.command!=='BEGIN')fail('BEGIN_UNVERIFIED');
   begun=true;
   const admin=await verifyAdmin(client,request);
