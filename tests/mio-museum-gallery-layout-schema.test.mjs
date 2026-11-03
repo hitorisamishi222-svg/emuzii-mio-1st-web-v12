@@ -27,8 +27,8 @@ test('one shared museum layout with separate draft and published versions',()=>{
   'published_revision','published_order','published_visible_ids','published_featured_id']){
   assert.ok(statements.includes(name),name);
  }
- assert.match(statements,/published_revision IS NULL AND published_order IS NULL/);
- assert.match(statements,/published_revision IS NOT NULL AND published_revision>=0/);
+ assert.match(statements,/published_revision IS NULL AND published_from_draft_revision IS NULL/);
+ assert.match(statements,/published_revision IS NOT NULL AND published_from_draft_revision IS NOT NULL/);
  assert.match(statements,/published_by IS NOT NULL AND published_at IS NOT NULL/);
 });
 test('metadata counts cannot grow without bounds or be arbitrarily structured',()=>{
@@ -78,8 +78,8 @@ test('candidate SQL is precisely three complete CREATE TABLE statements with bal
  }
 });
 test('layout metadata alone cannot unhide or publish moderated items',()=>{
- assert.match(sql,/takedowns and rights decisions remain authoritative/);
- assert.match(sql,/authoritative DB again inside ONE transaction before every publish/);
- assert.match(sql,/JSON arrays alone MUST NEVER be interpreted as permission to publish/);
- assert.match(sql,/uncertain COMMIT, recheck the same operation_id/);
+ assert.match(sql,/Layout metadata NEVER overrides live moderation/);
+ assert.match(sql,/current\s*hidden\/deleted flags in the SAME dedicated transaction/);
+ assert.match(sql,/Serialized IDs are NOT publication rights/);
+ assert.match(sql,/On uncertain COMMIT check operation_id/);
 });
