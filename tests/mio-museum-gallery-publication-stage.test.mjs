@@ -13,7 +13,7 @@ const video={id:'mio-awakening-video',title:'応援動画',category:'動画',
  thumbnail:'/assets/gallery-emuzii-mio-cover.svg',hidden:false,deleted:false};
 const hidden={id:'mio-private-work',title:'非公開の絵',category:'イラスト',
  thumbnail:'',hidden:true,deleted:false};
-const authoritative=()=>({sourceVerified:true,
+const authoritative=()=>({sourceVerified:true,mutationReadLocked:true,
  catalog:[{...video},{...song},{...hidden}],
  verifiedApprovedIds:[video.id,song.id],
  currentReviewHashes:{[video.id]:'a'.repeat(64),[song.id]:'b'.repeat(64)}});
