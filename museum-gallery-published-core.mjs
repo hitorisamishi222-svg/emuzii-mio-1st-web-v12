@@ -3,6 +3,7 @@
 // "authoritative" inputs must be fetched again from the approved gallery DB:
 // a saved layout is NEVER a grant of publication rights.
 const ID=/^[a-z0-9-]{3,70}$/;
+const ROOMS=new Set(['gallery','icons','moments','events']);
 const fail=(code)=>{throw Error('MUSEUM_PUBLIC_'+code)};
 const ids=(x)=>Array.isArray(x)&&x.length<=500&&x.every(v=>typeof v==='string'&&ID.test(v))&&new Set(x).size===x.length;
 const plain=(x)=>x&&typeof x==='object'&&!Array.isArray(x);
@@ -33,6 +34,7 @@ export function projectPublishedMuseumGallery({
   if(!plain(item)||typeof item.id!=='string'||!ID.test(item.id)||byId.has(item.id)||
      typeof item.hidden!=='boolean'||typeof item.deleted!=='boolean'||
      !safeText(item.title,120)||!safeText(item.category,40)||
+     !(item.room===undefined||ROOMS.has(item.room))||
      !safeText(item.creator,80)||typeof item.description!=='string'||
      item.description.length>2000||typeof item.thumbnail!=='string'||
      !safeThumbnail(item.thumbnail)||!safeLink(item.url))fail('CATALOG_INVALID');
@@ -58,7 +60,7 @@ export function projectPublishedMuseumGallery({
   if(!item||item.hidden||item.deleted)continue;
   items.push(Object.freeze({
    id:item.id,title:item.title,creator:item.creator,
-   category:item.category,description:item.description,
+   category:item.category,room:item.room??'gallery',description:item.description,
    url:item.url,thumbnail:item.thumbnail,featured:id===publishedLayout.featuredId
   }));
  }
