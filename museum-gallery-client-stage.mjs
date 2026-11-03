@@ -13,8 +13,11 @@ export async function withDedicatedMuseumStageClient(pool,{verifyBinding,perform
  }catch{
   throw Error('MUSEUM_CLIENT_CONNECT_FAILED');
  }
- if(!client||typeof client.query!=='function'||typeof client.release!=='function')
-  throw Error('MUSEUM_CLIENT_INVALID');
+ if(!client||typeof client.query!=='function'||typeof client.release!=='function'){
+  const error=Error('MUSEUM_CLIENT_INVALID');
+  if(typeof client?.release==='function')client.release(error);
+  throw error;
+ }
  let unsafeError=null;
  try{
   // Callback must be an independent server-side binding check. The result
