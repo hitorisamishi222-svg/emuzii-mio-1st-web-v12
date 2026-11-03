@@ -75,6 +75,7 @@ test('unapplied schema enforces resolved timestamp and approved last actor',()=>
  assert.ok(schema.includes("last_actor varchar(24) CHECK (last_actor IS NULL OR last_actor IN ('admin-code','admin-passkey'))"));
  assert.ok(schema.includes("state='resolved' AND resolved_at IS NOT NULL"));
  assert.ok(schema.includes("state<>'resolved' AND resolved_at IS NULL"));
+ assert.ok(schema.includes('CHECK (occurred_at <= last_seen_at AND last_seen_at <= updated_at)'));
  assert.match(candidate,/resolved_at=CASE WHEN \$2='resolved' THEN now\(\) ELSE NULL END/);
 });
 test('future incident audit schema requires exactly ordered start and resolve transitions',()=>{
@@ -152,7 +153,8 @@ test('inbox rejects corrupted incident rows and only returns approved fields',as
   {occurred_at:'2026-02-30T00:00:00Z'},
   {occurred_at:'2025-02-29T00:00:00Z'},
   {occurred_at:'2026-11-02T24:00:00Z'},
-  {last_seen_at:'2026-11-01T23:59:59Z'}]){
+  {last_seen_at:'2026-11-01T23:59:59Z'},
+  {updated_at:'2026-11-01T23:59:59Z'}]){
   await assert.rejects(listIncidents(async()=>({rowCount:1,rows:[{...row,...changed}]})),
    /incident inbox row invalid/);
  }
