@@ -2,29 +2,37 @@
 // ISOLATED rehearsal. No fetch, storage, cookies, identity, production APIs or writes.
 (function(){
  const $=id=>document.getElementById(id);
+ // Room keys intentionally match the already-existing public museum links.
+ const galleryRooms=Object.freeze({
+  gallery:'💎 翠央っ子ギャラリー',
+  icons:'👑 歴代アイコン館',
+  moments:'📸 思い出アルバム',
+  events:'🏆 イベントの記録'
+ });
+ const knownGalleryRoom=room=>Object.hasOwn(galleryRooms,room);
  const initial=()=>({
   pending:[{id:'REQ-DEMO-1',name:'デモ申請者A'},{id:'REQ-DEMO-2',name:'デモ申請者B'}],
   roster:[{id:'DEMO-01',name:'デモ参加者',tickets:3}],
   incidents:[{id:'INC-DEMO-1',kind:'結果照合',state:'unhandled'},
    {id:'INC-DEMO-2',kind:'端末切替の確認',state:'working'}],
   gallery:[
-   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',visible:true,featured:true,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',visible:true,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
-   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',visible:false,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null}
+   {id:'ART-DEMO-1',title:'架空作品A・歌の記憶',category:'音声・楽曲',room:'gallery',visible:true,featured:true,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-2',title:'架空作品B・思い出の絵',category:'イラスト',room:'icons',visible:true,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null},
+   {id:'ART-DEMO-3',title:'架空作品C・準備中',category:'その他',room:'moments',visible:false,featured:false,reviewed:true,rightsConfirmed:true,privacyConfirmed:true,archived:false,imageUrl:null}
   ],
   ops:new Map(),log:[],selected:null,nextMember:2,nextExhibit:4,unconfirmed:null
  });
  let s=initial();
  // All following snapshots are fictional, memory-only rehearsal data.
  // They are NOT the real gallery DB, release state, rights or authentication.
- const eligible=item=>item.visible&&item.reviewed&&item.rightsConfirmed&&
+ const eligible=item=>knownGalleryRoom(item.room)&&item.visible&&item.reviewed&&item.rightsConfirmed&&
    item.privacyConfirmed&&!item.archived;
  const draftDisplay=()=>s.gallery.filter(eligible).map(item=>({
-  id:item.id,title:item.title,category:item.category,
+  id:item.id,title:item.title,category:item.category,room:item.room,
   featured:item.featured,imageUrl:null // browser-selected photos are never published
  }));
  const galleryFingerprint=()=>JSON.stringify(s.gallery.map(item=>[
-  item.id,item.title,item.category,item.visible,item.featured,
+  item.id,item.title,item.category,item.room,item.visible,item.featured,
   item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.archived,item.imageUrl
  ]));
  let galleryPublished=[],galleryReviewFingerprint=null;
@@ -74,9 +82,12 @@
   };
   const needle=$('demoGallerySearch').value.trim().toLocaleLowerCase('ja');
   const filter=$('demoGalleryFilter').value;
+  const editorRoom=$('demoGalleryRoomFilter').value;
+  const previewRoom=$('demoGalleryPreviewRoom').value;
   let matches=0;
   s.gallery.forEach((item,index)=>{
    if(needle&&!(item.title+' '+item.id).toLocaleLowerCase('ja').includes(needle))return;
+   if(editorRoom!=='all'&&item.room!==editorRoom)return;
    if(filter==='visible'&&(!item.visible||item.archived))return;
    if(filter==='review'&&item.reviewed)return;
    if(filter==='hidden'&&item.visible&&!item.archived)return;
@@ -84,7 +95,7 @@
    const row=make('div',undefined,'entry gallery-row');
    const details=make('div');
    details.append(make('strong',item.title),
-    make('p',item.category+' ・ '+(item.archived?'保管済み':item.visible?'公開予定':item.reviewed?'非公開':'公開確認待ち')+
+    make('p',galleryRooms[item.room]+' ・ '+item.category+' ・ '+(item.archived?'保管済み':item.visible?'公開予定':item.reviewed?'非公開':'公開確認待ち')+
       (item.featured?' ・ 注目作品':''),'mini'));
    const label=make('label','展示タイトル（仮）');
    label.htmlFor='demoGalleryTitle'+item.id;
@@ -167,16 +178,34 @@
     }
     approval.append(make('p','両方の模擬確認を終えるまで承認ボタンは使えません。','mini'));
    }
-   details.append(label,title,approval,actions,fileLabel,file);
+   const roomLabel=make('label','配置する展示室（模擬）');
+   roomLabel.htmlFor='demoGalleryRoom'+item.id;
+   const roomSelect=make('select');roomSelect.id=roomLabel.htmlFor;
+   roomSelect.className='gallery-room-select';
+   for(const [value,name] of Object.entries(galleryRooms)){
+    const opt=make('option',name);opt.value=value;
+    roomSelect.append(opt);
+   }
+   roomSelect.value=item.room;
+   roomSelect.disabled=item.archived;
+   roomSelect.addEventListener('change',()=>{
+    if(item.archived||!knownGalleryRoom(roomSelect.value))return;
+    item.room=roomSelect.value;
+    audit(item.id+'：配置先を'+galleryRooms[item.room]+'に変更（模擬）');
+    setMessage('展示室の配置を変更しました。仮保存・確認後にだけ模擬公開できます。');
+    render();
+   });
+   details.append(label,title,roomLabel,roomSelect,approval,actions,fileLabel,file);
    row.append(galleryThumb(item),details);editor.append(row);
   });
   $('demoGalleryMatchCount').textContent='全'+s.gallery.length+'件のうち'+matches+'件を表示中。';
   if(!matches)editor.append(make('p','条件に合う架空展示はありません。','mini'));
-  const visible=s.gallery.filter(x=>x.visible&&x.reviewed&&!x.archived);
+  const visible=s.gallery.filter(x=>eligible(x)&&
+   (previewRoom==='all'||x.room===previewRoom));
   for(const item of visible){
    const card=make('article',undefined,'entry');
    card.append(galleryThumb(item),make('strong',item.title),
-    make('p',item.category,'mini'));
+    make('p',galleryRooms[item.room]+' ・ '+item.category,'gallery-room-label'));
    if(item.featured)card.append(make('p','✦ 注目作品','gallery-featured'));
    preview.append(card);
   }
@@ -190,10 +219,11 @@
   for(const exhibit of publication.items){
    const actual=byId.get(exhibit.id);
    if(!actual||actual.archived||!actual.reviewed||
+      (previewRoom!=='all'&&exhibit.room!==previewRoom)||
       !actual.rightsConfirmed||!actual.privacyConfirmed)continue;
    const card=make('article',undefined,'entry');
    card.append(galleryThumb(exhibit),make('strong',exhibit.title),
-    make('p',exhibit.category,'mini'));
+    make('p',galleryRooms[exhibit.room]+' ・ '+exhibit.category,'gallery-room-label'));
    if(exhibit.featured)card.append(make('p','✦ 注目作品','gallery-featured'));
    published.append(card);publishedCount++;
   }
@@ -419,19 +449,23 @@
  });
  $('demoGallerySearch').addEventListener('input',render);
  $('demoGalleryFilter').addEventListener('change',render);
+ $('demoGalleryRoomFilter').addEventListener('change',render);
+ $('demoGalleryPreviewRoom').addEventListener('change',render);
  $('demoGalleryAdd').addEventListener('click',()=>{
   const title=$('demoGalleryNewTitle').value.trim();
   const category=$('demoGalleryNewCategory').value;
+  const room=$('demoGalleryNewRoom').value;
   if(!title||title.length>60){setMessage('模擬作品名は1〜60文字で入力してください。');return}
   if(!['イラスト','動画','音声・楽曲','ファンアート','その他'].includes(category)){
    setMessage('展示の種類を確認してください。');return
   }
+  if(!knownGalleryRoom(room)){setMessage('配置する展示室を選択してください。');return}
   if(s.gallery.length>=30){setMessage('模擬展示の上限は30件です。');return}
   const id='ART-DEMO-'+s.nextExhibit++;
-  s.gallery.push({id,title,category,visible:false,featured:false,
+  s.gallery.push({id,title,category,room,visible:false,featured:false,
    reviewed:false,rightsConfirmed:false,privacyConfirmed:false,archived:false,imageUrl:null});
   audit(id+'：非公開の模擬下書きを追加');
-  $('demoGalleryNewTitle').value='';
+  $('demoGalleryNewTitle').value='';$('demoGalleryNewRoom').value='gallery';
   setMessage('模擬展示を非公開で追加しました。模擬確認前はプレビューには表示されません。');
   render();
  });
@@ -452,6 +486,8 @@
   s=initial();resetPublication();
   $('demoGalleryDifference').textContent='公開済みの版との差分はまだ確認していません。';
   $('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';
+  $('demoGalleryNewRoom').value='gallery';$('demoGalleryRoomFilter').value='all';
+  $('demoGalleryPreviewRoom').value='all';
   $('demoGallerySearch').value='';$('demoGalleryFilter').value='all';$('demoSearch').value='';$('demoGrantAmount').value='1';
   $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
   setMessage('リハーサルを初期状態へ戻しました。実データは変更していません。');
