@@ -35,12 +35,13 @@
   item.id,item.title,item.category,item.room,item.visible,item.featured,
   item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.archived,item.imageUrl
  ]));
- let galleryPublished=[],galleryReviewFingerprint=null;
+ let galleryPublished=[],galleryReviewFingerprint=null,restoreSelectedRevision=null;
  let savedDraftRevision=1,savedDraftFingerprint=galleryFingerprint();
  const currentPublication=()=>galleryPublished[galleryPublished.length-1];
  const resetPublication=()=>{
   galleryPublished=[{revision:1,items:draftDisplay()}];
   galleryReviewFingerprint=null;
+  restoreSelectedRevision=null;
   savedDraftRevision=1;
   savedDraftFingerprint=galleryFingerprint();
  };
@@ -231,6 +232,48 @@
   $('demoGalleryPublishedStatus').textContent=
    '模擬公開版 第'+publication.revision+'版・表示可能 '+publishedCount+
    '件／版内 '+publication.items.length+'件。実際の公開サイトは変わりません。';
+  // Historical publication snapshots stay immutable; every restore is a
+  // NEW version. Only currently eligible works can appear in an old preview.
+  const history=galleryPublished.slice(0,-1).reverse();
+  if(!history.some(v=>v.revision===restoreSelectedRevision)){
+   restoreSelectedRevision=history[0]?.revision??null;
+  }
+  const select=$('demoGalleryHistoryVersion');
+  select.replaceChildren();
+  if(!history.length){
+   const empty=make('option','復元できる公開履歴はありません');
+   empty.value='';select.append(empty);select.disabled=true;
+  }else{
+   select.disabled=false;
+   for(const entry of history){
+    const option=make('option','第'+entry.revision+'版（記録 '+entry.items.length+'作品）');
+    option.value=String(entry.revision);select.append(option);
+   }
+   select.value=String(restoreSelectedRevision);
+  }
+  const selected=history.find(v=>v.revision===restoreSelectedRevision);
+  const restoreItems=(selected?.items||[]).filter(item=>{
+   const actual=byId.get(item.id);
+   return actual&&eligible(actual);
+  }).map(item=>({...item}));
+  const restorePreview=$('demoGalleryRestorePreview');
+  restorePreview.replaceChildren();
+  let previewed=0;
+  for(const item of restoreItems){
+   if(previewRoom!=='all'&&item.room!==previewRoom)continue;
+   const card=make('article',undefined,'entry');
+   card.append(galleryThumb(item),make('strong',item.title),
+    make('p',galleryRooms[item.room]+' ・ '+item.category,'gallery-room-label'));
+   if(item.featured)card.append(make('p','✦ 注目作品','gallery-featured'));
+   restorePreview.append(card);previewed++;
+  }
+  if(!previewed)restorePreview.append(make('p',
+   selected?'この展示室に復元可能な作品はありません。':'過去の公開履歴はありません。','mini'));
+  $('demoGalleryRestoreSummary').textContent=selected?
+   '第'+selected.revision+'版から復元候補 '+restoreItems.length+'件（旧版の記録は'+
+   selected.items.length+'件）。現在の非公開・保管・承認停止を優先します。復元時は第'+
+   (publication.revision+1)+'版として記録します。':
+   '初回の模擬公開版です。復元できる履歴はありません。';
   const changed=galleryReviewFingerprint!==null&&
    galleryReviewFingerprint!==galleryFingerprint();
   if(changed){
@@ -246,7 +289,8 @@
   $('demoGallerySaveDraft').disabled=!hasUnsavedChanges;
   $('demoGalleryCommit').disabled=!galleryReviewFingerprint||identical||
    hasUnsavedChanges||s.gallery.some(item=>item.visible&&!eligible(item));
-  $('demoGalleryRollback').disabled=galleryPublished.length<2;
+  $('demoGalleryRollback').disabled=!selected||
+   JSON.stringify(restoreItems)===JSON.stringify(publication.items);
   $('demoGalleryStatus').textContent=
    '模擬公開 '+visible.length+'件／全'+s.gallery.length+'件。'+
    'このプレビューは保存されず、実ギャラリーには反映されません。';
@@ -421,6 +465,7 @@
    galleryReviewFingerprint=null;render();return;
   }
   const revision=currentPublication().revision+1;
+  restoreSelectedRevision=currentPublication().revision;
   galleryPublished.push({revision,items});
   galleryReviewFingerprint=null;
   audit('ギャラリーの模擬公開版を第'+revision+'版へ変更');
@@ -429,21 +474,36 @@
   render();
  });
  $('demoGalleryRollback').addEventListener('click',()=>{
-  if(galleryPublished.length<2){render();return;}
-  const previous=galleryPublished[galleryPublished.length-2];
-  // Recheck the current moderation state: never resurrect a revoked exhibit.
+  const selected=galleryPublished.find(entry=>
+   entry.revision===restoreSelectedRevision&&entry!==currentPublication());
+  if(!selected){render();return;}
+  // NEVER reinstate a hidden, archived or unapproved item from history.
+  // Restoring an older version does not edit the ongoing working draft.
   const byId=new Map(s.gallery.map(item=>[item.id,item]));
-  const items=previous.items.filter(item=>{
+  const items=selected.items.filter(item=>{
    const current=byId.get(item.id);
    return current&&eligible(current);
   }).map(item=>({...item}));
+  if(JSON.stringify(items)===JSON.stringify(currentPublication().items)){
+   $('demoGalleryDifference').textContent='選択した履歴は現在の公開版と同じです。復元は不要です。';
+   render();return;
+  }
   const revision=currentPublication().revision+1;
+  const replaced=currentPublication().revision;
   galleryPublished.push({revision,items});
+  restoreSelectedRevision=replaced;
   galleryReviewFingerprint=null;
-  audit('ギャラリー模擬公開版を第'+previous.revision+'版から復元 → 第'+revision+'版');
-  $('demoGalleryDifference').textContent='過去の版を第'+revision+
-   '版として模擬復元しました。保管・権利停止の作品は再掲載していません。';
-  setMessage('公開版の復元を模擬しました。本番や旧データへの変更はありません。');
+  audit('ギャラリー模擬公開版を第'+selected.revision+'版から復元 → 第'+revision+'版');
+  $('demoGalleryDifference').textContent='第'+selected.revision+'版を第'+revision+
+   '版として模擬復元しました。履歴は保持し、非公開・権利停止の作品は再掲載していません。';
+  setMessage('選択した公開履歴の復元を模擬しました。本番や旧データへの変更はありません。');
+  render();
+ });
+ $('demoGalleryHistoryVersion').addEventListener('change',()=>{
+  const value=$('demoGalleryHistoryVersion').value;
+  const found=galleryPublished.find(entry=>String(entry.revision)===value&&
+   entry!==currentPublication());
+  restoreSelectedRevision=found?found.revision:null;
   render();
  });
  $('demoGallerySearch').addEventListener('input',render);
