@@ -8,7 +8,7 @@ import {approvedGalleryItems} from './gallery-items.js';
 
 const ID=/^[a-z0-9-]{3,70}$/;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-const KINDS=Object.freeze({icons:'イラスト',moments:'その他',events:'その他'});
+const KINDS=Object.freeze({gallery:'ギャラリー',icons:'イラスト',moments:'その他',events:'その他'});
 const STATUS=new Set(['draft','published','hidden','trash']);
 const fail=code=>{throw Error('MUSEUM_SOURCE_'+code)};
 const rows=(r,max)=>{
@@ -23,7 +23,7 @@ const checkedTime=x=>x instanceof Date?Number.isFinite(x.getTime()):
  typeof x==='string'&&x.length>0&&Number.isFinite(Date.parse(x));
 const catalogEntry=(item)=>({
  id:item.id,title:item.title,creator:item.creator,
- description:item.description??'',category:item.category,
+ description:item.description??'',category:item.category,room:item.room??'gallery',
  thumbnail:item.thumbnail??'',url:item.url,
  hidden:item.hidden===true,deleted:item.deleted===true
 });
@@ -34,7 +34,7 @@ const catalogEntry=(item)=>({
 const redactNonpublic=item=>
  item.hidden||item.deleted?{
   id:item.id,title:'非公開の展示',creator:'翠央記念館',
-  description:'',category:item.category,thumbnail:'',url:'',
+  description:'',category:item.category,room:item.room,thumbnail:'',url:'',
   hidden:true,deleted:item.deleted===true
  }:item;
 
@@ -117,7 +117,7 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
   if(row.status==='published'&&!reviewed)fail('EXHIBIT_REVIEW_UNVERIFIED');
   const item={
    id,title:row.title,creator:row.credit||'翠央記念館',
-   description:row.description,category:KINDS[row.kind],
+   description:row.description,category:KINDS[row.kind],room:row.kind,
    thumbnail:row.image_url,url:row.external_url||row.image_url||'',
    hidden:!reviewed,deleted:row.status==='trash'
   };
