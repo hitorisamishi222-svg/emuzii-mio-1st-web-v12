@@ -104,7 +104,7 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
  // migration file: staged source files are not evidence of live readiness.
  const publicationReviewConstraintComplete=validated.some(row=>{
   if(row.table_name!=='museum_public_exhibits'||row.contype!=='c')return false;
-  const def=normalized(row.definition).replace(/::[a-z_ ]+/gi,'');
+  const def=normalized(row.definition);
   return /\bCHECK\b/i.test(def)&&/\bstatus\b/i.test(def)&&
    def.includes("'published'")&&/\bOR\b/i.test(def)&&
    ['rights_checked_at','privacy_checked_at','reviewed_by','published_at']
