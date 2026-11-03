@@ -92,6 +92,17 @@ label{display:block;font-weight:700;margin-top:10px}
 <section class="full gallery-curator" aria-label="ギャラリー作品管理の模擬編集">
 <h2>💎 ギャラリーを簡単に入れ替える（模擬編集）</h2>
 <p class="mini">SEIRAサイト型の操作を試すための<strong>架空展示だけ</strong>の画面です。並び替え・注目作品・公開切替・タイトルと画像の差し替えを端末内で確認できます。<strong>保存・アップロード・本番反映はできません。</strong></p>
+<div class="entry" style="margin:12px 0 16px">
+ <strong>新しい展示を追加（端末内の模擬下書き）</strong>
+ <p class="mini">最初は必ず非公開・確認待ち。確認してから模擬プレビューへ出せます。実データは作成しません。</p>
+ <label for="demoGalleryNewTitle">作品名</label>
+ <input id="demoGalleryNewTitle" type="text" maxlength="60" placeholder="例：架空の思い出アルバム" autocomplete="off">
+ <label for="demoGalleryNewCategory">展示の種類</label>
+ <select id="demoGalleryNewCategory" style="width:100%;min-height:48px;border-radius:9px;background:#091c30;color:#fff;border:1px solid #97bddf;padding:10px;font:inherit">
+  <option value="イラスト">イラスト</option><option value="動画">動画</option><option value="音声・楽曲">音声・楽曲</option><option value="ファンアート">ファンアート</option><option value="その他">その他</option>
+ </select>
+ <button id="demoGalleryAdd" type="button" class="secondary" style="margin-top:12px">非公開の模擬下書きを追加</button>
+</div>
 <div id="demoGallery" class="entries" aria-label="模擬ギャラリー編集一覧"></div>
 <h3 style="margin:20px 0 9px">来場者側の見え方（模擬プレビュー）</h3>
 <div id="demoGalleryPreview" class="gallery-preview" aria-label="公開状態だけを表示する模擬プレビュー"></div>
