@@ -17,7 +17,7 @@ const proposed=(revision=0)=>({
  expectedRevision:revision,order:[video.id,song.id,hidden.id],
  visibleIds:[video.id,song.id],featuredId:video.id
 });
-const source=()=>({sourceVerified:true,catalog:[{...song},{...video},{...hidden}],
+const source=()=>({sourceVerified:true,mutationReadLocked:true,catalog:[{...song},{...video},{...hidden}],
  verifiedApprovedIds:[song.id,video.id]});
 const admin=()=>({user_id:ID,role:'owner'});
 const success=(rows,command='SELECT')=>({command,rowCount:rows.length,rows});
