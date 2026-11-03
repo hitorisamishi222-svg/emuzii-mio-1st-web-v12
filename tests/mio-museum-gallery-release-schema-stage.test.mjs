@@ -21,7 +21,8 @@ const baseKeys=REQUIRED_FOREIGN_KEYS.map(([table_name,column,to,ref])=>({
 }));
 const extra={
  gallery_live_overrides:{
-  item_id:'text',hidden:'boolean',deleted:'boolean'
+  item_id:'text',hidden:'boolean',deleted:'boolean',
+  revision:'bigint',updated_at:'timestamp with time zone'
  },
  museum_gallery_layout_stage:{
   layout_key:'text',draft_revision:'bigint',draft_order:'jsonb',
