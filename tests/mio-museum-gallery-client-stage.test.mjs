@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {withDedicatedMuseumStageClient} from '../museum-gallery-client-stage.mjs';
 
 const proof=()=>({
- identityVerified:true,schemaReady:true,backupVerified:true,ownerApproved:true
+ identityVerified:true,schemaReady:true,sourceReady:true,layoutReady:true,
+ backupVerified:true,ownerApproved:true
 });
 const mock=()=>{
  const state={connections:0,queryCount:0,releases:[],clients:[]};
@@ -41,7 +42,7 @@ test('stage wrapper uses one checked-out client for both identity and work and r
  assert.equal(state.releases[0],undefined);
 });
 test('no database work runs without independently verified branch/schema/backup and owner decision',async()=>{
- for(const key of ['identityVerified','schemaReady','backupVerified','ownerApproved']){
+ for(const key of ['identityVerified','schemaReady','sourceReady','layoutReady','backupVerified','ownerApproved']){
   const {pool,state}=mock();
   let executed=false;
   await assert.rejects(()=>run(pool,async()=>({...proof(),[key]:false}),
