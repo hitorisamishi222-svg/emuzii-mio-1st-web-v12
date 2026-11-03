@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS mio_admin_incidents (
  CHECK ((state='resolved' AND resolved_at IS NOT NULL)
      OR (state<>'resolved' AND resolved_at IS NULL)),
  updated_at timestamptz NOT NULL DEFAULT now(),
+ CHECK (occurred_at <= last_seen_at AND last_seen_at <= updated_at),
  CHECK (participant_ref ~ '^MIO-W-[a-f0-9]{24}$'),
  CHECK (draw_id IS NULL OR draw_id ~ '^[a-f0-9]{32}$')
 );
