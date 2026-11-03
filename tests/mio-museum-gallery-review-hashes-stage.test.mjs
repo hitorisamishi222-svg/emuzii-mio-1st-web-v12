@@ -64,7 +64,7 @@ test('new publication creates a new reviewed snapshot from the current source',(
 test('missing, extra, invented or malformed stored approval proof never becomes public',()=>{
  const v=[song,video];
  for(const bad of [null,{}, {[song]:h1}, {[song]:h1,[video]:h2,[art]:h3},
-  {[song]:'bad',[video]:h2},{[song]:h1,[video]:h2,'__proto__':h2}]){
+  {[song]:'bad',[video]:h2},Object.fromEntries([[song,h1],[video,h2],['__proto__',h2]])]){
   assert.throws(()=>selectCurrentlyReviewedMuseumIds({
    visibleIds:v,publishedReviewHashes:bad,currentReviewHashes:source()
   }),/MUSEUM_REVIEW_(HASHES_INVALID|SNAPSHOT_INCOMPLETE)/);
