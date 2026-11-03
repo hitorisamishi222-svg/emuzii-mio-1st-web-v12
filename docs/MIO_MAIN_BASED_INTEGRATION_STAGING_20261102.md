@@ -230,3 +230,15 @@
 - 監査の設計候補 `db/museum-gallery-layout-stage.sql` に `payload_hash` を追加。未適用のため本番スキーマは変わっていない。**公開版の列をUPDATEするコードは今回実装していない**。公開許可・下書き表示・編集内容と実際の公開権限は区別。
 - `tests/mio-museum-gallery-draft-store.test.mjs` でインメモリPostgreSQL模擬clientを使い、保存・競合・冪等再送・別管理者/別payload・COMMIT不明・監査失敗・ロールバック・認証拒否・権利確認不足・権限偽装などを確認。**実PGのロック特性、稼働管理者Cookie、GAS、Blob、iPhone Safari は未試験**。
 - 実接続前に運営が確認すべき必須項目: 使用中DBの正本識別/復元可能バックアップ、既存権限の有効なログイン経路、公開許可の正本、DBスキーマ/移行審査、同時編集を含む専用DB接続試験、公開版の一括切替と取り消し試験。Previewへ非公開画像・個人情報・秘密コンテンツを置かない。
+
+
+### 2026-11-03：ギャラリーの公開・復元ゲートを開発用に追加（**本番接続なし**）
+
+- `museum-gallery-publication-stage.mjs` を追加。**公開API未登録、Production/既存DB未接続、SQL未適用**。運営本人の明示的な確認文字列、既存管理者権限（ownerのみ）、改訂番号一致、操作IDの冪等性、現在の作品承認/非公開指定の再照合を全て要求する。下書き保存と来場者公開は別。
+- `museum-gallery-owner-stage.mjs` は既存 `gallery-auth-shared.js` のCookie + 承認済み端末ログインを利用し、同一Origin・POST・JSON・owner条件でしか認証結果を返さない。**新規ログイン/セッション発行はなし**。今はスタンドアロンの未配備アダプター。
+- 開発用SQL `db/museum-gallery-layout-stage.sql` に以前のコピー時の構文崩れを発見して修復。未適用のまま、`layout_stage`（下書きと公開版の分離）、`layout_history_stage`（公開版スナップショットの永続履歴）、`layout_audit_stage`（操作者・操作ID・payloadハッシュ）を設計。現在の公開ページや参加者台帳をALTER/DELETE/初期化しない。
+- 復元（rollback）は旧公開版の参照を直接差し替えるのではなく、**過去のスナップショットから新しい公開版番号を作る**。その時点の承認撤回・削除・公開停止を再検証し、非公開作品の再登場を防ぐ。既存バージョン・監査行・皆勤/ガチャ・参加者データは削除しない。
+- 公開処理は`BEGIN ISOLATION LEVEL SERIALIZABLE`を指定し、**同じ専用DB clientで**認証・正本の公開許可/非公開指定・ロック・履歴挿入・監査・COMMITを実行する契約。SERIALIZABLEだけに依存せず、将来の公開管理APIでは更新競合と運営操作の再検証、未確定COMMIT時の照会が必要。実PostgreSQL同時実行試験は未実施。
+- SQL側にも、展示順に無い作品を公開対象にすることや非表示の作品を注目指定することを防ぐ JSONB 包含/存在チェックを追加。**静的構文チェックとモックは実DBの移行成功を保証しない。**
+- `tests/mio-museum-gallery-publication-stage.test.mjs` と `tests/mio-museum-gallery-owner-stage.test.mjs` に、owner/端末/Origin拒否、下書きと公開の分離、複数版、権利撤回、同時編集、操作IDの重複、履歴付き復元、監査/COMMIT不明/途中エラーの検証を追加。
+- **一括公開の停止条件は継続**：DBの実体・保護設定・バックアップ/復元テスト、GAS現行原本とデプロイ版・権限/監査照合、iPhone実機、公開URLの切替手順、復旧操作、最終オーナー承認が必要。Previewのnoindexは認証ではない。チャット保留・皆勤記録保存・ギャラリー最優先。
