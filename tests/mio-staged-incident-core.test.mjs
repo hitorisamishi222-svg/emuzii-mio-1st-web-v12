@@ -105,7 +105,8 @@ test('contradictory recording replies do not claim success or a real rate limit'
 });
 test('inbox does not render missing, partial or inconsistent DB results as zero incidents',async()=>{
  for(const invalid of [undefined,null,{}, {rows:[]}, {rows:null,rowCount:0},
-  {rows:[],rowCount:1},{rows:[{}],rowCount:1},{rows:[],rowCount:0.5}]){
+  {rows:[],rowCount:1},{rows:[{}],rowCount:1},{rows:[],rowCount:0.5},
+  {rows:[],rowCount:-1}]){
   await assert.rejects(listIncidents(async()=>invalid),/incident inbox (read unavailable|row invalid)/);
  }
  assert.deepEqual(await listIncidents(async()=>({rowCount:0,rows:[]})),[]);
