@@ -262,6 +262,34 @@ test('offline rehearsal has SEIRA-style curator controls without live gallery mu
  assert.doesNotMatch(script,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|indexedDB|\binnerHTML\s*=/);
  assert.doesNotMatch(script,/\/api\/gallery|\/api\/museum/);
 });
+test('museum homepage leads with an elegant approved-works showcase, never unreviewed media',()=>{
+ const html=read('museum.html'),css=read('museum.css');
+ const approved=approvedGalleryItems.filter(item=>item.hidden===false);
+ assert.equal(approved.length,2,'recheck static approved references before adding more highlights');
+ const gallery=html.indexOf('id="exhibits"');
+ const showcase=html.indexOf('class="museum-showcase"');
+ const rooms=html.indexOf('class="museum-grid"',gallery);
+ assert.ok(gallery>=0&&showcase>gallery&&showcase<rooms,
+  'visitor should see approved highlights before museum room tiles');
+ const section=html.slice(showcase,rooms);
+ for(const item of approved){
+  assert.ok(section.includes(item.title),'a highlighted work must already be in the approved catalog');
+ }
+ assert.equal((section.match(/class="museum-showcase-item"/g)||[]).length,2);
+ assert.ok(section.includes('href="/museum-approved-gallery.html?kind=music"'));
+ assert.ok(section.includes('href="/museum-approved-gallery.html?kind=video"'));
+ assert.equal((section.match(/src="\/assets\/gallery-emuzii-mio-cover.svg"/g)||[]).length,2);
+ assert.doesNotMatch(section,/blob\.vercel-storage\.com|<script|<iframe|autoplay|onerror=|contenteditable/);
+ for(const entry of ['.museum-showcase','.museum-showcase-grid',
+  '.museum-showcase-item','.museum-showcase-art','.museum-showcase-cta'])
+  assert.ok(css.includes(entry),'missing gallery museum styling '+entry);
+ assert.match(css,/@media\(max-width:860px\)/);
+ assert.match(css,/@media\(max-width:560px\)/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ const galleryScript=read('museum-approved-gallery.js');
+ assert.match(galleryScript,/kind==='video'\?'動画'/);
+ assert.match(galleryScript,/kind==='music'\?'音声・楽曲'/);
+});
 test('all local museum navigation targets and static media assets exist in the main-based copy',()=>{
  for(const path of museumPages){
   const html=read(path);
