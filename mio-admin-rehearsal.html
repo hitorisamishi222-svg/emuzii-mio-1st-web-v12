@@ -50,6 +50,9 @@ label{display:block;font-weight:700;margin-top:10px}
 .gallery-curator .gallery-release-rehearsal h3{color:#ffebc8;margin:8px 0 10px}
 .gallery-curator #demoGalleryPublished .entry{border:1px solid #e7cd90;background:linear-gradient(145deg,#173653,#0a1d36);box-shadow:0 5px 16px #0004}
 .gallery-curator #demoGalleryDifference{overflow-wrap:anywhere}
+.gallery-curator .gallery-filters{display:grid;grid-template-columns:2fr 1fr;gap:12px;align-items:end;margin:12px 0}
+.gallery-curator .gallery-filters select{display:block;width:100%;min-height:48px;padding:10px;border-radius:9px;background:#091c30;color:#fff;border:1px solid #97bddf;font:inherit}
+@media(max-width:590px){.gallery-curator .gallery-filters{grid-template-columns:1fr;gap:3px}}
 .gallery-curator .gallery-release-rehearsal button:focus-visible{outline-color:#ffdc92}
 .gallery-curator .gallery-review-checks{padding:9px 0}
 .gallery-curator .gallery-review-checks label{display:flex;align-items:flex-start;gap:10px;font-weight:600;line-height:1.5}
@@ -112,6 +115,18 @@ label{display:block;font-weight:700;margin-top:10px}
  </select>
  <button id="demoGalleryAdd" type="button" class="secondary" style="margin-top:12px">非公開の模擬下書きを追加</button>
 </div>
+<div class="gallery-filters" aria-label="展示検索と絞り込み">
+ <div><label for="demoGallerySearch">展示名を検索</label>
+  <input id="demoGallerySearch" type="search" autocomplete="off" placeholder="作品名、展示IDで探す"></div>
+ <div><label for="demoGalleryFilter">展示の状態</label>
+  <select id="demoGalleryFilter">
+   <option value="all">すべて</option>
+   <option value="visible">公開予定</option>
+   <option value="review">確認待ち</option>
+   <option value="hidden">非公開・保管済み</option>
+  </select></div>
+</div>
+<p class="mini" id="demoGalleryMatchCount" role="status" aria-live="polite">作品一覧を準備しています。</p>
 <div id="demoGallery" class="entries" aria-label="模擬ギャラリー編集一覧"></div>
 <h3 style="margin:20px 0 9px">編集中の展示プレビュー（下書き）</h3>
 <div id="demoGalleryPreview" class="gallery-preview" aria-label="編集中の架空展示プレビュー"></div>
