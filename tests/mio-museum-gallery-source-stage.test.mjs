@@ -171,7 +171,9 @@ test('legacy gallery hide and later reapproval cannot reuse the old publication 
  const id='mio-awakening-song';
  const makeOverride=(when,hidden)=>({
   item_id:id,title:null,creator:null,description:null,category:null,
-  external_url:null,thumbnail_url:null,hidden,deleted:false,updated_at:new Date(when)
+  external_url:null,thumbnail_url:null,hidden,deleted:false,
+  revision:when.includes('11-03')?3:when.includes('11-02')?2:1,
+  updated_at:new Date(when)
  });
  const first=await loadMuseumModeratedCatalogStage(fake({
   overrides:[makeOverride('2026-11-01T00:00:00Z',false)]
