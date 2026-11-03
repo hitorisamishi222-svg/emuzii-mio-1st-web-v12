@@ -58,7 +58,9 @@ try{
   '--remote-allow-origins=*','--remote-debugging-port=0',
   '--user-data-dir='+join(temp,'profile'),'about:blank'],{stdio:'ignore'});
  const portFile=join(temp,'profile','DevToolsActivePort');
- const debugPort=await poll(async()=>Number((await readFile(portFile,'utf8')).split(String.fromCharCode(10))[0])||null);
+ // On shared CI runners Chrome's DevToolsActivePort can appear after 18 seconds.
+ // Extend only cold-start readiness; retain normal UI/action poll deadlines.
+ const debugPort=await poll(async()=>Number((await readFile(portFile,'utf8')).split(String.fromCharCode(10))[0])||null,45000);
  const page=await poll(async()=>{
   const r=await fetch('http://127.0.0.1:'+debugPort+'/json/list');
   const items=await r.json();return items.find(x=>x.type==='page'&&x.webSocketDebuggerUrl);
