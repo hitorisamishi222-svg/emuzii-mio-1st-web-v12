@@ -83,7 +83,7 @@ export async function saveMuseumGalleryDraft(client,{request,operationId,proposa
   // Future caller must provide a validated, server-side source and must reread
   // moderation/rights on the same DB session. No caller-supplied ids are trusted.
   const source=await loadModeratedCatalog(client);
-  if(!source||source.sourceVerified!==true||
+  if(!source||source.sourceVerified!==true||source.mutationReadLocked!==true||
      !Array.isArray(source.catalog)||!Array.isArray(source.verifiedApprovedIds))
    die('CATALOG_SOURCE_UNVERIFIED');
   const candidate=planMuseumCuration({
