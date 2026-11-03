@@ -115,3 +115,50 @@ body.museum [hidden]{display:none!important}
 .museum-awakening-action:focus-visible{outline:3px solid #9af5ff;outline-offset:3px}
 @media(max-width:900px){.museum-awakening-grid{grid-template-columns:1fr}}
 @media(max-width:390px){.museum-awakening-card{grid-template-columns:1fr}.museum-awakening-cover{max-width:170px;max-height:210px;margin-inline:auto}}
+
+/* One-release museum direction: gallery-first, jewel-lit but legible on mobile.
+   Visual styles are scoped to the draft museum only; old attendance/gacha CSS is untouched. */
+body.museum{background:
+ radial-gradient(circle at 15% 14%,#375f8d66 0,transparent 31%),
+ radial-gradient(circle at 83% 41%,#8a6a5540 0,transparent 34%),
+ radial-gradient(ellipse at 50% 120%,#153f6988 0,transparent 50%),
+ linear-gradient(170deg,#050f25,#102f52 48%,#07162e)}
+.museum-gallery-first{position:relative;isolation:isolate;padding-block:49px 25px}
+.museum-gallery-first::before{content:"";position:absolute;z-index:-1;inset:12px max(10px,calc((100vw - 1180px)/2)) 0;
+ border:1px solid #dec79472;border-radius:30px;
+ background:linear-gradient(142deg,#224a7299,#0c2447ed 55%,#152d54d9),
+ radial-gradient(circle at 90% 12%,#f2d38c38,transparent 35%);
+ box-shadow:inset 0 0 0 1px #c1e6fb1d,0 18px 70px #0006}
+.museum-gallery-first .museum-heading{padding:3px 16px 0}
+.museum-gallery-first .museum-heading h2{color:#fff1d4;text-shadow:0 0 24px #f8d99148}
+.museum-gallery-first .museum-grid{padding:0 12px 18px}
+.museum-gallery-first .museum-card{position:relative;border:1px solid #e1c789a6;
+ box-shadow:inset 0 0 0 1px #9fe9f521,0 14px 37px #0007;
+ background:linear-gradient(150deg,#1e466c,#0a1f3d 80%)}
+.museum-gallery-first .museum-card::before{content:"✦";position:absolute;right:13px;top:9px;
+ font-size:18px;color:#ffe7a8c9;text-shadow:0 0 19px #ffe7a8;pointer-events:none}
+.museum-gallery-first .museum-card .card-art{background:
+ radial-gradient(circle at 50% 35%,#bfdfefa6 0,transparent 40%),
+ radial-gradient(circle at 22% 75%,#e0bd7f54 0,transparent 50%),
+ linear-gradient(142deg,#214a72,#0a2447);border-bottom:1px solid #ddc68c70}
+.museum-gallery-first .museum-featured-gallery{grid-column:span 2;
+ display:grid;grid-template-columns:minmax(190px,.85fr) minmax(0,1.15fr);align-items:stretch}
+.museum-gallery-first .museum-featured-gallery .card-art{min-height:260px;border:0;
+ border-right:1px solid #ddc68c70}
+.museum-gallery-first .museum-featured-gallery .card-art img{display:block;
+ width:min(78%,270px);height:230px;object-fit:contain;filter:drop-shadow(0 12px 25px #0009)}
+.museum-gallery-first .museum-featured-gallery .card-body{align-self:center;padding:27px}
+.museum-gallery-first .museum-featured-gallery h3{font-size:clamp(21px,2.4vw,29px)}
+.museum-gallery-first .museum-card .card-cta{color:#fff0be;text-decoration:underline;text-underline-offset:4px}
+@media(max-width:850px){.museum-gallery-first .museum-featured-gallery{grid-column:span 2}}
+@media(max-width:630px){
+ .museum-gallery-first{padding-top:30px}
+ .museum-gallery-first::before{inset:6px 7px 0;border-radius:22px}
+ .museum-gallery-first .museum-heading{padding-inline:11px}
+ .museum-gallery-first .museum-grid{padding-inline:9px}
+ .museum-gallery-first .museum-featured-gallery{grid-column:auto;grid-template-columns:1fr}
+ .museum-gallery-first .museum-featured-gallery .card-art{min-height:180px;border-right:0;
+ border-bottom:1px solid #ddc68c70}
+ .museum-gallery-first .museum-featured-gallery .card-art img{height:172px}
+ .museum-gallery-first .museum-featured-gallery .card-body{padding:19px}
+}
