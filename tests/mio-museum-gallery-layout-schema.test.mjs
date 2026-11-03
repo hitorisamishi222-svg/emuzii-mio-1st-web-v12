@@ -43,7 +43,7 @@ test('owner-linked audit records exactly track approved draft, publish and rollb
  assert.match(statements,/payload_hash text NOT NULL CHECK\s*\(payload_hash ~/);
  assert.match(statements,/actor_id uuid NOT NULL REFERENCES gallery_admin_users\(id\)/);
  assert.match(statements,/action IN \('draft','publish','rollback'\)/);
- assert.match(statements,/new_revision bigint NOT NULL CHECK\(new_revision>prior_revision\)/);
+ assert.match(statements,/new_revision bigint NOT NULL CHECK\s*\(new_revision>prior_revision\)/);
  assert.match(statements,/recorded_at timestamptz NOT NULL DEFAULT now\(\)/);
 });
 test('a fully versioned publication history can support rollback without deleting old snapshots',()=>{
