@@ -54,6 +54,18 @@ test('candidate incident SQL is audit-only, never a participant, attendance, dra
  assert.doesNotMatch(schema,/\b(?:ALTER|UPDATE|DELETE|DROP|TRUNCATE)\s+(?:TABLE\s+)?(?:emuzii_|mio_registration|mio_draw|mio_gacha)/i);
  assert.doesNotMatch(schema,/\bINSERT INTO\s+(?:emuzii_|mio_registration|mio_draw|mio_gacha)/i);
 });
+test('unapplied incident schema rejects invalid source, stage and draw relationships',()=>{
+ assert.match(schema,/stage varchar\(24\) NOT NULL CHECK \(stage IN \('draw','catalog','history','status'\)\)/);
+ assert.match(schema,/source='status' AND stage='status' AND draw_id IS NULL/);
+ assert.match(schema,/source='gacha' AND \(stage<>'draw' OR draw_id IS NOT NULL\)/);
+ // These match the application metadata validation without changing live DB.
+ for(const event of [
+  {participantRef:webId,source:'status',stage:'draw',category:'GAS_TIMEOUT',drawId:draw},
+  {participantRef:webId,source:'status',stage:'status',category:'GAS_TIMEOUT',drawId:draw},
+  {participantRef:webId,source:'gacha',stage:'draw',category:'DRAW_UNKNOWN',drawId:null},
+  {participantRef:webId,source:'gacha',stage:'invalid',category:'DRAW_UNKNOWN',drawId:null}
+ ])assert.throws(()=>normalizeEvent(event));
+});
 test('future incident audit schema requires exactly ordered start and resolve transitions',()=>{
  assert.match(schema,/action='start' AND before_state='unhandled' AND after_state='working'/);
  assert.match(schema,/action='resolve' AND before_state='working' AND after_state='resolved'/);
