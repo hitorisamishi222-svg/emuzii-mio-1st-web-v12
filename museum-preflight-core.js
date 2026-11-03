@@ -51,8 +51,7 @@ export const REQUIRED_NOT_NULL=Object.freeze({
  gallery_admin_audit:['action','result'],
  museum_public_exhibits:[
   'id','kind','title','description','credit','image_url','external_url',
-  'status','revision','rights_checked_at','privacy_checked_at','reviewed_by',
-  'created_at','updated_at'
+  'status','revision','created_at','updated_at'
  ]
 });
 
@@ -100,6 +99,17 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
    /\bCHECK\b/i.test(s)&&/\bstatus\b/i.test(s)&&
    REQUIRED_STATUS.every(v=>s.includes("'"+v+"'"));
  });
+ // A private draft needs nullable review fields, whereas publishing must
+ // require ALL review proofs. Check the validated DB constraint, not the SQL
+ // migration file: staged source files are not evidence of live readiness.
+ const publicationReviewConstraintComplete=validated.some(row=>{
+  if(row.table_name!=='museum_public_exhibits'||row.contype!=='c')return false;
+  const def=normalized(row.definition).replace(/::[a-z_ ]+/gi,'');
+  return /\bCHECK\b/i.test(def)&&/\bstatus\b/i.test(def)&&
+   def.includes("'published'")&&/\bOR\b/i.test(def)&&
+   ['rights_checked_at','privacy_checked_at','reviewed_by','published_at']
+    .every(name=>new RegExp('\\b'+name+'\\s+IS\\s+NOT\\s+NULL\\b','i').test(def));
+ });
  const foreignKeys=REQUIRED_FOREIGN_KEYS.map(([table,column,refTable,refColumn])=>{
   const matches=validated.some(row=>{
    if(row.contype!=='f'||row.table_name!==table)return false;
@@ -109,7 +119,8 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
   });
   return {table,column,present:matches};
  });
- const constraintsReady=statusConstraintComplete&&foreignKeys.every(x=>x.present);
+ const constraintsReady=statusConstraintComplete&&publicationReviewConstraintComplete&&
+  foreignKeys.every(x=>x.present);
  const tablesReady=tables.every(x=>x.exists&&x.missing.length===0&&
   x.wrongTypes.length===0&&x.wrongNullability.length===0);
  const schemaReady=tablesReady&&constraintsReady;
@@ -119,6 +130,7 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
   allReady:schemaReady&&identityVerified===true,
   tables,
   statusConstraintComplete,
+  publicationReviewConstraintComplete,
   constraintsReady,
   foreignKeys,
   optionalTables,
