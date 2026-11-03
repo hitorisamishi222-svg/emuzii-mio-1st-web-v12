@@ -403,8 +403,6 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGalleryDifference').textContent.includes('先に下書きを仮保存')"),true);
    await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第2版')"),true);
-   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
-   assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第3版')"),true);
    await evaluate("document.querySelector('#demoGalleryReview').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
    await evaluate("document.querySelector('#demoGalleryCommit').click()");
@@ -416,6 +414,8 @@ try{
      title.value='架空作品A・第3版';
      document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
    })()`);
+   await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第3版')"),true);
    await evaluate("document.querySelector('#demoGalleryReview').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
    await evaluate("document.querySelector('#demoGalleryCommit').click()");
