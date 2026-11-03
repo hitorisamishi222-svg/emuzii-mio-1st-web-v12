@@ -69,8 +69,25 @@ export async function recordIncident(query,data,secret,now=Date.now()){
 }
 // PostgreSQL normally returns timestamptz as Date; accept strict ISO text for
 // isolated adapters, but never expose missing or unparsable chronology as valid.
-const validTimestamp=x=>x instanceof Date?Number.isFinite(x.getTime()):
- typeof x==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(x)&&Number.isFinite(Date.parse(x));
+const validTimestamp=x=>{
+ if(x instanceof Date)return Number.isFinite(x.getTime());
+ if(typeof x!=='string')return false;
+ // Date.parse alone silently normalizes invalid dates such as February 30.
+ const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(x);
+ if(!match||!Number.isFinite(Date.parse(x)))return false;
+ const [,yearText,monthText,dayText,hourText,minuteText,secondText,offset]=match;
+ const year=Number(yearText),month=Number(monthText),day=Number(dayText);
+ if(year<1||month<1||month>12||Number(hourText)>23||
+    Number(minuteText)>59||Number(secondText)>59)return false;
+ const leap=year%4===0&&(year%100!==0||year%400===0);
+ const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+ if(day<1||day>days[month-1])return false;
+ if(offset!=='Z'){
+  const [hours,minutes]=offset.slice(1).split(':').map(Number);
+  if(hours>23||minutes>59)return false;
+ }
+ return true;
+};
 export async function listIncidents(query){
  const r=await query(`SELECT incident_id,participant_ref,source,category,draw_id,stage,
    state,occurrence_count,occurred_at,last_seen_at,updated_at
