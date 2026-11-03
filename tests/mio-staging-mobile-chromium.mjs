@@ -350,6 +350,32 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品A')"),true);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'0');
+   // Newly created works never appear in the visitor preview until a mock
+   // approval step. Archiving only hides them, with a reversible restore.
+   await evaluate(`(()=>{
+    document.querySelector('#demoGalleryNewTitle').value='架空作品D・新規下書き';
+    document.querySelector('#demoGalleryNewCategory').value='ファンアート';
+    document.querySelector('#demoGalleryAdd').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),4);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').disabled"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(6)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').disabled"),false);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),3);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(7)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),4);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(7)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),3);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewTitle').value"),'');
 
   }
  }
