@@ -352,6 +352,48 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品A')"),true);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'0');
+   // Filtered owner ordering must never silently move nonmatching works.
+   // A fourth gallery work has two different-room works between it and A.
+   await evaluate(`(()=>{
+    document.querySelector('#demoGalleryNewTitle').value='架空作品D・並べ替え検査';
+    document.querySelector('#demoGalleryNewCategory').value='ファンアート';
+    document.querySelector('#demoGalleryNewRoom').value='gallery';
+    document.querySelector('#demoGalleryAdd').click();
+    const room=document.querySelector('#demoGalleryRoomFilter');
+    room.value='gallery';room.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(2)').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(3)').disabled"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(2)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品D')"),true);
+   await evaluate(`(()=>{
+    const room=document.querySelector('#demoGalleryRoomFilter');
+    room.value='all';room.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   const filteredOrder=await evaluate("[...document.querySelectorAll('#demoGallery .gallery-row strong')].map(x=>x.textContent)");
+   assert.deepEqual(filteredOrder.map(x=>x.match(/架空作品[A-D]/)?.[0]),[
+    '架空作品D','架空作品B','架空作品C','架空作品A'
+   ],'works from unrelated rooms must keep their original positions');
+   await evaluate(`(()=>{
+    const room=document.querySelector('#demoGalleryRoomFilter');
+    room.value='gallery';room.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(3)').click();
+    room.value='all';room.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   const restoredOrder=await evaluate("[...document.querySelectorAll('#demoGallery .gallery-row strong')].map(x=>x.textContent)");
+   assert.deepEqual(restoredOrder.map(x=>x.match(/架空作品[A-D]/)?.[0]),[
+    '架空作品A','架空作品B','架空作品C','架空作品D'
+   ]);
+   await evaluate(`(()=>{
+    const search=document.querySelector('#demoGallerySearch');
+    search.value='架空作品A';search.dispatchEvent(new Event('input',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row .gallery-actions button:nth-child(2)').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row .gallery-actions button:nth-child(3)').disabled"),true);
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
    // Newly created works never appear in the visitor preview until a mock
    // approval step. Archiving only hides them, with a reversible restore.
    await evaluate(`(()=>{
