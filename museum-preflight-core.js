@@ -126,9 +126,20 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
   // Only "status <> 'published' OR (all review proofs present)" is
   // conservative enough. CHECK(status='published' OR ...) is bypassable.
   const notPublished=/\bstatus\b(?:\s*::\s*[a-z_]+)?\s*(?:<>|!=)\s*'published'(?:\s*::\s*[a-z_]+)?/i;
-  return /\bCHECK\b/i.test(def)&&notPublished.test(def)&&/\bOR\b/i.test(def)&&
-   ['rights_checked_at','privacy_checked_at','reviewed_by','published_at']
-    .every(name=>new RegExp('\\b'+name+'\\s+IS\\s+NOT\\s+NULL\\b','i').test(def));
+  const status=notPublished.exec(def);
+  const disjunctions=[...def.matchAll(/\bOR\b/gi)];
+  if(!/\bCHECK\b/i.test(def)||!status||disjunctions.length!==1||
+     disjunctions[0].index<=status.index+status[0].length)return false;
+  const proof=def.slice(disjunctions[0].index+disjunctions[0][0].length);
+  const fields=['rights_checked_at','privacy_checked_at','reviewed_by','published_at'];
+  // Require all four independent NOT NULL proofs joined by AND. A disjunctive
+  // check can look valid in text while still allowing unreviewed publication.
+  const positions=fields.map(name=>
+   new RegExp('\\b'+name+'\\s+IS\\s+NOT\\s+NULL\\b','i').exec(proof));
+  if(positions.some(x=>!x))return false;
+  const ordered=positions.slice().sort((a,b)=>a.index-b.index);
+  return ordered.slice(1).every((p,i)=>
+   /\bAND\b/i.test(proof.slice(ordered[i].index+ordered[i][0].length,p.index)));
  });
  const foreignKeys=REQUIRED_FOREIGN_KEYS.map(([table,column,refTable,refColumn])=>{
   const matches=validated.some(row=>{
