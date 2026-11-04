@@ -37,9 +37,18 @@
   item.archived,item.imageUrl
  ]));
  let galleryPublished=[],galleryReviewFingerprint=null,restoreSelectedRevision=null;
+ // A one-step undo only remembers order IDs. It never stores rights approval,
+ // copies an image, touches public history, or rewinds moderation state.
+ let lastGalleryOrderUndo=null;
+ const rememberOrderBeforeMove=order=>{
+  lastGalleryOrderUndo={order,after:galleryFingerprint()};
+ };
+ const canUndoGalleryOrder=()=>lastGalleryOrderUndo!==null&&
+  lastGalleryOrderUndo.after===galleryFingerprint();
  let savedDraftRevision=1,savedDraftFingerprint=galleryFingerprint();
  const currentPublication=()=>galleryPublished[galleryPublished.length-1];
  const resetPublication=()=>{
+  lastGalleryOrderUndo=null;
   galleryPublished=[{revision:1,items:draftDisplay()}];
   galleryReviewFingerprint=null;
   restoreSelectedRevision=null;
@@ -119,7 +128,9 @@
     button('↑ 上へ',()=>{
      const previous=displayedIndices[displayIndex-1];
      if(previous===undefined)return;
+     const oldOrder=s.gallery.map(work=>work.id);
      [s.gallery[previous],s.gallery[index]]=[item,s.gallery[previous]];
+     rememberOrderBeforeMove(oldOrder);
      audit(item.id+'：表示中の展示順を上へ');
      setMessage('表示中の展示だけ並べ替えました。絞り込み対象外の作品は動かしていません。');
      render();
@@ -127,7 +138,9 @@
     button('↓ 下へ',()=>{
      const next=displayedIndices[displayIndex+1];
      if(next===undefined)return;
+     const oldOrder=s.gallery.map(work=>work.id);
      [s.gallery[index],s.gallery[next]]=[s.gallery[next],item];
+     rememberOrderBeforeMove(oldOrder);
      audit(item.id+'：表示中の展示順を下へ');
      setMessage('表示中の展示だけ並べ替えました。絞り込み対象外の作品は動かしていません。');
      render();
@@ -168,20 +181,24 @@
      if(displayIndex===0)return;
      // Rotate only matching positions; other rooms and hidden entries retain
      // their original array positions even during filtered curator actions.
+     const oldOrder=s.gallery.map(work=>work.id);
      const reordered=displayedIndices.map(i=>s.gallery[i]);
      const [moving]=reordered.splice(displayIndex,1);
      reordered.unshift(moving);
      displayedIndices.forEach((position,i)=>{s.gallery[position]=reordered[i];});
+     rememberOrderBeforeMove(oldOrder);
      audit(item.id+'：絞り込み内の先頭へ移動');
      setMessage('表示中の先頭へ移動しました。絞り込み対象外の作品は動かしていません。');
      render();
     },displayIndex===0),
     button('⇊ 末尾へ',()=>{
      if(displayIndex===displayedIndices.length-1)return;
+     const oldOrder=s.gallery.map(work=>work.id);
      const reordered=displayedIndices.map(i=>s.gallery[i]);
      const [moving]=reordered.splice(displayIndex,1);
      reordered.push(moving);
      displayedIndices.forEach((position,i)=>{s.gallery[position]=reordered[i];});
+     rememberOrderBeforeMove(oldOrder);
      audit(item.id+'：絞り込み内の末尾へ移動');
      setMessage('表示中の末尾へ移動しました。絞り込み対象外の作品は動かしていません。');
      render();
@@ -261,6 +278,7 @@
    details.append(label,title,roomLabel,roomSelect,approval,actions,fileLabel,file);
    row.append(galleryThumb(item),details);editor.append(row);
   });
+  $('demoGalleryUndoOrder').disabled=!canUndoGalleryOrder();
   $('demoGalleryMatchCount').textContent='全'+s.gallery.length+'件のうち'+matches+'件を表示中。';
   if(!matches)editor.append(make('p','条件に合う架空展示はありません。','mini'));
   const visible=s.gallery.filter(x=>eligible(x)&&
@@ -566,6 +584,22 @@
   const found=galleryPublished.find(entry=>String(entry.revision)===value&&
    entry!==currentPublication());
   restoreSelectedRevision=found?found.revision:null;
+  render();
+ });
+ $('demoGalleryUndoOrder').addEventListener('click',()=>{
+  if(!canUndoGalleryOrder()){lastGalleryOrderUndo=null;render();return;}
+  const ids=lastGalleryOrderUndo.order;
+  const works=new Map(s.gallery.map(item=>[item.id,item]));
+  if(ids.length!==s.gallery.length||works.size!==ids.length||
+     ids.some(id=>!works.has(id))){
+   lastGalleryOrderUndo=null;render();return;
+  }
+  // The exact work objects (including current moderation and temporary image)
+  // stay untouched. Only their positions are restored.
+  s.gallery=ids.map(id=>works.get(id));
+  lastGalleryOrderUndo=null;
+  audit('直前の模擬並び替えだけを取り消し');
+  setMessage('直前の並び替えを取り消しました。公開履歴・承認・画像は戻していません。');
   render();
  });
  $('demoGallerySearch').addEventListener('input',render);
