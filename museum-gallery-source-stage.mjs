@@ -132,9 +132,15 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
   const id='museum-'+row.id.toLowerCase();
   if(!ID.test(id)||seen.has(id))fail('EXHIBIT_DUPLICATE');
   seen.add(id);
-  const reviewed=row.status==='published'&&
-   checkedTime(row.rights_checked_at)&&checkedTime(row.privacy_checked_at)&&
-   checkedTime(row.published_at)&&typeof row.reviewed_by==='string'&&UUID.test(row.reviewed_by);
+  // Rights and privacy checks cannot retroactively justify an older
+  // publication. A later re-review needs a new, explicitly recorded
+  // publication generation; it must not revive any historical snapshot.
+  const validReviewTimes=checkedTime(row.rights_checked_at)&&
+   checkedTime(row.privacy_checked_at)&&checkedTime(row.published_at);
+  const reviewed=row.status==='published'&&validReviewTimes&&
+   new Date(row.rights_checked_at).getTime()<=new Date(row.published_at).getTime()&&
+   new Date(row.privacy_checked_at).getTime()<=new Date(row.published_at).getTime()&&
+   typeof row.reviewed_by==='string'&&UUID.test(row.reviewed_by);
   // A stored 'published' state without a complete rights/privacy trail is
   // invalid; never silently manufacture that approval.
   if(row.status==='published'&&!reviewed)fail('EXHIBIT_REVIEW_UNVERIFIED');
