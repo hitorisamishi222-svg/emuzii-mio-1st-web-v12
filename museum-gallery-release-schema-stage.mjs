@@ -84,6 +84,17 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   overrideActorFk:constraint(constraints,'gallery_live_overrides','f',
    ['updated_by','gallery_admin_users'])
  });
+ // The on-disk SQL is not evidence: the inspected PostgreSQL CHECK must
+ // independently reject rights or privacy reviews recorded after publication.
+ const reviewChronologyReady=constraints.some(row=>{
+  if(row?.table_name!=='museum_public_exhibits'||row.contype!=='c'||
+     row.validated!==true)return false;
+  const definition=normalized(row.definition);
+  return /\\bstatus\\s*(?:<>|!=)\\s*'published'/.test(definition)&&
+   definition.includes(' or ')&&
+   /\\brights_checked_at\\s*<=\\s*published_at\\b/.test(definition)&&
+   /\\bprivacy_checked_at\\s*<=\\s*published_at\\b/.test(definition);
+ });
  const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true&&
   Object.values(legacyChecks).every(Boolean);
  const layoutTablesReady=tables.filter(x=>x.table!=='gallery_live_overrides')
@@ -125,8 +136,10 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   sourceReady,
   legacyChecks,
   roomKindReady,
+  reviewChronologyReady,
   layoutReady,
-  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&layoutReady,
+  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
+   reviewChronologyReady&&layoutReady,
   tables:Object.freeze(tables),
   constraintChecks,
   // This report does NOT assert backup, owner signoff, or authorization.
