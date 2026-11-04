@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS museum_public_exhibits (
  CHECK (status <> 'published' OR
    (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL
     AND reviewed_by IS NOT NULL AND published_at IS NOT NULL)),
+ -- A review completed AFTER publication cannot authorize the older version.
+ -- Private drafts remain unaffected; publishing requires a new approval epoch.
+ CHECK (status <> 'published' OR
+   (rights_checked_at <= published_at AND privacy_checked_at <= published_at)),
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now()
 );
