@@ -103,7 +103,7 @@ jobs:
         run: node --test tests/mio-gas-connect-guidance.test.mjs tests/mio-gas-full-install.test.mjs
       - name: Check previously failing visual-only SHA in both immutable release baselines
         run: node --test --test-name-pattern='visual-only and main-based candidates each' tests/gacha-release-visual-scope.test.mjs
-      - name: Read-only observed Sheet schema vs candidate GAS: keep mutation gate closed
+      - name: "Read-only observed Sheet schema vs candidate GAS: keep mutation gate closed"
         run: node --test tests/mio-live-sheet-schema-preflight.test.mjs
       - name: Compare archived GAS candidates safely to confirm duplicate module and unknown live source
         run: node --test tests/mio-gas-source-preflight.test.mjs
