@@ -236,6 +236,31 @@ test('reviewed-by UUID and both rights checks are mandatory for a published exhi
   await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits:rows})),'EXHIBIT_REVIEW_UNVERIFIED');
  }
 });
+test('a post-publication rights or privacy review cannot justify the old public version',async()=>{
+ for(const field of ['rights_checked_at','privacy_checked_at']){
+  const exhibits=SRC();
+  const oldPublication=exhibits[0].published_at;
+  exhibits[0][field]=new Date('2026-11-01T00:10:00Z');
+  assert.ok(exhibits[0][field]>oldPublication);
+  await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits})),
+   'EXHIBIT_REVIEW_UNVERIFIED');
+ }
+});
+test('a newly dated publication can be accepted only with complete chronological review evidence',async()=>{
+ const exhibits=SRC();
+ exhibits[0].rights_checked_at=new Date('2026-11-01T00:10:00Z');
+ exhibits[0].privacy_checked_at=new Date('2026-11-01T00:15:00Z');
+ exhibits[0].published_at=new Date('2026-11-01T00:20:00Z');
+ const approved=await loadMuseumModeratedCatalogStage(fake({exhibits}));
+ assert.equal(approved.catalog.find(x=>x.id===NEW).hidden,false);
+ assert.ok(approved.verifiedApprovedIds.includes(NEW));
+ const unpublished=SRC();
+ unpublished[1].status='draft';
+ unpublished[1].rights_checked_at=new Date('2026-11-01T02:00:00Z');
+ unpublished[1].published_at=new Date('2026-11-01T01:00:00Z');
+ const privateResult=await loadMuseumModeratedCatalogStage(fake({exhibits:unpublished}));
+ assert.equal(privateResult.catalog.find(x=>x.id===DRAFT).hidden,true);
+});
 test('invalid hidden/deleted data does not silently become a visible work',async()=>{
  for(const invalid of [null,'false',undefined,1]){
   const overrides=[{item_id:'mio-awakening-song',hidden:invalid,deleted:false}];
