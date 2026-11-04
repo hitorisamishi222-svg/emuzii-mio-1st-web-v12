@@ -78,6 +78,13 @@ test('invalid, unvalidated or missing public status check cannot pass',()=>{
   assert.equal(report(p).allReady,false);
  }
 });
+test('positive status CHECK cannot be bypassed with OR TRUE',()=>{
+ const x=valid();
+ x.constraints[0].definition=
+  "CHECK (status = ANY (ARRAY['draft','published','hidden','trash']) OR TRUE)";
+ assert.equal(report(x).statusConstraintComplete,false);
+ assert.equal(report(x).allReady,false);
+});
 test('missing, unvalidated, or partial rights/privacy publication checks block readiness',()=>{
  for(const check of [null,{...review,validated:false},
   {...review,definition:"CHECK (status <> 'published' OR reviewed_by IS NOT NULL)"}]){
