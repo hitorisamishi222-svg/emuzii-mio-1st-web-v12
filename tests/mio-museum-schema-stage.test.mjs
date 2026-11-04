@@ -111,6 +111,19 @@ test('review checks must require proof when published, not allow missing review 
   assert.equal(report(p).allReady,false);
  }
 });
+test('publication proof constraints cannot hide an OR bypass among their terms',()=>{
+ const all="rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL";
+ for(const definition of [
+  "CHECK (status <> 'published' OR (rights_checked_at IS NOT NULL OR privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))",
+  "CHECK (status <> 'published' OR ("+all+") OR TRUE)",
+  "CHECK (status <> 'published' OR ("+all.replace(' AND reviewed_by',' OR reviewed_by')+"))"
+ ]){
+  const p=valid();
+  p.constraints[1].definition=definition;
+  assert.equal(report(p).publicationReviewConstraintComplete,false,definition);
+  assert.equal(report(p).allReady,false);
+ }
+});
 test('every required role/session and reviewed-by foreign key must be verified',()=>{
  for(let i=0;i<keys.length;i++){
   const p=valid();p.constraints=[status,review,...keys.filter((_,j)=>i!==j)];
