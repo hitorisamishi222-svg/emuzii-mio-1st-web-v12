@@ -6,6 +6,11 @@ on:
       - feature/mio-v2-integration-mainbaseline-20261102
     paths:
       - museum*
+      - 'tests/mio-museum-*.test.mjs'
+      - 'db/museum*.sql'
+      - gallery-items.js
+      - gallery-auth-shared.js
+      - 'api-gallery*.js'
       - tests/mio-staging-mobile-chromium.mjs
       - mio-profile.html
       - vercel.json
@@ -33,6 +38,11 @@ on:
       - main
     paths:
       - museum*
+      - 'tests/mio-museum-*.test.mjs'
+      - 'db/museum*.sql'
+      - gallery-items.js
+      - gallery-auth-shared.js
+      - 'api-gallery*.js'
       - tests/mio-staging-mobile-chromium.mjs
       - mio-profile.html
       - vercel.json
@@ -93,6 +103,8 @@ jobs:
         run: node --test tests/gacha-legacy-recovery.test.mjs
       - name: Install existing test imports without executing package scripts
         run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund
+      - name: Offline museum gallery lifecycle, moderation, history and release-gate regression
+        run: node --test tests/mio-museum-*.test.mjs
       - name: Unapproved browser must stay blocked (failed-only case)
         run: node --test --test-name-pattern='other unapproved browsers' tests/mio-mg-admin-browser-approved-recovery.test.mjs
       - name: Existing cache-busted gacha asset is still loaded (failed-only case)
