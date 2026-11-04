@@ -74,7 +74,65 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   return /\bkind\b\s*(?:in\s*\(|=\s*any\s*\()/i.test(expr)&&
    ['gallery','icons','moments','events'].every(kind=>expr.includes("'"+kind+"'"));
  });
- const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true;
+ const legacyChecks=Object.freeze({
+  overridePrimary:constraint(constraints,'gallery_live_overrides','p',['item_id']),
+  overrideIdFormat:constraints.some(row=>row?.table_name==='gallery_live_overrides'&&
+   row.contype==='c'&&row.validated===true&&
+   normalized(row.definition).includes("item_id ~ '^[a-z0-9-]{3,70}
+ const layoutTablesReady=tables.filter(x=>x.table!=='gallery_live_overrides')
+  .every(x=>x.ready);
+ const constraintChecks=Object.freeze({
+  layoutPrimary:constraint(constraints,'museum_gallery_layout_stage','p',['layout_key']),
+  historyUnique:constraint(constraints,'museum_gallery_layout_history_stage','u',
+   ['layout_key','published_revision']),
+  operationIdUnique:constraint(constraints,'museum_gallery_layout_audit_stage','u',['operation_id']),
+  auditAction:constraint(constraints,'museum_gallery_layout_audit_stage','c',
+   ["'draft'","'publish'","'rollback'"]),
+  layoutVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_order','@>','draft_visible_ids']),
+  historyVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_order','@>','snapshot_visible_ids']),
+  publicationReviewType:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['jsonb_typeof(published_review_hashes)',"'object'"]),
+  historyReviewType:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['jsonb_typeof(snapshot_review_hashes)',"'object'"]),
+  approvedDeviceOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['drafted_by','gallery_admin_users']),
+  publishOwnerFk:constraint(constraints,'museum_gallery_layout_history_stage','f',
+   ['published_by','gallery_admin_users']),
+  layoutPublishedOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['published_by','gallery_admin_users']),
+  draftFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_featured_id','draft_visible_ids','?']),
+  publishedFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['published_featured_id','published_visible_ids','?']),
+  historyFeaturedVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_featured_id','snapshot_visible_ids','?']),
+  auditOwnerFk:constraint(constraints,'museum_gallery_layout_audit_stage','f',
+   ['actor_id','gallery_admin_users'])
+ });
+ const layoutReady=layoutTablesReady&&Object.values(constraintChecks).every(Boolean);
+ return Object.freeze({
+  identityVerified:identityVerified===true,
+  baseMuseumReady:base.schemaReady,
+  sourceReady,
+  legacyChecks,
+  roomKindReady,
+  layoutReady,
+  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&layoutReady,
+  tables:Object.freeze(tables),
+  constraintChecks,
+  // This report does NOT assert backup, owner signoff, or authorization.
+  canPublish:false,
+  canDeploy:false
+ });
+}
+")),
+  overrideActorFk:constraint(constraints,'gallery_live_overrides','f',
+   ['updated_by','gallery_admin_users'])
+ });
+ const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true&&
+  Object.values(legacyChecks).every(Boolean);
  const layoutTablesReady=tables.filter(x=>x.table!=='gallery_live_overrides')
   .every(x=>x.ready);
  const constraintChecks=Object.freeze({
