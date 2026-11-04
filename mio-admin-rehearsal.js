@@ -86,14 +86,19 @@
   const filter=$('demoGalleryFilter').value;
   const editorRoom=$('demoGalleryRoomFilter').value;
   const previewRoom=$('demoGalleryPreviewRoom').value;
-  let matches=0;
-  s.gallery.forEach((item,index)=>{
-   if(needle&&!(item.title+' '+item.id).toLocaleLowerCase('ja').includes(needle))return;
-   if(editorRoom!=='all'&&item.room!==editorRoom)return;
-   if(filter==='visible'&&(!item.visible||item.archived))return;
-   if(filter==='review'&&item.reviewed)return;
-   if(filter==='hidden'&&item.visible&&!item.archived)return;
-   matches++;
+  // Filtered ordering must swap ONLY the two adjacent displayed entries.
+  // Using the unfiltered array index would silently move an unrelated hidden
+  // work when the owner searches or views a single room.
+  const included=item=>
+   (!needle||(item.title+' '+item.id).toLocaleLowerCase('ja').includes(needle))&&
+   (editorRoom==='all'||item.room===editorRoom)&&
+   (filter!=='visible'||(item.visible&&!item.archived))&&
+   (filter!=='review'||!item.reviewed)&&
+   (filter!=='hidden'||!item.visible||item.archived);
+  const displayedIndices=s.gallery.flatMap((item,index)=>included(item)?[index]:[]);
+  const matches=displayedIndices.length;
+  displayedIndices.forEach((index,displayIndex)=>{
+   const item=s.gallery[index];
    const row=make('div',undefined,'entry gallery-row');
    const details=make('div');
    details.append(make('strong',item.title),
@@ -112,13 +117,21 @@
      setMessage('展示名を変更しました。端末内だけの模擬編集です。');render();
     }),
     button('↑ 上へ',()=>{
-     [s.gallery[index-1],s.gallery[index]]=[item,s.gallery[index-1]];
-     audit(item.id+'：展示順を上へ');render();
-    },index===0),
+     const previous=displayedIndices[displayIndex-1];
+     if(previous===undefined)return;
+     [s.gallery[previous],s.gallery[index]]=[item,s.gallery[previous]];
+     audit(item.id+'：表示中の展示順を上へ');
+     setMessage('表示中の展示だけ並べ替えました。絞り込み対象外の作品は動かしていません。');
+     render();
+    },displayIndex===0),
     button('↓ 下へ',()=>{
-     [s.gallery[index],s.gallery[index+1]]=[s.gallery[index+1],item];
-     audit(item.id+'：展示順を下へ');render();
-    },index===s.gallery.length-1),
+     const next=displayedIndices[displayIndex+1];
+     if(next===undefined)return;
+     [s.gallery[index],s.gallery[next]]=[s.gallery[next],item];
+     audit(item.id+'：表示中の展示順を下へ');
+     setMessage('表示中の展示だけ並べ替えました。絞り込み対象外の作品は動かしていません。');
+     render();
+    },displayIndex===displayedIndices.length-1),
     button(item.visible?'非公開にする':'公開予定にする',()=>{
      if(!item.reviewed||item.archived)return;
      item.visible=!item.visible;
