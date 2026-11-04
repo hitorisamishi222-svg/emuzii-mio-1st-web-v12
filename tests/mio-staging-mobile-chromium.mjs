@@ -331,6 +331,14 @@ try{
    // with a faithful public-view preview and a reset to the original mock list.
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:nth-child(2) .gallery-actions button:nth-child(2)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品B')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),false);
+   await evaluate("document.querySelector('#demoGalleryUndoOrder').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品A')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第1版')"),true);
    await evaluate("document.querySelector('#demoGallery .gallery-row:nth-child(2) .gallery-actions button:nth-child(2)').click()");
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品B')"),true);
    await evaluate(`(()=>{
@@ -339,6 +347,8 @@ try{
     document.querySelector('#demoGallery .gallery-row .gallery-actions button:first-child').click();
    })()`);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示名変更')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),true,
+    'after an edit, old ordering history must not roll back the curator state');
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(5)').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPreview .gallery-featured').closest('.entry').textContent.includes('展示名変更')"),true);
@@ -352,6 +362,7 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row strong').textContent.includes('架空作品A')"),true);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'0');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),true);
    // Filtered owner ordering must never silently move nonmatching works.
    // A fourth gallery work has two different-room works between it and A.
    await evaluate(`(()=>{
