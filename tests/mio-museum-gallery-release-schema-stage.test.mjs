@@ -75,6 +75,14 @@ const moreConstraints=[
   definition:"CHECK (jsonb_typeof(snapshot_review_hashes) = 'object')"},
  {table_name:'museum_gallery_layout_history_stage',contype:'f',validated:true,
   definition:'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)'},
+ {table_name:'museum_gallery_layout_stage',contype:'f',validated:true,
+  definition:'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)'},
+ {table_name:'museum_gallery_layout_stage',contype:'c',validated:true,
+  definition:'CHECK (draft_featured_id IS NULL OR draft_visible_ids ? draft_featured_id)'},
+ {table_name:'museum_gallery_layout_stage',contype:'c',validated:true,
+  definition:'CHECK (published_featured_id IS NULL OR published_visible_ids ? published_featured_id)'},
+ {table_name:'museum_gallery_layout_history_stage',contype:'c',validated:true,
+  definition:'CHECK (snapshot_featured_id IS NULL OR snapshot_visible_ids ? snapshot_featured_id)'},
  {table_name:'museum_gallery_layout_audit_stage',contype:'f',validated:true,
   definition:'FOREIGN KEY (actor_id) REFERENCES gallery_admin_users(id)'}
 ];
@@ -167,6 +175,23 @@ test('all required primary, unique, owner-link and membership checks must be val
   const result=report(x);
   assert.equal(result.layoutReady,false,'unvalidated check '+i);
   assert.equal(result.allReady,false);
+ }
+});
+test('layout and history must bind published owner and featured items to approved visibility',()=>{
+ for(const token of [
+  'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)',
+  'draft_visible_ids ? draft_featured_id',
+  'published_visible_ids ? published_featured_id',
+  'snapshot_visible_ids ? snapshot_featured_id'
+ ]){
+  const x=good();
+  const i=x.constraints.findIndex(row=>String(row.definition).includes(token)&&
+   (token.startsWith('FOREIGN KEY')?row.table_name==='museum_gallery_layout_stage':true));
+  assert.notEqual(i,-1,token);
+  x.constraints.splice(i,1);
+  const out=report(x);
+  assert.equal(out.layoutReady,false,token);
+  assert.equal(out.allReady,false,token);
  }
 });
 test('missing or unverified real DB identity is not inferred from valid metadata',()=>{
