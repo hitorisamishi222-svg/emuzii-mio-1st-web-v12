@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {assessMuseumNeonBindingStage as check} from '../museum-neon-binding-preflight.mjs';
 const host='ep-preview.c-13.us-east-1.aws.neon.tech';
 const prod='ep-prod.c-13.us-east-1.aws.neon.tech';
@@ -15,6 +16,7 @@ test('matching preview metadata is only a comparison, never permission to deploy
  assert.deepEqual(result.failed,[]);
  assert.equal(result.canWrite,false);
  assert.equal(result.canDeploy,false);
+ assert.equal(result.didFetchCredentials,false);
  assert.equal(result.canConnectToProduction,false);
  assert.equal(JSON.stringify(result).includes(host),false);
  assert.equal(Object.isFrozen(result),true);
@@ -57,4 +59,12 @@ test('non-TLS and spoofable Postgres URL options are rejected',()=>{
   assert.equal(check(x).matchesMetadata,false);
  }
  assert.equal(check().matchesMetadata,false);
+});
+
+test('preview binding helper remains unexposed and cannot run SQL',()=>{
+ const source=readFileSync(new URL('../museum-neon-binding-preflight.mjs',import.meta.url),'utf8');
+ const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+ assert.equal(config.builds.some(x=>x.src==='museum-neon-binding-preflight.mjs'),false);
+ assert.equal(config.routes.some(x=>x.dest==='/museum-neon-binding-preflight.mjs'),false);
+ assert.doesNotMatch(source,/process\.env|export default|\.query\s*\(|\.connect\s*\(|INSERT INTO|DELETE FROM/);
 });
