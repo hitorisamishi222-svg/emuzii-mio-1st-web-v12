@@ -96,6 +96,14 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
    ['drafted_by','gallery_admin_users']),
   publishOwnerFk:constraint(constraints,'museum_gallery_layout_history_stage','f',
    ['published_by','gallery_admin_users']),
+  layoutPublishedOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['published_by','gallery_admin_users']),
+  draftFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_featured_id','draft_visible_ids','?']),
+  publishedFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['published_featured_id','published_visible_ids','?']),
+  historyFeaturedVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_featured_id','snapshot_visible_ids','?']),
   auditOwnerFk:constraint(constraints,'museum_gallery_layout_audit_stage','f',
    ['actor_id','gallery_admin_users'])
  });
