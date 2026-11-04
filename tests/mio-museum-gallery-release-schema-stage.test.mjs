@@ -90,7 +90,15 @@ const legacyConstraints=[
  {table_name:'gallery_live_overrides',contype:'p',validated:true,
   definition:'PRIMARY KEY (item_id)'},
  {table_name:'gallery_live_overrides',contype:'c',validated:true,
-  definition:"CHECK ((item_id ~ '^[a-z0-9-]{3,70}
+  definition:"CHECK ((item_id ~ '^[a-z0-9-]{3,70}"+String.fromCharCode(36)+"'::text))"},
+ {table_name:'gallery_live_overrides',contype:'f',validated:true,
+  definition:'FOREIGN KEY (updated_by) REFERENCES gallery_admin_users(id)'}
+];
+const good=()=>({identityVerified:true,
+ columns:structuredClone([...baseColumns,...extraCols]),
+ constraints:structuredClone([status,review,roomKinds,...baseKeys,
+  ...legacyConstraints,...moreConstraints])
+});
 const report=input=>museumGalleryReleaseSchemaReport(input);
 test('a staged release can be reviewed only when base museum, live overrides and all layout tables exist',()=>{
  const result=report(good());
@@ -158,7 +166,7 @@ test('the live override table is required for correct public takedowns',()=>{
  assert.equal(v.layoutReady,true);
  assert.equal(v.allReady,false);
 });
-test('legacy gallery must have a work-ID primary key, format check and editor foreign key',()=>{
+test('existing gallery needs a unique work ID and attributed moderation',()=>{
  for(const kind of ['p','c','f']){
   const x=good();
   const index=x.constraints.findIndex(row=>row.table_name==='gallery_live_overrides'&&row.contype===kind);
@@ -170,7 +178,7 @@ test('legacy gallery must have a work-ID primary key, format check and editor fo
   assert.equal(out.allReady,false);
  }
 });
-test('unvalidated or negated legacy gallery checks must fail closed',()=>{
+test('unvalidated or negated legacy ID checks fail closed',()=>{
  for(const kind of ['p','c','f']){
   const x=good(),row=x.constraints.find(row=>
    row.table_name==='gallery_live_overrides'&&row.contype===kind);
@@ -180,331 +188,8 @@ test('unvalidated or negated legacy gallery checks must fail closed',()=>{
  const x=good();
  const format=x.constraints.find(row=>
   row.table_name==='gallery_live_overrides'&&row.contype==='c');
- format.definition="CHECK (item_id !~ '^[a-z0-9-]{3,70}
- for(const column of ['draft_order','published_revision','snapshot_order',
-  'payload_hash','new_revision']){
-  const x=good();x.columns.find(c=>c.column_name===column).data_type='text (invalid)';
-  assert.equal(report(x).allReady,false,column);
- }
- const x=good();x.columns.find(c=>c.table_name==='museum_gallery_layout_audit_stage'&&
-  c.column_name==='operation_id').is_nullable='YES';
- assert.equal(report(x).allReady,false);
-});
-test('all required primary, unique, owner-link and membership checks must be validated',()=>{
- for(let i=0;i<moreConstraints.length;i++){
-  const x=good();
-  const index=x.constraints.length-moreConstraints.length+i;
-  x.constraints[index].validated=false;
-  const result=report(x);
-  assert.equal(result.layoutReady,false,'unvalidated check '+i);
-  assert.equal(result.allReady,false);
- }
-});
-test('layout and history must bind published owner and featured items to approved visibility',()=>{
- for(const token of [
-  'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)',
-  'draft_visible_ids ? draft_featured_id',
-  'published_visible_ids ? published_featured_id',
-  'snapshot_visible_ids ? snapshot_featured_id'
- ]){
-  const x=good();
-  const i=x.constraints.findIndex(row=>String(row.definition).includes(token)&&
-   (token.startsWith('FOREIGN KEY')?row.table_name==='museum_gallery_layout_stage':true));
-  assert.notEqual(i,-1,token);
-  x.constraints.splice(i,1);
-  const out=report(x);
-  assert.equal(out.layoutReady,false,token);
-  assert.equal(out.allReady,false,token);
- }
-});
-test('missing or unverified real DB identity is not inferred from valid metadata',()=>{
- for(const identityVerified of [false,undefined,'true']){
-  const x=good();x.identityVerified=identityVerified;
-  const result=report(x);
-  assert.equal(result.allReady,false);
-  assert.equal(result.canDeploy,false);
- }
-});
-test('incomplete query results cannot produce a ready report',()=>{
- assert.throws(()=>report({columns:null,constraints:[],identityVerified:true}),TypeError);
- assert.throws(()=>report({columns:[],constraints:null,identityVerified:true}),TypeError);
- assert.equal(report({columns:[],constraints:[],identityVerified:true}).allReady,false);
-});
-test('release schema evaluator has no live database or deployment capabilities',()=>{
- const src=readFileSync(new URL('../museum-gallery-release-schema-stage.mjs',import.meta.url),'utf8');
- const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
- assert.doesNotMatch(src,/export default|process\.env|\.query\s*\(|INSERT INTO|DELETE FROM|UPDATE museum|fetch\s*\(/);
- assert.equal(config.routes.some(x=>x.src==='/museum-gallery-release-schema-stage.mjs'),false);
- assert.equal(config.builds.some(x=>x.src==='museum-gallery-release-schema-stage.mjs'),false);
-});
-::text))"},
- {table_name:'gallery_live_overrides',contype:'f',validated:true,
-  definition:'FOREIGN KEY (updated_by) REFERENCES gallery_admin_users(id)'}
-];
-const good=()=>({identityVerified:true,
- columns:structuredClone([...baseColumns,...extraCols]),
- constraints:structuredClone([status,review,roomKinds,...baseKeys,
-  ...legacyConstraints,...moreConstraints])
-});
-const report=input=>museumGalleryReleaseSchemaReport(input);
-test('a staged release can be reviewed only when base museum, live overrides and all layout tables exist',()=>{
- const result=report(good());
- assert.equal(result.identityVerified,true);
- assert.equal(result.baseMuseumReady,true);
- assert.equal(result.sourceReady,true);
- assert.equal(result.roomKindReady,true);
- assert.equal(result.layoutReady,true);
- assert.equal(result.allReady,true);
- assert.equal(result.canPublish,false);
- assert.equal(result.canDeploy,false);
- assert.equal(result.tables.every(x=>x.ready),true);
-});
-test('an actual checked DB must accept all four owner-curated exhibition rooms',()=>{
- for(const definition of [
-  "CHECK (kind = ANY (ARRAY['icons','moments','events']))",
-  "CHECK (kind <> 'invalid' AND title <> 'gallery' AND title <> 'icons' AND title <> 'moments' AND title <> 'events')",
-  "CHECK (kind NOT IN ('gallery','icons','moments','events'))"
- ]){
-  const x=good();x.constraints[2].definition=definition;
-  assert.equal(report(x).roomKindReady,false,definition);
-  assert.equal(report(x).allReady,false,definition);
- }
- const unvalidated=good();unvalidated.constraints[2].validated=false;
- assert.equal(report(unvalidated).roomKindReady,false);
- const absent=good();absent.constraints.splice(2,1);
- assert.equal(report(absent).roomKindReady,false);
-});
-test('publication and history review fingerprints are necessary for release readiness',()=>{
- for(const [table,column] of [
-  ['museum_gallery_layout_stage','published_review_hashes'],
-  ['museum_gallery_layout_history_stage','snapshot_review_hashes']
- ]){
-  const x=good();
-  x.columns=x.columns.filter(c=>!(c.table_name===table&&c.column_name===column));
-  assert.equal(report(x).allReady,false);
-  assert.ok(report(x).tables.find(t=>t.table===table).missing.includes(column));
- }
-});
-test('review fingerprints require a validated JSONB-object check in both tables',()=>{
- for(const name of ['published_review_hashes','snapshot_review_hashes']){
-  const x=good();
-  x.constraints=x.constraints.filter(c=>!String(c.definition).includes('jsonb_typeof('+name+')'));
-  const result=report(x);
-  assert.equal(result.layoutReady,false,name);
-  assert.equal(result.allReady,false,name);
- }
-});
-test('the prior museum-only preflight is insufficient when the layout tables are missing',()=>{
- for(const table of ['museum_gallery_layout_stage',
-  'museum_gallery_layout_history_stage','museum_gallery_layout_audit_stage']){
-  const x=good();x.columns=x.columns.filter(c=>c.table_name!==table);
-  const v=report(x);
-  assert.equal(v.baseMuseumReady,true);
-  assert.equal(v.layoutReady,false);
-  assert.equal(v.allReady,false);
-  assert.equal(v.tables.find(a=>a.table===table).exists,false);
- }
-});
-test('the live override table is required for correct public takedowns',()=>{
- const x=good();x.columns=x.columns.filter(c=>c.table_name!=='gallery_live_overrides');
- const v=report(x);
- assert.equal(v.baseMuseumReady,true);
- assert.equal(v.sourceReady,false);
- assert.equal(v.layoutReady,true);
- assert.equal(v.allReady,false);
-});
-test('a wrong type or nullable audit field must prevent a write-ready report',()=>{
- for(const column of ['draft_order','published_revision','snapshot_order',
-  'payload_hash','new_revision']){
-  const x=good();x.columns.find(c=>c.column_name===column).data_type='text (invalid)';
-  assert.equal(report(x).allReady,false,column);
- }
- const x=good();x.columns.find(c=>c.table_name==='museum_gallery_layout_audit_stage'&&
-  c.column_name==='operation_id').is_nullable='YES';
- assert.equal(report(x).allReady,false);
-});
-test('all required primary, unique, owner-link and membership checks must be validated',()=>{
- for(let i=0;i<moreConstraints.length;i++){
-  const x=good();
-  const index=x.constraints.length-moreConstraints.length+i;
-  x.constraints[index].validated=false;
-  const result=report(x);
-  assert.equal(result.layoutReady,false,'unvalidated check '+i);
-  assert.equal(result.allReady,false);
- }
-});
-test('layout and history must bind published owner and featured items to approved visibility',()=>{
- for(const token of [
-  'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)',
-  'draft_visible_ids ? draft_featured_id',
-  'published_visible_ids ? published_featured_id',
-  'snapshot_visible_ids ? snapshot_featured_id'
- ]){
-  const x=good();
-  const i=x.constraints.findIndex(row=>String(row.definition).includes(token)&&
-   (token.startsWith('FOREIGN KEY')?row.table_name==='museum_gallery_layout_stage':true));
-  assert.notEqual(i,-1,token);
-  x.constraints.splice(i,1);
-  const out=report(x);
-  assert.equal(out.layoutReady,false,token);
-  assert.equal(out.allReady,false,token);
- }
-});
-test('missing or unverified real DB identity is not inferred from valid metadata',()=>{
- for(const identityVerified of [false,undefined,'true']){
-  const x=good();x.identityVerified=identityVerified;
-  const result=report(x);
-  assert.equal(result.allReady,false);
-  assert.equal(result.canDeploy,false);
- }
-});
-test('incomplete query results cannot produce a ready report',()=>{
- assert.throws(()=>report({columns:null,constraints:[],identityVerified:true}),TypeError);
- assert.throws(()=>report({columns:[],constraints:null,identityVerified:true}),TypeError);
- assert.equal(report({columns:[],constraints:[],identityVerified:true}).allReady,false);
-});
-test('release schema evaluator has no live database or deployment capabilities',()=>{
- const src=readFileSync(new URL('../museum-gallery-release-schema-stage.mjs',import.meta.url),'utf8');
- const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
- assert.doesNotMatch(src,/export default|process\.env|\.query\s*\(|INSERT INTO|DELETE FROM|UPDATE museum|fetch\s*\(/);
- assert.equal(config.routes.some(x=>x.src==='/museum-gallery-release-schema-stage.mjs'),false);
- assert.equal(config.builds.some(x=>x.src==='museum-gallery-release-schema-stage.mjs'),false);
-});
-)";
+ format.definition="CHECK (item_id !~ '^[a-z0-9-]{3,70}"+String.fromCharCode(36)+"')";
  assert.equal(report(x).sourceReady,false);
-});
-test('a wrong type or nullable audit field must prevent a write-ready report',()=>{
- for(const column of ['draft_order','published_revision','snapshot_order',
-  'payload_hash','new_revision']){
-  const x=good();x.columns.find(c=>c.column_name===column).data_type='text (invalid)';
-  assert.equal(report(x).allReady,false,column);
- }
- const x=good();x.columns.find(c=>c.table_name==='museum_gallery_layout_audit_stage'&&
-  c.column_name==='operation_id').is_nullable='YES';
- assert.equal(report(x).allReady,false);
-});
-test('all required primary, unique, owner-link and membership checks must be validated',()=>{
- for(let i=0;i<moreConstraints.length;i++){
-  const x=good();
-  const index=x.constraints.length-moreConstraints.length+i;
-  x.constraints[index].validated=false;
-  const result=report(x);
-  assert.equal(result.layoutReady,false,'unvalidated check '+i);
-  assert.equal(result.allReady,false);
- }
-});
-test('layout and history must bind published owner and featured items to approved visibility',()=>{
- for(const token of [
-  'FOREIGN KEY (published_by) REFERENCES gallery_admin_users(id)',
-  'draft_visible_ids ? draft_featured_id',
-  'published_visible_ids ? published_featured_id',
-  'snapshot_visible_ids ? snapshot_featured_id'
- ]){
-  const x=good();
-  const i=x.constraints.findIndex(row=>String(row.definition).includes(token)&&
-   (token.startsWith('FOREIGN KEY')?row.table_name==='museum_gallery_layout_stage':true));
-  assert.notEqual(i,-1,token);
-  x.constraints.splice(i,1);
-  const out=report(x);
-  assert.equal(out.layoutReady,false,token);
-  assert.equal(out.allReady,false,token);
- }
-});
-test('missing or unverified real DB identity is not inferred from valid metadata',()=>{
- for(const identityVerified of [false,undefined,'true']){
-  const x=good();x.identityVerified=identityVerified;
-  const result=report(x);
-  assert.equal(result.allReady,false);
-  assert.equal(result.canDeploy,false);
- }
-});
-test('incomplete query results cannot produce a ready report',()=>{
- assert.throws(()=>report({columns:null,constraints:[],identityVerified:true}),TypeError);
- assert.throws(()=>report({columns:[],constraints:null,identityVerified:true}),TypeError);
- assert.equal(report({columns:[],constraints:[],identityVerified:true}).allReady,false);
-});
-test('release schema evaluator has no live database or deployment capabilities',()=>{
- const src=readFileSync(new URL('../museum-gallery-release-schema-stage.mjs',import.meta.url),'utf8');
- const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
- assert.doesNotMatch(src,/export default|process\.env|\.query\s*\(|INSERT INTO|DELETE FROM|UPDATE museum|fetch\s*\(/);
- assert.equal(config.routes.some(x=>x.src==='/museum-gallery-release-schema-stage.mjs'),false);
- assert.equal(config.builds.some(x=>x.src==='museum-gallery-release-schema-stage.mjs'),false);
-});
-::text))"},
- {table_name:'gallery_live_overrides',contype:'f',validated:true,
-  definition:'FOREIGN KEY (updated_by) REFERENCES gallery_admin_users(id)'}
-];
-const good=()=>({identityVerified:true,
- columns:structuredClone([...baseColumns,...extraCols]),
- constraints:structuredClone([status,review,roomKinds,...baseKeys,
-  ...legacyConstraints,...moreConstraints])
-});
-const report=input=>museumGalleryReleaseSchemaReport(input);
-test('a staged release can be reviewed only when base museum, live overrides and all layout tables exist',()=>{
- const result=report(good());
- assert.equal(result.identityVerified,true);
- assert.equal(result.baseMuseumReady,true);
- assert.equal(result.sourceReady,true);
- assert.equal(result.roomKindReady,true);
- assert.equal(result.layoutReady,true);
- assert.equal(result.allReady,true);
- assert.equal(result.canPublish,false);
- assert.equal(result.canDeploy,false);
- assert.equal(result.tables.every(x=>x.ready),true);
-});
-test('an actual checked DB must accept all four owner-curated exhibition rooms',()=>{
- for(const definition of [
-  "CHECK (kind = ANY (ARRAY['icons','moments','events']))",
-  "CHECK (kind <> 'invalid' AND title <> 'gallery' AND title <> 'icons' AND title <> 'moments' AND title <> 'events')",
-  "CHECK (kind NOT IN ('gallery','icons','moments','events'))"
- ]){
-  const x=good();x.constraints[2].definition=definition;
-  assert.equal(report(x).roomKindReady,false,definition);
-  assert.equal(report(x).allReady,false,definition);
- }
- const unvalidated=good();unvalidated.constraints[2].validated=false;
- assert.equal(report(unvalidated).roomKindReady,false);
- const absent=good();absent.constraints.splice(2,1);
- assert.equal(report(absent).roomKindReady,false);
-});
-test('publication and history review fingerprints are necessary for release readiness',()=>{
- for(const [table,column] of [
-  ['museum_gallery_layout_stage','published_review_hashes'],
-  ['museum_gallery_layout_history_stage','snapshot_review_hashes']
- ]){
-  const x=good();
-  x.columns=x.columns.filter(c=>!(c.table_name===table&&c.column_name===column));
-  assert.equal(report(x).allReady,false);
-  assert.ok(report(x).tables.find(t=>t.table===table).missing.includes(column));
- }
-});
-test('review fingerprints require a validated JSONB-object check in both tables',()=>{
- for(const name of ['published_review_hashes','snapshot_review_hashes']){
-  const x=good();
-  x.constraints=x.constraints.filter(c=>!String(c.definition).includes('jsonb_typeof('+name+')'));
-  const result=report(x);
-  assert.equal(result.layoutReady,false,name);
-  assert.equal(result.allReady,false,name);
- }
-});
-test('the prior museum-only preflight is insufficient when the layout tables are missing',()=>{
- for(const table of ['museum_gallery_layout_stage',
-  'museum_gallery_layout_history_stage','museum_gallery_layout_audit_stage']){
-  const x=good();x.columns=x.columns.filter(c=>c.table_name!==table);
-  const v=report(x);
-  assert.equal(v.baseMuseumReady,true);
-  assert.equal(v.layoutReady,false);
-  assert.equal(v.allReady,false);
-  assert.equal(v.tables.find(a=>a.table===table).exists,false);
- }
-});
-test('the live override table is required for correct public takedowns',()=>{
- const x=good();x.columns=x.columns.filter(c=>c.table_name!=='gallery_live_overrides');
- const v=report(x);
- assert.equal(v.baseMuseumReady,true);
- assert.equal(v.sourceReady,false);
- assert.equal(v.layoutReady,true);
- assert.equal(v.allReady,false);
 });
 test('a wrong type or nullable audit field must prevent a write-ready report',()=>{
  for(const column of ['draft_order','published_revision','snapshot_order',
