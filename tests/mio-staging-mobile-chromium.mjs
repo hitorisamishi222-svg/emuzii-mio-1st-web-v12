@@ -385,6 +385,26 @@ try{
    assert.deepEqual(restoredOrder.map(x=>x.match(/架空作品[A-D]/)?.[0]),[
     '架空作品A','架空作品B','架空作品C','架空作品D'
    ]);
+   // Fast first/last actions must operate only within the filtered room
+   // while unrelated B and C remain at their exact original positions.
+   await evaluate(`(()=>{
+    const room=document.querySelector('#demoGalleryRoomFilter');
+    room.value='gallery';room.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(8)').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(9)').disabled"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(8)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品D')"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(9)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品A')"),true);
+   await evaluate(`(()=>{
+    const room=document.querySelector('#demoGalleryRoomFilter');
+    room.value='all';room.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   const edgeOrder=await evaluate("[...document.querySelectorAll('#demoGallery .gallery-row strong')].map(x=>x.textContent)");
+   assert.deepEqual(edgeOrder.map(x=>x.match(/架空作品[A-D]/)?.[0]),[
+    '架空作品A','架空作品B','架空作品C','架空作品D'
+   ]);
    await evaluate(`(()=>{
     const search=document.querySelector('#demoGallerySearch');
     search.value='架空作品A';search.dispatchEvent(new Event('input',{bubbles:true}));
@@ -392,6 +412,8 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row .gallery-actions button:nth-child(2)').disabled"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row .gallery-actions button:nth-child(3)').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row .gallery-actions button:nth-child(8)').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row .gallery-actions button:nth-child(9)').disabled"),true);
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
    // Newly created works never appear in the visitor preview until a mock
