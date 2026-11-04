@@ -163,7 +163,29 @@
      item.visible=false;item.featured=false;
      audit(item.id+'：'+(item.archived?'非破壊で保管':'保管から復元'));
      setMessage('模擬作品は削除されず、元の一覧に保持されます。');render();
-    })
+    }),
+    button('⇈ 先頭へ',()=>{
+     if(displayIndex===0)return;
+     // Rotate only matching positions; other rooms and hidden entries retain
+     // their original array positions even during filtered curator actions.
+     const reordered=displayedIndices.map(i=>s.gallery[i]);
+     const [moving]=reordered.splice(displayIndex,1);
+     reordered.unshift(moving);
+     displayedIndices.forEach((position,i)=>{s.gallery[position]=reordered[i];});
+     audit(item.id+'：絞り込み内の先頭へ移動');
+     setMessage('表示中の先頭へ移動しました。絞り込み対象外の作品は動かしていません。');
+     render();
+    },displayIndex===0),
+    button('⇊ 末尾へ',()=>{
+     if(displayIndex===displayedIndices.length-1)return;
+     const reordered=displayedIndices.map(i=>s.gallery[i]);
+     const [moving]=reordered.splice(displayIndex,1);
+     reordered.push(moving);
+     displayedIndices.forEach((position,i)=>{s.gallery[position]=reordered[i];});
+     audit(item.id+'：絞り込み内の末尾へ移動');
+     setMessage('表示中の末尾へ移動しました。絞り込み対象外の作品は動かしていません。');
+     render();
+    },displayIndex===displayedIndices.length-1)
    );
    const fileLabel=make('label','端末内の画像を仮プレビューで差し替える');
    fileLabel.htmlFor='demoGalleryImage'+item.id;
