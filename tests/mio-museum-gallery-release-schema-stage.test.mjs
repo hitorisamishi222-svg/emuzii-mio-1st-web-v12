@@ -149,6 +149,31 @@ test('release requires real DB chronology check, not just source code',()=>{
  missing.constraints=missing.constraints.filter(c=>c.definition!==chronology.definition);
  assert.equal(report(missing).reviewChronologyReady,false);
 });
+test('SQL check that lists rooms but allows OR TRUE cannot pass the room gate',()=>{
+ const x=good();
+ const row=x.constraints.find(c=>c.table_name==='museum_public_exhibits'&&
+  c.definition.includes('kind = ANY'));
+ assert.ok(row);
+ row.definition="CHECK (kind = ANY (ARRAY['gallery','icons','moments','events']) OR TRUE)";
+ assert.equal(report(x).roomKindReady,false);
+ assert.equal(report(x).allReady,false);
+});
+test('chronology must require BOTH independent review timestamps, never either one',()=>{
+ const definitions=[
+  "CHECK (status <> 'published' OR (rights_checked_at <= published_at OR privacy_checked_at <= published_at))",
+  "CHECK (status <> 'published' OR (rights_checked_at <= published_at AND privacy_checked_at <= published_at) OR TRUE)",
+  "CHECK (NOT (status <> 'published' OR rights_checked_at <= published_at AND privacy_checked_at <= published_at))"
+ ];
+ for(const definition of definitions){
+  const x=good(),row=x.constraints.find(c=>
+   c.table_name==='museum_public_exhibits'&&
+   c.definition.includes('rights_checked_at <= published_at'));
+  assert.ok(row);
+  row.definition=definition;
+  assert.equal(report(x).reviewChronologyReady,false,definition);
+  assert.equal(report(x).allReady,false,definition);
+ }
+});
 test('publication and history review fingerprints are necessary for release readiness',()=>{
  for(const [table,column] of [
   ['museum_gallery_layout_stage','published_review_hashes'],
