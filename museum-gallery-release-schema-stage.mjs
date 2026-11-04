@@ -71,7 +71,11 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   if(row?.table_name!=='museum_public_exhibits'||
      row.contype!=='c'||row.validated!==true)return false;
   const expr=normalized(row.definition);
+  // "kind IN (...)" combined with OR TRUE is NOT a protective CHECK.
+  // Conservative: accept only a positive membership, without alternate OR
+  // or negation. Actual PG metadata must be read, not copied from migration.
   return /\bkind\b\s*(?:in\s*\(|=\s*any\s*\()/i.test(expr)&&
+   !/\b(?:or|not)\b/.test(expr)&&
    ['gallery','icons','moments','events'].every(kind=>expr.includes("'"+kind+"'"));
  });
  // Existing gallery moderation must retain its unique ID and editor links.
@@ -90,10 +94,20 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   if(row?.table_name!=='museum_public_exhibits'||row.contype!=='c'||
      row.validated!==true)return false;
   const definition=normalized(row.definition);
-  return /\bstatus\s*(?:<>|!=)\s*'published'/.test(definition)&&
-   definition.includes(' or ')&&
-   /\brights_checked_at\s*<=\s*published_at\b/.test(definition)&&
-   /\bprivacy_checked_at\s*<=\s*published_at\b/.test(definition);
+  const status=/\bstatus\s*(?:<>|!=)\s*'published'/.exec(definition);
+  const orMatches=[...definition.matchAll(/\bor\b/g)];
+  // Exactly one OR: publishing must require BOTH conditions, not either.
+  if(!status||orMatches.length!==1||/\bnot\b/.test(definition))return false;
+  const orAt=orMatches[0].index;
+  if(orAt<=status.index+status[0].length)return false;
+  const proof=definition.slice(orAt+orMatches[0][0].length);
+  const rights=/\brights_checked_at\s*<=\s*published_at\b/.exec(proof);
+  const privacy=/\bprivacy_checked_at\s*<=\s*published_at\b/.exec(proof);
+  if(!rights||!privacy)return false;
+  // The two independent checks must be joined by AND (not OR).
+  const between=proof.slice(Math.min(rights.index,privacy.index),
+   Math.max(rights.index,privacy.index));
+  return /\band\b/.test(between);
  });
  const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true&&
   Object.values(legacyChecks).every(Boolean);
