@@ -69,6 +69,6 @@ export function assessMuseumNeonBindingStage({
   checks:freeze(Object.fromEntries(keys.map(k=>[k,checks[k]===true]))),
   failed,
   canConnectToProduction:false,canWrite:false,canDeploy:false,
-  didReadSecrets:false,didModifyDatabase:false
+  didFetchCredentials:false,didModifyDatabase:false
  });
 }
