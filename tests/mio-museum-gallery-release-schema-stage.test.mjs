@@ -11,6 +11,8 @@ const review={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK ((status <> 'published'::text) OR (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))"};
 const roomKinds={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK (kind = ANY (ARRAY['gallery'::text,'icons'::text,'moments'::text,'events'::text]))"};
+const chronology={table_name:'museum_public_exhibits',contype:'c',validated:true,
+ definition:"CHECK ((status <> 'published'::text) OR (rights_checked_at <= published_at AND privacy_checked_at <= published_at))"};
 const baseColumns=Object.entries(REQUIRED_MUSEUM_SCHEMA).flatMap(([table_name,cols])=>
  cols.map(column_name=>({table_name,column_name,
   data_type:REQUIRED_COLUMN_TYPES[table_name+'.'+column_name]||'text',
@@ -96,7 +98,7 @@ const legacyConstraints=[
 ];
 const good=()=>({identityVerified:true,
  columns:structuredClone([...baseColumns,...extraCols]),
- constraints:structuredClone([status,review,roomKinds,...baseKeys,
+ constraints:structuredClone([status,review,roomKinds,chronology,...baseKeys,
   ...legacyConstraints,...moreConstraints])
 });
 const report=input=>museumGalleryReleaseSchemaReport(input);
@@ -126,6 +128,26 @@ test('an actual checked DB must accept all four owner-curated exhibition rooms',
  assert.equal(report(unvalidated).roomKindReady,false);
  const absent=good();absent.constraints.splice(2,1);
  assert.equal(report(absent).roomKindReady,false);
+});
+test('release requires real DB chronology check, not just source code',()=>{
+ const ready=report(good());
+ assert.equal(ready.reviewChronologyReady,true);
+ for(const invalidate of [
+  c=>{c.validated=false},
+  c=>{c.definition="CHECK (status <> 'published' OR rights_checked_at >= published_at AND privacy_checked_at >= published_at)"},
+  c=>{c.definition="CHECK (status <> 'published' OR rights_checked_at <= published_at)"}
+ ]){
+  const x=good();
+  const row=x.constraints.find(c=>c.table_name==='museum_public_exhibits'&&
+   c.definition.includes('rights_checked_at <= published_at'));
+  assert.ok(row);
+  invalidate(row);
+  assert.equal(report(x).reviewChronologyReady,false);
+  assert.equal(report(x).allReady,false);
+ }
+ const missing=good();
+ missing.constraints=missing.constraints.filter(c=>c.definition!==chronology.definition);
+ assert.equal(report(missing).reviewChronologyReady,false);
 });
 test('publication and history review fingerprints are necessary for release readiness',()=>{
  for(const [table,column] of [
