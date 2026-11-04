@@ -90,10 +90,10 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   if(row?.table_name!=='museum_public_exhibits'||row.contype!=='c'||
      row.validated!==true)return false;
   const definition=normalized(row.definition);
-  return /\\bstatus\\s*(?:<>|!=)\\s*'published'/.test(definition)&&
+  return /\bstatus\s*(?:<>|!=)\s*'published'/.test(definition)&&
    definition.includes(' or ')&&
-   /\\brights_checked_at\\s*<=\\s*published_at\\b/.test(definition)&&
-   /\\bprivacy_checked_at\\s*<=\\s*published_at\\b/.test(definition);
+   /\brights_checked_at\s*<=\s*published_at\b/.test(definition)&&
+   /\bprivacy_checked_at\s*<=\s*published_at\b/.test(definition);
  });
  const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true&&
   Object.values(legacyChecks).every(Boolean);
