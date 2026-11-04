@@ -113,8 +113,11 @@ export function museumSchemaReport({columns,constraints,identityVerified}){
   // require a positive membership constraint specifically on "status".
   const stateColumn=/\bstatus\b(?:\s*::\s*[a-z_]+)?/i;
   const membership=/\bstatus\b(?:\s*::\s*[a-z_]+)?\s*(?:IN\s*\(|=\s*ANY\s*\()/i;
+  // A positive status membership combined with OR TRUE does not
+  // constrain anything. Reject disjunctions and negation in this CHECK.
   return row.table_name==='museum_public_exhibits'&&row.contype==='c'&&
    /\bCHECK\b/i.test(s)&&stateColumn.test(s)&&membership.test(s)&&
+   !/\b(?:OR|NOT)\b/i.test(s)&&
    REQUIRED_STATUS.every(v=>s.includes("'"+v+"'"));
  });
  // A private draft needs nullable review fields, whereas publishing must
