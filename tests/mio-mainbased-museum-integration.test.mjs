@@ -299,7 +299,7 @@ test('museum curator rehearsal is museum-only, offline and has a visible fail-cl
  }
  assert.match(js,/function undoLastOrder/);
  assert.match(js,/orderUndo\.after!==signature\(\)/);
- assert.match(js,/function safeOldWorks/);
+ assert.match(js,/const safeOldWorks=/);
  assert.match(js,/current\.epoch===x\.epoch/);
  assert.match(js,/function reviewHistoryRestore/);
  assert.match(js,/function restoreHistory/);
