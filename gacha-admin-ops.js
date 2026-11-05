@@ -10,7 +10,8 @@ try{
  const saved=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');
  if(saved&&['approve','grant','create','intake','review'].includes(saved.action)&&
     typeof saved.operationId==='string'&&/^[a-f0-9]{32}$/.test(saved.operationId))
-  pending=saved;
+  // Any restored pending operation might have reached GAS before the browser closed.
+  pending={...saved,submitted:true};
 }catch{}
 function storePending(value){
  pending=value;
@@ -326,7 +327,11 @@ for(const field of ['opsQuantity','opsReason']){
 }
 async function verifyPending(){
  if(processing||!pending)return;
- const attempted=pending;
+ const wasSubmitted=pending.submitted===true;
+ // Persist before network activity. A subsequent reload must treat any previous attempt
+ // as uncertain, even when a later retry gets a pre-bridge 403/503 response.
+ const attempted={...pending,submitted:true};
+ storePending(attempted);
  blocked(true);
  notice('前回と同じ操作IDで台帳への反映を確認中…');
  try{
@@ -342,15 +347,15 @@ async function verifyPending(){
    state=null;render();notice('操作は確定しましたが一覧の再読込が失敗しました。受付情報を読み直してください。',true);
   }
  }catch(e){
-  if([400,401,403,405,413,415,503].includes(e.httpStatus)){
-   // These responses reject the request before forwarding it to GAS.
+  if([400,401,403,405,413,415,503].includes(e.httpStatus)&&!wasSubmitted){
+   // First confirmed pre-bridge rejection: no earlier attempt exists to reconcile.
    storePending(null);state=null;render();
    notice('操作は受け付けられませんでした。'+e.message,true);
   }else{
-   // Timeout, disconnected network, and 409 may follow a partial GAS write.
-   // Keep the exact ID and payload for a safe, explicit retry.
+   // A prior write may already have committed. A later 403/503/400 on retry
+   // is NOT evidence that the first attempt did not change the ledger.
    state=null;render();
-   notice('操作結果が未確認です。別の操作IDでやり直さず「同じIDで再確認」を押してください。'+e.message,true);
+   notice('操作結果が未確認です。新しい操作IDを発行せず、管理者認証・接続を復旧してから同じIDで再確認してください。'+e.message,true);
   }
  }finally{blocked(false);render()}
 }
