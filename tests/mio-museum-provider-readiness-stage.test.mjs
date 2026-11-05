@@ -91,7 +91,7 @@ test('missing or duplicate tables and irrelevant snapshots are not proof',()=>{
  assert.equal(inspect(snapshot).snapshotInventoryPresent,false);
  assert.equal(inspect(snapshot).checks.recovery_route_inventory_present,false);
 });
-test('free Neon PITR window is a permitted recovery candidate, not a restore drill',()=>{
+test('free child-branch history is inspectable but not a supported restore gate',()=>{
  const data=record();
  data.neonSnapshots=[];
  data.neonBranches[0].project_id=PROJECT;
@@ -102,12 +102,14 @@ test('free Neon PITR window is a permitted recovery candidate, not a restore dri
   owner:{subscription_type:'free_v3'}
  };
  const x=inspect(data);
- assert.equal(x.recoveryRoute,'pitr_candidate');
+ assert.equal(x.recoveryRoute,'historical_inspection_only');
  assert.equal(x.snapshotInventoryPresent,false);
  assert.equal(x.historyRetentionSeconds,21600);
- assert.equal(x.checks.recovery_route_inventory_present,true);
- assert.equal(x.metadataInventoryComplete,true,
-  'all inventory metadata may pass before independent restoration proof exists');
+ assert.equal(x.historyWindowPresent,true);
+ assert.equal(x.rootInstantRestoreEligible,false);
+ assert.equal(x.checks.recovery_route_inventory_present,false);
+ assert.equal(x.metadataInventoryComplete,false,
+  'history retention is not a restore route for a child branch');
  assert.equal(x.restorationDrillVerified,false);
  assert.equal(x.canConnect,false);
  assert.equal(x.canWrite,false);
@@ -118,6 +120,21 @@ test('free Neon PITR window is a permitted recovery candidate, not a restore dri
  assert.equal(bad.recoveryRoute,'none',
   'branch metadata must prove it is in the declared Neon project');
  assert.equal(bad.metadataInventoryComplete,false);
+});
+test('a snapshot route remains only an inventory candidate, never an executable write gate',()=>{
+ const data=record();
+ data.neonBranches[0].project_id=PROJECT;
+ data.neonBranches[1].project_id=PROJECT;
+ data.neonBranches[1].current_state='ready';
+ data.neonProjectMetadata={id:PROJECT,history_retention_seconds:21600};
+ const x=inspect(data);
+ assert.equal(x.recoveryRoute,'snapshot_candidate');
+ assert.equal(x.checks.recovery_route_inventory_present,true);
+ assert.equal(x.metadataInventoryComplete,true);
+ assert.equal(x.restorationDrillVerified,false);
+ assert.equal(x.canConnect,false);
+ assert.equal(x.canMigrate,false);
+ assert.equal(x.canWrite,false);
 });
 test('malformed or partial inventories are rejected without an eligibility result',()=>{
  for(const mutation of [
