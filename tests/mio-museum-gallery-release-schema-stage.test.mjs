@@ -45,6 +45,11 @@ const extra={
  museum_gallery_layout_audit_stage:{
   operation_id:'text',payload_hash:'text',actor_id:'uuid',
   action:'text',prior_revision:'bigint',new_revision:'bigint'
+ },
+ museum_exhibit_draft_operations_stage:{
+  operation_id:'text',actor_id:'uuid',exhibit_id:'uuid',
+  action:'text',payload_hash:'text',revision:'integer',
+  recorded_at:'timestamp with time zone'
  }
 };
 const nullable=Object.freeze({
@@ -98,10 +103,28 @@ const legacyConstraints=[
  {table_name:'gallery_live_overrides',contype:'f',validated:true,
   definition:'FOREIGN KEY (updated_by) REFERENCES gallery_admin_users(id)'}
 ];
+const receiptConstraints=[
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'p',validated:true,
+  definition:'PRIMARY KEY (operation_id)'},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'u',validated:true,
+  definition:'UNIQUE (exhibit_id,revision)'},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'f',validated:true,
+  definition:'FOREIGN KEY (actor_id) REFERENCES gallery_admin_users(id)'},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'f',validated:true,
+  definition:'FOREIGN KEY (exhibit_id) REFERENCES museum_public_exhibits(id)'},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'c',validated:true,
+  definition:"CHECK (action = ANY (ARRAY['create'::text,'edit'::text]))"},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'c',validated:true,
+  definition:"CHECK (operation_id ~ '^[a-f0-9]{32}$'::text)"},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'c',validated:true,
+  definition:"CHECK (payload_hash ~ '^[a-f0-9]{64}$'::text)"},
+ {table_name:'museum_exhibit_draft_operations_stage',contype:'c',validated:true,
+  definition:'CHECK (revision >= 0)'}
+];
 const good=()=>({identityVerified:true,
  columns:structuredClone([...baseColumns,...extraCols]),
  constraints:structuredClone([status,review,roomKinds,mediaCategories,chronology,...baseKeys,
-  ...legacyConstraints,...moreConstraints])
+  ...legacyConstraints,...receiptConstraints,...moreConstraints])
 });
 const report=input=>museumGalleryReleaseSchemaReport(input);
 test('media type requires an independent non-bypassable check in the real DB',()=>{
@@ -120,6 +143,71 @@ test('media type requires an independent non-bypassable check in the real DB',()
   assert.equal(report(x).allReady,false,expression);
  }
 });
+test('exhibit draft receipt table is mandatory even if the layout subsystem is valid',()=>{
+ const noTable=good();
+ noTable.columns=noTable.columns.filter(c=>
+  c.table_name!=='museum_exhibit_draft_operations_stage');
+ assert.equal(report(noTable).layoutReady,true);
+ assert.equal(report(noTable).exhibitReceiptReady,false);
+ assert.equal(report(noTable).allReady,false);
+ for(const name of ['operation_id','actor_id','exhibit_id','action','payload_hash','revision','recorded_at']){
+  const x=good();
+  x.columns=x.columns.filter(c=>!(c.table_name==='museum_exhibit_draft_operations_stage'&&
+   c.column_name===name));
+  const r=report(x);
+  assert.equal(r.exhibitReceiptReady,false,name);
+  assert.ok(r.tables.find(t=>t.table==='museum_exhibit_draft_operations_stage').missing.includes(name),name);
+ }
+ for(const name of ['actor_id','payload_hash','recorded_at']){
+  const x=good();
+  x.columns.find(c=>c.table_name==='museum_exhibit_draft_operations_stage'&&
+   c.column_name===name).is_nullable='YES';
+  assert.equal(report(x).exhibitReceiptReady,false,name);
+ }
+ for(const name of ['operation_id','revision','recorded_at']){
+  const x=good();
+  x.columns.find(c=>c.table_name==='museum_exhibit_draft_operations_stage'&&
+   c.column_name===name).data_type='wrong';
+  assert.equal(report(x).exhibitReceiptReady,false,name);
+ }
+});
+test('receipt primary, unique, foreign-key and check constraints all block unsafe readiness',()=>{
+ for(let i=0;i<receiptConstraints.length;i++){
+  for(const change of ['missing','unvalidated']){
+   const x=good();
+   const receipt=x.constraints.filter(c=>c.table_name==='museum_exhibit_draft_operations_stage');
+   const row=receipt[i];
+   if(change==='missing')x.constraints=x.constraints.filter(c=>c!==row);
+   else row.validated=false;
+   const r=report(x);
+   assert.equal(r.exhibitReceiptReady,false,i+' '+change);
+   assert.equal(r.layoutReady,true);
+   assert.equal(r.allReady,false);
+  }
+ }
+});
+test('bypassable or too-broad receipt IDs, actions and revisions never pass',()=>{
+ for(const [needle,bad] of [
+  ['operation_id ~',"CHECK (operation_id ~ '^[a-f0-9]{32}$' OR TRUE)"],
+  ['operation_id ~',"CHECK (operation_id !~ '^[a-f0-9]{32}$')"],
+  ['payload_hash ~',"CHECK (payload_hash ~ '^[a-f0-9]{63}$')"],
+  ['payload_hash ~',"CHECK (payload_hash ~ '^[a-f0-9]{64}$' OR TRUE)"],
+  ['action = ANY',"CHECK (action IN ('create','edit','publish'))"],
+  ['action = ANY',"CHECK (action IN ('create','edit') OR TRUE)"],
+  ['revision >=',"CHECK (revision >= -1)"],
+  ['revision >=',"CHECK (revision >= 0 OR TRUE)"]
+ ]){
+  const x=good();
+  const row=x.constraints.find(c=>
+   c.table_name==='museum_exhibit_draft_operations_stage'&&
+   String(c.definition).includes(needle));
+  assert.ok(row,needle);
+  row.definition=bad;
+  const r=report(x);
+  assert.equal(r.exhibitReceiptReady,false,bad);
+  assert.equal(r.allReady,false,bad);
+ }
+});
 test('a staged release can be reviewed only when base museum, live overrides and all layout tables exist',()=>{
  const result=report(good());
  assert.equal(result.identityVerified,true);
@@ -128,6 +216,8 @@ test('a staged release can be reviewed only when base museum, live overrides and
  assert.equal(result.roomKindReady,true);
  assert.equal(result.mediaCategoryReady,true);
  assert.equal(result.layoutReady,true);
+ assert.equal(result.exhibitReceiptReady,true);
+ assert.equal(Object.values(result.receiptChecks).every(Boolean),true);
  assert.equal(result.allReady,true);
  assert.equal(result.canPublish,false);
  assert.equal(result.canDeploy,false);
