@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 // Always run staged GAS dispatcher and idempotency tests with the onsite admin suite.
 import './mio-gas-onsite-compatibility.test.mjs';
+import './mio-live-source-preflight.test.mjs';
 
 const read = name => readFileSync(new URL('../'+name, import.meta.url), 'utf8');
 const html = read('gacha-web-gate.html');
