@@ -253,3 +253,59 @@ test('grant switch defaults to off even for verified participant until onsite ch
  assert.equal(b.el('opsGrant').disabled,false,'manually checked person can proceed to confirmation');
  assert.equal(b.requests.length,1,'a switch alone never makes a backend write');
 });
+
+test('the real admin API blocks on-site writes without explicit verification',async()=>{
+ const api=read('api-gacha-admin-ops.js')
+   .replace(/^import .*;$/gm,'')
+   .replace('export default async function handler','async function handler')+
+   '\n globalThis.__handler=handler;';
+ let calls=[],authorized=true;
+ const context={
+  process:{env:{MIO_GACHA_ONSITE_RELEASE:'operator-verified-onsite-20261105'}},
+  prepare:()=>({}),authorizedCode:()=>authorized,sessionOK:async()=>false,
+  bridge:async(action,data)=>{calls.push({action,data});return action==='webAdminOpsRead'?
+   {ok:true,pending:[],roster:[],simple:[],grants:[],totalPending:0,rejectedCount:0}:
+   {ok:true,mioId:'MIO-0017',status:'承認済み'}},
+  console:{error(){}}
+ };
+ vm.runInNewContext(api,context);
+ const run=async(body)=>{
+  const req={headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+   origin:'https://emuzii-mio-1st-web-v12.vercel.app',
+   'content-type':'application/json'},body};
+  const output={status:0,payload:null};
+  const res={setHeader(){},status(n){output.status=n;return this},json(j){output.payload=j;return this}};
+  await context.__handler(req,res);return output;
+ };
+ const approval={code:'test-admin-secret-is-mocked',action:'approve',
+  webId:'MIO-W-123456789012345678901234',mioId:'MIO-0017',
+  expectedStatus:'承認待ち',memberConfirmed:true,operationId:'a'.repeat(32)};
+ let result=await run(approval);
+ assert.equal(result.status,400,'onsite approval denied without person switch');
+ assert.equal(calls.length,0);
+ result=await run({...approval,onSiteVerified:true});
+ assert.equal(result.status,200,'per-person attestation may reach existing GAS');
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].action,'webAdminOpsApprove');
+ assert.equal(calls[0].data.mioId,'MIO-0017');
+ const grant={code:approval.code,action:'grant',mioId:'MIO-0017',count:2,
+  expectedSpecial:0,reason:'現場確認の検証',operationId:'b'.repeat(32)};
+ result=await run(grant);
+ assert.equal(result.status,400,'no blind additional grant');
+ assert.equal(calls.length,1);
+ result=await run({...grant,onSiteVerified:true});
+ assert.equal(result.status,200);
+ assert.equal(calls.length,2);
+ authorized=false;
+ result=await run({...approval,onSiteVerified:true});
+ assert.equal(result.status,403,'operator login always required');
+ assert.equal(calls.length,2);
+ context.process.env.MIO_GACHA_ONSITE_RELEASE='';
+ authorized=true;
+ result=await run({...approval,onSiteVerified:true});
+ assert.equal(result.status,503,'field release must be intentionally enabled');
+ assert.equal(calls.length,2);
+ result=await run({code:approval.code,action:'read'});
+ assert.equal(result.status,200,'authenticated read does not require write release');
+ assert.equal(result.payload.writeMode,'locked');
+});
