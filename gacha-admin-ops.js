@@ -293,7 +293,7 @@ function renderRoster(){
   (!onlyRemaining||(x.gacha?.checked===true&&Number(x.gacha.remaining)>0)))
   .sort((a,b)=>onlyRemaining?Number(b.gacha?.remaining||0)-Number(a.gacha?.remaining||0):0).slice(0,45);
  for(const item of all){
-  div.append(button(item.name+' ('+item.mioId+')',()=>{
+  div.append(button(item.name+' ('+item.mioId+')'+(item.needsReview?' ⚠️ 台帳要確認':''),()=>{
     selected=item;
     el('opsOnsiteGrantVerified').checked=false;
     const g=item.gacha;
