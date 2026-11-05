@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 
 const load = name => readFileSync(new URL('../' + name, import.meta.url), 'utf8');
 const full = load('GAS_Code_FULL_WEB_OPS_20261030.gs');
@@ -49,4 +50,60 @@ test('operator API never passes an unverified onsite request to the existing GAS
   assert.match(api,/d\.onSiteVerified!==true/);
   assert.match(api,/d\.action!=='read'&&!writeEnabled/);
   assert.match(api,/bridge\(operations\[d\.action\],data\)/);
+});
+
+test('completed grant operations cannot be replayed with a changed reason or old balance',()=>{
+ const begin=moduleOnly.indexOf('function mioAdminOpsGrant_(ss,d){');
+ const end=moduleOnly.indexOf('function mioAdminOpsReview_(ss,d){',begin);
+ assert.ok(begin>=0&&end>begin);
+ const code=moduleOnly.slice(begin,end)+'\n globalThis.__grant=mioAdminOpsGrant_;';
+ const id='MIO-9000',op='f'.repeat(32),originalReason='現場で確認した特典';
+ const g=Array(17).fill('');g[0]=id;g[1]='架空参加者';g[12]='OK';g[13]='OK';
+ let prior={c:[null,op,'付与','',id,2,3,'確定',originalReason,'架空参加者']};
+ let writes=0;
+ const context={
+  mioAdminOpsRequest_:d=>d.operationId,
+  mioAdminOpsStr_:x=>String(x??'').trim(),
+  mioAdminOpsPeople_:()=>[[id,'架空参加者']],
+  mioAdminOpsSheet_:()=>({getRange(){writes++;throw Error('no physical write expected')}}),
+  mioAdminOpsValues_:()=>[g],
+  mioAdminOpsOne_:(arr,idx,value)=>({row:2,c:arr.find(x=>x[idx]===value)}),
+  mioAdminOpsName_:x=>String(x??''),
+  mioAdminOpsLog_:()=>({}),
+  mioAdminOpsExisting_:()=>prior,
+ };
+ vm.runInNewContext(code,context);
+ const args={operationId:op,mioId:id,count:1,expectedSpecial:2,reason:originalReason};
+ assert.throws(()=>context.__grant({}, {...args,reason:'違う理由'}),/操作IDの再利用は禁止/);
+ assert.throws(()=>context.__grant({}, {...args,expectedSpecial:1,count:2}),/操作IDの再利用は禁止/);
+ const same=context.__grant({},args);
+ assert.equal(same.replayed,true);
+ assert.equal(writes,0,'idempotent replay never writes another entitlement');
+});
+test('an existing gacha grant ledger row cannot be replayed under a different reason',()=>{
+ const begin=moduleOnly.indexOf('function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){');
+ const end=moduleOnly.indexOf('function mioAdminOpsGrant_(ss,d){',begin);
+ assert.ok(begin>=0&&end>begin);
+ const code=moduleOnly.slice(begin,end)+'\n globalThis.__record=mioAdminOpsRecordGrant_;';
+ const op='d'.repeat(32),id='MIO-9001';
+ const logRow=[null,id,'架空参加者',1,'最初の付与理由',3,4,4,4,op];
+ let writes=0;
+ const sheet={
+  getRange(row,col,n,width){
+   if(row===1&&col===10)return {getValue:()=> 'Web操作ID'};
+   if(row===2&&col===10)return {getValues:()=>[[op]]};
+   if(row===2&&col===1)return {getValues:()=>[logRow]};
+   writes++;throw Error('unexpected history write');
+  },
+  getLastRow:()=>2
+ };
+ const context={
+  mioAdminOpsSheet_:()=>sheet,
+  mioAdminOpsStr_:x=>String(x??'').trim(),
+ };
+ vm.runInNewContext(code+'\n globalThis.__record=mioAdminOpsRecordGrant_;',context);
+ assert.throws(()=>context.__record({},op,id,'架空参加者',1,'違う付与理由',3,4),
+   /既存の付与履歴と操作内容が一致しません/);
+ assert.equal(context.__record({},op,id,'架空参加者',1,'最初の付与理由',3,4),true);
+ assert.equal(writes,0,'duplicate grant record never inserted');
 });
