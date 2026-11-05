@@ -188,3 +188,36 @@ test('simple visitor intake is explicitly not a membership draw registration',()
   assert.match(html,/href="\/join\.html"/);
   assert.match(html,/id="opsSelectedCheck"/);
 });
+
+test('quick priority list highlights missing Web identity before remaining balance and never writes',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+    roster:[
+      {name:'本人照合済み候補',mioId:'MIO-0001',gacha:{checked:true,total:4,remaining:4,special:0}},
+      {name:'途中登録候補',mioId:'MIO-0002',gacha:{checked:true,total:2,remaining:2,special:0}},
+      {name:'残数なし',mioId:'MIO-0003',gacha:{checked:true,total:5,remaining:0,special:0}}
+    ],
+    webLinks:[{name:'本人照合済み候補',webId:'MIO-W-123456789012345678901234',mioId:'MIO-0001',verified:true}],
+    pending:[],simple:[],grants:[]});
+  b.connect();await b.settled();
+  const cards=b.el('opsQuickList').children;
+  assert.equal(cards.length,2,'only positive confirmed balances included');
+  assert.match(flatten(cards[0]).map(x=>x.textContent).join(' '),/途中登録候補/);
+  assert.match(flatten(cards[0]).map(x=>x.textContent).join(' '),/登録途中・旧登録の可能性あり/);
+  const choose=flatten(cards[0]).find(x=>x.tagName==='button');
+  await choose.click();
+  assert.match(b.el('opsSelectedCheck').textContent,/MIO-0002/);
+  assert.equal(b.requests.length,1,'read-only investigation cannot issue a write');
+});
+test('pending legacy duplicate cannot create a new MIO-ID by shortcut',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,rejectedCount:0,
+    roster:[{name:'登録途中の利用者',mioId:'MIO-0017',gacha:{checked:true,total:2,remaining:2,special:0}}],
+    pending:[{name:'登録途中の利用者',status:'承認待ち',webId:'MIO-W-123456789012345678901234',
+      mioId:'',member:'未確認'}],simple:[],grants:[]});
+  b.connect();await b.settled();
+  const wrap=b.el('opsPending');
+  assert.match(flatten(wrap).map(x=>x.textContent).join(' '),/新規IDを作成せず/);
+  assert.equal(flatten(wrap).filter(x=>x.tagName==='button'&&/新規作成/.test(x.textContent)).length,0);
+  assert.equal(b.requests.length,1,'new participant must never be issued from a name coincidence');
+});
