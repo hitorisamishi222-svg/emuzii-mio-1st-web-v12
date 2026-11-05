@@ -189,6 +189,7 @@ async function change(mode){
  try{
   const result=await request({action:'set',mode,enabled,expected});
   snapshot=result;
+  window.dispatchEvent(new Event('mio:gate-state-changed'));
   say('✅ '+mode+'ガチャを'+(enabled?'ON':'OFF')+'に変更し、実際の受付設定まで確認しました。');
  }catch(e){snapshot=null;say('⚠️ '+e.message+'。再接続して現在の設定を確認してください。',true)}
  finally{busy=false;redraw()}
