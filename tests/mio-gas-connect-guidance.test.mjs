@@ -27,6 +27,14 @@ test('safe guidance stays accessible but no unauthorized admin or GAS changes ar
  assert.doesNotMatch(html,/<script[^>]+src="\/gacha-admin-ops[.]js"/,'do not start management writes');
  assert.doesNotMatch(panel,/Code[.]gs全貼り付け手順を開く|全貼り付け（部分追加なし）/);
  assert.match(js,/error\.code=json\.code/,'admin future error classification remains wired in archived module');
+ assert.match(html,/id="opsInstallGuide" hidden/);
+ assert.match(html,/issues\/66/);
+ assert.match(html,/現行のCode\.gsを全文置換しないでください/);
+ assert.match(html,/同じデプロイの新バージョン/);
+ assert.match(html,/id="opsSetupToggle"/);
+ assert.match(js,/setupToggle\.addEventListener\('click'/);
+ assert.match(js,/showGuide\(opsGuide\.hidden\)/);
+ assert.match(js,/showGuide\(e\.code==='GAS_UPDATE_REQUIRED'\)/);
 });
 test('original gacha switch remains wired; write gate remains closed',()=>{
  const config=JSON.parse(load('vercel.json'));
