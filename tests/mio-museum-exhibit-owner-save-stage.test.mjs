@@ -92,6 +92,8 @@ const setup=(options={})=>{
       return result([{id:current.id,revision:current.revision,status:'draft'}],'UPDATE');
      }
      if(sql.startsWith('INSERT INTO museum_exhibit_draft_operations_stage(')){
+      assert.match(sql,/recorded_at\) VALUES\(\$1,\$2,\$3,\$4,\$5,\$6,now\(\)\)/,
+       'the receipt timestamp must be server-generated, not client supplied');
       const [operation_id,actor_id,exhibit_id,action,payload_hash,revision]=args;
       assert.equal(this.active.receipts[operation_id],undefined);
       this.active.receipts[operation_id]={actor_id,action,payload_hash,exhibit_id,revision};
