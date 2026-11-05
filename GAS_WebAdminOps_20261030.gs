@@ -197,7 +197,7 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  if(matches.length===1){
   var h=matches[0];
   if(mioAdminOpsStr_(h[1])!==id||Number(h[3])!==count||
-     Number(h[5])!==before||Number(h[6])!==after)
+     mioAdminOpsStr_(h[4])!==reason||Number(h[5])!==before||Number(h[6])!==after)
     throw new Error('既存の付与履歴と操作内容が一致しません');
   return true;
  }
@@ -226,7 +226,9 @@ function mioAdminOpsGrant_(ss,d){
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!=='OK'||g.c[13]!=='OK')throw new Error('ガチャ管理行に要確認の項目があります');
  var log=mioAdminOpsLog_(ss),prev=mioAdminOpsExisting_(log,op);
  if(prev){
-   if(prev.c[2]!=='付与'||prev.c[4]!==id||Number(prev.c[6])!==expected+count)throw new Error('操作IDの再利用は禁止です');
+   if(prev.c[2]!=='付与'||prev.c[4]!==id||Number(prev.c[5])!==expected||
+       Number(prev.c[6])!==expected+count||mioAdminOpsStr_(prev.c[8])!==reason)
+      throw new Error('操作IDの再利用は禁止です');
    if(prev.c[7]==='確定')return {ok:true,replayed:true,mioId:id};
    var current=Number(sheet.getRange(g.row,15).getValue());
    if(current===expected+count){mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count);log.getRange(prev.row,8).setValue('確定');return {ok:true,replayed:true,mioId:id};}
