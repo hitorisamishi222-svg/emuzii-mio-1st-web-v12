@@ -16,56 +16,111 @@ small{color:#bbd8ed}
 #status{white-space:pre-wrap;word-break:break-word;border-radius:14px;background:#112a49;padding:13px;min-height:54px}
 #status.error{background:#542922;border:1px solid #f69e87}
 
+/* Operator UI: no new API routes or entitlement logic. */
+/* 運営管理センター Phase 1: existing GAS remains the source of truth. */
+main{max-width:760px}
+.ops-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ops-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;background:#294764;border:1px solid #78a6cc;border-radius:999px;font-weight:700}
+.ops-pill.alert{background:#67401c;border-color:#f9ca6a;color:#fff1cf}
+.ops-pill.blocked{background:#532c2b;border-color:#e89b91}
+.ops-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ops-grid button{height:100%}
+.ops-card{margin:13px 0;border:1px solid #597fa8;border-radius:14px;padding:14px;background:#122e50}
+.ops-list{max-height:450px;overflow:auto}
+.ops-action{display:block;margin-top:10px;min-height:48px;font-size:15px}
+.ops-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ops-head small{overflow-wrap:anywhere}
+.ops-item{background:#14375c;border:1px solid #5e92c2;border-radius:12px;padding:13px;margin:11px 0;overflow-wrap:anywhere}
+.ops-item>p{margin:7px 0}
+.ops-item button{min-height:48px}
+.ops-item select{width:100%;min-height:48px;border-radius:9px;padding:9px;margin-top:8px}
+.ops-message{padding:12px;border-radius:10px;background:#102943;white-space:pre-wrap;overflow-wrap:anywhere}
+.ops-error{color:#ffe0dd;background:#592f31;padding:12px;border-radius:10px}
+.ops-ok{padding:12px;background:#16405b;border-radius:10px}
+.ops-section-title{margin:6px 0 10px;font-size:20px}
+.ops-caption{display:block;color:#bdd6e8;font-size:13px}
+.ops-field{margin:10px 0}
+.ops-field label{font-size:14px}
+.ops-control{width:100%;min-height:48px}
+.ops-number{width:100%;padding:12px;border-radius:12px;border:1px solid #90bddd;background:white;color:#06162e}
+.ops-secondary{background:#22577e;color:#f1f8ff;border:1px solid #7eadd2;margin-top:12px}
+#opsCount{font-weight:800;font-size:18px}
+#opsRetry{background:#f9d3a5}
+.ops-filter{display:flex;align-items:center;gap:9px;margin:12px 0;font-weight:600}
+.ops-filter input{width:auto;min-width:20px;height:20px;accent-color:#9fe1b6}
+.ops-shortcut{min-height:52px}
+.ops-steps{margin:10px 0;padding-left:24px;color:#ecf5ff}
+.ops-steps li{margin:8px 0}
+@media(max-width:520px){.ops-grid{grid-template-columns:1fr}.ops-summary{align-items:flex-start}}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
 <section><h2>🔑 Face ID・パスキー</h2><p><small>初回だけ管理者コードで登録。次からはFace IDでログインできます。</small></p><button id="passkeyLogin" disabled>Face IDでログイン</button><button id="passkeyRegister" disabled style="margin-top:10px;background:#184d71;color:#f3f9ff;border:1px solid #83afce">この端末のFace IDを登録</button><p id="passkeyStatus" role="status" aria-live="polite">Face IDの利用状況を確認しています…</p></section>
 <section id="switches"><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
-<section class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
-<section class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
+<section id="normalSection" class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
+<section id="festSection" class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
 <p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
-<p><small>変更はGoogle管理台帳の実際の受付設定に反映します。利用者のガチャ回数・当選履歴は変更しません。</small></p>
-
-
-<!-- MIO_ADMIN_PREVIEW_START -->
-<section id="opsAdminPanel" aria-labelledby="opsAdminTitle" style="margin-top:24px;border-color:#97bdde">
- <h2 id="opsAdminTitle">🛡️ Web管理センター（統合準備中）</h2>
- <p><a href="/mio-admin-rehearsal.html" style="color:#bfe8ff;font-weight:bold">架空の参加者で承認・回数付与・障害復旧を操作するリハーサルへ</a></p>
- <p><a href="/mio-gas-local-check.html" style="color:#bfe8ff;font-weight:bold">現行GASソースを端末内だけで照合（秘密情報は送信しません）</a></p>
- <p role="status" id="opsStatus" aria-live="polite">大型更新の表示確認用です。既存GASの稼働コードと管理権限の照合が終わるまでは、参加者の取得・承認・回数付与を行いません。</p>
- <p style="background:#342b19;border:1px solid #eac779;border-radius:10px;padding:10px">🔒 管理者データとの接続停止中・書き込み停止中。ボタンは安全のため無効化されています。</p>
- <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-  <strong id="opsCount">管理台帳：未接続</strong>
-  <button id="opsReload" type="button" disabled style="width:auto;min-height:46px">一覧を更新（停止中）</button>
+<p><small>受付ON/OFFは従来の管理操作です。登録承認・ガチャ回数付与は稼働GAS照合が完了するまで利用できません。</small></p>
+<!-- MIO_MUSEUM_PREVIEW_LOCK_OPEN_START -->
+<section id="museumPreviewBridge" style="border-color:#9ec7de" aria-labelledby="museumPreviewBridgeTitle">
+ <h2 id="museumPreviewBridgeTitle">🛡️ 記念館・管理センター統合プレビュー</h2>
+ <p role="status">🔒 この画面では追加管理機能は操作できません。本番のGAS・参加者・ガチャ回数に接続しない表示確認用です。</p>
+ <p><a href="/mio-admin-rehearsal.html" style="color:#c8ebff;font-weight:700">架空データで記念館・管理機能を操作するリハーサル</a></p>
+ <p><a href="/mio-gas-local-check.html" style="color:#c8ebff;font-weight:700">実GASソースの端末内・読み取り専用確認</a></p>
+</section>
+<fieldset id="museumOpsPreviewLock" disabled style="border:0;padding:0;margin:0;min-width:0">
+<!-- MIO_MUSEUM_PREVIEW_LOCK_OPEN_END -->
+<section id="opsAdminPanel" aria-labelledby="opsAdminTitle">
+ <div class="ops-summary"><h2 id="opsAdminTitle">🔔 運営管理センター</h2><span id="opsBell" class="ops-pill" aria-live="polite">通知：管理者認証待ち</span></div>
+ <p class="ops-caption">参加者・ガチャ履歴は既存のGoogle管理台帳が正本です。管理者認証後に承認待ちを読み込みます。更新は30秒ごと（画面を閉じている間は停止）。</p>
+ <div class="ops-summary"><strong id="opsCount">未接続</strong><button type="button" id="opsReload" class="ops-secondary" disabled style="width:auto;min-height:48px">一覧を更新</button></div>
+ <p id="opsStatus" class="ops-message" role="status" aria-live="polite">管理者コードまたはFace IDで接続してください。</p>
+ <p id="opsRetryInfo" class="ops-error" hidden></p><button type="button" id="opsRetry" hidden disabled>前回と同じ操作IDで再確認</button>
+ <div id="opsQuickPanel" class="ops-card" aria-labelledby="opsQuickTitle">
+  <h3 id="opsQuickTitle" class="ops-section-title">⚡ 残りのガチャ・即日対応</h3>
+  <p class="ops-caption">先に本人の登録ブラウザとメンシプ資格を確認。権利を作成・追加するときは各操作を個別に承認します。本人のガチャ画面の認証は省略しません。</p>
+  <p id="opsQuickSummary" class="ops-message" role="status" aria-live="polite">管理者の接続待ちです。</p>
+  <div class="ops-grid">
+   <button type="button" id="opsQuickIntake" class="ops-secondary ops-shortcut">① 新規受付へ</button>
+   <button type="button" id="opsQuickApproval" class="ops-secondary ops-shortcut">② メンシプ確認・登録承認へ</button>
+   <button type="button" id="opsQuickGrant" class="ops-secondary ops-shortcut">③ 残回数確認・付与へ</button>
+   <button type="button" id="opsQuickGate" class="ops-secondary ops-shortcut">④ ガチャ受付ON/OFFへ</button>
+  </div>
+  <p class="ops-caption">⑤ 参加者ご自身が登録済みブラウザから <a href="/gacha.html" style="color:#bfe8ff">ガチャ画面</a> を開いて抽選。管理画面の操作だけでは抽選は実行されません。</p>
  </div>
- <div role="group" aria-label="管理待機数・接続前プレビュー" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0">
-  <div style="border:1px solid #90b4d2;border-radius:10px;padding:12px;background:#091d36"><strong>新規登録の承認待ち</strong><p id="opsPendingNewCount" style="margin:4px 0">未接続（0人とは限りません）</p></div>
-  <div style="border:1px solid #90b4d2;border-radius:10px;padding:12px;background:#091d36"><strong>本人照合・再確認待ち</strong><p id="opsPendingIdentityCount" style="margin:4px 0">未接続（0人とは限りません）</p></div>
-  <div style="border:1px solid #90b4d2;border-radius:10px;padding:12px;background:#091d36"><strong>簡易登録の管理確認待ち</strong><p id="opsPendingSimpleCount" style="margin:4px 0">未接続（0人とは限りません）</p></div>
+ <div id="opsPendingSection" class="ops-card"><h3 class="ops-section-title">承認待ち・本人確認</h3><div id="opsPending" class="ops-list"><p>未接続</p></div></div>
+ <div id="opsGrantSection" class="ops-card"><h3 class="ops-section-title">ガチャ回数の確認・付与</h3>
+  <div class="ops-field"><label for="opsSearch">参加者の名前・MIO-IDで検索</label><input id="opsSearch" type="search" placeholder="参加者を検索" autocomplete="off"></div>
+  <label class="ops-filter" for="opsOnlyRemaining"><input id="opsOnlyRemaining" type="checkbox">残回数がある参加者だけ表示</label>
+  <p id="opsRemainingSummary" class="ops-caption">残回数を照合中</p>
+  <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <div class="ops-grid">
+   <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
+   <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
+  </div>
+  <button type="button" id="opsGrant" disabled>選択した参加者に回数を付与</button>
+  <p class="ops-caption">抽選結果不明時は、既存の確定履歴を先に照合してください。未確認の回数を自動付与しません。</p>
  </div>
- <p id="opsUnknownState" role="status">未分類の登録状態も、既存GASの読み取り照合後に検知します。現在は人数を取得していません。</p>
- <div id="opsPending" aria-label="承認待ち一覧" style="padding:12px;background:#091d36;border-radius:12px;margin-top:12px">承認待ち一覧は未接続です。</div>
- <div style="padding-top:16px">
-  <h3>🔎 参加者とガチャ回数</h3>
-  <label for="opsSearch">参加者を検索（接続後に利用）</label>
-  <input id="opsSearch" type="search" autocomplete="off" disabled placeholder="管理接続未確認">
-  <div id="opsRoster" aria-label="参加者一覧" style="padding:12px;margin-top:12px;background:#091d36;border-radius:12px">参加者情報は読み込みません。</div>
-  <p id="opsPerson">対象参加者：未選択</p>
-  <label for="opsQuantity">付与回数（停止中）</label>
-  <input id="opsQuantity" type="number" min="1" max="50" value="1" disabled>
-  <label for="opsReason">付与理由（停止中）</label>
-  <input id="opsReason" type="text" maxlength="120" disabled>
-  <button type="button" id="opsGrant" disabled>ガチャ回数を付与（停止中）</button>
+ <div id="opsIntakeSection" class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
+  <div class="ops-field"><label for="opsNewName">来場者名</label><input id="opsNewName" maxlength="40" placeholder="ColorSing名"></div>
+  <div class="ops-field"><label for="opsNewNote">受付メモ</label><input id="opsNewNote" maxlength="120" placeholder="例：ガチャだけ参加"></div>
+  <button type="button" id="opsIntakeCreate" disabled>初訪問を受付記録に追加</button>
+  <p class="ops-caption">初訪問の記録はガチャ承認・回数付与とは別の操作です。</p>
+  <div id="opsSimple" class="ops-list"></div>
  </div>
- <div style="padding-top:16px">
-  <h3>📝 初訪問・簡易受付</h3>
-  <label for="opsNewName">来訪者名（停止中）</label>
-  <input id="opsNewName" disabled autocomplete="off" maxlength="40">
-  <label for="opsNewNote">受付メモ（停止中）</label>
-  <input id="opsNewNote" disabled maxlength="120">
-  <button type="button" id="opsIntakeCreate" disabled>初訪問を受付（停止中）</button>
-  <div id="opsSimple" aria-label="簡易受付一覧">管理者の接続照合が完了するまで表示しません。</div>
+ <details class="ops-card"><summary>ガチャ回数の付与履歴</summary><div id="opsGrants" class="ops-list"></div></details>
+ <div class="ops-card">
+  <button id="opsSetupToggle" type="button" class="ops-secondary" aria-expanded="false" aria-controls="opsInstallGuide">稼働GASの安全な照合手順を開く</button>
+  <div id="opsInstallGuide" hidden>
+   <p>既存GAS本番の稼働版が未確認の場合、管理操作は停止されたままになります。既存のApps Scriptを新規作成せず、稼働コードを照合してください。</p>
+   <p><strong>現行のCode.gsを全文置換しないでください。</strong>既存GAS全ファイルとデプロイ版をバックアップし、doPostと管理関数の重複・不足を照合します。必要な差分だけ別途審査するまで追加・更新は禁止です。</p>
+   <p>作業前に <a href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/issues/66" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff">稼働GAS照合・停止条件（Issue #66）</a> を確認してください。過去の統合版ソースをそのまま本番に貼り付けることは禁止です。</p>
+   <p>必要な変更が検証・承認された場合にのみ、既存Apps Scriptと同じデプロイの新バージョンを検討します。本番URL・データ・当選履歴を保持し、未確認の間は一切変更しません。</p>
+  </div>
  </div>
- <section id="incidentPreviewPanel" aria-labelledby="incidentPreviewTitle" style="margin-top:18px;padding:14px;background:#101f3d;border:1px solid #8eaac9;border-radius:14px">
+</section>
+<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_START -->
+</fieldset>
+<section id="incidentPreviewPanel" aria-labelledby="incidentPreviewTitle" style="margin-top:18px;padding:14px;background:#101f3d;border:1px solid #8eaac9;border-radius:14px">
   <h3 id="incidentPreviewTitle">🚨 障害・復旧状況（診断機能の準備中）</h3>
   <p id="incidentPreviewState" role="status">実際の障害監視データベースには未接続です。ここには参加者名、抽選ID、Cookieや個人情報を表示しません。</p>
   <div style="display:flex;gap:12px;flex-wrap:wrap" aria-label="障害の状態">
@@ -77,15 +132,10 @@ small{color:#bbd8ed}
   <button id="incidentPreviewRefresh" type="button" disabled>障害一覧の更新（停止中）</button>
   <div id="incidentPreviewList" aria-label="障害一覧の表示準備">監査用DBの接続・権限・個人情報の保護が確認されるまで一覧を表示しません。</div>
  </section>
- <details style="margin-top:18px"><summary>以前の操作結果を安全に照合するための欄</summary>
-  <p id="opsRetryInfo" role="status">未接続：操作IDの再試行はできません。</p>
-  <button id="opsRetry" type="button" hidden disabled>同じ操作IDで再照合（停止中）</button>
-  <div id="opsGrants">付与履歴は未接続です。</div>
- </details>
- <p>既存Apps Scriptは、新規作成も全文置換も行いません。稼働版をバックアップし、既存の<code>doPost</code>と重複関数を照合したうえで、必要な差分だけを同じデプロイに導入します。</p>
- <p><a href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/feature/mio-v2-integration-mainbaseline-20261102/docs/MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102.md" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff">既存GASを壊さない接続手順・途中で止める条件を見る</a></p>
-</section>
-<!-- MIO_ADMIN_PREVIEW_END -->
+<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_END -->
+
+
+
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -115,6 +165,7 @@ $('connect').onclick=async()=>{
   snapshot=await request({action:'read'});
   $('code').value='';
   say('✅ 管理シートの実際の設定と一致しました。');
+  window.dispatchEvent(new Event('mio:admin-connected'));
  }catch(e){snapshot=null;code='';say(e.message,true)}
  finally{busy=false;redraw()}
 };
@@ -126,6 +177,7 @@ async function change(mode){
  try{
   const result=await request({action:'set',mode,enabled,expected});
   snapshot=result;
+  window.dispatchEvent(new Event('mio:gate-state-changed'));
   say('✅ '+mode+'ガチャを'+(enabled?'ON':'OFF')+'に変更し、実際の受付設定まで確認しました。');
  }catch(e){snapshot=null;say('⚠️ '+e.message+'。再接続して現在の設定を確認してください。',true)}
  finally{busy=false;redraw()}
@@ -133,4 +185,4 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><!-- MIO_MUSEUM_PREVIEW_DISABLE_OPS_JS --></body></html>
