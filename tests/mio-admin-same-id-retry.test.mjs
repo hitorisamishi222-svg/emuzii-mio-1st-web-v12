@@ -6,7 +6,7 @@ const source=readFileSync(new URL('../gacha-admin-ops.js',import.meta.url),'utf8
 
 test('uncertain Web grant keeps the exact operation ID across explicit retry',async()=>{
  const elements=new Map();
- let codeId=0,serverSpecial=2,grantCalls=[],networkDrop=true;
+ let codeId=0,serverSpecial=2,grantCalls=[],networkDrop=true,authBlockedOnce=true;
  function element(tag='div'){
   return {tag,value:'',disabled:false,hidden:false,textContent:'',className:'',
    children:[],listeners:{},append(...items){this.children.push(...items)},
@@ -39,6 +39,10 @@ test('uncertain Web grant keeps the exact operation ID across explicit retry',as
    grantCalls.push(d.operationId);
    if(networkDrop){
     networkDrop=false;serverSpecial+=d.count;throw Error('connection interrupted after server commit');
+   }
+   if(authBlockedOnce){
+    authBlockedOnce=false;
+    return {ok:false,status:403,json:async()=>({ok:false,error:'管理者認証を再確認してください'})};
    }
    return {ok:true,status:200,json:async()=>({ok:true,result:{replayed:true,mioId:d.mioId}})};
   }
@@ -76,11 +80,17 @@ test('uncertain Web grant keeps the exact operation ID across explicit retry',as
  assert.equal(stored.mioId,'MIO-0001');
  assert.equal('code' in stored,false,'administrator secret is never cached');
  await get('opsRetry').listeners.click();
+ // Even a definite new 403 rejection cannot prove whether the older attempt committed.
+ for(let i=0;i<5;i++)await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(grantCalls.length,2);
+ assert.equal(get('opsRetry').hidden,false,'authentication error on a retry must preserve pending operation');
+ assert.equal(saved.size,1,'do not lose original operation ID after the previous write may have committed');
+ await get('opsRetry').listeners.click();
  // The event listener starts async verification; drain microtasks.
  for(let i=0;i<30&&get('opsRetry').hidden===false;i++)await new Promise(resolve=>setImmediate(resolve));
- assert.equal(grantCalls.length,2);
- assert.equal(grantCalls[0],grantCalls[1],'retry must reuse original operation ID');
- assert.equal(serverSpecial,3,'retry cannot add a second gacha credit');
+ assert.equal(grantCalls.length,3);
+ assert.ok(grantCalls.every(id=>id===grantCalls[0]),'all retries must reuse original operation ID');
+ assert.equal(serverSpecial,3,'three attempts still spend only one gacha entitlement');
  assert.equal(saved.size,0,'confirmed operation cleared from session');
  assert.equal(get('opsRetry').hidden,true);
  const restored=get('opsRoster').children.find(x=>x.tag==='button');
