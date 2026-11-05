@@ -110,3 +110,56 @@ test('polling updates bell without erasing a focused operator input',async()=>{
   b.intervals[0].fn();await b.settled();
   assert.equal(b.requests.length,2,'background tab must not poll');
 });
+
+test('quick gacha operator workflow keeps existing gates and avoids unsafe GAS replacement', () => {
+  for (const id of ['opsQuickPanel','opsQuickSummary','opsQuickIntake','opsQuickApproval',
+    'opsQuickGrant','opsQuickGate','opsOnlyRemaining','opsRemainingSummary']) {
+    assert.ok(html.includes('id="'+id+'"'), 'missing quick operator control: '+id);
+  }
+  assert.match(html, /href="\/gacha\.html"/);
+  assert.match(html, /現行のCode\.gsを全文置換しないでください/);
+  assert.doesNotMatch(html, /Code\.gsの全貼り付け（部分追加なし）/);
+  assert.match(source, /mio:gate-state-changed/);
+  assert.match(source, /メンシプ照合結果を選択（必須）/);
+  assert.match(source, /member\.value='';/);
+});
+test('quick operator reads remaining eligible candidates without granting or bypassing membership', async () => {
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:false,totalPending:1,rejectedCount:0,
+    roster:[
+      {name:'参加者A',mioId:'MIO-0001',gacha:{checked:true,total:3,remaining:2,special:0}},
+      {name:'参加者B',mioId:'MIO-0002',gacha:{checked:true,total:3,remaining:0,special:0}},
+      {name:'参加者C',mioId:'MIO-0003',gacha:{checked:false,total:2,remaining:2,special:0}}
+    ],
+    pending:[{name:'参加者D',webId:'MIO-W-123456789012345678901234',
+      status:'承認待ち',mioId:'MIO-0004',member:'未確認'}],
+    simple:[],grants:[]});
+  b.connect();await b.settled();
+  assert.match(b.el('opsQuickSummary').textContent,/登録承認待ち 1件/);
+  assert.match(b.el('opsQuickSummary').textContent,/既存ガチャ残回数あり 1名/);
+  assert.match(b.el('opsQuickSummary').textContent,/管理書込 停止中/);
+  assert.match(b.el('opsQuickSummary').textContent,/残回数あり＝抽選許可ではありません/);
+  assert.equal(b.el('opsGrant').disabled,true);
+  b.el('opsOnlyRemaining').checked=true;
+  b.el('opsOnlyRemaining').events.get('change')();
+  const buttons=flatten(b.el('opsRoster')).filter(x=>x.tagName==='button');
+  assert.equal(buttons.length,1);
+  assert.match(buttons[0].textContent,/参加者A/);
+  const member=flatten(b.el('opsPending')).find(x=>x.tagName==='select');
+  assert.ok(member,'membership confirmation dropdown required');
+  assert.equal(member.value,'','operator must explicitly confirm member status');
+  assert.equal(b.requests.length,1,'read-only interaction must not write to server');
+});
+test('operator cannot approve without explicitly choosing the membership result',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,rejectedCount:0,roster:[],
+    pending:[{name:'試験参加者',webId:'MIO-W-123456789012345678901234',
+      status:'承認待ち',mioId:'MIO-0004',member:'確認済み'}],simple:[],grants:[]});
+  b.connect();await b.settled();
+  const approve=flatten(b.el('opsPending')).find(x=>x.tagName==='button'&&/本人照合して承認/.test(x.textContent));
+  assert.ok(approve);
+  assert.equal(approve.disabled,false);
+  await approve.click();
+  assert.match(b.el('opsStatus').textContent,/メンシプ照合結果を管理者が選択してください/);
+  assert.equal(b.requests.length,1,'no approval request without manual membership selection');
+});
