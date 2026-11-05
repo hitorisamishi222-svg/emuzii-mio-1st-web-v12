@@ -387,3 +387,22 @@ test('all local museum navigation targets and static media assets exist in the m
   }
  }
 });
+
+test('current main Web operator regression contracts survive the museum history merge',()=>{
+ // These files have no Preview-specific changes and must remain byte-identical.
+ for(const path of ['.github/workflows/mio-admin-ops.yml',
+   'tests/mio-admin-readonly.test.mjs',
+   'tests/mio-admin-same-id-retry.test.mjs']){
+  assert.equal(shaOfFile(path),observedMain.changedFileBlobs[path],
+   'current main operator regression source was dropped: '+path);
+ }
+ const stageOne=read('tests/mio-admin-center-stage1.test.mjs');
+ assert.match(stageOne,/no participant record is fetched before administrator connection/);
+ assert.match(stageOne,/polling updates bell without erasing a focused operator input/);
+ assert.match(stageOne,/operator cannot approve without explicitly choosing the membership result/);
+ const gate=read('gacha-web-gate.html');
+ assert.match(gate,/<fieldset id="museumOpsPreviewLock" disabled/);
+ assert.match(gate,/connect-src 'none'/);
+ assert.doesNotMatch(gate,/<script src="\/gacha-admin-ops\.js" defer>/,
+  'current main module remains disconnected on the museum Preview');
+});
