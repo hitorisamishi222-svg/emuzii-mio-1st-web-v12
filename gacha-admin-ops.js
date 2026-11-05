@@ -35,6 +35,7 @@ function showGuide(visible){
 setupToggle.addEventListener('click',()=>showGuide(opsGuide.hidden));
 function notice(t,bad=false){opsStatus.textContent=t;opsStatus.className=bad?'ops-error':'ops-ok'}
 function safe(t){return String(t??'')}
+function nameKey(t){return safe(t).normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase()}
 function node(tag,text,cls){
  const e=document.createElement(tag);
  if(text!==undefined)e.textContent=safe(text);
@@ -211,23 +212,38 @@ function render(){
    // An existing sheet value cannot silently qualify as the operator's verification.
    member.value='';
    wrap.append(member);
+   // Search by nickname; identity must still be verified on site, never inferred from name alone.
+   const matches=(state.roster||[]).filter(p=>/^MIO-\d{4}$/.test(p.mioId||'')&&nameKey(p.name)===nameKey(item.name));
+   const identity=node('select',undefined,'ops-select');
+   identity.setAttribute('aria-label','本人確認した既存参加者を選択（ID入力不要）');
+   const placeholder=node('option','照合済みの既存参加者を選択（必須）');placeholder.value='';identity.append(placeholder);
+   for(const person of matches){
+    const option=node('option',person.name+' / '+person.mioId);option.value=person.mioId;identity.append(option);
+   }
+   identity.value='';
+   wrap.append(identity);
+   if(matches.length>1)wrap.append(node('p','⚠️ 同名候補が複数あります。MIO-ID・元の登録ブラウザ・本人確認が完了するまで承認しないでください。'));
+   else if(matches.length===0)wrap.append(node('p','⚠️ 既存参加者を確認できません。新規ID発行前に過去の登録・途中受付を確認してください。'));
    const grant=button('本人照合して承認',async()=>{
     if(onsiteBox.checked!==true){notice('現場確認スイッチで本人・MIO-ID・ブラウザを確認してください',true);return}
     if(member.value!=='yes'&&member.value!=='no'){notice('メンシプ照合結果を管理者が選択してください',true);return}
-    const target=window.prompt('照合済みの参加者ID（MIO-0000形式）を入力',item.mioId||'');
-    if(target===null)return;
-    const id=target.trim();
-    if(!/^MIO-\d{4}$/.test(id)){notice('MIO-IDの形式を確認してください',true);return}
+    const id=identity.value;
+    if(!/^MIO-\d{4}$/.test(id)||!matches.some(person=>person.mioId===id)){
+     notice('本人確認した既存参加者を候補から選択してください。お客様のID暗記は不要です。',true);return;
+    }
+    if(item.mioId&&item.mioId!==id){notice('登録済みのMIO-IDと選択した参加者が一致しません。承認を停止しました。',true);return}
     if(!window.confirm(item.name+' / '+id+' を承認しますか？\n'+(member.value==='yes'?'メンシプ確認済み':'メンシプ未確認')))return;
     await mutate('approve',{webId:item.webId,mioId:id,memberConfirmed:member.value==='yes',expectedStatus:'承認待ち',onSiteVerified:true});
    });
    wrap.append(grant);
-   if(!item.mioId){
+   if(!item.mioId&&matches.length===0){
      wrap.append(button('初訪問者のMIO-IDを新規作成',async()=>{
         if(onsiteBox.checked!==true){notice('現場で本人・既存登録の照合スイッチを入れてください',true);return}
        if(!window.confirm(item.name+' に新しい参加者IDを作成しますか？\n既存登録がある場合は作成されません。'))return;
        await mutate('create',{webId:item.webId,expectedStatus:'承認待ち',onSiteVerified:true});
      }));
+   }else if(!item.mioId&&matches.length){
+     wrap.append(node('p','既存MIO-ID候補が見つかりました。新しいIDを作らず、現場で元の登録情報を照合してください。'));
    }
   }
   el('opsPending').append(wrap);
