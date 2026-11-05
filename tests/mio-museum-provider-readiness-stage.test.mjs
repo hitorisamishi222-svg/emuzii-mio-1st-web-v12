@@ -57,7 +57,7 @@ test('observed 2026-11-05 situation stays blocked: generic Preview, five missing
  assert.equal(result.metadataInventoryComplete,false);
  assert.deepEqual(result.blockers,[
   'preview_environment_isolated','schema_table_inventory_complete',
-  'snapshot_inventory_present'
+  'recovery_route_inventory_present'
  ]);
  assert.deepEqual(result.missingTables,[
   'museum_public_exhibits','museum_gallery_layout_stage',
@@ -89,6 +89,34 @@ test('missing or duplicate tables and irrelevant snapshots are not proof',()=>{
  const snapshot=record();
  snapshot.neonSnapshots=[{id:'from-production',branch_id:MAIN}];
  assert.equal(inspect(snapshot).checks.snapshot_inventory_present,false);
+});
+test('free Neon PITR window is a permitted recovery candidate, not a restore drill',()=>{
+ const data=record();
+ data.neonSnapshots=[];
+ data.neonBranches[0].project_id=PROJECT;
+ data.neonBranches[1].project_id=PROJECT;
+ data.neonBranches[1].current_state='ready';
+ data.neonProjectMetadata={
+  id:PROJECT,history_retention_seconds:21600,
+  owner:{subscription_type:'free_v3'}
+ };
+ const x=inspect(data);
+ assert.equal(x.recoveryRoute,'pitr_candidate');
+ assert.equal(x.snapshotInventoryPresent,false);
+ assert.equal(x.historyRetentionSeconds,21600);
+ assert.equal(x.checks.recovery_route_inventory_present,true);
+ assert.equal(x.metadataInventoryComplete,true,
+  'all inventory metadata may pass before independent restoration proof exists');
+ assert.equal(x.restorationDrillVerified,false);
+ assert.equal(x.canConnect,false);
+ assert.equal(x.canWrite,false);
+ assert.equal(x.canMigrate,false);
+ const absent=record();absent.neonSnapshots=[];
+ absent.neonProjectMetadata=data.neonProjectMetadata;
+ const bad=inspect(absent);
+ assert.equal(bad.recoveryRoute,'none',
+  'branch metadata must prove it is in the declared Neon project');
+ assert.equal(bad.metadataInventoryComplete,false);
 });
 test('malformed or partial inventories are rejected without an eligibility result',()=>{
  for(const mutation of [
