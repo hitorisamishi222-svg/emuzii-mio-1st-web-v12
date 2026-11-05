@@ -204,7 +204,7 @@
    const categoryLabel=make('label','作品の種類を編集（模擬）');
    categoryLabel.htmlFor='demoGalleryCategory'+item.id;
    const categorySelect=make('select');categorySelect.id=categoryLabel.htmlFor;
-   categorySelect.className='gallery-room-select gallery-category-select';
+   categorySelect.className='gallery-category-select';
    for(const value of ['イラスト','動画','音声・楽曲','ファンアート','その他']){
     const option=make('option',value);option.value=value;categorySelect.append(option);
    }
