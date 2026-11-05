@@ -414,10 +414,15 @@ test('preview assets add independent API, keep current draw route',()=>{
  assert.match(api,/MIO_GACHA_ADMIN_OPS_RELEASE/);
  const html=readFileSync(new URL('../gacha-web-gate.html',import.meta.url),'utf8');
  for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','normal','fest',
-  'opsPendingNewCount','opsPendingIdentityCount','opsPendingSimpleCount','opsUnknownState'])
-  assert.ok(html.includes('id="'+id+'"'));
- // A disconnected preview cannot claim no waiting participants.
- assert.ok(html.includes('未接続（0人とは限りません）'));
+  'opsBell','opsQuickSummary','opsRemainingSummary','opsOnlyRemaining','museumOpsPreviewLock'])
+  assert.ok(html.includes('id="'+id+'"'),'required new main admin element missing: '+id);
+ // Current main has no fake zero-queue counters. The disconnected Preview
+ // cannot infer queue size from an empty local mock.
+ assert.match(html,/管理者認証待ち/);
+ assert.match(html,/<strong id="opsCount">未接続<\/strong>/);
+ assert.match(html,/<fieldset id="museumOpsPreviewLock" disabled/);
+ assert.match(html,/content="connect-src 'none'; form-action 'none'"/);
+ assert.doesNotMatch(html,/<script src="\/gacha-admin-ops\.js" defer><\/script>/);
  assert.match(html,/id="opsReload"[^>]*disabled/);
 });
 
