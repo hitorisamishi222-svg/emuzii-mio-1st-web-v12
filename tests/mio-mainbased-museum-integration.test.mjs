@@ -11,6 +11,7 @@ const exists=p=>existsSync(new URL('../'+p,import.meta.url));
 const config=JSON.parse(read('vercel.json'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 const baseline=JSON.parse(read('tests/fixtures/mio-protected-main-baseline-20261102.json'));
+const observedMain=JSON.parse(read('tests/fixtures/mio-observed-main-gacha-operator-20261105.json'));
 const shaOfFile=path=>{
  const bytes=readFileSync(new URL('../'+path,import.meta.url));
  return createHash('sha1').update('blob '+bytes.length).update(Buffer.from([0])).update(bytes).digest('hex');
@@ -48,13 +49,46 @@ test('all old production authentication, draw, attendance and approved media blo
  }
  // Also protect against main advancing after the snapshot when a remote ref is present.
  if(hasMainRef()){
-  assert.equal(git('rev-parse','origin/main'),baseline.baselineCommit,
-    'main changed since staging baseline; refresh under review before release');
+  const liveMainSha=git('rev-parse','origin/main');
+  // A narrowly pinned known divergence is not an admin-feature merge.
+  assert.ok(liveMainSha===baseline.baselineCommit||
+   liveMainSha===observedMain.observedMainCommit,
+   'UNREVIEWED MAIN UPDATE: stop staging until new production changes are reviewed');
+  assert.equal(observedMain.previousMuseumBaseline,baseline.baselineCommit);
+  assert.equal(observedMain.observedMainCommit,
+   '84c623de9961a801f30b978bda8b8bea7a0daf4e');
+  assert.deepEqual(Object.keys(observedMain.changedFileBlobs).sort(),[
+   '.github/workflows/mio-admin-ops.yml',
+   'docs/MIO_GAS_FULL_REPLACE_SETUP.md',
+   'gacha-admin-ops.js','gacha-web-gate.html',
+   'tests/mio-admin-center-stage1.test.mjs',
+   'tests/mio-admin-readonly.test.mjs',
+   'tests/mio-admin-same-id-retry.test.mjs',
+   'tests/mio-gas-connect-guidance.test.mjs',
+   'tests/mio-gas-full-install.test.mjs'
+  ].sort());
+  if(liveMainSha===observedMain.observedMainCommit){
+   for(const [path,blob] of Object.entries(observedMain.changedFileBlobs)){
+    assert.match(blob,/^[a-f0-9]{40}$/,path);
+    assert.equal(git('rev-parse','origin/main:'+path),blob,
+     'observed operator source changed without review: '+path);
+   }
+  }
   for(const path of unchanged){
    assert.equal(git('rev-parse','HEAD:'+path),git('rev-parse','origin/main:'+path),
-     'Protected main file differs from live baseline: '+path);
+    'Protected main file differs from live baseline: '+path);
   }
  }
+});
+test('new main operator source is acknowledged but remains deactivated on museum Preview',()=>{
+ const html=read('gacha-web-gate.html');
+ assert.equal(observedMain.previousMuseumBaseline,baseline.baselineCommit);
+ assert.match(html,/<!-- MIO_ADMIN_PREVIEW_START -->/);
+ assert.match(html,/href="\/mio-admin-rehearsal.html"/);
+ assert.doesNotMatch(html,/<script[^>]*src="\/gacha-admin-ops\.js"/,
+  'museum Preview must never silently activate updated main operator actions');
+ assert.notEqual(observedMain.changedFileBlobs['gacha-web-gate.html'],
+  baseline.productionFileBlobs['gacha-web-gate.html']);
 });
 test('existing live gacha gate remains exactly the original code after removing the marked disabled admin preview',()=>{
  const html=read('gacha-web-gate.html');
