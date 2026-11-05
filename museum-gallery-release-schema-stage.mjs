@@ -27,6 +27,11 @@ const REQUIRED=Object.freeze({
  museum_gallery_layout_audit_stage:{
   operation_id:'text',payload_hash:'text',actor_id:'uuid',
   action:'text',prior_revision:'bigint',new_revision:'bigint'
+ },
+ museum_exhibit_draft_operations_stage:{
+  operation_id:'text',actor_id:'uuid',exhibit_id:'uuid',
+  action:'text',payload_hash:'text',revision:'integer',
+  recorded_at:'timestamp with time zone'
  }
 });
 const NOT_NULL=Object.freeze({
@@ -36,7 +41,9 @@ const NOT_NULL=Object.freeze({
   'source_draft_revision','snapshot_order','snapshot_visible_ids','snapshot_review_hashes',
   'published_by','published_at'],
  museum_gallery_layout_audit_stage:['operation_id','payload_hash','actor_id',
-  'action','prior_revision','new_revision']
+  'action','prior_revision','new_revision'],
+ museum_exhibit_draft_operations_stage:['operation_id','actor_id','exhibit_id',
+  'action','payload_hash','revision','recorded_at']
 });
 const normalized=x=>String(x||'').toLowerCase()
  .replace(/"/g,'').replace(/\s+/g,' ').replace(/::(?:text|jsonb|uuid|bigint)/g,'').trim();
@@ -123,8 +130,149 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
  });
  const sourceReady=tables.find(x=>x.table==='gallery_live_overrides')?.ready===true&&
   Object.values(legacyChecks).every(Boolean);
- const layoutTablesReady=tables.filter(x=>x.table!=='gallery_live_overrides')
-  .every(x=>x.ready);
+ const layoutTablesReady=tables.filter(x=>x.table!=='gallery_live_overrides'&&
+  x.table!=='museum_exhibit_draft_operations_stage').every(x=>x.ready);
+ // A name-only receipt table cannot establish idempotency or attribution.
+ // Verify the schema using read-only PostgreSQL catalog metadata.
+ const receiptTableReady=tables.find(x=>
+  x.table==='museum_exhibit_draft_operations_stage')?.ready===true;
+ const receiptCheck=(parts)=>constraints.some(row=>{
+  if(row?.table_name!=='museum_exhibit_draft_operations_stage'||
+    row.contype!=='c'||row.validated!==true)return false;
+  const def=normalized(row.definition);
+  return /\bcheck\b/.test(def)&&!/\b(?:or|not)\b/.test(def)&&
+   parts.every(part=>def.includes(part));
+ });
+ const receiptActionReady=constraints.some(row=>{
+  if(row?.table_name!=='museum_exhibit_draft_operations_stage'||
+     row.contype!=='c'||row.validated!==true)return false;
+  const def=normalized(row.definition);
+  if(/\b(?:or|not)\b/.test(def)||
+     !/\baction\b\s*(?:in\s*\(|=\s*any\s*\()/.test(def))return false;
+  const values=[...def.matchAll(/'([^']+)'/g)].map(x=>x[1]).sort();
+  return values.length===2&&values[0]==='create'&&values[1]==='edit';
+ });
+ const receiptChecks=Object.freeze({
+  operationPrimary:constraint(constraints,'museum_exhibit_draft_operations_stage','p',
+   ['operation_id']),
+  exhibitRevisionUnique:constraint(constraints,'museum_exhibit_draft_operations_stage','u',
+   ['exhibit_id','revision']),
+  ownerFk:constraint(constraints,'museum_exhibit_draft_operations_stage','f',
+   ['actor_id','gallery_admin_users']),
+  exhibitFk:constraint(constraints,'museum_exhibit_draft_operations_stage','f',
+   ['exhibit_id','museum_public_exhibits']),
+  actionAllowed:receiptActionReady,
+  operationIdFormat:receiptCheck(["operation_id ~ '^[a-f0-9]{32}
+ const constraintChecks=Object.freeze({
+  layoutPrimary:constraint(constraints,'museum_gallery_layout_stage','p',['layout_key']),
+  historyUnique:constraint(constraints,'museum_gallery_layout_history_stage','u',
+   ['layout_key','published_revision']),
+  operationIdUnique:constraint(constraints,'museum_gallery_layout_audit_stage','u',['operation_id']),
+  auditAction:constraint(constraints,'museum_gallery_layout_audit_stage','c',
+   ["'draft'","'publish'","'rollback'"]),
+  layoutVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_order','@>','draft_visible_ids']),
+  historyVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_order','@>','snapshot_visible_ids']),
+  publicationReviewType:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['jsonb_typeof(published_review_hashes)',"'object'"]),
+  historyReviewType:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['jsonb_typeof(snapshot_review_hashes)',"'object'"]),
+  approvedDeviceOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['drafted_by','gallery_admin_users']),
+  publishOwnerFk:constraint(constraints,'museum_gallery_layout_history_stage','f',
+   ['published_by','gallery_admin_users']),
+  layoutPublishedOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['published_by','gallery_admin_users']),
+  draftFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_featured_id','draft_visible_ids','?']),
+  publishedFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['published_featured_id','published_visible_ids','?']),
+  historyFeaturedVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_featured_id','snapshot_visible_ids','?']),
+  auditOwnerFk:constraint(constraints,'museum_gallery_layout_audit_stage','f',
+   ['actor_id','gallery_admin_users'])
+ });
+ const layoutReady=layoutTablesReady&&Object.values(constraintChecks).every(Boolean);
+ return Object.freeze({
+  identityVerified:identityVerified===true,
+  baseMuseumReady:base.schemaReady,
+  sourceReady,
+  legacyChecks,
+  roomKindReady,
+  mediaCategoryReady,
+  reviewChronologyReady,
+  layoutReady,
+  exhibitReceiptReady,
+  receiptChecks,
+  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
+   mediaCategoryReady&&reviewChronologyReady&&layoutReady&&exhibitReceiptReady,
+  tables:Object.freeze(tables),
+  constraintChecks,
+  // This report does NOT assert backup, owner signoff, or authorization.
+  canPublish:false,
+  canDeploy:false
+ });
+}
+"]),
+  payloadHashFormat:receiptCheck(["payload_hash ~ '^[a-f0-9]{64}
+ const constraintChecks=Object.freeze({
+  layoutPrimary:constraint(constraints,'museum_gallery_layout_stage','p',['layout_key']),
+  historyUnique:constraint(constraints,'museum_gallery_layout_history_stage','u',
+   ['layout_key','published_revision']),
+  operationIdUnique:constraint(constraints,'museum_gallery_layout_audit_stage','u',['operation_id']),
+  auditAction:constraint(constraints,'museum_gallery_layout_audit_stage','c',
+   ["'draft'","'publish'","'rollback'"]),
+  layoutVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_order','@>','draft_visible_ids']),
+  historyVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_order','@>','snapshot_visible_ids']),
+  publicationReviewType:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['jsonb_typeof(published_review_hashes)',"'object'"]),
+  historyReviewType:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['jsonb_typeof(snapshot_review_hashes)',"'object'"]),
+  approvedDeviceOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['drafted_by','gallery_admin_users']),
+  publishOwnerFk:constraint(constraints,'museum_gallery_layout_history_stage','f',
+   ['published_by','gallery_admin_users']),
+  layoutPublishedOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
+   ['published_by','gallery_admin_users']),
+  draftFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['draft_featured_id','draft_visible_ids','?']),
+  publishedFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
+   ['published_featured_id','published_visible_ids','?']),
+  historyFeaturedVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
+   ['snapshot_featured_id','snapshot_visible_ids','?']),
+  auditOwnerFk:constraint(constraints,'museum_gallery_layout_audit_stage','f',
+   ['actor_id','gallery_admin_users'])
+ });
+ const layoutReady=layoutTablesReady&&Object.values(constraintChecks).every(Boolean);
+ return Object.freeze({
+  identityVerified:identityVerified===true,
+  baseMuseumReady:base.schemaReady,
+  sourceReady,
+  legacyChecks,
+  roomKindReady,
+  mediaCategoryReady,
+  reviewChronologyReady,
+  layoutReady,
+  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
+   mediaCategoryReady&&reviewChronologyReady&&layoutReady,
+  tables:Object.freeze(tables),
+  constraintChecks,
+  // This report does NOT assert backup, owner signoff, or authorization.
+  canPublish:false,
+  canDeploy:false
+ });
+}
+"]),
+  revisionNonnegative:constraints.some(row=>
+   row?.table_name==='museum_exhibit_draft_operations_stage'&&
+   row.contype==='c'&&row.validated===true&&
+   !/\b(?:or|not)\b/.test(normalized(row.definition))&&
+   /\brevision\s*>=\s*0\b/.test(normalized(row.definition)))
+ });
+ const exhibitReceiptReady=receiptTableReady&&Object.values(receiptChecks).every(Boolean);
  const constraintChecks=Object.freeze({
   layoutPrimary:constraint(constraints,'museum_gallery_layout_stage','p',['layout_key']),
   historyUnique:constraint(constraints,'museum_gallery_layout_history_stage','u',
