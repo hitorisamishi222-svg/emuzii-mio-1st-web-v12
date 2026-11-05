@@ -1219,27 +1219,42 @@ try{
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
   }
  }
- // The real management landing page remains disconnected; test its three
- // queue placeholders without invoking production switches or Web APIs.
+ // Real main operator markup, but ALL operator inputs are inside a native
+ // disabled fieldset. Browser CSP must deny even a forged legacy API fetch.
  for(const width of [320,375,390,430]){
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
   await cdp('Page.navigate',{url:root+'/gacha-web-gate.html'});
-  await poll(()=>evaluate("document.readyState==='complete'&&!!document.querySelector('#opsPendingSimpleCount')"),18000);
+  await poll(()=>evaluate("document.readyState==='complete'&&!!document.querySelector('#museumOpsPreviewLock')"),18000);
   const gate=await evaluate(`(()=>({
    viewport:innerWidth,scroll:document.documentElement.scrollWidth,
-   queueIds:['opsPendingNewCount','opsPendingIdentityCount','opsPendingSimpleCount']
-    .map(id=>document.getElementById(id)?.textContent),
-   reloadDisabled:document.getElementById('opsReload').disabled,
-   grantDisabled:document.getElementById('opsGrant').disabled,
-   unknownText:document.getElementById('opsUnknownState').textContent
+   locked:document.getElementById('museumOpsPreviewLock').disabled,
+   count:document.getElementById('opsCount').textContent,
+   bell:document.getElementById('opsBell').textContent,
+   quickDisabled:document.getElementById('opsQuickGrant').matches(':disabled'),
+   reloadDisabled:document.getElementById('opsReload').matches(':disabled'),
+   grantDisabled:document.getElementById('opsGrant').matches(':disabled'),
+   incidentDisabled:document.getElementById('incidentPreviewRefresh').disabled,
+   csp:document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content||'',
+   rehearsal:!!document.querySelector('a[href="/mio-admin-rehearsal.html"]')
   }))()`);
-  assert.ok(gate.scroll<=gate.viewport+2,'admin preview horizontal overflow '+JSON.stringify(gate));
-  assert.ok(gate.queueIds.every(x=>x&&x.includes('未接続')&&x.includes('0人とは限りません')),
-   'a disconnected administrator must never receive a false zero');
+  assert.ok(gate.scroll<=gate.viewport+2,'integrated admin horizontal overflow '+JSON.stringify(gate));
+  assert.equal(gate.locked,true,'main operator controls must be disabled in Preview');
+  assert.equal(gate.count,'未接続');
+  assert.ok(gate.bell.includes('管理者認証待ち'));
+  assert.equal(gate.quickDisabled,true);
   assert.equal(gate.reloadDisabled,true);
   assert.equal(gate.grantDisabled,true);
-  assert.ok(gate.unknownText.includes('未分類の登録状態'));
+  assert.equal(gate.incidentDisabled,true);
+  assert.equal(gate.rehearsal,true);
+  assert.equal(gate.csp,"connect-src 'none'; form-action 'none'");
   if(width===390){
+   const blocked=await evaluate(`(async()=>{
+    try{
+     await fetch('/api/gacha-web-gate',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+     return false;
+    }catch{return true}
+   })()`);
+   assert.equal(blocked,true,'CSP must reject the legacy gate request before local server');
    await mkdir('artifacts',{recursive:true});
    const shot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-management-queue-390.png',Buffer.from(shot.data,'base64'));
