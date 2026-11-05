@@ -106,3 +106,13 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - **構造と件数の一致だけでは、完全なデータ同一性やNeonによる復元の実施を証明しない**。この照合機能は常に `restorationProvenanceVerified=false`、`fullDataIntegrityVerified=false`、`restorationDrillVerified=false` とし、公開・DB移行・書き込み権限を与えない。独立の履歴証跡／復元検証と本番許可が後で必要。
 - 復元比較テストは既存の `mio-mainbased-museum-staging.yml` に**独立ジョブ**として追加（外部接続ゼロ）。既存の全体CIが別の理由で停止しても、検証部分だけは別に合否を追える。
 - 注意：2026-11-05T09:02:39Z に `main` へガチャ管理画面更新（`84c623de`）が追加され、記念館のDraft PR #76のベースと差が生じている。特設の開発ブランチにも管理・GASガイド関連の既存差分があるため、**無条件でmainをコピー／マージしない**。差分照合と両方の安全テストが必要。今回production mainへの更新・記念館PRのマージは行わない。
+
+## 2026-11-05追記：本番 main の管理センター更新との安全な整合検査
+
+- `main` の最新観測コミット `84c623de9961a801f30b978bda8b8bea7a0daf4e` は、記念館開発開始時の `bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b` より新しい。ガチャ管理センター・GAS設置ガイド・管理関係テストなど**正確に9ファイル**の変更を確認した。
+- `tests/fixtures/mio-observed-main-gacha-operator-20261105.json` に、最新 `main` のコミットと9ファイルのGit blob SHAのみを記録。個人データ、パスワード、秘密環境変数は保存しない。
+- `tests/mio-mainbased-museum-integration.test.mjs` の旧「mainが一切進んではいけない」という停止条件を、**既知の変更だけ検証可能**な条件へ更新。GitHub Actionsが取得した `origin/main` が元のベースか、上記の完全一致コミットであることを検査する。さらに当該9ファイルのblobを検査し、ID・チェックイン・ガチャAPI・配信メディアなど従来の**保護対象ファイルを最新mainと照合**する。
+- これによって既知のガチャ管理UI更新だけで記念館の開発CIが止まり続ける問題を解消するが、**マージ可能・本番反映済み・管理者書き込み可能の証明ではない**。
+- 競合候補は `gacha-web-gate.html`（新mainの運営UIと記念館の停止中模擬管理センター）と `docs/MIO_GAS_FULL_REPLACE_SETUP.md`（双方とも全文貼り替え禁止だが内容が異なる）。競合部分を無条件で片方へ置き換えず、今は機能ブランチに残す。
+- 記念館Previewで `gacha-admin-ops.js` を無確認で読み込まないこと、架空データのリハーサル画面を残すことを明示的に検査する。記念館・ガチャ管理UIの最終統合前に、実体ソース差分のレビューと管理センター回帰テストが必要。
+- この作業は**開発ブランチの安全検査と証拠記録のみ**。GitHub `main`、本番GAS、参加者台帳、Neon DB、Vercel Production、本番URLを変更していない。PR #76はDraft・未マージを維持する。
