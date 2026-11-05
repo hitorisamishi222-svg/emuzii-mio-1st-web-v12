@@ -759,29 +759,76 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
    await evaluate("document.querySelector('#demoReset').click()");
-   // Editing formerly reviewed metadata immediately invalidates the old
-   // approval and keeps the old public snapshot hidden after reapproval.
+   // Title-only changes previously bypassed rights review. A typed unsaved
+   // title must survive render filters, and must not affect public snapshots.
    await evaluate(`(()=>{
     const row=document.querySelector('#demoGallery .gallery-row:first-child');
-    const d=row.querySelector('.gallery-description-input');
-    d.value='大幅修正した展示説明';
-    d.dispatchEvent(new Event('input',{bubbles:true}));
-    row.querySelector('.gallery-save-meta').click();
+    const title=row.querySelector('[id^=demoGalleryTitle]');
+    title.value='架空作品A・未保存の新題名';
+    title.dispatchEvent(new Event('input',{bubbles:true}));
+    const filter=document.querySelector('#demoGalleryRoomFilter');
+    filter.value='icons';filter.dispatchEvent(new Event('change',{bubbles:true}));
+    filter.value='all';filter.dispatchEvent(new Event('change',{bubbles:true}));
    })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child [id^=demoGalleryTitle]').value"),'架空作品A・未保存の新題名');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-detail-unsaved').textContent.includes('未保存')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-cancel-meta').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child [id^=demoGalleryTitle]').value"),'架空作品A・歌の記憶');
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   // An unchanged save is not a takedown.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-save-meta').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   // A title shortcut now uses the same atomic details save, revoking old
+   // reviews and the old snapshot's epoch, never merely replacing a label.
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:first-child');
+    const title=row.querySelector('[id^=demoGalleryTitle]');
+    title.value='架空作品A・改題';
+    title.dispatchEvent(new Event('input',{bubbles:true}));
+    row.querySelector('.gallery-actions button:first-child').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品A・改題')"),true);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),1);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child').textContent.includes('公開確認待ち')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').disabled"),true);
-   // Reacquire the first work after each re-render.
+   // Re-review does not revive stale historical publication automatically.
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:first-child input').click()");
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:nth-child(2) input').click()");
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1,
-    'reapproval must never revive a stale historical publication');
+    'renamed reapproved work must not revive the old published snapshot');
+   // Validation is atomic: a valid new title cannot slip through alongside
+   // invalid description; neither live metadata nor moderation changes.
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:first-child');
+    row.querySelector('[id^=demoGalleryTitle]').value='架空作品A・不正編集';
+    row.querySelector('.gallery-description-input').value='x'.repeat(2001);
+    row.querySelector('.gallery-save-meta').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品A・改題')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   // Cancel invalid input; then apply name/description/credit together.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-cancel-meta').click()");
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:first-child');
+    row.querySelector('[id^=demoGalleryTitle]').value='架空作品A・一括編集';
+    row.querySelector('.gallery-description-input').value='展示説明の改訂';
+    row.querySelector('.gallery-credit-input').value='架空の制作者名';
+    row.querySelector('.gallery-save-meta').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child strong').textContent.includes('架空作品A・一括編集')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-exhibit-description').textContent.includes('展示説明の改訂')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-exhibit-meta').textContent.includes('架空の制作者名')"),true);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),1);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child [id^=demoGalleryTitle]').value"),'架空作品A・歌の記憶');
 
   }
  }
