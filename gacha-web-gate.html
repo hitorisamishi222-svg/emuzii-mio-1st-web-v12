@@ -95,7 +95,8 @@ main{max-width:760px}
  <div id="opsIntakeSection" class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
   <div class="ops-field"><label for="opsNewName">来場者名</label><input id="opsNewName" maxlength="40" placeholder="ColorSing名"></div>
   <div class="ops-field"><label for="opsNewNote">受付メモ</label><input id="opsNewNote" maxlength="120" placeholder="例：ガチャだけ参加"></div>
-  <button type="button" id="opsIntakeCreate" disabled>初訪問を受付記録に追加</button>
+  <label class="ops-filter" for="opsOnsiteIntakeVerified"><input id="opsOnsiteIntakeVerified" type="checkbox">現場で来場者名と既存登録を確認した</label>
+  <button type="button" id="opsIntakeCreate" disabled>現場確認した来場者を受付記録に追加</button>
   <p class="ops-caption">初訪問の記録はガチャ承認・回数付与とは別の操作です。</p>
   <div id="opsSimple" class="ops-list"></div>
  </div>
