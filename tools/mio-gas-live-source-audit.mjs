@@ -12,7 +12,7 @@ function fnBody(s,name){
 }
 export function auditGas(sourceFiles,expectedModule){
  const report={status:'STOP',doPostCount:0,expectedOpsCount:0,presentOpsCount:0,
-  duplicates:[],missingOps:[],issues:[],canSafelyPatch:false};
+  duplicates:[],missingOps:[],missingHelpers:[],issues:[],canSafelyPatch:false};
  if(!Array.isArray(sourceFiles)||sourceFiles.length===0||sourceFiles.some(s=>typeof s!=='string'||!s.trim())){
   report.issues.push('稼働中の全GASファイルが未取得');return report;
  }
@@ -28,6 +28,11 @@ export function auditGas(sourceFiles,expectedModule){
  report.expectedOpsCount=expected.length;
  report.presentOpsCount=expected.filter(n=>counts.has(n)).length;
  report.missingOps=expected.filter(n=>!counts.has(n));
+ // All of these helpers are required by the admin module or its doPost wrapper.
+ // A superficially correct dispatcher with missing helpers cannot be released.
+ const requiredHelpers=['json_','safeText_','webIntegrityOk_','ensureWebDerivedRow_'];
+ report.missingHelpers=requiredHelpers.filter(n=>!counts.has(n));
+ if(report.missingHelpers.length)report.issues.push('管理機能が依存する既存ヘルパーがありません');
  if(report.doPostCount!==1)report.issues.push('doPostが1つではない');
  if(report.duplicates.length)report.issues.push('重複関数あり（統合候補と単独19関数を両方追加しないこと）');
  const owner=sourceFiles.filter(s=>functionNames(s).includes('doPost'));
