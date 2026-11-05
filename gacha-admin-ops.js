@@ -117,6 +117,16 @@ async function refresh({automatic=false}={}){
  if(!automatic)notice('管理台帳から最新の受付情報を取得中…');
  try{
   const response=await request('read');
+  // Never keep an older onsite confirmation when the authoritative gacha balance changed.
+  if(selected&&el('opsOnsiteGrantVerified').checked===true){
+   const current=(response.roster||[]).find(x=>x.mioId===selected.mioId);
+   const previous=selected.gacha;
+   const next=current?.gacha;
+   if(!next||!previous||next.remaining!==previous.remaining||
+      next.total!==previous.total||next.special!==previous.special||
+      next.checked!==previous.checked||current.name!==selected.name)
+     el('opsOnsiteGrantVerified').checked=false;
+  }
   state=response;
   gasCompatibilityBlocked=false;
   identityUpdated();
@@ -137,7 +147,7 @@ async function refresh({automatic=false}={}){
  finally{blocked(false);if(!editing)render()}
 }
 el('opsReload').addEventListener('click',refresh);
-el('opsNewName').addEventListener('input',()=>{el('opsOnsiteIntakeVerified').checked=false});
+for(const field of ['opsNewName','opsNewNote'])el(field).addEventListener('input',()=>{el('opsOnsiteIntakeVerified').checked=false});
 el('opsIntakeCreate').addEventListener('click',async()=>{
  const name=el('opsNewName').value.trim(),note=el('opsNewNote').value.trim();
  if(el('opsOnsiteIntakeVerified').checked!==true){notice('現場で来場者名と既存登録を確認してスイッチを入れてください',true);return}
@@ -213,6 +223,7 @@ function render(){
    }
    // An existing sheet value cannot silently qualify as the operator's verification.
    member.value='';
+   member.addEventListener('change',()=>{onsiteBox.checked=false});
    wrap.append(member);
    // Search by nickname; identity must still be verified on site, never inferred from name alone.
    const matches=(state.roster||[]).filter(p=>/^MIO-\d{4}$/.test(p.mioId||'')&&nameKey(p.name)===nameKey(item.name));
@@ -223,6 +234,7 @@ function render(){
     const option=node('option',person.name+' / '+person.mioId);option.value=person.mioId;identity.append(option);
    }
    identity.value='';
+   identity.addEventListener('change',()=>{onsiteBox.checked=false});
    wrap.append(identity);
    if(matches.length>1)wrap.append(node('p','⚠️ 同名候補が複数あります。MIO-ID・元の登録ブラウザ・本人確認が完了するまで承認しないでください。'));
    else if(matches.length===0)wrap.append(node('p','⚠️ 既存参加者を確認できません。新規ID発行前に過去の登録・途中受付を確認してください。'));
@@ -302,6 +314,12 @@ function renderRoster(){
 el('opsSearch').addEventListener('input',renderRoster);
 el('opsOnlyRemaining').addEventListener('change',renderRoster);
 el('opsOnsiteGrantVerified').addEventListener('change',()=>{el('opsGrant').disabled=!grantReady()});
+for(const field of ['opsQuantity','opsReason']){
+ el(field).addEventListener('input',()=>{
+  el('opsOnsiteGrantVerified').checked=false;
+  el('opsGrant').disabled=!grantReady();
+ });
+}
 async function verifyPending(){
  if(processing||!pending)return;
  const attempted=pending;
