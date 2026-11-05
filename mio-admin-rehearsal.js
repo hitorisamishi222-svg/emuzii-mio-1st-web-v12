@@ -43,6 +43,9 @@
  // A one-step undo only remembers order IDs. It never stores rights approval,
  // copies an image, touches public history, or rewinds moderation state.
  let lastGalleryOrderUndo=null;
+ // Keep unsaved in-memory metadata edits across filter and reorder renders.
+ // Never serialize these drafts, upload media, or expose them publicly.
+ const galleryDetailDrafts=new Map();
  const rememberOrderBeforeMove=order=>{
   lastGalleryOrderUndo={order,after:galleryFingerprint()};
  };
@@ -52,6 +55,7 @@
  const currentPublication=()=>galleryPublished[galleryPublished.length-1];
  const resetPublication=()=>{
   lastGalleryOrderUndo=null;
+  galleryDetailDrafts.clear();
   galleryPublished=[{revision:1,items:draftDisplay()}];
   galleryReviewFingerprint=null;
   restoreSelectedRevision=null;
@@ -175,6 +179,77 @@
    label.htmlFor='demoGalleryTitle'+item.id;
    const title=make('input');title.type='text';title.id=label.htmlFor;
    title.value=item.title;title.maxLength=60;
+   const metaEditor=make('div',undefined,'gallery-metadata-editor');
+   const pending=galleryDetailDrafts.get(item.id)||{
+    description:item.description||'',credit:item.credit||''
+   };
+   const descriptionLabel=make('label','作品説明を編集（模擬・2000文字以内）');
+   descriptionLabel.htmlFor='demoGalleryDescription'+item.id;
+   const descriptionInput=make('textarea');
+   descriptionInput.id=descriptionLabel.htmlFor;
+   descriptionInput.className='gallery-description-input';
+   descriptionInput.maxLength=2000;descriptionInput.rows=3;
+   descriptionInput.value=pending.description;
+   descriptionInput.disabled=item.archived;
+   const creditLabel=make('label','制作者・提供者名を編集（模擬・80文字以内）');
+   creditLabel.htmlFor='demoGalleryCredit'+item.id;
+   const creditInput=make('input');
+   creditInput.type='text';creditInput.id=creditLabel.htmlFor;
+   creditInput.className='gallery-credit-input';
+   creditInput.maxLength=80;creditInput.value=pending.credit;
+   creditInput.disabled=item.archived;
+   const pendingLabel=make('p','','mini gallery-detail-unsaved');
+   const changed=()=>descriptionInput.value!==(item.description||'')||
+    creditInput.value.trim()!==(item.credit||'');
+   const updatePending=()=>{
+    if(changed()){
+     galleryDetailDrafts.set(item.id,{
+      description:descriptionInput.value,credit:creditInput.value
+     });
+     pendingLabel.textContent='編集中（未保存）・元の内容は変更していません。';
+    }else{
+     galleryDetailDrafts.delete(item.id);
+     pendingLabel.textContent='';
+    }
+   };
+   descriptionInput.addEventListener('input',updatePending);
+   creditInput.addEventListener('input',updatePending);
+   const metaActions=make('div',undefined,'actions gallery-metadata-actions');
+   metaActions.append(
+    button('説明・制作者を変更',()=>{
+     if(item.archived)return;
+     const description=descriptionInput.value,credit=creditInput.value.trim();
+     const bad=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
+     if(description.length>2000||credit.length>80||
+        bad.test(description)||bad.test(credit)){
+      setMessage('説明は2000文字以内、制作者名は80文字以内で入力してください。');
+      return;
+     }
+     if(description===(item.description||'')&&credit===(item.credit||'')){
+      galleryDetailDrafts.delete(item.id);
+      setMessage('変更はありません。');render();return;
+     }
+     item.description=description;item.credit=credit;
+     // A changed description/attribution invalidates earlier rights and
+     // privacy review. Prevent old published versions from reappearing even
+     // if this mock work is subsequently reapproved.
+     item.reviewed=false;item.rightsConfirmed=false;item.privacyConfirmed=false;
+     item.visible=false;item.featured=false;item.approvalEpoch++;
+     galleryDetailDrafts.delete(item.id);
+     audit(item.id+'：説明・制作者を変更し、模擬承認を解除して非公開に');
+     setMessage('説明・制作者を変更しました。以前の模擬掲載確認は無効になりました。再確認前は公開されません。');
+     render();
+    },item.archived,'secondary gallery-save-meta'),
+    button('編集中の変更を取消',()=>{
+     galleryDetailDrafts.delete(item.id);
+     setMessage('未保存の説明・制作者変更を取り消しました。');
+     render();
+    },item.archived,'secondary gallery-cancel-meta')
+   );
+   metaEditor.append(descriptionLabel,descriptionInput,creditLabel,
+    creditInput,pendingLabel,metaActions);
+   if(galleryDetailDrafts.has(item.id))pendingLabel.textContent=
+    '編集中（未保存）・元の内容は変更していません。';
    const actions=make('div',undefined,'actions gallery-actions');
    actions.append(
     button('名前を変更',()=>{
@@ -333,7 +408,7 @@
     setMessage('展示室の配置を変更しました。仮保存・確認後にだけ模擬公開できます。');
     render();
    });
-   details.append(label,title,roomLabel,roomSelect,approval,actions,fileLabel,file);
+   details.append(label,title,metaEditor,roomLabel,roomSelect,approval,actions,fileLabel,file);
    row.append(galleryThumb(item),details);editor.append(row);
   });
   $('demoGalleryUndoOrder').disabled=!canUndoGalleryOrder();
