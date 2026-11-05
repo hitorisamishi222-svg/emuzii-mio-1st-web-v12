@@ -116,3 +116,12 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - 競合候補は `gacha-web-gate.html`（新mainの運営UIと記念館の停止中模擬管理センター）と `docs/MIO_GAS_FULL_REPLACE_SETUP.md`（双方とも全文貼り替え禁止だが内容が異なる）。競合部分を無条件で片方へ置き換えず、今は機能ブランチに残す。
 - 記念館Previewで `gacha-admin-ops.js` を無確認で読み込まないこと、架空データのリハーサル画面を残すことを明示的に検査する。記念館・ガチャ管理UIの最終統合前に、実体ソース差分のレビューと管理センター回帰テストが必要。
 - この作業は**開発ブランチの安全検査と証拠記録のみ**。GitHub `main`、本番GAS、参加者台帳、Neon DB、Vercel Production、本番URLを変更していない。PR #76はDraft・未マージを維持する。
+
+## 2026-11-05追記：新main管理センターとの表示・設置ガイド統合（Preview限定）
+
+- 新mainコミット `84c623de` で更新された `gacha-web-gate.html` の管理センターを、記念館の機能ブランチへ**元ソースの全内容を復元可能な形**で統合した。上書きではなく、記念館だけの追加をマーカー `MIO_MUSEUM_PREVIEW_LOCK_OPEN/CLOSE` と `MIO_MUSEUM_PREVIEW_CSP` で独立させ、元に戻したときのGit blob SHAが最新mainの実際のblobと一致することをテストする。
+- 新mainの `gacha-admin-ops.js` は**バイト同一**で機能ブランチへ取得。ただし記念館Previewでは脚本を**読み込まない**。新mainの管理センター入力全体を `<fieldset disabled>` に閉じ込め、さらにブラウザの `Content-Security-Policy: connect-src 'none'; form-action 'none'` を**PreviewのHTML metaに設定**し、旧ガチャON/OFFの実API通信も遮断する。**本番の管理画面には適用していない。**
+- 記念館側の架空データリハーサル（`/mio-admin-rehearsal.html`）、端末内GASソース照合、旧障害・復旧状況の未接続表示は引き続き使用可能。既存のGASや参加者記録は一切取得・書き換えない。
+- `docs/MIO_GAS_FULL_REPLACE_SETUP.md` は新mainの「旧全文貼り替え手順は廃止・実行禁止」を基準に、記念館Previewの保護条件と既存同一プロジェクト・デプロイ・URL維持を追記。稼働中の`Code.gs`、`doPost` の実ソース照合や承認を飛ばしてGASを変更することは禁止。
+- 以前の模擬画面構造だけを検査したテストは、新管理センターの構造・機能停止・ガイドリンク・現行mainソースへの可逆性に更新。スマホ幅320/375/390/430pxの実Chromiumで、**CSPが旧管理APIへのPOSTをブロックすること**も検証した。
+- この統合は**機能ブランチ内でのソース互換化**であり、PR #76のGit履歴上の競合解消・マージ・本番更新を意味しない。今後の安全な履歴統合には、2026-11-05のmain更新9ファイル全体の親子関係と管理センター関連テストを改めて確認する必要がある。現在はDraft PRのまま停止。
