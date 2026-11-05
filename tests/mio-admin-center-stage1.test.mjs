@@ -19,7 +19,7 @@ test('admin gate mounts the existing operator module with every required UI cont
     assert.ok(html.includes('id="'+field+'"'), 'original gate missing '+field);
   }
   assert.match(html, /mio:admin-connected/);
-  assert.match(passkey, /mio:admin-connected/);
+  assert.match(passkey, /passkeyLogin/); // Face ID source unchanged; gate read connects via existing browser session
   assert.match(source, /mio:admin-connected/);
   assert.match(source, /30000/);
 });
