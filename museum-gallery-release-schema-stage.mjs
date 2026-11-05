@@ -162,110 +162,8 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   exhibitFk:constraint(constraints,'museum_exhibit_draft_operations_stage','f',
    ['exhibit_id','museum_public_exhibits']),
   actionAllowed:receiptActionReady,
-  operationIdFormat:receiptCheck(["operation_id ~ '^[a-f0-9]{32}
- const constraintChecks=Object.freeze({
-  layoutPrimary:constraint(constraints,'museum_gallery_layout_stage','p',['layout_key']),
-  historyUnique:constraint(constraints,'museum_gallery_layout_history_stage','u',
-   ['layout_key','published_revision']),
-  operationIdUnique:constraint(constraints,'museum_gallery_layout_audit_stage','u',['operation_id']),
-  auditAction:constraint(constraints,'museum_gallery_layout_audit_stage','c',
-   ["'draft'","'publish'","'rollback'"]),
-  layoutVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['draft_order','@>','draft_visible_ids']),
-  historyVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
-   ['snapshot_order','@>','snapshot_visible_ids']),
-  publicationReviewType:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['jsonb_typeof(published_review_hashes)',"'object'"]),
-  historyReviewType:constraint(constraints,'museum_gallery_layout_history_stage','c',
-   ['jsonb_typeof(snapshot_review_hashes)',"'object'"]),
-  approvedDeviceOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
-   ['drafted_by','gallery_admin_users']),
-  publishOwnerFk:constraint(constraints,'museum_gallery_layout_history_stage','f',
-   ['published_by','gallery_admin_users']),
-  layoutPublishedOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
-   ['published_by','gallery_admin_users']),
-  draftFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['draft_featured_id','draft_visible_ids','?']),
-  publishedFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['published_featured_id','published_visible_ids','?']),
-  historyFeaturedVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
-   ['snapshot_featured_id','snapshot_visible_ids','?']),
-  auditOwnerFk:constraint(constraints,'museum_gallery_layout_audit_stage','f',
-   ['actor_id','gallery_admin_users'])
- });
- const layoutReady=layoutTablesReady&&Object.values(constraintChecks).every(Boolean);
- return Object.freeze({
-  identityVerified:identityVerified===true,
-  baseMuseumReady:base.schemaReady,
-  sourceReady,
-  legacyChecks,
-  roomKindReady,
-  mediaCategoryReady,
-  reviewChronologyReady,
-  layoutReady,
-  exhibitReceiptReady,
-  receiptChecks,
-  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
-   mediaCategoryReady&&reviewChronologyReady&&layoutReady&&exhibitReceiptReady,
-  tables:Object.freeze(tables),
-  constraintChecks,
-  // This report does NOT assert backup, owner signoff, or authorization.
-  canPublish:false,
-  canDeploy:false
- });
-}
-"]),
-  payloadHashFormat:receiptCheck(["payload_hash ~ '^[a-f0-9]{64}
- const constraintChecks=Object.freeze({
-  layoutPrimary:constraint(constraints,'museum_gallery_layout_stage','p',['layout_key']),
-  historyUnique:constraint(constraints,'museum_gallery_layout_history_stage','u',
-   ['layout_key','published_revision']),
-  operationIdUnique:constraint(constraints,'museum_gallery_layout_audit_stage','u',['operation_id']),
-  auditAction:constraint(constraints,'museum_gallery_layout_audit_stage','c',
-   ["'draft'","'publish'","'rollback'"]),
-  layoutVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['draft_order','@>','draft_visible_ids']),
-  historyVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
-   ['snapshot_order','@>','snapshot_visible_ids']),
-  publicationReviewType:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['jsonb_typeof(published_review_hashes)',"'object'"]),
-  historyReviewType:constraint(constraints,'museum_gallery_layout_history_stage','c',
-   ['jsonb_typeof(snapshot_review_hashes)',"'object'"]),
-  approvedDeviceOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
-   ['drafted_by','gallery_admin_users']),
-  publishOwnerFk:constraint(constraints,'museum_gallery_layout_history_stage','f',
-   ['published_by','gallery_admin_users']),
-  layoutPublishedOwnerFk:constraint(constraints,'museum_gallery_layout_stage','f',
-   ['published_by','gallery_admin_users']),
-  draftFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['draft_featured_id','draft_visible_ids','?']),
-  publishedFeaturedVisibility:constraint(constraints,'museum_gallery_layout_stage','c',
-   ['published_featured_id','published_visible_ids','?']),
-  historyFeaturedVisibility:constraint(constraints,'museum_gallery_layout_history_stage','c',
-   ['snapshot_featured_id','snapshot_visible_ids','?']),
-  auditOwnerFk:constraint(constraints,'museum_gallery_layout_audit_stage','f',
-   ['actor_id','gallery_admin_users'])
- });
- const layoutReady=layoutTablesReady&&Object.values(constraintChecks).every(Boolean);
- return Object.freeze({
-  identityVerified:identityVerified===true,
-  baseMuseumReady:base.schemaReady,
-  sourceReady,
-  legacyChecks,
-  roomKindReady,
-  mediaCategoryReady,
-  reviewChronologyReady,
-  layoutReady,
-  allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
-   mediaCategoryReady&&reviewChronologyReady&&layoutReady,
-  tables:Object.freeze(tables),
-  constraintChecks,
-  // This report does NOT assert backup, owner signoff, or authorization.
-  canPublish:false,
-  canDeploy:false
- });
-}
-"]),
+  operationIdFormat:receiptCheck(["operation_id ~ '^[a-f0-9]{32}$'"]),
+  payloadHashFormat:receiptCheck(["payload_hash ~ '^[a-f0-9]{64}$'"]),
   revisionNonnegative:constraints.some(row=>
    row?.table_name==='museum_exhibit_draft_operations_stage'&&
    row.contype==='c'&&row.validated===true&&
@@ -313,8 +211,10 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   mediaCategoryReady,
   reviewChronologyReady,
   layoutReady,
+  exhibitReceiptReady,
+  receiptChecks,
   allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
-   mediaCategoryReady&&reviewChronologyReady&&layoutReady,
+   mediaCategoryReady&&reviewChronologyReady&&layoutReady&&exhibitReceiptReady,
   tables:Object.freeze(tables),
   constraintChecks,
   // This report does NOT assert backup, owner signoff, or authorization.
