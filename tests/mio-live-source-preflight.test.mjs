@@ -43,8 +43,9 @@ test('source audit permits distinct production GAS files only when global functi
 
 test('source audit blocks deployment when required existing integrity helpers are absent',()=>{
  for(const helper of ['json_','safeText_','webIntegrityOk_','ensureWebDerivedRow_']){
-  const pattern=new RegExp('^\\\\s*function\\\\s+'+helper+'\\\\s*\\\\(','m');
-  const code=full.replace(pattern,'function TEST_REMOVED_'+helper+'(');
+  const original='function '+helper+'(';
+  assert.ok(full.includes(original),helper+' appears in candidate');
+  const code=full.replace(original,'function TEST_REMOVED_'+helper+'(');
   const out=auditGas([code],moduleOnly);
   assert.equal(out.status,'STOP',helper+' is required for safe admin operation');
   assert.ok(out.missingHelpers.includes(helper),helper+' must appear in missing helper report');
