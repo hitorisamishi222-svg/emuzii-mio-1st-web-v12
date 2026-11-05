@@ -112,7 +112,9 @@ function grantReady(){return !processing&&!pending&&!!state?.writeEnabled&&!!sel
 function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=!grantReady();el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
 async function refresh({automatic=false}={}){
  if(processing||!ready()||(automatic&&(document.hidden||pending||gasCompatibilityBlocked)))return;
- const editing=automatic&&!!document.querySelector('#opsAdminPanel input:focus, #opsAdminPanel select:focus');
+ // On mobile a checked confirmation switch may lose focus before the 30s refresh.
+ // Keep the operator's form visible; backend still checks the current state on submission.
+ const editing=automatic&&!!document.querySelector('#opsAdminPanel input:focus, #opsAdminPanel select:focus, #opsAdminPanel textarea:focus, #opsAdminPanel input[type="checkbox"]:checked');
  blocked(true);
  if(!automatic)notice('管理台帳から最新の受付情報を取得中…');
  try{
