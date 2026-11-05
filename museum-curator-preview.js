@@ -17,10 +17,11 @@ const button=(label,fn,off=false)=>{const b=node('button',label,'curator-seconda
 const itemBy=id=>items.find(x=>x.id===id);
 const eligible=x=>x.visible&&x.reviewed&&x.rights&&x.privacy&&!x.archived;
 const publication=()=>items.filter(eligible).map(x=>({id:x.id,title:x.title,room:x.room,category:x.category,description:x.description,featured:x.featured,epoch:x.epoch}));
-let published=publication();
+let published=publication(),history=[{version:1,items:publication()}],orderUndo=null,restoreApproval=null;
 const signature=()=>JSON.stringify(items.map(x=>[x.id,...fields.map(k=>x[k]),x.reviewed,x.rights,x.privacy,x.visible,x.featured,x.archived,x.epoch]));
 const status=s=>{$('editStatus').textContent=s;};
-function touched(){approvedHash=null;$('simulatePublish').disabled=true;}
+function touched(){approvedHash=null;restoreApproval=null;$('simulatePublish').disabled=true;$('restoreHistory').disabled=true;}
+function invalidateOrderUndo(){orderUndo=null;$('undoOrder').disabled=true;}
 function values(){
 const v={};for(const k of fields)v[k]=$(map[k]).value;
 v.title=v.title.trim();v.credit=v.credit.trim();v.externalUrl=v.externalUrl.trim();v.occurredOn=v.occurredOn||null;
@@ -68,11 +69,11 @@ const changed=JSON.stringify(currentValues(x))!==JSON.stringify(v)||Boolean(file
 if(!changed){status('変更はありません。');return;}
 Object.assign(x,v);imageFor(x.id,file);
 x.epoch++;x.reviewed=false;x.rights=false;x.privacy=false;x.visible=false;x.featured=false;
-touched();choose(x);status('変更を反映。掲載確認・公開予定は解除したので再確認してください。');
+invalidateOrderUndo();touched();choose(x);status('変更を反映。掲載確認・公開予定は解除したので再確認してください。');
 }else{
 const id='DEMO-'+String(next++).padStart(2,'0');
 const x={id,...v,epoch:1,reviewed:false,rights:false,privacy:false,visible:false,featured:false,archived:false};
-items.unshift(x);imageFor(id,file);touched();choose(x);
+items.unshift(x);imageFor(id,file);invalidateOrderUndo();touched();choose(x);
 status('非公開の架空展示を追加しました。外部には保存していません。');
 }
 }catch(err){status(err.message||'入力を確認してください。');}
@@ -80,7 +81,7 @@ status('非公開の架空展示を追加しました。外部には保存して
 function approve(){
 if(!cleanSelected()||!['rightsOk','privacyOk','contentOk'].every(id=>$(id).checked)){status('保存内容と3つの項目を確認してください。');return;}
 const x=itemBy(selected);x.rights=true;x.privacy=true;x.reviewed=true;x.epoch++;
-touched();clearChecks();render();status('模擬確認済みです。公開予定への切替は別操作です。');
+invalidateOrderUndo();touched();clearChecks();render();status('模擬確認済みです。公開予定への切替は別操作です。');
 }
 function invalidateRights(x){
 x.epoch++;x.visible=false;x.featured=false;x.reviewed=false;x.rights=false;x.privacy=false;
@@ -94,7 +95,7 @@ else if(x.archived||!x.reviewed||!x.rights||!x.privacy){status('公開予定に�
 else{x.visible=true;status('公開予定に変更。実公開はしていません。');}
 }
 if(kind==='featured'){if(!eligible(x))return;x.featured=!x.featured;status('注目表示を模擬変更しました。');}
-touched();clearChecks();render();
+invalidateOrderUndo();touched();clearChecks();render();
 }
 function filtered(){
 const room=$('filterRoom').value,q=$('filterText').value.trim().toLocaleLowerCase('ja');
@@ -102,8 +103,75 @@ return items.filter(x=>(room==='all'||x.room===room)&&(x.title+' '+x.id).toLocal
 }
 function move(id,offset){
 const visible=filtered(),at=visible.findIndex(x=>x.id===id),nextItem=visible[at+offset];if(!nextItem)return;
+const before=items.map(x=>x.id);
 const a=items.findIndex(x=>x.id===id),b=items.findIndex(x=>x.id===nextItem.id);
-[items[a],items[b]]=[items[b],items[a]];touched();render();status('絞り込み中も指定した隣の作品とだけ入れ替えました。');
+[items[a],items[b]]=[items[b],items[a]];
+touched();orderUndo={before,after:signature()};$('undoOrder').disabled=false;
+render();status('表示中の隣の作品だけを入れ替えました。直前の並べ替えは取り消せます。');
+}
+function undoLastOrder(){
+if(!orderUndo||orderUndo.after!==signature()){invalidateOrderUndo();status('別の変更後なので並べ替えの取り消しはできません。');return;}
+const byId=new Map(items.map(x=>[x.id,x]));
+if(byId.size!==items.length||orderUndo.before.length!==items.length||
+ orderUndo.before.some(id=>!byId.has(id))){invalidateOrderUndo();status('作品一覧が変わったため取り消せません。');return;}
+items=orderUndo.before.map(id=>byId.get(id));
+invalidateOrderUndo();touched();render();status('直前の表示順だけを元に戻しました。掲載許可は変更していません。');
+}
+function unsavedForm(){
+if($('workImage').files?.length)return true;
+if(selected)return !cleanSelected();
+return Boolean($('workTitle').value.trim()||$('workDescription').value||
+ $('workCredit').value.trim()||$('workDate').value||$('workUrl').value.trim()||
+ $('workRoom').value!=='gallery'||$('workCategory').value!=='イラスト');
+}
+const historyRecord=()=>history.find(x=>String(x.version)===$('historyVersion').value);
+const safeOldWorks=entry=>entry?entry.items.filter(x=>{
+ const current=itemBy(x.id);return current&&eligible(current)&&current.epoch===x.epoch;
+}):[];
+function renderHistoryPreview(){
+restoreApproval=null;$('restoreHistory').disabled=true;
+const record=historyRecord(),root=$('historyPreview');root.replaceChildren();
+$('reviewRestore').disabled=!record;
+if(!record){$('historyStatus').textContent='復元する過去の模擬版を選んでください。';return;}
+const safe=safeOldWorks(record);
+for(const item of safe){
+ const el=node('article',undefined,'curator-public-card');
+ if(item.featured)el.append(node('span','✦ 注目作品','curator-feature'));
+ el.append(node('strong',item.title),node('p',rooms[item.room]+' · '+item.category));
+ root.append(el);
+}
+if(!safe.length)root.append(node('p','復元できる掲載許可済み作品はありません。','curator-small'));
+$('historyStatus').textContent='第'+record.version+'版：復元できる作品'+safe.length+'件。失効した権利や非公開作品は除外。';
+}
+function updateHistoryPicker(){
+const el=$('historyVersion'),current=el.value;el.replaceChildren();
+const empty=node('option','過去版を選択してください');empty.value='';el.append(empty);
+for(const entry of history.slice(0,-1).reverse()){
+ const o=node('option','第'+entry.version+'版');o.value=String(entry.version);el.append(o);
+}
+el.value=history.slice(0,-1).some(x=>String(x.version)===current)?current:'';
+renderHistoryPreview();
+}
+function reviewHistoryRestore(){
+const record=historyRecord();
+if(!record||unsavedForm()){restoreApproval=null;$('restoreHistory').disabled=true;
+ $('historyStatus').textContent='対象の過去版と、保存前の入力がない状態を確認してください。';return;}
+const safe=safeOldWorks(record);
+restoreApproval=JSON.stringify([record.version,signature(),safe]);
+$('restoreHistory').disabled=false;
+$('historyStatus').textContent='第'+record.version+'版の'+safe.length+'件を確認済み。復元は現在の模擬公開版への新しい版として記録します。';
+}
+function restoreHistory(){
+const record=historyRecord(),safe=safeOldWorks(record);
+if(!record||!restoreApproval||unsavedForm()||
+ restoreApproval!==JSON.stringify([record.version,signature(),safe])){
+ restoreApproval=null;$('restoreHistory').disabled=true;
+ $('historyStatus').textContent='内容が変わりました。過去版をもう一度確認してください。';return;
+}
+published=safe.map(x=>({...x}));version++;
+history.push({version,items:published.map(x=>({...x}))});
+invalidateOrderUndo();touched();render();updateHistoryPicker();
+$('publishStatus').textContent='模擬公開第'+version+'版として復元しました。過去版を直接書き換えず、失効した作品は復活させません。';
 }
 function render(){
 const list=$('workList');list.replaceChildren();
@@ -141,6 +209,7 @@ root.append(card);
 if(!eligiblePublished.length)root.append(node('p','模擬公開済みの作品はありません。','curator-small'));
 }
 function review(){
+if(unsavedForm()){touched();$('publishStatus').textContent='未保存の入力があります。先に下書きを反映するか新規入力をクリアしてください。';return;}
 const now=publication(),oldIds=new Set(published.map(x=>x.id)),newIds=new Set(now.map(x=>x.id));
 const added=now.filter(x=>!oldIds.has(x.id)).length,hidden=published.filter(x=>!newIds.has(x.id)).length;
 const changed=JSON.stringify(now)!==JSON.stringify(published);
@@ -148,13 +217,13 @@ approvedHash=signature();$('simulatePublish').disabled=false;
 $('publishStatus').textContent='差分確認：追加 '+added+'件、非掲載 '+hidden+'件、順序・内容変更'+(changed?'あり':'なし')+'。次は架空データだけの模擬公開です。';
 }
 function publish(){
-if(!approvedHash||approvedHash!==signature()){touched();$('publishStatus').textContent='状態が変わりました。再確認してください。';return;}
-published=publication();version++;touched();showVisitor();
+if(unsavedForm()||!approvedHash||approvedHash!==signature()){touched();$('publishStatus').textContent='状態が変わりました。再確認してください。';return;}
+published=publication();version++;history.push({version,items:published.map(x=>({...x}))});invalidateOrderUndo();touched();showVisitor();updateHistoryPicker();
 $('publishStatus').textContent='画面内の模擬公開版 '+version+' を更新しました。実サイトとDBは変更していません。';
 }
 function reset(){
 for(const id of images.keys())forgetImage(id);
-items=sample();next=4;version=1;published=publication();touched();choose(null);
+items=sample();next=4;version=1;published=publication();history=[{version:1,items:published.map(x=>({...x}))}];invalidateOrderUndo();touched();choose(null);updateHistoryPicker();
 $('filterRoom').value='all';$('filterText').value='';render();
 $('publishStatus').textContent='初期の架空展示へ戻しました。';
 status('架空作品を初期化しました。実データは変更していません。');
@@ -167,15 +236,19 @@ for(const id of ['rightsOk','privacyOk','contentOk'])$(id).addEventListener('cha
 $('approveWork').addEventListener('click',approve);
 $('clearImage').addEventListener('click',()=>{
 $('workImage').value='';
-if(selected){forgetImage(selected);touched();render();}
+if(selected&&images.has(selected)){forgetImage(selected);invalidateRights(itemBy(selected));invalidateOrderUndo();touched();render();}
 clearChecks();status('端末内の仮画像を消しました。本番画像は変更していません。');
 });
 $('filterRoom').addEventListener('change',render);
 $('filterText').addEventListener('input',render);
+$('undoOrder').addEventListener('click',undoLastOrder);
+$('historyVersion').addEventListener('change',renderHistoryPreview);
+$('reviewRestore').addEventListener('click',reviewHistoryRestore);
+$('restoreHistory').addEventListener('click',restoreHistory);
 $('reviewPublish').addEventListener('click',review);
 $('simulatePublish').addEventListener('click',publish);
 $('resetDemo').addEventListener('click',reset);
 window.addEventListener('pagehide',()=>{for(const id of images.keys())forgetImage(id);});
-choose(null);
+choose(null);updateHistoryPicker();
 $('publishStatus').textContent='架空の初期展示を表示しています。実公開ではありません。';
 })();
