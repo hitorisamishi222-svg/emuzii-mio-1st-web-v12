@@ -107,3 +107,35 @@ test('an existing gacha grant ledger row cannot be replayed under a different re
  assert.equal(context.__record({},op,id,'架空参加者',1,'最初の付与理由',3,4),true);
  assert.equal(writes,0,'duplicate grant record never inserted');
 });
+
+test('duplicate legacy participant IDs cannot yield actionable gacha rows',()=>{
+ const begin=moduleOnly.indexOf('function mioAdminOpsSummary_(ss,webRows){');
+ const end=moduleOnly.indexOf('function mioAdminOpsRead_(ss,d){',begin);
+ assert.ok(begin>=0&&end>begin);
+ const code=moduleOnly.slice(begin,end)+'\n globalThis.__summary=mioAdminOpsSummary_;';
+ const g=Array(17).fill('');g[0]='MIO-9001';g[1]='架空参加者';g[5]=2;g[7]=1;
+ g[12]='OK';g[13]='OK';g[14]=0;
+ const people=[['MIO-9001','架空参加者'],['MIO-9001','別名で重複']];
+ const ss={'emuzii_ガチャ':[g],'emuzii_新規簡易登録':[]};
+ const ctx={
+  mioAdminOpsPeople_:()=>people,
+  mioAdminOpsSheet_:(ss,key)=>ss[key],
+  mioAdminOpsValues_:rows=>rows,
+  mioAdminOpsStr_:x=>String(x??'').trim()
+ };
+ vm.runInNewContext(code,ctx);
+ const duplicate=ctx.__summary(ss,[]);
+ assert.equal(duplicate.roster.length,1);
+ assert.equal(duplicate.roster[0].gacha,null,'same ID in multiple participant rows must be non-actionable');
+ assert.equal(duplicate.roster[0].needsReview,true);
+ people.pop();
+ const normal=ctx.__summary(ss,[]);
+ assert.equal(normal.roster[0].gacha.remaining,1,'a unique healthy row can be viewed');
+ assert.equal(normal.roster[0].needsReview,false);
+ g[7]=-1;
+ const negative=ctx.__summary(ss,[]);
+ assert.equal(negative.roster[0].gacha,null,'negative remaining rights fail closed');
+ g[7]=3;
+ const tooMany=ctx.__summary(ss,[]);
+ assert.equal(tooMany.roster[0].needsReview,true,'remaining greater than total is inconsistent');
+});
