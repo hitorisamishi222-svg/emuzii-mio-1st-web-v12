@@ -442,6 +442,42 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-description').textContent.includes('編集後の説明（未公開）')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('編集後の架空制作者')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-detail-unsaved').textContent"),'');
+   // Full edit contract: type, date and URL are editable but never published
+   // before a separate rights/privacy re-review and mock publish.
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-category-select').value"),'ファンアート');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-occurred-input').value"),'2026-11-05');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-external-input').value"),'https://example.org/art');
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:last-child');
+    row.querySelector('.gallery-category-select').value='動画';
+    row.querySelector('.gallery-occurred-input').value='2026-11-06';
+    row.querySelector('.gallery-external-input').value='http://unsafe.example';
+    row.querySelector('.gallery-save-meta').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoMessage').textContent.includes('https')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-category-select').value"),'動画',
+    'failed save must not replace uncommitted input before explicit cancel');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('2026-11-05')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('unsafe.example')"),false);
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:last-child');
+    const input=row.querySelector('.gallery-external-input');
+    input.value='https://example.org/revised';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    const filter=document.querySelector('#demoGalleryRoomFilter');
+    filter.value='icons';filter.dispatchEvent(new Event('change',{bubbles:true}));
+    filter.value='gallery';filter.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-category-select').value"),'動画');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-occurred-input').value"),'2026-11-06');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-external-input').value"),'https://example.org/revised');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-detail-unsaved').textContent.includes('未保存')"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-save-meta').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('2026-11-06')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('https://example.org/revised')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta a')"),null,
+    'unreviewed external URL must remain inert text');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-category-select').value"),'動画');
    assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品D')"),false,
     'creating an unreviewed private exhibit never publishes it');
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(2)').disabled"),true);
