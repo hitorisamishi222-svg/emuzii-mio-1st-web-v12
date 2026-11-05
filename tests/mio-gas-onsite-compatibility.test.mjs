@@ -121,7 +121,8 @@ test('duplicate legacy participant IDs cannot yield actionable gacha rows',()=>{
   mioAdminOpsPeople_:()=>people,
   mioAdminOpsSheet_:(ss,key)=>ss[key],
   mioAdminOpsValues_:rows=>rows,
-  mioAdminOpsStr_:x=>String(x??'').trim()
+  mioAdminOpsStr_:x=>String(x??'').trim(),
+  mioAdminOpsName_:x=>String(x??'').trim()
  };
  vm.runInNewContext(code,ctx);
  const duplicate=ctx.__summary(ss,[]);
@@ -138,4 +139,10 @@ test('duplicate legacy participant IDs cannot yield actionable gacha rows',()=>{
  g[7]=3;
  const tooMany=ctx.__summary(ss,[]);
  assert.equal(tooMany.roster[0].needsReview,true,'remaining greater than total is inconsistent');
+ g[7]=1;g[1]='別人のガチャ権利';
+ const wrongPerson=ctx.__summary(ss,[]);
+ assert.equal(wrongPerson.roster[0].needsReview,true,'name mismatch must never present a grant target');
+ g[1]='架空参加者';g[5]='';
+ const blankTotal=ctx.__summary(ss,[]);
+ assert.equal(blankTotal.roster[0].gacha,null,'blank entitled amount must not silently become zero');
 });
