@@ -263,6 +263,23 @@ test('museum large update is gallery-first, hides attendance navigation without 
   assert.equal(shaOfFile(path),baseline.productionFileBlobs[path]);
  }
 });
+test('memory archive has three clearly unpublished responsive room guides without exposing private work',()=>{
+ const html=read('museum-archive.html'),css=read('museum-archive.css');
+ assert.match(html,/class="archive-room-guide"/);
+ assert.match(html,/aria-labelledby="archiveRoomTitle"/);
+ assert.match(html,/まだ作品の登録・公開は行っていません/);
+ for(const [kind,label] of [['icons','歴代アイコン館'],['moments','思い出アルバム'],['events','イベントの記録']]){
+  assert.match(html,new RegExp('href="/museum-archive\\.html\\?kind='+kind+'"'));
+  assert.match(html,new RegExp(label));
+ }
+ assert.equal((html.match(/class="archive-room-card"/g)||[]).length,3);
+ assert.equal((html.match(/公開準備中 · 展示室を見る/g)||[]).length,3);
+ assert.match(css,/\.museum-archive \.archive-room-grid/);
+ assert.match(css,/@media\(max-width:630px\)/);
+ assert.match(html,/id="archiveEntries"/);
+ assert.match(html,/src="\/museum-archive\.js"/);
+ assert.doesNotMatch(html,/\/api\/|fetch\s*\(|document\.cookie|localStorage|sessionStorage/);
+});
 test('gallery layout planning stays off public routes and leaves production catalog untouched',()=>{
  const plan='museum-curation-plan.mjs';
  assert.ok(exists(plan));
