@@ -403,6 +403,13 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGalleryNewDescription').value"),'');
    assert.equal(await evaluate("document.querySelector('#demoGalleryNewExternal').value"),'');
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),2);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-description').textContent.includes('架空の思い出と展示説明')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('架空の制作者')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('https://example.org/art')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta a')"),null,
+    'unreviewed external URLs are never rendered as clickable links');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品D')"),false,
+    'creating an unreviewed private exhibit never publishes it');
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(2)').disabled"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(3)').disabled"),true);
    await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(2)').click()");
