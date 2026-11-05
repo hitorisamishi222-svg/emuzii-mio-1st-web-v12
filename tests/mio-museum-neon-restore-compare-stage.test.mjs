@@ -84,7 +84,7 @@ test('compares full schema and 14 historical table counts on two distinct READ O
  for(const client of [s,r]){
   assert.equal(client.calls[0].sql,'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
   assert.equal(client.calls.at(-1).sql,'COMMIT');
-  assert.equal(client.calls.length,19);
+  assert.equal(client.calls.length,20);
   assert.equal(client.rollbacks,0);
   assert.ok(client.calls.every(x=>!/\b(?:INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE)\b/i.test(x.sql)));
   assert.ok(client.calls.every(x=>x.args.length===0));
