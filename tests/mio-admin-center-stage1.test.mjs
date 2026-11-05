@@ -333,3 +333,53 @@ test('API onsite release rejects all mutation operations unless owner confirms p
  assert.equal(called.length,1);
  assert.equal(called[0].action,'webAdminOpsReview');
 });
+
+test('onsite confirmation becomes invalid after identity or purchase changes',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,
+  roster:[{name:'架空A',mioId:'MIO-9001',gacha:{checked:true,total:2,remaining:2,special:0}}],
+  pending:[{name:'架空A',webId:'MIO-W-123456789012345678901234',status:'承認待ち'}],
+  simple:[],grants:[]});
+ b.connect();await b.settled();
+ const items=flatten(b.el('opsPending'));
+ const onsite=items.find(x=>x.tagName==='input');
+ const member=items.find(x=>x.tagName==='select'&&/メンシプ確認/.test(x['aria-label']||''));
+ const identity=items.find(x=>x.tagName==='select'&&/既存参加者を選択/.test(x['aria-label']||''));
+ const approve=items.find(x=>x.tagName==='button'&&/本人照合して承認/.test(x.textContent));
+ assert.ok(onsite&&member&&identity&&approve);
+ onsite.checked=true;
+ identity.value='MIO-9001';identity.events.get('change')();
+ assert.equal(onsite.checked,false,'selecting a different identity requires a new onsite verification');
+ onsite.checked=true;
+ member.value='yes';member.events.get('change')();
+ assert.equal(onsite.checked,false,'changing membership result requires a new onsite verification');
+ await approve.click();
+ assert.match(b.el('opsStatus').textContent,/現場確認スイッチ/);
+ assert.equal(b.requests.length,1);
+});
+test('grant attestation resets on edited quantity, reason, and server-side balance changes',async()=>{
+ const b=fakeBrowser();
+ const roster=(remaining)=>[{name:'架空B',mioId:'MIO-9002',
+  gacha:{checked:true,total:3,remaining,special:0}}];
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,roster:roster(2),
+  pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ const choose=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+ await choose.click();
+ const check=b.el('opsOnsiteGrantVerified');
+ check.checked=true;check.events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,false);
+ b.el('opsQuantity').value='5';b.el('opsQuantity').events.get('input')();
+ assert.equal(check.checked,false,'new count must require a fresh onsite verification');
+ assert.equal(b.el('opsGrant').disabled,true);
+ check.checked=true;check.events.get('change')();
+ b.el('opsReason').value='再確認';b.el('opsReason').events.get('input')();
+ assert.equal(check.checked,false,'new reason must require a fresh onsite verification');
+ check.checked=true;check.events.get('change')();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,roster:roster(1),
+  pending:[],simple:[],grants:[]});
+ await b.el('opsReload').click();await b.settled();
+ assert.equal(check.checked,false,'new server balance invalidates previously verified numbers');
+ assert.equal(b.el('opsGrant').disabled,true);
+ assert.equal(b.requests.length,2,'no grant write was attempted during these changes');
+});
