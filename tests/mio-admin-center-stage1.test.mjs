@@ -163,3 +163,28 @@ test('operator cannot approve without explicitly choosing the membership result'
   assert.match(b.el('opsStatus').textContent,/メンシプ照合結果を管理者が選択してください/);
   assert.equal(b.requests.length,1,'no approval request without manual membership selection');
 });
+
+test('person readiness diagnosis keeps membership and browser possession unverified',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+    roster:[{name:'運営試験',mioId:'MIO-0088',gacha:{checked:true,total:5,remaining:3,special:0}}],
+    webLinks:[{name:'運営試験',webId:'MIO-W-123456789012345678901234',mioId:'MIO-0088',verified:true}],
+    simple:[],pending:[],grants:[]});
+  b.connect();await b.settled();
+  const select=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+  assert.ok(select);
+  await select.click();
+  const message=b.el('opsSelectedCheck').textContent;
+  assert.match(message,/照合済みの登録あり/);
+  assert.match(message,/メンシプ購入：この一覧だけでは判定不可/);
+  assert.match(message,/残回数：3回（台帳上）/);
+  assert.match(message,/受付OFF/);
+  assert.match(message,/抽選許可・本人認証・メンシプ資格の自動付与ではありません/);
+  assert.equal(b.requests.length,1,'person diagnostics cannot create a write request');
+});
+test('simple visitor intake is explicitly not a membership draw registration',()=>{
+  assert.match(html,/初訪問の簡易受付だけではガチャを解放できません/);
+  assert.match(html,/簡易登録.*ガチャの本人認証にはなりません/);
+  assert.match(html,/href="\/join\.html"/);
+  assert.match(html,/id="opsSelectedCheck"/);
+});
