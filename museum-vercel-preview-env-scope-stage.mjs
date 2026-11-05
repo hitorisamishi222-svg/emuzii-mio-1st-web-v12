@@ -12,7 +12,7 @@ const isRecord=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const owns=(x,k)=>Object.prototype.hasOwnProperty.call(x,k);
 const FIELDS=['inventory_shape','project_identity','preview_identity',
  'candidate_commit','valid_gallery_metadata','one_branch_override',
- 'no_inherited_preview','preview_only_scope'];
+ 'no_inherited_preview','preview_only_scope','museum_key_exclusive_branch'];
 const frozen=Object.freeze;
 export function assessMuseumPreviewEnvScopeStage({variables,deployment,expected}={}){
  const d=isRecord(deployment)?deployment:{};
@@ -41,7 +41,12 @@ export function assessMuseumPreviewEnvScopeStage({variables,deployment,expected}
   // created Preview branch could silently inherit the dangerous DB URL.
   no_inherited_preview:inherited.length===0,
   preview_only_scope:matching.length===1&&
-   matching[0].target.length===1&&matching[0].target[0]==='preview'
+   matching[0].target.length===1&&matching[0].target[0]==='preview',
+  // This key is reserved for the museum Draft only. A Production,
+  // Development, another Preview branch or mixed-target entry is unsafe.
+  // Keep the unrelated legacy GALLERY_DATABASE_URL completely untouched.
+  museum_key_exclusive_branch:gallery.length===1&&matching.length===1&&
+   gallery[0]===matching[0]
  };
  const failed=frozen(FIELDS.filter(k=>checks[k]!==true));
  return frozen({
