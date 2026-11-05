@@ -24,7 +24,7 @@ const media={
  cover:'/assets/gallery-emuzii-mio-cover.svg'
 };
 const museumPages=['museum.html','mio-profile.html','museum-archive.html','museum-approved-gallery.html','museum-device-check.html'];
-const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js'];
+const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js','museum-curator-preview.html','museum-curator-preview.css','museum-curator-preview.js'];
 const rehearsalFiles=['mio-admin-rehearsal.html','mio-admin-rehearsal.js'];
 const gasLocalFiles=['mio-gas-local-check.html','mio-gas-local-check.js'];
 const stagedAssets=[...museumFiles,...rehearsalFiles,...gasLocalFiles];
@@ -279,6 +279,32 @@ test('memory archive has three clearly unpublished responsive room guides withou
  assert.match(html,/id="archiveEntries"/);
  assert.match(html,/src="\/museum-archive\.js"/);
  assert.doesNotMatch(html,/\/api\/|fetch\s*\(|document\.cookie|localStorage|sessionStorage/);
+});
+test('museum curator rehearsal is museum-only, offline and has a visible fail-closed publish review',()=>{
+ const html=read('museum-curator-preview.html');
+ const js=read('museum-curator-preview.js'),css=read('museum-curator-preview.css');
+ assert.match(html,/noindex,nofollow/);
+ assert.match(html,/connect-src 'none'; form-action 'none'/);
+ assert.match(html,/作品の追加・編集・並び替え/);
+ assert.match(html,/本番保存、画像アップロード、DB接続、公開、会員操作は行いません/);
+ assert.match(html,/src="\/museum-curator-preview\.js"/);
+ for(const id of ['curatorForm','saveWork','newWork','workImage','clearImage','rightsOk','privacyOk',
+  'contentOk','approveWork','filterRoom','filterText','workList','reviewPublish',
+  'simulatePublish','visitorPreview','resetDemo']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html,/id="simulatePublish" disabled/);
+ assert.match(js,/const eligible=/);
+ assert.match(js,/const publication=/);
+ assert.match(js,/function invalidateRights/);
+ assert.match(js,/function review\(\)/);
+ assert.match(js,/approvedHash!==signature\(\)/);
+ assert.match(js,/URL\.revokeObjectURL/);
+ assert.match(js,/x\.epoch===x\.epoch|now\.epoch===x\.epoch/);
+ assert.match(css,/@media\(max-width:570px\)/);
+ assert.doesNotMatch(html+js,/\/api\/|gacha-web-gate|mio-admin-rehearsal|GAS_WebAdminOps/);
+ assert.doesNotMatch(js,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|document\.cookie|localStorage|sessionStorage|\bindexedDB\b|innerHTML\s*=/);
+ assert.doesNotThrow(()=>new vm.Script(js));
 });
 test('gallery layout planning stays off public routes and leaves production catalog untouched',()=>{
  const plan='museum-curation-plan.mjs';
