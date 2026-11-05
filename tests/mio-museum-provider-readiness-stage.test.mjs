@@ -88,7 +88,8 @@ test('missing or duplicate tables and irrelevant snapshots are not proof',()=>{
  assert.equal(inspect(duplicate).checks.schema_table_inventory_complete,false);
  const snapshot=record();
  snapshot.neonSnapshots=[{id:'from-production',branch_id:MAIN}];
- assert.equal(inspect(snapshot).checks.snapshot_inventory_present,false);
+ assert.equal(inspect(snapshot).snapshotInventoryPresent,false);
+ assert.equal(inspect(snapshot).checks.recovery_route_inventory_present,false);
 });
 test('free Neon PITR window is a permitted recovery candidate, not a restore drill',()=>{
  const data=record();
