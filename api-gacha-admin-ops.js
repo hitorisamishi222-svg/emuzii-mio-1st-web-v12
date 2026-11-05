@@ -30,8 +30,9 @@ export default async function handler(req,res){
  if(!Object.hasOwn(operations,d.action))return reply(res,400,'この操作は使用できません');
  if(d.action!=='read'&&!writeEnabled)
    return reply(res,503,'Web管理の書き込み接続が未有効です。既存GASの現場対応機能を確認してください');
- if(d.action!=='read'&&onsiteEnabled&&!standardEnabled&&
-    ['approve','grant','create'].includes(d.action)&&d.onSiteVerified!==true)
+ // All on-site mutations, including intake and simple-review, require a deliberate
+ // per-person attestation. A code or passkey alone must never silently write.
+ if(d.action!=='read'&&onsiteEnabled&&!standardEnabled&&d.onSiteVerified!==true)
    return reply(res,400,'現場で対象者を確認してから個別承認スイッチを入れてください');
  const data={};
  if(d.action==='approve'){
