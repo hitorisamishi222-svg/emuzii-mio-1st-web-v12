@@ -789,11 +789,10 @@ function mioAdminOpsSummary_(ss,webRows){
  var pending=web.filter(function(r){return r.status==='承認待ち'||(r.status==='承認済み'&&r.integrity!=='確認済み');}).slice(-80).reverse();
  var simple=[];for(var l=0;l<fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,createdAt:mioAdminOpsStr_(fr[0] instanceof Date?fr[0].toISOString():fr[0]),name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
  var roster=[];Object.keys(byId).forEach(function(id){var x=byId[id],gg=(grants[id]||[]),entry=gg[0];
+  var rawGacha=gacha.find(function(r){return mioAdminOpsStr_(r[0])===id});
   var healthy=!duplicatePeople[id]&&gg.length===1&&entry.checked===true&&
    mioAdminOpsName_(entry.name)===mioAdminOpsName_(x.name)&&
-   mioAdminOpsStr_(gacha.filter(function(r){return mioAdminOpsStr_(r[0])===id})[0][5])!==''&&
-   mioAdminOpsStr_(gacha.filter(function(r){return mioAdminOpsStr_(r[0])===id})[0][7])!==''&&
-   mioAdminOpsStr_(gacha.filter(function(r){return mioAdminOpsStr_(r[0])===id})[0][14])!==''&&
+   rawGacha&&[5,7,14].every(function(i){return mioAdminOpsStr_(rawGacha[i])!=='';})&&
    Number.isSafeInteger(entry.total)&&entry.total>=0&&Number.isSafeInteger(entry.remaining)&&entry.remaining>=0&&
    Number.isSafeInteger(entry.special)&&entry.special>=0&&entry.remaining<=entry.total;
   roster.push({mioId:id,name:x.name,gacha:healthy?entry:null,needsReview:!healthy});
