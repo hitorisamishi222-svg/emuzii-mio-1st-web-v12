@@ -25,17 +25,27 @@ export function assessMuseumNeonRecoveryRouteStage({
  // Neon project metadata: retained seconds are a possible recovery WINDOW,
  // not evidence that this source state was successfully restored.
  const seconds=project.history_retention_seconds;
- const pitrWindowAvailable=correctIsolated&&
+ const historyWindowPresent=correctIsolated&&
   Number.isSafeInteger(seconds)&&seconds>=3600&&seconds<=60*60*24*30;
+ // A CHILD branch can be inspected at a historical timestamp, but Neon's
+ // Instant Restore to an earlier state is root-only. Our currently connected
+ // create_branch operation copies HEAD and cannot select parent_timestamp.
+ // Never mislabel a retention window as an executable restore route.
+ const rootInstantRestoreEligible=false; // isolatedBranch.primary must be false
+ const pitrWindowAvailable=historyWindowPresent&&rootInstantRestoreEligible;
  // Snapshot inventory is informational only: creation != restore evidence.
  const snapshotCandidate=correctIsolated&&snapshots.some(x=>
   plain(x)&&typeof x.id==='string'&&recognizedId.test(x.id)&&
   x.branch_id===isolatedBranch.id);
  const route=correctIsolated?
-  (snapshotCandidate?'snapshot_candidate':pitrWindowAvailable?'pitr_candidate':'none'):'none';
+  (snapshotCandidate?'snapshot_candidate':
+   historyWindowPresent?'historical_inspection_only':'none'):'none';
  return frozen({
   identityMatched:correctIsolated,
-  route,pitrWindowAvailable,historyRetentionSeconds:pitrWindowAvailable?seconds:null,
+  route,pitrWindowAvailable,historyWindowPresent,
+  historyRetentionSeconds:historyWindowPresent?seconds:null,
+  rootInstantRestoreEligible,
+  timestampBranchCreationAvailableThroughConnector:false,
   snapshotCandidate,
   // These must only come from a future independent, completed restore drill
   // and read-only schema/integrity comparison on a separate restore branch.
