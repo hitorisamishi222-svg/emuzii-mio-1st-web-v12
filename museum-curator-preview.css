@@ -47,3 +47,10 @@
  .museum-curator .curator-actions button{flex:1 1 122px}
 }
 @media(prefers-reduced-motion:reduce){.museum-curator *{scroll-behavior:auto}}
+
+/* Release history is intentionally contained within the rehearsal, never live. */
+.museum-curator .curator-restore{border-top:1px solid #e7c89185;padding-top:17px;margin-top:20px}
+.museum-curator .curator-restore select{width:100%}
+.museum-curator .curator-restore .curator-public-card{border-color:#b4cfe29e;background:#0e2a47}
+.museum-curator .curator-restore .curator-actions button:disabled{opacity:.46}
+.museum-curator #undoOrder:disabled{opacity:.46}
