@@ -10,7 +10,7 @@ const sha='a'.repeat(40);
 const candidate=()=>({
  variables:[
   {id:'branch-override',key:KEY,target:['preview'],gitBranch:TARGET,type:'encrypted'},
-  {id:'production-only',key:KEY,target:['production'],type:'encrypted'}
+  {id:'legacy-production',key:LEGACY,target:['production'],type:'encrypted'}
  ],
  deployment:{projectId:'prj_MuseumDemo',target:'preview',gitBranch:TARGET,gitSha:sha},
  expected:{vercelProjectId:'prj_MuseumDemo',candidateSha:sha}
@@ -53,6 +53,18 @@ test('shared legacy gallery Preview credentials are ignored, not modified or reu
  ];
  assert.equal(check(onlyLegacy).metadataConsistent,false);
  assert.equal(check(onlyLegacy).checks.one_branch_override,false);
+});
+test('museum key must never have Production, Development or another Preview branch scope',()=>{
+ for(const extra of [
+  {id:'museum-production',key:KEY,target:['production'],type:'encrypted'},
+  {id:'museum-development',key:KEY,target:['development'],type:'encrypted'},
+  {id:'museum-other-preview',key:KEY,target:['preview'],
+   gitBranch:'fix/announcements-passkey-auth-review',type:'encrypted'}
+ ]){
+  const x=candidate();x.variables.push(extra);
+  assert.equal(check(x).checks.museum_key_exclusive_branch,false,extra.id);
+  assert.equal(check(x).metadataConsistent,false,extra.id);
+ }
 });
 test('unscoped Preview always blocks readiness, even when a correct override exists',()=>{
  const x=candidate();
