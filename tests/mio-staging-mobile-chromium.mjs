@@ -601,6 +601,10 @@ try{
      input.value=${JSON.stringify(name)};
      document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
     })()`);
+    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:first-child input').click()");
+    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:nth-child(2) input').click()");
+    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
+    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
     await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
     await evaluate("document.querySelector('#demoGalleryReview').click()");
     assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),false);
@@ -612,21 +616,23 @@ try{
     const select=document.querySelector('#demoGalleryHistoryVersion');
     select.value='1';select.dispatchEvent(new Event('change',{bubbles:true}));
    })()`);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryRestorePreview').textContent.includes('架空作品A・歌の記憶')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRestorePreview').textContent.includes('架空作品A・歌の記憶')"),false,
+    'earlier approval generations are not restored after a title edit');
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・履歴3')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),false);
    await evaluate("document.querySelector('#demoGalleryRollback').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第4版')"),true);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・歌の記憶')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・歌の記憶')"),false,
+    'a rolled-back title cannot revive stale content approvals');
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryHistoryVersion option').length"),3);
-   // A current hide overrides old versions, both in public view and in the
-   // selected historical restore preview, and cannot be resurrected.
+   // A current hide prevents even a later historical revision from reviving
+   // the work. A no-op restore must not create a spurious history revision.
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),false);
    assert.equal(await evaluate("document.querySelector('#demoGalleryRestorePreview').textContent.includes('架空作品A')"),false);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),false);
-   await evaluate("document.querySelector('#demoGalleryRollback').click()");
-   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第5版')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第4版')"),true);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
    await evaluate("document.querySelector('#demoReset').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryRollback').disabled"),true);
