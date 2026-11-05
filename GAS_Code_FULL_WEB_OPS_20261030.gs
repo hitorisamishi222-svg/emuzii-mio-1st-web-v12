@@ -1025,6 +1025,9 @@ function mioAdminOpsReview_(ss,d){
  if(!name||!createdAt||mioAdminOpsName_(name)!==mioAdminOpsName_(d.expectedName)||
     createdAt!==mioAdminOpsStr_(d.expectedCreatedAt)||browserId!==mioAdminOpsStr_(d.expectedBrowserId))
    throw new Error('簡易受付の対象者が変更されました。台帳を再確認してください');
+ // Bind the operation ID to this exact reception identity, not only its row/name.
+ // Audit details remain in the private administrator sheet, never returned publicly.
+ var receiptIdentity='受付本人照合:'+JSON.stringify([createdAt,mioAdminOpsName_(name),browserId]);
  var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
  if(old){
    // Store the exact intake row in audit column D so that an interrupted
@@ -1032,7 +1035,8 @@ function mioAdminOpsReview_(ss,d){
    var target='簡易受付:'+row;
    if(old.c[2]!=='簡易確認'||mioAdminOpsStr_(old.c[3])!==target||
       mioAdminOpsStr_(old.c[5])!==status||mioAdminOpsStr_(old.c[6])!=='確認済み'||
-      mioAdminOpsName_(old.c[9])!==mioAdminOpsName_(name))
+      mioAdminOpsName_(old.c[9])!==mioAdminOpsName_(name)||
+      mioAdminOpsStr_(old.c[8])!==receiptIdentity)
      throw new Error('操作IDの再利用は禁止です');
    if(actual!=='確認済み')throw new Error('簡易登録の変更状態を確認してください');
    if(old.c[7]!=='確定'){
@@ -1043,7 +1047,7 @@ function mioAdminOpsReview_(ss,d){
  }
  if(actual!==status)throw new Error('簡易登録状態が変更されています');
  if(actual==='確認済み')return {ok:true,replayed:true};
- var lrow=mioAdminOpsWriteLog_(log,op,'簡易確認','簡易受付:'+row,'',actual,'確認済み','Web受付状況確認',name);
+ var lrow=mioAdminOpsWriteLog_(log,op,'簡易確認','簡易受付:'+row,'',actual,'確認済み',receiptIdentity,name);
  sheet.getRange(row,5).setValue('確認済み');
  SpreadsheetApp.flush();
  if(sheet.getRange(row,5).getValue()!=='確認済み')throw new Error('確認結果が一致しません');
