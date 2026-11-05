@@ -86,3 +86,13 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - 非公開保存時の操作履歴 `recorded_at` はSQL側の `now()` を明示し、クライアント時刻やDB列のデフォルト値への依存を減らした。
 - 今回の修正は開発用の未接続モジュールと候補SQLに限る。実DBのDDL、環境変数、認証方式、公開API、GAS、本番URL、皆勤、ガチャ、当選、参加者記録は変更しない。
 - 実接続の前提：隔離ブランチへの専用資格情報と実体照合、バックアップ復元実証、5テーブルの移行と実DB制約確認、Preview専用認証設計、オーナー承認が揃っていること。
+
+## 2026-11-05追記：無料Neonの復元手段（未実施）
+
+- Neonの現在のプロジェクトメタデータを読み取り確認：`subscription_type=free_v3`、`history_retention_seconds=21600`（**6時間**）、隔離ブランチ `br-bold-credit-b7y6frdo` は `ready`、自動snapshotスケジュールは空。
+- 公式情報：Neon Freeは6時間のInstant Restore履歴を利用可能（https://neon.com/blog/neon-free-plan-1-gb-per-project、2026-10-02）。**履歴が存在するだけでは復元成功の証拠ではない**。
+- `museum-neon-recovery-route-stage.mjs` を追加。隔離ブランチと親ブランチのプロジェクトID・親子関係・稼働状態を照合し、スナップショットがなくても6時間PITRを**復元方法の候補**として検出する。メタデータが不正、分岐先が本番、保持時間が不足なら候補から除外する。
+- `museum-provider-readiness-stage.mjs` のメタデータチェックを `recovery_route_inventory_present` に変更。FreeでもPITRの候補を扱えるが、`restorationDrillVerified=false`、`canConnect/canMigrate/canWrite/canDeploy=false` を維持し、本番保護を弱めない。
+- 実際の復元演習は、元の隔離ブランチを上書きせず、期限内の記録を復元した**別の一時ブランチ**でテーブル構成と整合性を比較する必要がある。既存の14テーブルに管理者・会員関連のデータが含まれるため、値をログに出さず検証する。
+- Freeの短期PITRは長期の独立バックアップの代替にはならない。本番運用前に、6時間以上の障害を想定した別手段の復元証明も必要。
+- **この追記時点ではスナップショット作成、一時復元ブランチ作成、実DBの書き換え、プラン変更・課金、既存データの取り出しは行っていない。**
