@@ -11,6 +11,8 @@ const review={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK ((status <> 'published'::text) OR (rights_checked_at IS NOT NULL AND privacy_checked_at IS NOT NULL AND reviewed_by IS NOT NULL AND published_at IS NOT NULL))"};
 const roomKinds={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK (kind = ANY (ARRAY['gallery'::text,'icons'::text,'moments'::text,'events'::text]))"};
+const mediaCategories={table_name:'museum_public_exhibits',contype:'c',validated:true,
+ definition:"CHECK (category = ANY (ARRAY['イラスト'::text,'動画'::text,'音声・楽曲'::text,'ファンアート'::text,'その他'::text]))"};
 const chronology={table_name:'museum_public_exhibits',contype:'c',validated:true,
  definition:"CHECK ((status <> 'published'::text) OR (rights_checked_at <= published_at AND privacy_checked_at <= published_at))"};
 const baseColumns=Object.entries(REQUIRED_MUSEUM_SCHEMA).flatMap(([table_name,cols])=>
@@ -98,16 +100,33 @@ const legacyConstraints=[
 ];
 const good=()=>({identityVerified:true,
  columns:structuredClone([...baseColumns,...extraCols]),
- constraints:structuredClone([status,review,roomKinds,chronology,...baseKeys,
+ constraints:structuredClone([status,review,roomKinds,mediaCategories,chronology,...baseKeys,
   ...legacyConstraints,...moreConstraints])
 });
 const report=input=>museumGalleryReleaseSchemaReport(input);
+test('media type requires an independent non-bypassable check in the real DB',()=>{
+ const missing=good();
+ missing.constraints=missing.constraints.filter(x=>x.definition!==mediaCategories.definition);
+ assert.equal(report(missing).mediaCategoryReady,false);
+ assert.equal(report(missing).allReady,false);
+ for(const expression of [
+  "CHECK (category IN ('イラスト','動画','音声・楽曲','ファンアート','その他') OR TRUE)",
+  "CHECK (category IS NOT NULL)",
+  "CHECK (kind IN ('gallery','icons','moments','events'))"
+ ]){
+  const x=good();
+  x.constraints.find(c=>c.definition===mediaCategories.definition).definition=expression;
+  assert.equal(report(x).mediaCategoryReady,false,expression);
+  assert.equal(report(x).allReady,false,expression);
+ }
+});
 test('a staged release can be reviewed only when base museum, live overrides and all layout tables exist',()=>{
  const result=report(good());
  assert.equal(result.identityVerified,true);
  assert.equal(result.baseMuseumReady,true);
  assert.equal(result.sourceReady,true);
  assert.equal(result.roomKindReady,true);
+ assert.equal(result.mediaCategoryReady,true);
  assert.equal(result.layoutReady,true);
  assert.equal(result.allReady,true);
  assert.equal(result.canPublish,false);
