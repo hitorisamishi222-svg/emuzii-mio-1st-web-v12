@@ -11,9 +11,9 @@ const BRANCH='feature/mio-v2-integration-mainbaseline-20261102';
 const sha='a'.repeat(40);
 const record=()=>({
  previewVariables:[
-  {key:'GALLERY_DATABASE_URL',id:'scoped',type:'encrypted',
+  {key:'MIO_MUSEUM_GALLERY_DATABASE_URL',id:'scoped',type:'encrypted',
    target:['preview'],gitBranch:BRANCH},
-  {key:'GALLERY_DATABASE_URL',id:'prod',type:'encrypted',
+  {key:'MIO_MUSEUM_GALLERY_DATABASE_URL',id:'prod',type:'encrypted',
    target:['production']}
  ],
  deployment:{projectId:'prj_MuseumDemo',target:'preview',
