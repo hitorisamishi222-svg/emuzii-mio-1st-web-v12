@@ -280,3 +280,56 @@ test('existing linked MIO-ID mismatch stops onsite approval before any write',as
  assert.match(b.el('opsStatus').textContent,/MIO-IDと選択した参加者が一致しません/);
  assert.equal(b.requests.length,1,'no cross-person linking possible from UI');
 });
+
+test('onsite confirmation is mandatory for intake and simple review',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,
+   roster:[],pending:[],grants:[],
+   simple:[{name:'初訪問者',row:2,status:'未確認'}]});
+ b.connect();await b.settled();
+ b.el('opsNewName').value='初訪問者';
+ b.el('opsNewNote').value='現場受付';
+ await b.el('opsIntakeCreate').click();
+ assert.match(b.el('opsStatus').textContent,/来場者名と既存登録を確認/);
+ assert.equal(b.requests.length,1,'intake blocked before onsite checkbox');
+ const elements=flatten(b.el('opsSimple'));
+ const review=elements.find(x=>x.tagName==='button'&&/受付内容を確認済みにする/.test(x.textContent));
+ await review.click();
+ assert.match(b.el('opsStatus').textContent,/簡易受付の本人を確認/);
+ assert.equal(b.requests.length,1,'simple review blocked before onsite checkbox');
+ b.el('opsOnsiteIntakeVerified').checked=true;
+ b.el('opsNewName').value='名前を変更した';
+ b.el('opsNewName').events.get('input')();
+ assert.equal(b.el('opsOnsiteIntakeVerified').checked,false,
+   'change to person name invalidates earlier onsite confirmation');
+});
+test('API onsite release rejects all mutation operations unless owner confirms person',async()=>{
+ const api=read('api-gacha-admin-ops.js')
+ .replace(/^import .*;$/gm,'')
+ .replace('export default async function handler','async function handler')+'\n globalThis.__handler=handler;';
+ const called=[];
+ const context={
+   process:{env:{MIO_GACHA_ONSITE_RELEASE:'operator-verified-onsite-20261105'}},
+   prepare:()=>true,authorizedCode:()=>true,sessionOK:async()=>false,
+   bridge:async(action,data)=>{called.push({action,data});return {ok:true,status:'確認済み'}},
+   console:{error(){}}
+ };
+ vm.runInNewContext(api,context);
+ async function run(body){
+   const result={status:null,body:null};
+   const res={setHeader(){},status(code){result.status=code;return this},json(data){result.body=data;return this}};
+   await context.__handler({headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+     origin:'https://emuzii-mio-1st-web-v12.vercel.app','content-type':'application/json'},body:{code:'mock',...body}},res);
+   return result;
+ }
+ for(const action of ['approve','grant','create','intake','review']){
+   const result=await run({action});
+   assert.equal(result.status,400,action+' must require person switch before forwarding');
+ }
+ assert.equal(called.length,0,'none of these attempts reached GAS');
+ const result=await run({action:'review',row:2,expectedStatus:'未確認',
+   operationId:'f'.repeat(32),onSiteVerified:true});
+ assert.equal(result.status,200,'confirmed onsite simple review reaches existing GAS action');
+ assert.equal(called.length,1);
+ assert.equal(called[0].action,'webAdminOpsReview');
+});
