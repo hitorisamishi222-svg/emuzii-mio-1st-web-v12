@@ -161,6 +161,16 @@
    details.append(make('strong',item.title),
     make('p',galleryRooms[item.room]+' ・ '+item.category+' ・ '+(item.archived?'保管済み':item.visible?'公開予定':item.reviewed?'非公開':'公開確認待ち')+
       (item.featured?' ・ 注目作品':''),'mini'));
+   if(item.description){
+    details.append(make('p','作品説明：'+item.description,'mini gallery-exhibit-description'));
+   }
+   if(item.credit||item.occurredOn||item.externalUrl){
+    details.append(make('p',[
+     item.credit?'制作者：'+item.credit:null,
+     item.occurredOn?'作品日付：'+item.occurredOn:null,
+     item.externalUrl?'紹介先：'+item.externalUrl:null
+    ].filter(Boolean).join(' ／ '),'mini gallery-exhibit-meta'));
+   }
    const label=make('label','展示タイトル（仮）');
    label.htmlFor='demoGalleryTitle'+item.id;
    const title=make('input');title.type='text';title.id=label.htmlFor;
