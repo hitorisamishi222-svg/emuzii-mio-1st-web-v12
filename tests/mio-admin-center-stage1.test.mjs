@@ -245,15 +245,15 @@ test('GAS incompatibility stops automatic polling but allows manual recovery che
 test('operator can find a known customer by ColorSing name without typing a login ID',async()=>{
  const b=fakeBrowser();
  b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,
-  roster:[{name:'ユーリ',mioId:'MIO-0017',gacha:{checked:true,total:2,remaining:2,special:0}}],
-  pending:[{name:'ユーリ',webId:'MIO-W-123456789012345678901234',mioId:'',status:'承認待ち'}],
+  roster:[{name:'架空参加者Z',mioId:'MIO-9999',gacha:{checked:true,total:2,remaining:2,special:0}}],
+  pending:[{name:'架空参加者Z',webId:'MIO-W-123456789012345678901234',mioId:'',status:'承認待ち'}],
   simple:[],grants:[]});
  b.connect();await b.settled();
  const wrap=b.el('opsPending'),elements=flatten(wrap);
  const choice=elements.find(x=>x.tagName==='select'&&/本人確認した既存参加者/.test(x['aria-label']||''));
  assert.ok(choice,'existing participant chooser must appear');
  assert.equal(choice.value,'','name search must never automatically verify person');
- assert.ok(choice.children.some(x=>x.value==='MIO-0017'&&/ユーリ/.test(x.textContent)),
+ assert.ok(choice.children.some(x=>x.value==='MIO-9999'&&/架空参加者Z/.test(x.textContent)),
   'operator can choose the original MIO ID from roster');
  assert.equal(elements.filter(x=>x.tagName==='button'&&/新規作成/.test(x.textContent)).length,0,
   'interrupted registration must not offer a duplicate new ID');
