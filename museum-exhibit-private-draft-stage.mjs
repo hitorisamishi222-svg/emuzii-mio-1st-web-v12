@@ -129,8 +129,8 @@ export async function saveMuseumExhibitPrivateDraftStage(client,{
      (data.id.toLowerCase()!==exhibitId.toLowerCase()||
       revision!==expectedRevision+1))fail('PRIVATE_WRITE_UNVERIFIED');
   const wrote=await client.query(
-   "INSERT INTO museum_exhibit_draft_operations_stage(operation_id,actor_id,exhibit_id,action,payload_hash,revision) "+
-   "VALUES($1,$2,$3,$4,$5,$6) RETURNING operation_id",
+   "INSERT INTO museum_exhibit_draft_operations_stage(operation_id,actor_id,exhibit_id,action,payload_hash,revision,recorded_at) "+
+   "VALUES($1,$2,$3,$4,$5,$6,now()) RETURNING operation_id",
    [operationId,actor,data.id.toLowerCase(),action,payloadHash,revision]);
   if(rows(wrote,1)[0]?.operation_id!==operationId)fail('RECEIPT_WRITE_UNVERIFIED');
   commitAttempted=true;
