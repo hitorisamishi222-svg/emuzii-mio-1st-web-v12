@@ -151,11 +151,39 @@ function updateSelectionCheck(){
   '\n⑥ 最後に本人が元の登録ブラウザでガチャページの資格・残回数を再確認。'+
   '\n※これは運営確認用で、抽選許可・本人認証・メンシプ資格の自動付与ではありません。';
 }
+function renderQuickList(eligible){
+ const list=el('opsQuickList');list.replaceChildren();
+ if(!state){list.append(node('p','管理者認証後に表示します。'));return;}
+ const webLinks=Array.isArray(state.webLinks)?state.webLinks:[];
+ const items=eligible.map(person=>{
+  const matches=webLinks.filter(x=>x?.mioId===person.mioId&&x.verified===true);
+  return {person,matches:matches.length};
+ }).sort((a,b)=>(Number(a.matches>0)-Number(b.matches>0))||
+  (Number(b.person.gacha?.remaining||0)-Number(a.person.gacha?.remaining||0)));
+ if(!items.length){list.append(node('p','管理台帳で残回数のある参加者は見つかりません。'));return;}
+ for(const item of items.slice(0,50)){
+  const p=item.person,card=node('div',undefined,'ops-item');
+  card.append(node('strong',p.name+' / '+p.mioId+' ・残り'+p.gacha.remaining+'回'));
+  const webStatus=item.matches===0?'⚠️ 承認済みWeb本人照合を確認できません':
+    item.matches===1?'Web本人照合：1件（抽選認証は別確認）':
+    '⚠️ Web本人照合が複数：端末を個別確認';
+  card.append(node('p',webStatus));
+  card.append(button('この参加者の確認へ',()=>{
+   selected=p;
+   el('opsSearch').value=p.mioId;
+   renderRoster();
+   const target=el('opsGrantSection');
+   if(typeof target.scrollIntoView==='function')target.scrollIntoView({behavior:'smooth',block:'start'});
+  },true));
+  list.append(card);
+ }
+}
 function updateQuick(){
  const summary=el('opsQuickSummary'),remaining=el('opsRemainingSummary');
  if(!state){
   summary.textContent='管理者の接続待ちです。操作はできません。';
   remaining.textContent='残回数を確認するには管理者で接続してください。';
+  renderQuickList([]);
   return;
  }
  const roster=Array.isArray(state.roster)?state.roster:[];
@@ -169,6 +197,7 @@ function updateQuick(){
   ' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+selectedLine+
   '\n※残回数あり＝抽選許可ではありません。本人の登録端末・メンシプ資格を別途確認。';
  remaining.textContent='既存ガチャ残回数あり '+eligible.length+'名。検索・絞り込みで対象を選択できます。';
+ renderQuickList(eligible);
 }
 for(const [id,target] of [['opsQuickIntake','opsIntakeSection'],['opsQuickApproval','opsPendingSection'],
  ['opsQuickGrant','opsGrantSection'],['opsQuickGate','normalSection']]){
