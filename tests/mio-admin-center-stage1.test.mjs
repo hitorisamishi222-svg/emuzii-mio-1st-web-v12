@@ -50,7 +50,7 @@ function fakeBrowser() {
   const document={
     hidden:false,activeEditor:false,
     getElementById:el,createElement:tag=>new Element(tag),
-    querySelector(){return this.activeEditor?{tagName:'INPUT'}:null},
+    querySelector(selector){return this.activeEditor||(this.checkedConfirmation&&selector.includes('checkbox'))?{tagName:'INPUT'}:null},
     addEventListener(k,fn){events.set('document:'+k,fn)}
   };
   const window={
@@ -413,4 +413,27 @@ test('full or onsite release never bypasses in-person verification',async()=>{
  assert.equal(calls.length,0);
  assert.equal(await run(true),200);
  assert.equal(calls.length,1);
+});
+
+test('background polling never destroys an already checked onsite confirmation on mobile',async()=>{
+ const b=fakeBrowser();
+ const first={ok:true,writeEnabled:true,totalPending:1,rejectedCount:0,
+  roster:[],simple:[],grants:[],
+  pending:[{name:'架空の来場者',webId:'MIO-W-123456789012345678901234',
+    status:'承認待ち',mioId:''}]};
+ b.setSnapshot(first);b.connect();await b.settled();
+ const oldCard=b.el('opsPending').children[0];
+ assert.ok(oldCard,'first visit shown');
+ b.document.checkedConfirmation=true;
+ b.setSnapshot({...first,totalPending:2,
+  pending:[...first.pending,{name:'別の架空来場者',
+   webId:'MIO-W-'+'b'.repeat(24),status:'承認待ち',mioId:''}]});
+ b.intervals[0].fn();await b.settled();
+ assert.equal(b.requests.length,2,'background poll still receives fresh server data');
+ assert.equal(b.el('opsPending').children[0],oldCard,
+   'a checked customer confirmation must not vanish during a mobile background refresh');
+ assert.match(b.el('opsCount').textContent,/要確認 2 件/);
+ b.document.checkedConfirmation=false;
+ b.intervals[0].fn();await b.settled();
+ assert.equal(b.el('opsPending').children.length,2,'after confirmation, new roster results are visible');
 });
