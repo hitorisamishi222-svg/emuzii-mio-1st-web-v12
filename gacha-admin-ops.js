@@ -168,6 +168,7 @@ function renderQuickList(eligible){
     item.matches===1?'Web本人照合：1件（抽選認証は別確認）':
     '⚠️ Web本人照合が複数：端末を個別確認';
   card.append(node('p',webStatus));
+  if(item.matches===0)card.append(node('small','登録途中・旧登録の可能性あり。新規MIO-IDや権利を追加せず、登録申請履歴と本人の元ブラウザを確認。'));
   card.append(button('この参加者の確認へ',()=>{
    selected=p;
    el('opsSearch').value=p.mioId;
@@ -256,7 +257,11 @@ function render(){
    });
    wrap.append(grant);
    if(!item.mioId){
-     wrap.append(button('初訪問者のMIO-IDを新規作成',async()=>{
+     const nameKey=s=>String(s||'').normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase();
+     const matches=(state.roster||[]).filter(r=>nameKey(r.name)===nameKey(item.name));
+     if(matches.length){
+       wrap.append(node('p','⚠️ 同名の既存MIO-ID候補あり（'+matches.map(x=>x.mioId).join(', ')+'）。新規IDを作成せず、本人の登録途中履歴・元ブラウザ・旧MIO-IDを確認してください。'));
+     }else wrap.append(button('初訪問者のMIO-IDを新規作成',async()=>{
        if(!window.confirm(item.name+' に新しい参加者IDを作成しますか？\n既存登録がある場合は作成されません。'))return;
        await mutate('create',{webId:item.webId,expectedStatus:'承認待ち'});
      }));
