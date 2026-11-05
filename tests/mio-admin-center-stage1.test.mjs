@@ -241,3 +241,42 @@ test('GAS incompatibility stops automatic polling but allows manual recovery che
  b.intervals[0].fn();await b.settled();
  assert.equal(b.requests.length,3,'successful read resumes polling');
 });
+
+test('operator can find a known customer by ColorSing name without typing a login ID',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,
+  roster:[{name:'ユーリ',mioId:'MIO-0017',gacha:{checked:true,total:2,remaining:2,special:0}}],
+  pending:[{name:'ユーリ',webId:'MIO-W-123456789012345678901234',mioId:'',status:'承認待ち'}],
+  simple:[],grants:[]});
+ b.connect();await b.settled();
+ const wrap=b.el('opsPending'),elements=flatten(wrap);
+ const choice=elements.find(x=>x.tagName==='select'&&/本人確認した既存参加者/.test(x['aria-label']||''));
+ assert.ok(choice,'existing participant chooser must appear');
+ assert.equal(choice.value,'','name search must never automatically verify person');
+ assert.ok(choice.children.some(x=>x.value==='MIO-0017'&&/ユーリ/.test(x.textContent)),
+  'operator can choose the original MIO ID from roster');
+ assert.equal(elements.filter(x=>x.tagName==='button'&&/新規作成/.test(x.textContent)).length,0,
+  'interrupted registration must not offer a duplicate new ID');
+ const approve=elements.find(x=>x.tagName==='button'&&/本人照合して承認/.test(x.textContent));
+ const onsite=elements.find(x=>x.tagName==='input');onsite.checked=true;
+ const member=elements.find(x=>x.tagName==='select'&&/メンシプ確認/.test(x['aria-label']||''));member.value='yes';
+ await approve.click();
+ assert.match(b.el('opsStatus').textContent,/候補から選択してください/);
+ assert.equal(b.requests.length,1,'no identity approval based on nickname alone');
+});
+test('existing linked MIO-ID mismatch stops onsite approval before any write',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,
+  roster:[{name:'試験参加者',mioId:'MIO-0002',gacha:{checked:true,total:1,remaining:1,special:0}}],
+  pending:[{name:'試験参加者',webId:'MIO-W-123456789012345678901234',mioId:'MIO-0001',status:'承認待ち'}],
+  simple:[],grants:[]});
+ b.connect();await b.settled();
+ const elements=flatten(b.el('opsPending'));
+ const onsite=elements.find(x=>x.tagName==='input');onsite.checked=true;
+ const member=elements.find(x=>x.tagName==='select'&&/メンシプ確認/.test(x['aria-label']||''));member.value='yes';
+ const choice=elements.find(x=>x.tagName==='select'&&/本人確認した既存参加者/.test(x['aria-label']||''));choice.value='MIO-0002';
+ const approve=elements.find(x=>x.tagName==='button'&&/本人照合して承認/.test(x.textContent));
+ await approve.click();
+ assert.match(b.el('opsStatus').textContent,/MIO-IDと選択した参加者が一致しません/);
+ assert.equal(b.requests.length,1,'no cross-person linking possible from UI');
+});
