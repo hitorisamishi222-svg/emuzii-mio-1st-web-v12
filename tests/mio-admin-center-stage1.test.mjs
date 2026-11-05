@@ -330,6 +330,8 @@ test('API onsite release rejects all mutation operations unless owner confirms p
  }
  assert.equal(called.length,0,'none of these attempts reached GAS');
  const result=await run({action:'review',row:2,expectedStatus:'未確認',
+   expectedName:'架空受付者',expectedBrowserId:'MIO-W-'+'c'.repeat(24),
+   expectedCreatedAt:'2026-10-19T12:00:00.000Z',
    operationId:'f'.repeat(32),onSiteVerified:true});
  assert.equal(result.status,200,'confirmed onsite simple review reaches existing GAS action');
  assert.equal(called.length,1);
@@ -451,4 +453,27 @@ test('operator sees duplicate-ID row as manual-review only, never a grant target
  b.el('opsOnsiteGrantVerified').events.get('change')();
  assert.equal(b.el('opsGrant').disabled,true,'manual-review row never becomes a grant target');
  assert.equal(b.requests.length,1,'no write attempt from reading conflicted data');
+});
+
+test('API rejects a review when original customer identity is missing',async()=>{
+ const code=read('api-gacha-admin-ops.js')
+  .replace(/^import .*;$/gm,'')
+  .replace('export default async function handler','async function handler')+'\n globalThis.__handler=handler;';
+ let bridged=0;
+ const ctx={process:{env:{MIO_GACHA_ONSITE_RELEASE:'operator-verified-onsite-20261105'}},
+  prepare:()=>true,authorizedCode:()=>true,sessionOK:async()=>false,
+  bridge:async()=>{bridged++;return {ok:true}},console:{error(){}}};
+ vm.runInNewContext(code,ctx);
+ for(const excluded of ['expectedName','expectedBrowserId','expectedCreatedAt']){
+  const payload={code:'mock',action:'review',row:2,expectedStatus:'未確認',
+   operationId:'f'.repeat(32),onSiteVerified:true,
+   expectedName:'架空受付者',expectedBrowserId:'MIO-W-'+'c'.repeat(24),
+   expectedCreatedAt:'2026-10-19T12:00:00.000Z'};
+  delete payload[excluded];
+  const res={statusCode:0,setHeader(){},status(n){this.statusCode=n;return this},json(v){this.body=v;return this}};
+  await ctx.__handler({headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+   origin:'https://emuzii-mio-1st-web-v12.vercel.app','content-type':'application/json'},body:payload},res);
+  assert.equal(res.statusCode,400,excluded+' is required');
+ }
+ assert.equal(bridged,0,'an incomplete onsite identity must never reach the GAS bridge');
 });
