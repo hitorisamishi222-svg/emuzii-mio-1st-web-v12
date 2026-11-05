@@ -28,6 +28,7 @@ test('inspects only schema metadata using a single READ ONLY transaction',async(
  const c=client(),result=await inspect(c);
  assert.equal(result.identityVerified,true);
  assert.equal(result.schemaReady,false,'missing real tables must not be ready');
+ assert.equal(result.exhibitReceiptReady,false,'a missing receipt schema must block writes');
  assert.equal(result.allReady,false);
  assert.equal(result.backupVerified,false);
  assert.equal(result.ownerApproved,false);
