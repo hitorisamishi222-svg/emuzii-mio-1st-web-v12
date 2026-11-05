@@ -61,9 +61,13 @@ export default async function handler(req,res){
   Object.assign(data,{name:d.name.trim(),note:d.note.trim(),operationId:d.operationId});
  }else if(d.action==='review'){
   if(!Number.isInteger(d.row)||d.row<2||d.row>1000||
-     typeof d.expectedStatus!=='string'||d.expectedStatus.length>60||!ID.test(d.operationId||''))
-     return reply(res,400,'簡易登録の確認内容が不正です');
-  Object.assign(data,{row:d.row,expectedStatus:d.expectedStatus,operationId:d.operationId});
+     typeof d.expectedStatus!=='string'||!d.expectedStatus.trim()||d.expectedStatus.length>60||
+     typeof d.expectedName!=='string'||!d.expectedName.trim()||d.expectedName.length>80||
+     typeof d.expectedBrowserId!=='string'||d.expectedBrowserId.length>120||
+     typeof d.expectedCreatedAt!=='string'||!d.expectedCreatedAt.trim()||d.expectedCreatedAt.length>100||
+     !ID.test(d.operationId||''))
+     return reply(res,400,'簡易登録の本人照合情報が不足しています。台帳を再読み込みしてください');
+  Object.assign(data,{row:d.row,expectedStatus:d.expectedStatus,expectedName:d.expectedName.trim(),expectedBrowserId:d.expectedBrowserId,expectedCreatedAt:d.expectedCreatedAt,operationId:d.operationId});
  }
  try{
   const result=await bridge(operations[d.action],data);
