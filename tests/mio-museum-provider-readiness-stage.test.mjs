@@ -41,7 +41,7 @@ test('complete synthetic provider metadata is still not permission to write, mig
  assert.equal(Object.isFrozen(result),true);
  assert.equal(Object.isFrozen(result.blockers),true);
 });
-test('observed 2026-11-05 situation stays blocked: generic Preview, four missing museum tables, no snapshot',()=>{
+test('observed 2026-11-05 situation stays blocked: generic Preview, five missing museum tables, no snapshot',()=>{
  // Sanitized inventory shape observed through Vercel/Neon metadata calls.
  // This is a test fixture, NOT an authorization or a live DB connection.
  const data=record();
@@ -61,7 +61,8 @@ test('observed 2026-11-05 situation stays blocked: generic Preview, four missing
  ]);
  assert.deepEqual(result.missingTables,[
   'museum_public_exhibits','museum_gallery_layout_stage',
-  'museum_gallery_layout_history_stage','museum_gallery_layout_audit_stage'
+  'museum_gallery_layout_history_stage','museum_gallery_layout_audit_stage',
+  'museum_exhibit_draft_operations_stage'
  ]);
  assert.equal(result.checks.neon_gallery_branch_isolated,true);
  assert.equal(result.checks.neon_database_present,true);
