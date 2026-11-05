@@ -24,12 +24,15 @@ const denied=x=>{
  }
 };
 
-test('an independently inventoried six-hour free PITR window is not a successful restore',()=>{
+test('a free six-hour historical window on a CHILD branch is inspection-only, never direct PITR',()=>{
  const x=check(fixture());
  assert.equal(x.identityMatched,true);
- assert.equal(x.route,'pitr_candidate');
+ assert.equal(x.route,'historical_inspection_only');
  assert.equal(x.historyRetentionSeconds,21600);
- assert.equal(x.pitrWindowAvailable,true);
+ assert.equal(x.historyWindowPresent,true);
+ assert.equal(x.pitrWindowAvailable,false);
+ assert.equal(x.rootInstantRestoreEligible,false);
+ assert.equal(x.timestampBranchCreationAvailableThroughConnector,false);
  assert.equal(x.snapshotCandidate,false);
  denied(x);
  assert.equal(Object.isFrozen(x),true);
@@ -40,6 +43,19 @@ test('a snapshot is a candidate, never verified backup restoration',()=>{
  const x=check(input);
  assert.equal(x.route,'snapshot_candidate');
  assert.equal(x.snapshotCandidate,true);
+ assert.equal(x.pitrWindowAvailable,false,'snapshot cannot override child PITR restriction');
+ denied(x);
+});
+test('a historical schema comparison is not an authorizing snapshot or a restore branch',()=>{
+ const input=fixture();
+ input.project.historicalSchemaInspectionSucceeded=true;
+ input.isolatedBranch.restorationDrillVerified=true;
+ input.snapshots=[];
+ const x=check(input);
+ assert.equal(x.historyWindowPresent,true);
+ assert.equal(x.route,'historical_inspection_only');
+ assert.equal(x.snapshotCandidate,false);
+ assert.equal(x.restorationDrillVerified,false);
  denied(x);
 });
 test('restoration and integrity booleans smuggled through metadata are ignored',()=>{
@@ -68,12 +84,14 @@ test('wrong project, production branch, unavailable branch and zero history are 
   const x=check(input);
   assert.equal(x.route,'none');
   assert.equal(x.pitrWindowAvailable,false);
+  assert.equal(x.historyWindowPresent,false);
   denied(x);
  }
  for(const seconds of [0,-1,3599,Infinity,NaN,'21600',null,60*60*24*31]){
   const input=fixture();input.project.history_retention_seconds=seconds;
   const x=check(input);
   assert.equal(x.pitrWindowAvailable,false,String(seconds));
+  assert.equal(x.historyWindowPresent,false,String(seconds));
   assert.equal(x.route,'none',String(seconds));
   denied(x);
  }
