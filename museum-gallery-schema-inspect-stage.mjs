@@ -53,7 +53,8 @@ export async function inspectMuseumGallerySchemaStage(client,{
    layoutReady:report.layoutReady,
    schemaReady:report.baseMuseumReady&&report.sourceReady&&
     report.roomKindReady&&report.mediaCategoryReady&&
-    report.reviewChronologyReady&&report.layoutReady,
+    report.reviewChronologyReady&&report.layoutReady&&report.exhibitReceiptReady,
+   exhibitReceiptReady:report.exhibitReceiptReady,
    allReady:report.allReady,
    // Backup, owner signoff, GAS and client source identity are still separate.
    backupVerified:false,ownerApproved:false,
