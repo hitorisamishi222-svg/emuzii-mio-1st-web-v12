@@ -541,12 +541,19 @@ try{
      title.value='架空作品A・展示を更新';
      document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
    })()`);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示を更新')"),true);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),false);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示を更新')"),false,
+    'title-only changes must not be displayed before re-review');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A')"),false,
+    'old approval generations must not render stale publication');
    // Unsaved drafts cannot be approved or moved into a publication revision.
    await evaluate("document.querySelector('#demoGalleryReview').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryCommit').disabled"),true);
    assert.equal(await evaluate("document.querySelector('#demoGalleryDifference').textContent.includes('先に下書きを仮保存')"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:first-child input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:nth-child(2) input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示を更新')"),true);
    await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第2版')"),true);
    await evaluate("document.querySelector('#demoGalleryReview').click()");
@@ -560,6 +567,12 @@ try{
      title.value='架空作品A・第3版';
      document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:first-child').click();
    })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),false,
+    'another content edit invalidates the previously approved published generation');
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:first-child input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:nth-child(2) input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
    await evaluate("document.querySelector('#demoGallerySaveDraft').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryDraftStatus').textContent.includes('第3版')"),true);
    await evaluate("document.querySelector('#demoGalleryReview').click()");
@@ -569,8 +582,10 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('第3版')"),true);
    await evaluate("document.querySelector('#demoGalleryRollback').click()");
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublishedStatus').textContent.includes('第4版')"),true);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('展示を更新')"),false,
+    'restoring an old title must not resurrect expired approval');
    assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品A・第3版')"),false);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
    // Takedowns override older published snapshots, including restored revisions.
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(7)').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
