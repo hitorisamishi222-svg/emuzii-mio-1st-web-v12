@@ -188,7 +188,7 @@ test('person readiness diagnosis keeps membership and browser possession unverif
   assert.equal(b.requests.length,1,'person diagnostics cannot create a write request');
 });
 test('simple visitor intake is explicitly not a membership draw registration',()=>{
-  assert.match(html,/初訪問の簡易受付だけではガチャを解放できません/);
+  assert.match(html,/簡易受付だけではガチャを解放できず/);
   assert.match(html,/簡易登録.*ガチャの本人認証にはなりません/);
   assert.match(html,/href="\/join\.html"/);
   assert.match(html,/id="opsSelectedCheck"/);
