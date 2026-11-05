@@ -69,6 +69,11 @@ label{display:block;font-weight:700;margin-top:10px}
 .gallery-curator .gallery-review-checks label span{flex:1}
 .gallery-curator input[type=file]{font-size:14px;min-height:48px}
 .gallery-curator input[type=text]{min-height:42px}
+.gallery-curator textarea,.gallery-curator input[type=date],.gallery-curator input[type=url]{display:block;width:100%;min-height:48px;padding:10px 12px;border-radius:9px;border:1px solid #97bddf;background:#091c30;color:#fff;font:inherit;font-size:16px}
+.gallery-curator textarea{min-height:100px;resize:vertical}
+.gallery-curator .gallery-new-review{border:1px dashed #d9bd81;border-radius:10px;padding:12px;margin:12px 0;overflow-wrap:anywhere}
+.gallery-curator .gallery-new-review p{margin:4px 0}
+.gallery-curator #demoGalleryNewReview:focus-visible,.gallery-curator #demoGalleryAdd:focus-visible{outline:3px solid #ffdc92;outline-offset:3px}
 @media(max-width:690px){.grid{grid-template-columns:1fr}section.full{grid-column:auto}dl{grid-template-columns:1fr 1fr}}
 </style></head><body>
 <header>
@@ -129,7 +134,19 @@ label{display:block;font-weight:700;margin-top:10px}
   <option value="moments">📸 思い出アルバム</option>
   <option value="events">🏆 イベントの記録</option>
  </select>
- <button id="demoGalleryAdd" type="button" class="secondary" style="margin-top:12px">非公開の模擬下書きを追加</button>
+ <label for="demoGalleryNewDescription">作品説明（任意・2000文字以内）</label>
+ <textarea id="demoGalleryNewDescription" maxlength="2000" rows="3" placeholder="作品の思い出や見どころ"></textarea>
+ <label for="demoGalleryNewCredit">制作者・提供者名（任意・80文字以内）</label>
+ <input id="demoGalleryNewCredit" type="text" maxlength="80" autocomplete="off" placeholder="掲載を確認した表示名">
+ <label for="demoGalleryNewOccurred">作品の日付（任意）</label>
+ <input id="demoGalleryNewOccurred" type="date">
+ <label for="demoGalleryNewExternal">紹介先URL（任意・httpsのみ）</label>
+ <input id="demoGalleryNewExternal" type="url" maxlength="2048" autocomplete="off" placeholder="https://example.com/">
+ <div class="actions" style="margin-top:12px">
+  <button id="demoGalleryNewReview" type="button" class="secondary">入力内容を確認</button>
+  <button id="demoGalleryAdd" type="button" class="secondary" disabled>確認済みの非公開下書きを追加</button>
+ </div>
+ <div id="demoGalleryNewPreview" class="gallery-new-review mini" role="status" aria-live="polite">入力内容の確認後にだけ、架空の非公開作品を追加できます。通信・アップロード・保存は行いません。</div>
 </div>
 <div class="gallery-filters" aria-label="展示検索と絞り込み">
  <div><label for="demoGallerySearch">展示名を検索</label>
