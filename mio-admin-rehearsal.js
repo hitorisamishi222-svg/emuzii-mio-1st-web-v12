@@ -176,7 +176,9 @@
     ].filter(Boolean).join(' ／ '),'mini gallery-exhibit-meta'));
    }
    const pending=galleryDetailDrafts.get(item.id)||{
-    title:item.title,description:item.description||'',credit:item.credit||''
+    title:item.title,description:item.description||'',credit:item.credit||'',
+    category:item.category,occurredOn:item.occurredOn||'',
+    externalUrl:item.externalUrl||''
    };
    const label=make('label','展示タイトル（仮）');
    label.htmlFor='demoGalleryTitle'+item.id;
@@ -199,14 +201,38 @@
    creditInput.className='gallery-credit-input';
    creditInput.maxLength=80;creditInput.value=pending.credit;
    creditInput.disabled=item.archived;
+   const categoryLabel=make('label','作品の種類を編集（模擬）');
+   categoryLabel.htmlFor='demoGalleryCategory'+item.id;
+   const categorySelect=make('select');categorySelect.id=categoryLabel.htmlFor;
+   categorySelect.className='gallery-room-select gallery-category-select';
+   for(const value of ['イラスト','動画','音声・楽曲','ファンアート','その他']){
+    const option=make('option',value);option.value=value;categorySelect.append(option);
+   }
+   categorySelect.value=pending.category;categorySelect.disabled=item.archived;
+   const occurredLabel=make('label','作品の日付を編集（任意）');
+   occurredLabel.htmlFor='demoGalleryOccurred'+item.id;
+   const occurredInput=make('input');occurredInput.id=occurredLabel.htmlFor;
+   occurredInput.type='date';occurredInput.className='gallery-occurred-input';
+   occurredInput.value=pending.occurredOn||'';occurredInput.disabled=item.archived;
+   const externalLabel=make('label','紹介先URLを編集（httpsのみ）');
+   externalLabel.htmlFor='demoGalleryExternal'+item.id;
+   const externalInput=make('input');externalInput.id=externalLabel.htmlFor;
+   externalInput.type='url';externalInput.className='gallery-external-input';
+   externalInput.maxLength=2048;externalInput.value=pending.externalUrl||'';
+   externalInput.disabled=item.archived;
    const pendingLabel=make('p','','mini gallery-detail-unsaved');
    const changed=()=>title.value.trim()!==item.title||
     descriptionInput.value!==(item.description||'')||
-    creditInput.value.trim()!==(item.credit||'');
+    creditInput.value.trim()!==(item.credit||'')||
+    categorySelect.value!==item.category||
+    (occurredInput.value||null)!==(item.occurredOn||null)||
+    externalInput.value.trim()!==(item.externalUrl||'');
    const updatePending=()=>{
     if(changed()){
      galleryDetailDrafts.set(item.id,{
-      title:title.value,description:descriptionInput.value,credit:creditInput.value
+      title:title.value,description:descriptionInput.value,credit:creditInput.value,
+      category:categorySelect.value,occurredOn:occurredInput.value,
+      externalUrl:externalInput.value
      });
      pendingLabel.textContent='作品情報を編集中（未保存）。変更確定まで公開履歴は変わりません。';
     }else{
@@ -217,12 +243,18 @@
    title.addEventListener('input',updatePending);
    descriptionInput.addEventListener('input',updatePending);
    creditInput.addEventListener('input',updatePending);
+   for(const input of [categorySelect,occurredInput,externalInput]){
+    input.addEventListener('input',updatePending);
+    input.addEventListener('change',updatePending);
+   }
    const saveDetails=()=>{
     if(item.archived)return;
     // Read the DOM on click, not the input-event cache: this also catches
     // programmatic changes between review and commit during offline QA.
     const nextTitle=title.value.trim();
     const description=descriptionInput.value,credit=creditInput.value.trim();
+    const category=categorySelect.value,occurredOn=occurredInput.value||null;
+    const externalUrl=externalInput.value.trim();
     const bad=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
     if(!nextTitle||nextTitle.length>60||bad.test(nextTitle)){
      setMessage('展示名は1〜60文字で入力してください。');return;
@@ -232,19 +264,42 @@
      setMessage('説明は2000文字以内、制作者名は80文字以内で入力してください。');
      return;
     }
+    if(!['イラスト','動画','音声・楽曲','ファンアート','その他'].includes(category)){
+     setMessage('作品の種類を選択してください。');return;
+    }
+    if(occurredOn){
+     const date=new Date(occurredOn+'T00:00:00Z');
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(occurredOn)||
+        !Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==occurredOn){
+      setMessage('正しい作品日付を選んでください。');return;
+     }
+    }
+    if(externalUrl){
+     let url;
+     try{url=new URL(externalUrl)}catch{
+      setMessage('紹介先はhttpsのURLだけを指定してください。');return;
+     }
+     if(url.protocol!=='https:'||!url.hostname||url.username||url.password||
+        url.hash||/[\u0000-\u0020\u007f]/.test(externalUrl)||
+        externalUrl.length>2048){
+      setMessage('紹介先はhttpsのURLだけを指定してください。');return;
+     }
+    }
     if(nextTitle===item.title&&description===(item.description||'')&&
-       credit===(item.credit||'')){
+       credit===(item.credit||'')&&category===item.category&&
+       occurredOn===(item.occurredOn||null)&&externalUrl===(item.externalUrl||'')){
      galleryDetailDrafts.delete(item.id);
      setMessage('作品情報に変更はありません。');render();return;
     }
     // An atomic mock edit: never mutate ANY field before ALL inputs pass.
     item.title=nextTitle;item.description=description;item.credit=credit;
+    item.category=category;item.occurredOn=occurredOn;item.externalUrl=externalUrl;
     // Every changed piece of public-facing content must be reviewed again,
     // including title-only edits. Bump epoch to invalidate older snapshots.
     item.reviewed=false;item.rightsConfirmed=false;item.privacyConfirmed=false;
     item.visible=false;item.featured=false;item.approvalEpoch++;
     galleryDetailDrafts.delete(item.id);
-    audit(item.id+'：作品名・説明・制作者の模擬変更（再承認待ち・非公開）');
+    audit(item.id+'：作品情報の模擬変更（再承認待ち・非公開）');
     setMessage('作品情報を変更しました。以前の模擬掲載確認は失効し、再確認前は公開されません。');
     render();
    };
@@ -254,12 +309,13 @@
      'secondary gallery-save-meta'),
     button('編集中の変更を取消',()=>{
      galleryDetailDrafts.delete(item.id);
-     setMessage('未保存の作品名・説明・制作者変更を取り消しました。');
+     setMessage('未保存の作品情報変更を取り消しました。');
      render();
     },item.archived,'secondary gallery-cancel-meta')
    );
    metaEditor.append(descriptionLabel,descriptionInput,creditLabel,
-    creditInput,pendingLabel,metaActions);
+    creditInput,categoryLabel,categorySelect,occurredLabel,occurredInput,
+    externalLabel,externalInput,pendingLabel,metaActions);
    if(galleryDetailDrafts.has(item.id))pendingLabel.textContent=
     '作品情報を編集中（未保存）。変更確定まで公開履歴は変わりません。';
    const actions=make('div',undefined,'actions gallery-actions');
