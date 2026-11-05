@@ -363,16 +363,45 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoAuditCount').textContent"),'0');
    assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),true);
-   // Filtered owner ordering must never silently move nonmatching works.
-   // A fourth gallery work has two different-room works between it and A.
+   // The owner must explicitly review the exact private draft fields.
+   assert.equal(await evaluate("document.querySelector('#demoGalleryAdd').disabled"),true);
+   await evaluate(`(()=>{
+    document.querySelector('#demoGalleryNewTitle').value='有効な架空作品';
+    document.querySelector('#demoGalleryNewExternal').value='http://untrusted.example';
+    document.querySelector('#demoGalleryNewReview').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryAdd').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewPreview').textContent.includes('https')"),true);
    await evaluate(`(()=>{
     document.querySelector('#demoGalleryNewTitle').value='架空作品D・並べ替え検査';
     document.querySelector('#demoGalleryNewCategory').value='ファンアート';
     document.querySelector('#demoGalleryNewRoom').value='gallery';
+    document.querySelector('#demoGalleryNewDescription').value='架空の思い出と展示説明';
+    document.querySelector('#demoGalleryNewCredit').value='架空の制作者';
+    document.querySelector('#demoGalleryNewOccurred').value='2026-11-05';
+    document.querySelector('#demoGalleryNewExternal').value='https://example.org/art';
+    document.querySelector('#demoGalleryNewReview').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryAdd').disabled"),false);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewPreview').textContent.includes('架空の制作者')"),true);
+   // Even a programmatically changed input must not bypass the reviewed hash.
+   await evaluate("document.querySelector('#demoGalleryNewDescription').value='確認後に書き換え'");
+   await evaluate("document.querySelector('#demoGalleryAdd').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),3);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryAdd').disabled"),true);
+   // Filtered owner ordering must never silently move nonmatching works.
+   // A fourth gallery work has two different-room works between it and A.
+   await evaluate(`(()=>{
+    document.querySelector('#demoGalleryNewDescription').value='架空の思い出と展示説明';
+    document.querySelector('#demoGalleryNewReview').click();
     document.querySelector('#demoGalleryAdd').click();
     const room=document.querySelector('#demoGalleryRoomFilter');
     room.value='gallery';room.dispatchEvent(new Event('change',{bubbles:true}));
    })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryAdd').disabled"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewCredit').value"),'');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewDescription').value"),'');
+   assert.equal(await evaluate("document.querySelector('#demoGalleryNewExternal').value"),'');
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),2);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(2)').disabled"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-actions button:nth-child(3)').disabled"),true);
@@ -432,6 +461,7 @@ try{
    await evaluate(`(()=>{
     document.querySelector('#demoGalleryNewTitle').value='架空作品D・新規下書き';
     document.querySelector('#demoGalleryNewCategory').value='ファンアート';
+    document.querySelector('#demoGalleryNewReview').click();
     document.querySelector('#demoGalleryAdd').click();
    })()`);
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),4);
@@ -686,6 +716,7 @@ try{
    await evaluate(`(()=>{
     document.querySelector('#demoGalleryNewTitle').value='架空のイベント思い出';
     document.querySelector('#demoGalleryNewRoom').value='events';
+    document.querySelector('#demoGalleryNewReview').click();
     document.querySelector('#demoGalleryAdd').click();
    })()`);
    assert.equal(await evaluate("document.querySelectorAll('#demoGallery .gallery-row').length"),4);
