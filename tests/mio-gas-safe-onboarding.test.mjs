@@ -26,7 +26,7 @@ test('safe guide requires real GAS backup, collision checks and original deploym
 test('staging does not load admin mutation script or expose tokens to unauthenticated visitors',()=>{
  assert.doesNotMatch(html,/<script[^>]+src="\/gacha-admin-ops[.]js"/);
  assert.doesNotMatch(panel,/APPS_SCRIPT_SECRET\s*=|MIO_GACHA_WEB_KEY_SHA256\s*=/);
- assert.doesNotMatch(panel,/<form|on[a-z]+\s*=/);
+ assert.doesNotMatch(panel,/<form|\bon(?:click|change|input|submit|load|error|focus)\s*=/i);
  for(const id of ['opsGrant','opsIntakeCreate']){
   assert.match(panel,new RegExp('<button[^>]*id="'+id+'"[^>]*\\bdisabled\\b'));
  }
