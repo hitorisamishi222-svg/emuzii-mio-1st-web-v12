@@ -58,7 +58,7 @@ test('completed grant operations cannot be replayed with a changed reason or old
  assert.ok(begin>=0&&end>begin);
  const code=moduleOnly.slice(begin,end)+'\n globalThis.__grant=mioAdminOpsGrant_;';
  const id='MIO-9000',op='f'.repeat(32),originalReason='現場で確認した特典';
- const g=Array(17).fill('');g[0]=id;g[1]='架空参加者';g[12]='OK';g[13]='OK';
+ const g=Array(17).fill('');g[0]=id;g[1]='架空参加者';g[5]=3;g[7]=2;g[12]='OK';g[13]='OK';g[14]=2;
  let prior={c:[null,op,'付与','',id,2,3,'確定',originalReason,'架空参加者']};
  let writes=0;
  const context={
