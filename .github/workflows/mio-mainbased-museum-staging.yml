@@ -91,6 +91,7 @@ jobs:
           node --check museum-archive.js
           node --check museum-news.js
           node --check museum-approved-gallery.js
+          node --check museum-curator-preview.js
           node --check museum-media-fallback.js
           node --check tests/mio-mainbased-museum-integration.test.mjs
           node --check scripts/mio-gas-source-preflight.mjs
