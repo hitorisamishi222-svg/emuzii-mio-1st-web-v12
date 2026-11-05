@@ -8,7 +8,8 @@ const TABLES=Object.freeze([
  'gallery_admin_users','gallery_admin_devices','gallery_admin_sessions',
  'gallery_live_overrides',
  'museum_public_exhibits','museum_gallery_layout_stage',
- 'museum_gallery_layout_history_stage','museum_gallery_layout_audit_stage'
+ 'museum_gallery_layout_history_stage','museum_gallery_layout_audit_stage',
+ 'museum_exhibit_draft_operations_stage'
 ]);
 const PREFIX='MUSEUM_INVENTORY_';
 const fail=x=>{throw Error(PREFIX+x)};
