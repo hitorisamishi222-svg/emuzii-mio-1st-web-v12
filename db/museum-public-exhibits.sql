@@ -5,6 +5,9 @@
 CREATE TABLE IF NOT EXISTS museum_public_exhibits (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  kind text NOT NULL CHECK(kind IN ('gallery','icons','moments','events')),
+ -- "kind" is the exhibition ROOM; "category" is the media TYPE.
+ -- Preserve both independently: a music work may be in the memories room.
+ category text NOT NULL CHECK(category IN ('イラスト','動画','音声・楽曲','ファンアート','その他')),
  title text NOT NULL CHECK(char_length(title) BETWEEN 1 AND 120),
  description text NOT NULL DEFAULT '' CHECK(char_length(description) <= 2000),
  credit text NOT NULL DEFAULT '' CHECK(char_length(credit) <= 80),
