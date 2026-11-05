@@ -704,8 +704,9 @@
    id,title:details.title,category:details.category,room:details.kind,
    description:details.description,credit:details.credit,
    occurredOn:details.occurredOn,externalUrl:details.externalUrl,
-   visible:false,featured:false,reviewed:false,rightsConfirmed:false,
-   privacyConfirmed:false,approvalEpoch:0,archived:false,imageUrl:null
+   visible:false,featured:false,
+   reviewed:false,rightsConfirmed:false,privacyConfirmed:false,approvalEpoch:0,archived:false,
+   imageUrl:null
   });
   audit(id+'：内容確認後に非公開の模擬下書きを追加');
   resetNewExhibitForm();
