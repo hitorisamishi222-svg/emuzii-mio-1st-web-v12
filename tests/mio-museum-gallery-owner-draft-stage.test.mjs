@@ -67,7 +67,7 @@ class SimulatedMuseumClient {
     hidden:true,deleted:false,revision:'1',updated_at:new Date()
    }]);
   }
-  if(sql.startsWith('SELECT id,kind,title,description,credit,image_url,')){
+  if(sql.startsWith('SELECT id,kind,category,title,description,credit,image_url,')){
    assert.match(sql,/FROM museum_public_exhibits/);
    assert.match(sql,/FOR SHARE$/);
    return select([]);
