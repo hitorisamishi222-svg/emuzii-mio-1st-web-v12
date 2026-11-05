@@ -814,7 +814,7 @@ function mioAdminOpsSummary_(ss,webRows){
  var grants={};for(var j=0;j&lt;gacha.length;j++){var g=gacha[j],gid=mioAdminOpsStr_(g[0]);if(!/^MIO-\d{4}$/.test(gid))continue;if(!grants[gid])grants[gid]=[];grants[gid].push({mioId:gid,name:mioAdminOpsStr_(g[1]),total:Number(g[5]),remaining:Number(g[7]),special:Number(g[14]),checked:g[12]==='OK'&amp;&amp;g[13]==='OK'});}
  var web=[];for(var k=0;k&lt;webRows.length;k++){var row=webRows[k],wid=mioAdminOpsStr_(row[0]);if(!/^MIO-W-[a-f0-9]{24}$/.test(wid))continue;var mioId=mioAdminOpsStr_(row[7]);web.push({webId:wid,name:mioAdminOpsStr_(row[2]),status:mioAdminOpsStr_(row[5]),member:mioAdminOpsStr_(row[6]),mioId:mioId,integrity:mioAdminOpsStr_(row[11]),linkedName:byId[mioId]?byId[mioId].name:'',gacha:(grants[mioId]||[]).length===1?grants[mioId][0]:null});}
  var pending=web.filter(function(r){return r.status==='承認待ち'||(r.status==='承認済み'&amp;&amp;r.integrity!=='確認済み');}).slice(-80).reverse();
- var simple=[];for(var l=0;l&lt;fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
+ var simple=[];for(var l=0;l&lt;fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,createdAt:mioAdminOpsStr_(fr[0] instanceof Date?fr[0].toISOString():fr[0]),name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
  var roster=[];Object.keys(byId).forEach(function(id){var x=byId[id],gg=(grants[id]||[]),entry=gg[0];
   var healthy=!duplicatePeople[id]&amp;&amp;gg.length===1&amp;&amp;entry.checked===true&amp;&amp;
    Number.isSafeInteger(entry.total)&amp;&amp;entry.total&gt;=0&amp;&amp;Number.isSafeInteger(entry.remaining)&amp;&amp;entry.remaining&gt;=0&amp;&amp;
@@ -1038,7 +1038,11 @@ function mioAdminOpsReview_(ss,d){
  var sheet=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
  var data=sheet.getRange(row,1,1,6).getValues()[0];
  var name=mioAdminOpsStr_(data[1]),actual=mioAdminOpsStr_(data[4])||'未確認';
- if(!name)throw new Error('簡易登録の対象名がありません');
+ var createdAt=mioAdminOpsStr_(data[0] instanceof Date?data[0].toISOString():data[0]);
+ var browserId=mioAdminOpsStr_(data[2]);
+ if(!name||!createdAt||mioAdminOpsName_(name)!==mioAdminOpsName_(d.expectedName)||
+    createdAt!==mioAdminOpsStr_(d.expectedCreatedAt)||browserId!==mioAdminOpsStr_(d.expectedBrowserId))
+   throw new Error('簡易受付の対象者が変更されました。台帳を再確認してください');
  var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
  if(old){
    // Store the exact intake row in audit column D so that an interrupted
