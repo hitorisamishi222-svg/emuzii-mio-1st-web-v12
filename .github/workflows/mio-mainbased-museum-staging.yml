@@ -154,3 +154,28 @@ jobs:
           path: artifacts/mio-offline-mobile-*.png
           if-no-files-found: ignore
           retention-days: 7
+
+  restore-readonly-offline:
+    name: Offline museum restore comparison (no Neon connection)
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check out code without persisting credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check standalone read-only restore inspection
+        run: |
+          node --check museum-neon-restore-compare-stage.mjs
+          node --check tests/mio-museum-neon-restore-compare-stage.test.mjs
+      - name: Independently test two-client restore comparisons and fail-closed branch gates
+        run: |
+          node --test tests/mio-museum-neon-restore-compare-stage.test.mjs
+          node --test tests/mio-museum-neon-recovery-route-stage.test.mjs
+      - name: Verify no tracked files were changed by local checks
+        run: git diff --exit-code
+      # Independent of mutable main baseline parity. Zero providers, secrets,
+      # data copies, branch creation, database queries or production release.
