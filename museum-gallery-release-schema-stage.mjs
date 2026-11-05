@@ -78,6 +78,18 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
    !/\b(?:or|not)\b/.test(expr)&&
    ['gallery','icons','moments','events'].every(kind=>expr.includes("'"+kind+"'"));
  });
+ // The room identifies WHERE to show an exhibit, whereas its category
+ // identifies WHAT media it contains. A DB that loses the media type is
+ // never a ready candidate even when the four room keys are valid.
+ const mediaCategoryReady=constraints.some(row=>{
+  if(row?.table_name!=='museum_public_exhibits'||
+     row.contype!=='c'||row.validated!==true)return false;
+  const expr=normalized(row.definition);
+  return /\bcategory\b\s*(?:in\s*\(|=\s*any\s*\()/i.test(expr)&&
+   !/\b(?:or|not)\b/.test(expr)&&
+   ['イラスト','動画','音声・楽曲','ファンアート','その他']
+    .every(category=>expr.includes("'"+category+"'"));
+ });
  // Existing gallery moderation must retain its unique ID and editor links.
  const workIdCheck="item_id ~ '^[a-z0-9-]{3,70}"+String.fromCharCode(36)+"'";
  const legacyChecks=Object.freeze({
@@ -150,10 +162,11 @@ export function museumGalleryReleaseSchemaReport({columns,constraints,identityVe
   sourceReady,
   legacyChecks,
   roomKindReady,
+  mediaCategoryReady,
   reviewChronologyReady,
   layoutReady,
   allReady:identityVerified===true&&base.schemaReady&&sourceReady&&roomKindReady&&
-   reviewChronologyReady&&layoutReady,
+   mediaCategoryReady&&reviewChronologyReady&&layoutReady,
   tables:Object.freeze(tables),
   constraintChecks,
   // This report does NOT assert backup, owner signoff, or authorization.
