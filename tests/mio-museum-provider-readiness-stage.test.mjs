@@ -13,7 +13,7 @@ const record=()=>({
  previewVariables:[
   {key:'MIO_MUSEUM_GALLERY_DATABASE_URL',id:'scoped',type:'encrypted',
    target:['preview'],gitBranch:BRANCH},
-  {key:'MIO_MUSEUM_GALLERY_DATABASE_URL',id:'prod',type:'encrypted',
+  {key:'GALLERY_DATABASE_URL',id:'existing-prod',type:'encrypted',
    target:['production']}
  ],
  deployment:{projectId:'prj_MuseumDemo',target:'preview',
