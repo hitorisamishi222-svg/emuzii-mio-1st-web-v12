@@ -80,38 +80,58 @@ test('all old production authentication, draw, attendance and approved media blo
   }
  }
 });
-test('new main operator source is acknowledged but remains deactivated on museum Preview',()=>{
+test('latest main operator source is staged but protected from live actions on museum Preview',()=>{
  const html=read('gacha-web-gate.html');
- assert.equal(observedMain.previousMuseumBaseline,baseline.baselineCommit);
- assert.match(html,/<!-- MIO_ADMIN_PREVIEW_START -->/);
+ const mainScriptSha=observedMain.changedFileBlobs['gacha-admin-ops.js'];
+ assert.equal(shaOfFile('gacha-admin-ops.js'),mainScriptSha,
+  'new operator logic must remain unmodified for later controlled release review');
+ assert.match(html,/<!-- MIO_MUSEUM_PREVIEW_LOCK_OPEN_START -->/);
+ assert.match(html,/<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_END -->/);
+ assert.match(html,/<!-- MIO_MUSEUM_PREVIEW_CSP_START -->/);
+ assert.match(html,/<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; form-action 'none'">/);
+ assert.match(html,/<fieldset id="museumOpsPreviewLock" disabled\b/);
  assert.match(html,/href="\/mio-admin-rehearsal.html"/);
+ assert.match(html,/href="\/mio-gas-local-check.html"/);
+ assert.match(html,/id="incidentPreviewPanel"/);
  assert.doesNotMatch(html,/<script[^>]*src="\/gacha-admin-ops\.js"/,
-  'museum Preview must never silently activate updated main operator actions');
- assert.notEqual(observedMain.changedFileBlobs['gacha-web-gate.html'],
-  baseline.productionFileBlobs['gacha-web-gate.html']);
+  'museum Preview must not load the operator script');
 });
-test('existing live gacha gate remains exactly the original code after removing the marked disabled admin preview',()=>{
+test('the museum Preview reversibly preserves the exact latest main operator and gate page',()=>{
  const html=read('gacha-web-gate.html');
- const start='<!-- MIO_ADMIN_PREVIEW_START -->';
- const end='<!-- MIO_ADMIN_PREVIEW_END -->';
- assert.equal(html.split(start).length,2);
- assert.equal(html.split(end).length,2);
- const original=html.replace(/<!-- MIO_ADMIN_PREVIEW_START -->[\s\S]*?<!-- MIO_ADMIN_PREVIEW_END -->\n/,'');
- const buffer=Buffer.from(original,'utf8');
- const restoredSha=createHash('sha1').update('blob '+buffer.length)
-  .update(Buffer.from([0])).update(buffer).digest('hex');
- assert.equal(restoredSha,baseline.productionFileBlobs['gacha-web-gate.html'],
-  'Original gacha switches, passkeys, and API calls must remain byte identical');
- const panel=html.slice(html.indexOf(start),html.indexOf(end));
- for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','opsCount','opsStatus','opsReload','opsSearch','opsQuantity','opsReason','opsIntakeCreate']){
-  assert.equal(html.split('id="'+id+'"').length-1,1,'Missing/duplicate admin control '+id);
+ const one=(open,close,input)=>{
+  assert.equal(input.split(open).length,2,'Opening marker must be unique: '+open);
+  assert.equal(input.split(close).length,2,'Closing marker must be unique: '+close);
+  return input.slice(0,input.indexOf(open))+
+   input.slice(input.indexOf(close)+close.length+1);
+ };
+ let restored=one('<!-- MIO_MUSEUM_PREVIEW_CSP_START -->',
+  '<!-- MIO_MUSEUM_PREVIEW_CSP_END -->',html);
+ restored=one('<!-- MIO_MUSEUM_PREVIEW_LOCK_OPEN_START -->',
+  '<!-- MIO_MUSEUM_PREVIEW_LOCK_OPEN_END -->',restored);
+ restored=one('<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_START -->',
+  '<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_END -->',restored);
+ const disabledScript='<!-- MIO_MUSEUM_PREVIEW_DISABLE_OPS_JS -->';
+ assert.equal(restored.split(disabledScript).length,2);
+ restored=restored.replace(disabledScript,'<script src="/gacha-admin-ops.js" defer></script>');
+ const bytes=Buffer.from(restored,'utf8');
+ const blobSha=createHash('sha1').update('blob '+bytes.length)
+  .update(Buffer.from([0])).update(bytes).digest('hex');
+ assert.equal(blobSha,observedMain.changedFileBlobs['gacha-web-gate.html'],
+  'the complete latest main page must be restored byte-for-byte after removing Preview-only blocks');
+ // All new main controls remain present exactly once, but in a disabled
+ // native fieldset, preserving visuals without browser-side API requests.
+ const locked=html.slice(html.indexOf('id="museumOpsPreviewLock"'),
+  html.indexOf('<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_START -->'));
+ for(const id of ['opsBell','opsQuickIntake','opsQuickApproval','opsQuickGrant',
+   'opsQuickGate','opsPending','opsRoster','opsGrant','opsIntakeCreate','opsCount',
+   'opsStatus','opsReload','opsSearch','opsOnlyRemaining','opsQuantity',
+   'opsReason','opsSetupToggle']){
+  assert.equal(html.split('id="'+id+'"').length-1,1,
+   'Missing or duplicate main operator control '+id);
+  assert.ok(locked.includes('id="'+id+'"'),id+' must be under the disabled wrapper');
  }
- for(const id of ['opsReload','opsGrant','opsIntakeCreate','opsSearch','opsQuantity','opsReason','opsNewName','opsNewNote']){
-  assert.match(panel,new RegExp('<(?:button|input)[^>]*id="'+id+'"[^>]*\\bdisabled\\b'));
- }
- assert.doesNotMatch(panel,/fetch\s*\(|<script|onclick\s*=|onchange\s*=|document\.cookie|localStorage|sessionStorage/);
- assert.doesNotMatch(html,new RegExp('<script[^>]*src="/gacha-admin-ops[.]js"'),
-  'Do not activate admin actions until deployed GAS is verified');
+ assert.match(html,/id="incidentPreviewRefresh"[^>]*disabled/);
+ assert.doesNotMatch(locked,/<script|onclick\s*=|onchange\s*=|document\.cookie|localStorage|sessionStorage/);
 });
 test('all prior Vercel builds and routes are retained EXACTLY, in the same order',()=>{
  const filteredBuilds=config.builds.filter(x=>baseline.builds.some(y=>y.src===x.src));
