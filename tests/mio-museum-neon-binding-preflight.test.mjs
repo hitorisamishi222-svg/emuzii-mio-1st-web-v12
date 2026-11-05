@@ -53,6 +53,10 @@ test('non-TLS and spoofable Postgres URL options are rejected',()=>{
   'postgresql://sample_user@'+host+'/neondb',
   'postgresql://sample_user@'+host+'/neondb?sslmode=disable',
   'postgresql://sample_user@'+host+'/neondb?sslmode=require&host=other.example',
+  'postgresql://sample_user@'+host+'/neondb?sslmode=require&sslmode=disable',
+  'postgresql://sample_user@'+host+'/neondb?sslmode=disable&sslmode=require',
+  'postgresql://sample_user@'+host+'/neondb?sslmode=require&application_name=preview',
+  'postgresql://sample_user@'+host+'/neondb?SSLMODE=require',
   'https://sample_user@'+host+'/neondb?sslmode=require'
  ]){
   const x=valid();x.connectionString=input;
