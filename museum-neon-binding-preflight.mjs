@@ -21,14 +21,16 @@ const parseConnection=x=>{
   const url=new URL(x);
   const sql=url.protocol==='postgres:'||url.protocol==='postgresql:';
   const options=[...url.searchParams.keys()];
-  // Reject options capable of bypassing an exact endpoint comparison.
-  const dangerous=options.some(k=>['host','hostaddr','service','options','dbname','user','password'].includes(k.toLowerCase()));
+  // Reject ambiguous or repeated URL options, including duplicate sslmode
+  // (one library may honor the first value and another the last).
+  // This conservative preview check only allows a single TLS selector.
+  const secureOptions=options.length===1&&options[0]==='sslmode';
   const ssl=url.searchParams.get('sslmode');
   const db=decodeURIComponent(url.pathname.slice(1));
   return {
    host:url.hostname.toLowerCase(),
    database:db,role:decodeURIComponent(url.username),
-   transport:sql&&!url.hash&&!dangerous&&
+   transport:sql&&!url.hash&&secureOptions&&
     (url.port===''||url.port==='5432')&&
     (ssl==='require'||ssl==='verify-full')
   };
