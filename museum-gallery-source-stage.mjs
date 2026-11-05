@@ -9,7 +9,8 @@ import {createHash} from 'node:crypto';
 
 const ID=/^[a-z0-9-]{3,70}$/;
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
-const KINDS=Object.freeze({gallery:'ギャラリー',icons:'イラスト',moments:'その他',events:'その他'});
+const KINDS=new Set(['gallery','icons','moments','events']);
+const MEDIA_CATEGORIES=new Set(['イラスト','動画','音声・楽曲','ファンアート','その他']);
 const STATUS=new Set(['draft','published','hidden','trash']);
 const fail=code=>{throw Error('MUSEUM_SOURCE_'+code)};
 const rows=(r,max)=>{
@@ -117,14 +118,15 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
  // New museum records are deliberately distinct from the legacy gallery:
  // every record has a stable namespace; no overwrite of an old ID.
  const exhibits=rows(await client.query(
-  'SELECT id,kind,title,description,credit,image_url,external_url,'+
+  'SELECT id,kind,category,title,description,credit,image_url,external_url,'+
   'status,revision,updated_at,rights_checked_at,privacy_checked_at,reviewed_by,published_at '+
   'FROM museum_public_exhibits ORDER BY created_at,id LIMIT 501'+lockClause,[]
  ),500);
  const approvedIds=approvedGalleryItems.map(item=>item.id);
  const seen=new Set(staticIds);
  for(const row of exhibits){
-  if(!row||!UUID.test(row.id||'')||!Object.hasOwn(KINDS,row.kind)||
+  if(!row||!UUID.test(row.id||'')||!KINDS.has(row.kind)||
+     !MEDIA_CATEGORIES.has(row.category)||
      !STATUS.has(row.status)||!text(row.title,120)||!row.title.trim()||
      !text(row.description,2000)||!text(row.credit,80)||
      !text(row.image_url,1024)||!text(row.external_url,2048))
@@ -146,7 +148,7 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
   if(row.status==='published'&&!reviewed)fail('EXHIBIT_REVIEW_UNVERIFIED');
   const item={
    id,title:row.title,creator:row.credit||'翠央記念館',
-   description:row.description,category:KINDS[row.kind],room:row.kind,
+   description:row.description,category:row.category,room:row.kind,
    thumbnail:row.image_url,url:row.external_url||row.image_url||'',
    hidden:!reviewed,deleted:row.status==='trash'
   };
@@ -157,7 +159,7 @@ export async function loadMuseumModeratedCatalogStage(client,{lockModeration=fal
     'reviewed-museum-v1',id,rev(row.revision),iso(row.updated_at),
     iso(row.rights_checked_at),iso(row.privacy_checked_at),
     iso(row.published_at),row.reviewed_by.toLowerCase(),
-    row.kind,row.title,row.description,row.credit,row.image_url,row.external_url
+    row.kind,row.category,row.title,row.description,row.credit,row.image_url,row.external_url
    ]);
    approvedIds.push(id);
   }
