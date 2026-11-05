@@ -57,6 +57,8 @@
 <div class="curator-field"><label for="filterText">作品を検索</label><input id="filterText" type="search" placeholder="タイトルで検索"></div>
 </div>
 <p class="curator-small" id="countText" role="status" aria-live="polite"></p>
+<div class="curator-actions"><button type="button" id="undoOrder" class="curator-secondary" disabled>↶ 直前の並べ替えを戻す</button></div>
+<p class="curator-small">この取り消しは作品の表示順だけに作用し、掲載許可や公開状態は元に戻しません。</p>
 <div id="workList" class="curator-list" aria-label="編集中の架空展示作品"></div>
 <div class="curator-review">
 <h3>来場者向け表示の模擬確認</h3>
@@ -64,6 +66,18 @@
 <div class="curator-actions"><button type="button" id="reviewPublish" class="curator-secondary">公開予定との差分を確認</button><button type="button" id="simulatePublish" disabled>確認済み内容を模擬公開</button></div>
 <p id="publishStatus" class="curator-status" role="status" aria-live="polite">未確認です。実サイトへの公開は行いません。</p>
 <div id="visitorPreview" class="curator-public-grid" aria-label="仮公開した展示"></div>
+<div class="curator-restore" aria-label="模擬公開履歴と復元">
+<h3>✦ 過去の模擬公開版</h3>
+<p class="curator-small">公開履歴はこの画面のメモリ内だけ。非公開に戻した作品や掲載許可が失効した作品は、古い版からも復活しません。</p>
+<div class="curator-field"><label for="historyVersion">確認する公開版</label>
+<select id="historyVersion"><option value="">復元できる履歴はありません</option></select></div>
+<p id="historyStatus" class="curator-status" role="status" aria-live="polite">過去の模擬公開版を選んでください。</p>
+<div id="historyPreview" class="curator-public-grid" aria-label="復元対象の安全な表示確認"></div>
+<div class="curator-actions">
+<button id="reviewRestore" type="button" class="curator-secondary" disabled>復元する内容を確認</button>
+<button id="restoreHistory" type="button" disabled>確認した版を模擬復元</button>
+</div>
+</div>
 </div>
 <div class="curator-actions"><button type="button" id="resetDemo" class="curator-secondary">架空データを初期状態に戻す</button></div>
 </section>
