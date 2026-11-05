@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#07192f">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; img-src 'self' blob:; script-src 'self'; style-src 'self'">
+<title>展示編集の体験版｜翠央記念館</title>
+<link rel="stylesheet" href="/museum.css">
+<link rel="stylesheet" href="/museum-curator-preview.css">
+</head><body class="museum museum-curator">
+<a class="museum-skip" href="#curatorMain">作品管理へ移動</a>
+<header class="museum-header"><div class="museum-shell museum-bar">
+<a href="/museum.html" class="museum-brand"><span class="mark" aria-hidden="true">🐳</span><span>翠央記念館<small>MUSEUM CURATOR · PRIVATE REHEARSAL</small></span></a>
+<nav class="museum-nav" aria-label="移動先"><a href="/museum.html">記念館トップ</a><a href="/museum-archive.html">思い出の展示室</a></nav>
+</div></header>
+<main class="museum-shell" id="curatorMain">
+<section class="curator-hero" aria-labelledby="curatorTitle">
+<div class="museum-eyebrow">GALLERY MANAGEMENT · OFFLINE DEMO</div>
+<h1 id="curatorTitle">💎 ミュージアム作品管理</h1>
+<p>作品の追加・編集・並び替え・注目表示・公開確認を<strong>架空の作品だけ</strong>で体験できます。ガチャ管理・会員管理とは別の画面です。</p>
+<div class="curator-caution" role="status"><strong>🧪 操作練習専用・未公開</strong>：入力した内容はこの画面の中だけで一時的に扱い、ページを閉じると消えます。本番保存、画像アップロード、DB接続、公開、会員操作は行いません。</div>
+</section>
+<div class="curator-columns">
+<section class="curator-panel curator-editor" aria-labelledby="editorHeading">
+<h2 id="editorHeading">✦ 展示作品を追加・編集</h2>
+<p class="curator-small">最初は非公開。掲載許可と内容を確認した後、公開「予定」にできます。</p>
+<form id="curatorForm" autocomplete="off">
+<div class="curator-field"><label for="workTitle">作品タイトル <span aria-hidden="true">＊</span></label><input id="workTitle" maxlength="60" required placeholder="作品の名前"></div>
+<div class="curator-grid-2">
+<div class="curator-field"><label for="workRoom">展示室</label><select id="workRoom"><option value="gallery">💎 翠央っ子ギャラリー</option><option value="icons">👑 歴代アイコン</option><option value="moments">📸 思い出アルバム</option><option value="events">🏆 イベント記録</option></select></div>
+<div class="curator-field"><label for="workCategory">作品の種類</label><select id="workCategory"><option>イラスト</option><option>動画</option><option>音声・楽曲</option><option>ファンアート</option><option>その他</option></select></div>
+</div>
+<div class="curator-field"><label for="workDescription">作品説明（任意）</label><textarea id="workDescription" maxlength="2000" rows="3" placeholder="作品の思い出や見どころ"></textarea></div>
+<div class="curator-grid-2">
+<div class="curator-field"><label for="workCredit">制作者・提供者（任意）</label><input id="workCredit" maxlength="80"></div>
+<div class="curator-field"><label for="workDate">作品の日付（任意）</label><input id="workDate" type="date"></div>
+</div>
+<div class="curator-field"><label for="workUrl">紹介URL（任意・httpsのみ）</label><input id="workUrl" type="url" maxlength="2048" placeholder="https://example.com/"></div>
+<div class="curator-field"><label for="workImage">表紙画像（任意・端末内プレビューのみ）</label><input id="workImage" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-describedby="imageHelp"><p id="imageHelp" class="curator-small">最大12MB。画像は送信しません。仮公開版にも画像はコピーしません。</p><button type="button" id="clearImage" class="curator-secondary">仮画像を消す</button></div>
+<div class="curator-actions"><button type="submit" id="saveWork">非公開下書きを追加</button><button type="button" class="curator-secondary" id="newWork">新しい作品へ</button></div>
+</form>
+<div class="curator-review" aria-label="模擬公開の事前確認">
+<h3>公開前チェック（操作練習）</h3>
+<label><input type="checkbox" id="rightsOk"> 掲載・使用許可を確認したことにする</label>
+<label><input type="checkbox" id="privacyOk"> 個人情報と画像内容を確認したことにする</label>
+<label><input type="checkbox" id="contentOk"> 表示内容を確認したことにする</label>
+<button type="button" id="approveWork" class="curator-secondary" disabled>選択作品の確認を反映（模擬）</button>
+</div>
+<p class="curator-status" id="editStatus" role="status" aria-live="polite">新規の架空作品を追加できます。</p>
+</section>
+<section class="curator-panel" aria-labelledby="worksHeading">
+<h2 id="worksHeading">🖼️ 展示作品の並べ替え</h2>
+<div class="curator-grid-2">
+<div class="curator-field"><label for="filterRoom">表示する展示室</label><select id="filterRoom"><option value="all">すべて</option><option value="gallery">💎 ギャラリー</option><option value="icons">👑 アイコン</option><option value="moments">📸 思い出</option><option value="events">🏆 イベント</option></select></div>
+<div class="curator-field"><label for="filterText">作品を検索</label><input id="filterText" type="search" placeholder="タイトルで検索"></div>
+</div>
+<p class="curator-small" id="countText" role="status" aria-live="polite"></p>
+<div id="workList" class="curator-list" aria-label="編集中の架空展示作品"></div>
+<div class="curator-review">
+<h3>来場者向け表示の模擬確認</h3>
+<p class="curator-small">公開予定の作品だけが対象です。編集しただけでは表示は切り替わりません。</p>
+<div class="curator-actions"><button type="button" id="reviewPublish" class="curator-secondary">公開予定との差分を確認</button><button type="button" id="simulatePublish" disabled>確認済み内容を模擬公開</button></div>
+<p id="publishStatus" class="curator-status" role="status" aria-live="polite">未確認です。実サイトへの公開は行いません。</p>
+<div id="visitorPreview" class="curator-public-grid" aria-label="仮公開した展示"></div>
+</div>
+<div class="curator-actions"><button type="button" id="resetDemo" class="curator-secondary">架空データを初期状態に戻す</button></div>
+</section>
+</div>
+<footer class="museum-footer"><p>🔒 この確認ページには実参加者・実作品・本番データはありません。ガチャWeb管理とは独立しています。</p></footer>
+</main>
+<script defer src="/museum-curator-preview.js"></script>
+</body></html>
