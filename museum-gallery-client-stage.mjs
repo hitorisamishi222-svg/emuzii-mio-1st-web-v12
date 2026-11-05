@@ -24,9 +24,13 @@ export async function withDedicatedMuseumStageClient(pool,{verifyBinding,perform
   // cannot be taken from an HTTP request body or an environment key's presence.
   // "schemaReady" means schema checked against this actual connection,
   // not that an unapplied .sql file exists on GitHub.
+  // "previewEnvScopeVerified" requires independently verified complete
+  // Vercel metadata and endpoint affinity. An inherited Preview env key is
+  // not a binding proof, and a metadata-only comparison is not authorization.
   const binding=await verifyBinding(client);
   if(!binding||binding.identityVerified!==true||binding.schemaReady!==true||
      binding.sourceReady!==true||binding.layoutReady!==true||
+     binding.previewEnvScopeVerified!==true||
      binding.backupVerified!==true||binding.ownerApproved!==true)
    throw Error('MUSEUM_CLIENT_BINDING_NOT_VERIFIED');
   return await perform(client);
