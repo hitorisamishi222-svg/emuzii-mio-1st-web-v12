@@ -304,6 +304,26 @@ test('approved accounts with incomplete identity verification are still shown fo
  assert.equal(view.pending[0].status,'承認済み');
 });
 
+test('review replay cannot switch to a different browser or timestamp even if nickname and row match',()=>{
+ for(const field of ['expectedBrowserId','expectedCreatedAt']){
+  const x=sandbox();
+  const first={action:'webAdminOpsReview',operationId:'7'.repeat(32),
+   row:2,expectedStatus:'未確認',...reviewIdentity};
+  assert.equal(x.exec(first).status,'確認済み');
+  const prior=x.rows['emuzii_Web管理操作履歴'][1];
+  prior[7]='処理中';
+  const current=x.rows['emuzii_新規簡易登録'][1];
+  const replacement=field==='expectedBrowserId'
+   ?{...reviewIdentity,expectedBrowserId:'MIO-W-'+'e'.repeat(24)}
+   :{...reviewIdentity,expectedCreatedAt:'2026-10-20T00:00:00.000Z'};
+  if(field==='expectedBrowserId')current[2]=replacement.expectedBrowserId;
+  else current[0]=replacement.expectedCreatedAt;
+  const writesBefore=x.write.length;
+  assert.throws(()=>x.exec({...first,...replacement}),/操作IDの再利用は禁止/);
+  assert.equal(x.write.length,writesBefore,'replay of old operation never certifies another identity');
+  assert.equal(prior[7],'処理中','audit stays unresolved for human confirmation');
+ }
+});
 test('review refuses different timestamp, browser or participant name before writing',()=>{
  for(const [col,val] of [[0,'2026-10-20T00:00:00.000Z'],[1,'別人の受付者'],[2,'MIO-W-'+'f'.repeat(24)]]){
   const x=sandbox(),row=x.rows['emuzii_新規簡易登録'][1];
