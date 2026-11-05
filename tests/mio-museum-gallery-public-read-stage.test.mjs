@@ -16,7 +16,7 @@ const validLayout=()=>({
  published_at:new Date('2026-11-03T08:00:00Z')
 });
 const exhibit=()=>({
- id:museumId,kind:'icons',title:'承認済みイラスト',
+ id:museumId,kind:'icons',category:'イラスト',title:'承認済みイラスト',
  description:'ミュージアム展示',credit:'公認クリエイター',
  image_url:'/assets/gallery-emuzii-mio-cover.svg',
  external_url:'',status:'published',revision:2,
