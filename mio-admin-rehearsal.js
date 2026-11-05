@@ -175,14 +175,15 @@
      item.externalUrl?'紹介先：'+item.externalUrl:null
     ].filter(Boolean).join(' ／ '),'mini gallery-exhibit-meta'));
    }
+   const pending=galleryDetailDrafts.get(item.id)||{
+    title:item.title,description:item.description||'',credit:item.credit||''
+   };
    const label=make('label','展示タイトル（仮）');
    label.htmlFor='demoGalleryTitle'+item.id;
    const title=make('input');title.type='text';title.id=label.htmlFor;
-   title.value=item.title;title.maxLength=60;
+   title.value=pending.title??item.title;title.maxLength=60;
+   title.disabled=item.archived;
    const metaEditor=make('div',undefined,'gallery-metadata-editor');
-   const pending=galleryDetailDrafts.get(item.id)||{
-    description:item.description||'',credit:item.credit||''
-   };
    const descriptionLabel=make('label','作品説明を編集（模擬・2000文字以内）');
    descriptionLabel.htmlFor='demoGalleryDescription'+item.id;
    const descriptionInput=make('textarea');
@@ -199,65 +200,73 @@
    creditInput.maxLength=80;creditInput.value=pending.credit;
    creditInput.disabled=item.archived;
    const pendingLabel=make('p','','mini gallery-detail-unsaved');
-   const changed=()=>descriptionInput.value!==(item.description||'')||
+   const changed=()=>title.value.trim()!==item.title||
+    descriptionInput.value!==(item.description||'')||
     creditInput.value.trim()!==(item.credit||'');
    const updatePending=()=>{
     if(changed()){
      galleryDetailDrafts.set(item.id,{
-      description:descriptionInput.value,credit:creditInput.value
+      title:title.value,description:descriptionInput.value,credit:creditInput.value
      });
-     pendingLabel.textContent='編集中（未保存）・元の内容は変更していません。';
+     pendingLabel.textContent='作品情報を編集中（未保存）。変更確定まで公開履歴は変わりません。';
     }else{
      galleryDetailDrafts.delete(item.id);
      pendingLabel.textContent='';
     }
    };
+   title.addEventListener('input',updatePending);
    descriptionInput.addEventListener('input',updatePending);
    creditInput.addEventListener('input',updatePending);
+   const saveDetails=()=>{
+    if(item.archived)return;
+    // Read the DOM on click, not the input-event cache: this also catches
+    // programmatic changes between review and commit during offline QA.
+    const nextTitle=title.value.trim();
+    const description=descriptionInput.value,credit=creditInput.value.trim();
+    const bad=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
+    if(!nextTitle||nextTitle.length>60||bad.test(nextTitle)){
+     setMessage('展示名は1〜60文字で入力してください。');return;
+    }
+    if(description.length>2000||credit.length>80||
+       bad.test(description)||bad.test(credit)){
+     setMessage('説明は2000文字以内、制作者名は80文字以内で入力してください。');
+     return;
+    }
+    if(nextTitle===item.title&&description===(item.description||'')&&
+       credit===(item.credit||'')){
+     galleryDetailDrafts.delete(item.id);
+     setMessage('作品情報に変更はありません。');render();return;
+    }
+    // An atomic mock edit: never mutate ANY field before ALL inputs pass.
+    item.title=nextTitle;item.description=description;item.credit=credit;
+    // Every changed piece of public-facing content must be reviewed again,
+    // including title-only edits. Bump epoch to invalidate older snapshots.
+    item.reviewed=false;item.rightsConfirmed=false;item.privacyConfirmed=false;
+    item.visible=false;item.featured=false;item.approvalEpoch++;
+    galleryDetailDrafts.delete(item.id);
+    audit(item.id+'：作品名・説明・制作者の模擬変更（再承認待ち・非公開）');
+    setMessage('作品情報を変更しました。以前の模擬掲載確認は失効し、再確認前は公開されません。');
+    render();
+   };
    const metaActions=make('div',undefined,'actions gallery-metadata-actions');
    metaActions.append(
-    button('説明・制作者を変更',()=>{
-     if(item.archived)return;
-     const description=descriptionInput.value,credit=creditInput.value.trim();
-     const bad=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
-     if(description.length>2000||credit.length>80||
-        bad.test(description)||bad.test(credit)){
-      setMessage('説明は2000文字以内、制作者名は80文字以内で入力してください。');
-      return;
-     }
-     if(description===(item.description||'')&&credit===(item.credit||'')){
-      galleryDetailDrafts.delete(item.id);
-      setMessage('変更はありません。');render();return;
-     }
-     item.description=description;item.credit=credit;
-     // A changed description/attribution invalidates earlier rights and
-     // privacy review. Prevent old published versions from reappearing even
-     // if this mock work is subsequently reapproved.
-     item.reviewed=false;item.rightsConfirmed=false;item.privacyConfirmed=false;
-     item.visible=false;item.featured=false;item.approvalEpoch++;
-     galleryDetailDrafts.delete(item.id);
-     audit(item.id+'：説明・制作者を変更し、模擬承認を解除して非公開に');
-     setMessage('説明・制作者を変更しました。以前の模擬掲載確認は無効になりました。再確認前は公開されません。');
-     render();
-    },item.archived,'secondary gallery-save-meta'),
+    button('作品情報をまとめて変更',saveDetails,item.archived,
+     'secondary gallery-save-meta'),
     button('編集中の変更を取消',()=>{
      galleryDetailDrafts.delete(item.id);
-     setMessage('未保存の説明・制作者変更を取り消しました。');
+     setMessage('未保存の作品名・説明・制作者変更を取り消しました。');
      render();
     },item.archived,'secondary gallery-cancel-meta')
    );
    metaEditor.append(descriptionLabel,descriptionInput,creditLabel,
     creditInput,pendingLabel,metaActions);
    if(galleryDetailDrafts.has(item.id))pendingLabel.textContent=
-    '編集中（未保存）・元の内容は変更していません。';
+    '作品情報を編集中（未保存）。変更確定まで公開履歴は変わりません。';
    const actions=make('div',undefined,'actions gallery-actions');
    actions.append(
-    button('名前を変更',()=>{
-     const next=title.value.trim();
-     if(!next||next.length>60){setMessage('展示名は1〜60文字で入力してください。');return}
-     item.title=next;audit(item.id+'：模擬展示名の変更');
-     setMessage('展示名を変更しました。端末内だけの模擬編集です。');render();
-    }),
+    // Keep the original title shortcut, but route it through the SAME
+    // all-fields atomic save and moderation invalidation as the editor.
+    button('名前を変更',saveDetails,item.archived),
     button('↑ 上へ',()=>{
      const previous=displayedIndices[displayIndex-1];
      if(previous===undefined)return;
