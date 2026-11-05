@@ -25,6 +25,14 @@ test('current GAS deployment guidance requires live backup and incremental compa
  assert.match(guide,/書き込みを伴う作業は明示承認なしに実施しない/);
  assert.match(legacy,/廃止・実行禁止/);
  assert.match(legacy,/同一プロジェクト・同一デプロイ・同一URL/);
+ assert.match(page,/issues\/66/);
+ assert.match(page,/現行のCode\.gsを全文置換しないでください/);
+ assert.match(page,/同じデプロイの新バージョン/);
+ assert.doesNotMatch(page,/opsCopyDispatch|WebAdminOps\.gs|追加コード|追加2行/);
+ assert.match(legacy,/19関数重複/);
+ assert.match(legacy,/既存の運用スプレッドシート/);
+ assert.match(legacy,/復元可能なバックアップ/);
+ assert.match(legacy,/別途オーナーの明示承認/);
  assert.doesNotMatch(page,/統合版全文に置き換え|Code[.]gs全貼り付け手順を開く|全貼り付け（部分追加なし）/);
  assert.doesNotMatch(js,/opsCopyDispatch|dispatchCode/);
  assert.doesNotMatch(page,/<script[^>]+src="\/gacha-admin-ops[.]js"/);
