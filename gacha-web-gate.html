@@ -70,10 +70,10 @@ main{max-width:760px}
  <p id="opsRetryInfo" class="ops-error" hidden></p><button type="button" id="opsRetry" hidden disabled>前回と同じ操作IDで再確認</button>
  <div id="opsQuickPanel" class="ops-card" aria-labelledby="opsQuickTitle">
   <h3 id="opsQuickTitle" class="ops-section-title">⚡ 残りのガチャ・即日対応</h3>
-  <p class="ops-caption">先に本人の登録ブラウザとメンシプ資格を確認。権利を作成・追加するときは各操作を個別に承認します。本人のガチャ画面の認証は省略しません。</p>
+  <p class="ops-caption">先に本人の元の登録ブラウザ・MIO-IDとメンシプ資格を確認。初訪問の簡易受付だけではガチャを解放できません。回数の追加は個別承認が必要。本人のガチャ画面の認証は省略しません。</p>
   <p id="opsQuickSummary" class="ops-message" role="status" aria-live="polite">管理者の接続待ちです。</p>
   <div class="ops-grid">
-   <button type="button" id="opsQuickIntake" class="ops-secondary ops-shortcut">① 新規受付へ</button>
+   <button type="button" id="opsQuickIntake" class="ops-secondary ops-shortcut">① 未登録の方を受付・案内</button>
    <button type="button" id="opsQuickApproval" class="ops-secondary ops-shortcut">② メンシプ確認・登録承認へ</button>
    <button type="button" id="opsQuickGrant" class="ops-secondary ops-shortcut">③ 残回数確認・付与へ</button>
    <button type="button" id="opsQuickGate" class="ops-secondary ops-shortcut">④ ガチャ受付ON/OFFへ</button>
@@ -86,6 +86,7 @@ main{max-width:760px}
   <label class="ops-filter" for="opsOnlyRemaining"><input id="opsOnlyRemaining" type="checkbox">残回数がある参加者だけ表示</label>
   <p id="opsRemainingSummary" class="ops-caption">残回数を照合中</p>
   <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <p id="opsSelectedCheck" class="ops-message" role="status" aria-live="polite">参加者を選択すると、確認すべき項目が表示されます。</p>
   <div class="ops-grid">
    <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
    <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
@@ -97,7 +98,7 @@ main{max-width:760px}
   <div class="ops-field"><label for="opsNewName">来場者名</label><input id="opsNewName" maxlength="40" placeholder="ColorSing名"></div>
   <div class="ops-field"><label for="opsNewNote">受付メモ</label><input id="opsNewNote" maxlength="120" placeholder="例：ガチャだけ参加"></div>
   <button type="button" id="opsIntakeCreate" disabled>初訪問を受付記録に追加</button>
-  <p class="ops-caption">初訪問の記録はガチャ承認・回数付与とは別の操作です。</p>
+  <p class="ops-caption"><strong>重要：</strong>ここは来場者の管理メモです。参加者本人のガチャ用Web登録や本人認証は発行しません。<a href="/join.html" style="color:#bfe8ff">サイトの簡易登録</a>もフォーム・ギャラリー用で、ガチャの本人認証にはなりません。未登録・別端末の方には既存MIO-IDがないか先に確認し、重複登録せず運営が対応してください。</p>
   <div id="opsSimple" class="ops-list"></div>
  </div>
  <details class="ops-card"><summary>ガチャ回数の付与履歴</summary><div id="opsGrants" class="ops-list"></div></details>
