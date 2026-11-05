@@ -11,7 +11,7 @@ const OP='0123456789abcdef0123456789abcdef';
 const OP2='abcdef0123456789abcdef0123456789';
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const draft=()=>({
- kind:'gallery',title:'架空の思い出',description:'仮の説明',
+ kind:'gallery',category:'ファンアート',title:'架空の思い出',description:'仮の説明',
  credit:'テスト管理者',occurredOn:null,imageUrl:'',
  externalUrl:'https://example.org/work'
 });
@@ -64,14 +64,14 @@ const setup=(options={})=>{
       return result(hit?[hit]:[]);
      }
      if(sql.startsWith('INSERT INTO museum_public_exhibits(')){
-      assert.match(sql,/VALUES\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,'draft',0\)/);
+      assert.match(sql,/VALUES\(\$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,'draft',0\)/);
       const id=EXHIBIT;
       assert.equal(this.active.works[id],undefined,'duplicate created');
       this.active.newIds++;
       this.active.works[id]={
-       id,kind:args[0],title:args[1],description:args[2],
-       credit:args[3],occurred_on:args[4],image_url:args[5],
-       external_url:args[6],status:'draft',revision:0,
+       id,kind:args[0],category:args[1],title:args[2],description:args[3],
+       credit:args[4],occurred_on:args[5],image_url:args[6],
+       external_url:args[7],status:'draft',revision:0,
        rights_checked_at:null,privacy_checked_at:null,reviewed_by:null,published_at:null
       };
       return result([{id,revision:0,status:'draft'}],'INSERT');
@@ -79,12 +79,13 @@ const setup=(options={})=>{
      if(sql.startsWith('UPDATE museum_public_exhibits SET kind=')){
       assert.match(sql,/status='draft'/);
       assert.match(sql,/rights_checked_at=NULL,privacy_checked_at=NULL,reviewed_by=NULL,published_at=NULL/);
-      const current=this.active.works[args[7]];
-      if(!current||current.status!=='draft'||current.revision!==args[8])
+      const current=this.active.works[args[8]];
+      if(!current||current.status!=='draft'||current.revision!==args[9])
        return result([],'UPDATE');
       Object.assign(current,{
-       kind:args[0],title:args[1],description:args[2],credit:args[3],
-       occurred_on:args[4],image_url:args[5],external_url:args[6],
+       kind:args[0],category:args[1],title:args[2],description:args[3],
+       credit:args[4],occurred_on:args[5],image_url:args[6],
+       external_url:args[7],
        revision:current.revision+1,rights_checked_at:null,privacy_checked_at:null,
        reviewed_by:null,published_at:null
       });
@@ -116,6 +117,8 @@ test('owner creates nonpublic exhibition with one private audit receipt; never t
  assert.deepEqual(r,{ok:true,replayed:false,exhibitId:EXHIBIT,
   revision:0,privateDraftAtSave:true,published:false});
  assert.equal(storage.works[EXHIBIT].status,'draft');
+ assert.equal(storage.works[EXHIBIT].kind,'gallery');
+ assert.equal(storage.works[EXHIBIT].category,'ファンアート');
  assert.equal(storage.works[EXHIBIT].rights_checked_at,null);
  assert.equal(storage.works[EXHIBIT].published_at,null);
  assert.equal(storage.newIds,1);
@@ -227,6 +230,21 @@ test('invalid create/edit action fields never reach a database transaction',asyn
   await assert.rejects(()=>run(pool,changes),/MUSEUM_EXHIBIT_/);
   assert.equal(storage.calls.length,0);
  }
+});
+test('media category changes independently of exhibition room, and unknown type never writes',async()=>{
+ const {pool,storage}=setup();
+ await run(pool,{draft:{...draft(),kind:'moments',category:'音声・楽曲'}});
+ assert.equal(storage.works[EXHIBIT].kind,'moments');
+ assert.equal(storage.works[EXHIBIT].category,'音声・楽曲');
+ await run(pool,{operationId:OP2,action:'edit',exhibitId:EXHIBIT,
+  expectedRevision:0,draft:{...draft(),kind:'events',category:'動画'}});
+ assert.equal(storage.works[EXHIBIT].kind,'events');
+ assert.equal(storage.works[EXHIBIT].category,'動画');
+ const count=storage.calls.length;
+ await assert.rejects(()=>run(pool,{operationId:'fedcba9876543210fedcba9876543210',
+  action:'edit',exhibitId:EXHIBIT,expectedRevision:1,
+  draft:{...draft(),kind:'icons',category:'動画以外'}}),/MUSEUM_EXHIBIT_DRAFT_CONTENT_INVALID/);
+ assert.equal(storage.calls.length,count);
 });
 test('candidate DDL and stage module remain unrouted and contain no private data',()=>{
  const code=readFileSync(new URL('../museum-exhibit-private-draft-stage.mjs',import.meta.url),'utf8');
