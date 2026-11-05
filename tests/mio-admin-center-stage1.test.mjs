@@ -160,8 +160,13 @@ test('operator cannot approve without explicitly choosing the membership result'
   assert.ok(approve);
   assert.equal(approve.disabled,false);
   await approve.click();
+  assert.match(b.el('opsStatus').textContent,/先に現場確認スイッチ/);
+  const onsite=flatten(b.el('opsPending')).find(x=>x.tagName==='input');
+  assert.ok(onsite,'individual onsite switch required');
+  onsite.checked=true;
+  await approve.click();
   assert.match(b.el('opsStatus').textContent,/メンシプ照合結果を管理者が選択してください/);
-  assert.equal(b.requests.length,1,'no approval request without manual membership selection');
+  assert.equal(b.requests.length,1,'no approval request without onsite and membership checks');
 });
 
 test('person readiness diagnosis keeps membership and browser possession unverified',async()=>{
@@ -220,4 +225,31 @@ test('pending legacy duplicate cannot create a new MIO-ID by shortcut',async()=>
   assert.match(flatten(wrap).map(x=>x.textContent).join(' '),/新規IDを作成せず/);
   assert.equal(flatten(wrap).filter(x=>x.tagName==='button'&&/新規作成/.test(x.textContent)).length,0);
   assert.equal(b.requests.length,1,'new participant must never be issued from a name coincidence');
+});
+
+test('an onsite operator release is separate from full rollout and requires attestation',()=>{
+ const api=read('api-gacha-admin-ops.js');
+ assert.match(api,/MIO_GACHA_ONSITE_RELEASE/);
+ assert.match(api,/operator-verified-onsite-20261105/);
+ assert.match(api,/onsiteEnabled&&!standardEnabled/);
+ assert.match(api,/d\.onSiteVerified!==true/);
+ assert.match(api,/writeMode/);
+ assert.match(api,/authorizedCode\(d\.code/);
+ assert.match(api,/sessionOK\(req\)/);
+ assert.match(html,/id="opsOnsiteGrantVerified"/);
+ assert.match(source,/onSiteVerified:true/);
+});
+test('grant switch defaults to off even for verified participant until onsite check',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,writeMode:'onsite',totalPending:0,rejectedCount:0,
+   roster:[{name:'試験参加者',mioId:'MIO-0048',gacha:{checked:true,total:2,remaining:2,special:0}}],
+   pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ const person=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+ await person.click();
+ assert.equal(b.el('opsGrant').disabled,true,'onsite check must precede individual grant');
+ b.el('opsOnsiteGrantVerified').checked=true;
+ b.el('opsOnsiteGrantVerified').events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,false,'manually checked person can proceed to confirmation');
+ assert.equal(b.requests.length,1,'a switch alone never makes a backend write');
 });
