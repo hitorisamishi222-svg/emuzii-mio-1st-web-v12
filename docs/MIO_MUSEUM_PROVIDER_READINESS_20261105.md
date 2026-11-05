@@ -134,3 +134,13 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - その後、古い模擬カウンター `opsPendingNewCount` などを期待する管理センター回帰テストが、統合済みの新画面と食い違っていたことを発見。削除されたIDの再導入で取り繕わず、現在の `opsBell`、`opsQuickSummary` と認証待ち状態、管理操作停止とCSP通信遮断を確認するテストへ更新した。
 - 機能コミット `9f0f9543a703d53de41baec0a095787b6ad1dd88` で登録回帰、ガチャ管理センター、記念館CI（Chromium含む）、ガチャON/OFF、認証互換、Face IDなどの検査が成功した。これは**本番実機と実DB書込の合格ではない**。
 - PRは引き続き**Draft・未マージ**。履歴上の衝突が解消されても、Neon専用5テーブル、実復元検証、専用接続・管理者認証、本番移行は未達なので、実保存・マージ・公開は実行しない。
+
+## 2026-11-05再検証：Neon Free 子ブランチの履歴参照とPITRを区別
+
+- 当日のNeonメタデータを再読取（変更なし）：Free `free_v3`、履歴 `21600` 秒（6時間）、合計6ブランチ／上限10、`gallery-admin-isolated` は `main` を親とする**子ブランチ**、スナップショット0件・自動スケジュールなし。
+- **実操作の実証**：Neonの**読み取り専用** `compare_database_schema` で、子ブランチの `2026-11-05T09:00:00Z` 時点の `neondb` スキーマを親ブランチと比較できた。差分にはテーブル定義が含まれるため、参加者の実データ行は保存・表示・書込みしていない。成功したのは**過去時点のスキーマ照合だけ**。スナップショット作成・復元ブランチ作成・データ復元は未実施。
+- Neonの現行ドキュメント（https://neon.com/docs/manage/branches、https://neon.com/docs/postgres/backup-restore/branch-restore）では、子ブランチはInstant Restoreの対象でなく、Instant Restoreはルートブランチ限定。一方、Neonコンソール／APIの**Past data付き新規ブランチ作成**は、親ブランチに必要な履歴がある場合に選べる。これらは異なる操作である。
+- 現在接続しているNeon `create_branch` アクションは**現在HEADからのコピー**しか提供せず、`parent_timestamp` を受け取らない。従って、本セッションの利用可能ツールだけで「子ブランチを6時間前から復元して照合済み」と申告することは禁止。通常のHEAD複製は復元演習の代わりにしない。
+- `museum-neon-recovery-route-stage.mjs` の判定を修正し、子ブランチの6時間履歴を `historical_inspection_only` と表示。`pitrWindowAvailable=false`、`rootInstantRestoreEligible=false`、`timestampBranchCreationAvailableThroughConnector=false` とし、`museum-provider-readiness-stage.mjs` で**履歴があるだけでは復元経路の準備条件を通さない**。
+- 次の実復元演習は、同じ既存Neonプロジェクト内の**別名・一時的な非本番ブランチ**を指定時刻の履歴から作れる機能の利用可否、費用、期限切れ後の削除を確認した上で、復元先の独立性・テーブル定義・件数・個人情報保護を検証する必要がある。管理者・ガチャ・皆勤データが含まれるため、いかなる作業も元DBを上書きしない。
+- 復元先作成ができない場合は、機能の不足として停止する。**本番側のrootブランチを復元先に使うこと、子ブランチのHEAD複製を復元成功に見せかけること、無料枠を超える課金を無確認で発生させることはしない**。
