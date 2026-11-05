@@ -383,3 +383,32 @@ test('grant attestation resets on edited quantity, reason, and server-side balan
  assert.equal(b.el('opsGrant').disabled,true);
  assert.equal(b.requests.length,2,'no grant write was attempted during these changes');
 });
+
+test('full or onsite release never bypasses in-person verification',async()=>{
+ const src=read('api-gacha-admin-ops.js')
+   .replace(/^import .*;$/gm,'')
+   .replace('export default async function handler','async function handler')+
+   '\n globalThis.__handler=handler;';
+ const calls=[];
+ const context={
+  process:{env:{MIO_GACHA_ADMIN_OPS_RELEASE:'verified-existing-gas-ops-20261030'}},
+  prepare:()=>true,authorizedCode:()=>true,sessionOK:async()=>false,
+  bridge:async(action,data)=>{calls.push(action);return {ok:true,status:'承認済み'}},
+  console:{error(){}}
+ };
+ vm.runInNewContext(src,context);
+ async function run(verified){
+  const req={headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+   origin:'https://emuzii-mio-1st-web-v12.vercel.app',
+   'content-type':'application/json'},
+   body:{code:'mock',action:'approve',webId:'MIO-W-'+'a'.repeat(24),mioId:'MIO-9000',
+    memberConfirmed:true,expectedStatus:'承認待ち',operationId:'d'.repeat(32),
+    ...(verified?{onSiteVerified:true}:{})}};
+  const r={statusCode:0,status(n){this.statusCode=n;return this},json(j){this.body=j;return this},setHeader(){}};
+  await context.__handler(req,r);return r.statusCode;
+ }
+ assert.equal(await run(false),400,'full release is not authority to bypass person verification');
+ assert.equal(calls.length,0);
+ assert.equal(await run(true),200);
+ assert.equal(calls.length,1);
+});
