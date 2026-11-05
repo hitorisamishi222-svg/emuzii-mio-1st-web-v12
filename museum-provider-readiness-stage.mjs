@@ -64,10 +64,11 @@ export function assessMuseumProviderReadinessStage({
    branch.parent_id===main.id&&branch.name==='gallery-admin-isolated',
   neon_database_present:database,
   schema_table_inventory_complete:tableShape&&missing.length===0,
-  // Either a branch snapshot or a verifiable PITR window is a possible
-  // recovery route. Neither constitutes an executed restore exercise.
-  recovery_route_inventory_present:snapshotInventoryPresent||
-   recovery?.pitrWindowAvailable===true
+  // The child branch can have a historical query window yet NO supported
+  // direct instant-restore route. A real snapshot (or future independently
+  // verified restore mechanism) is required to pass the route inventory.
+  recovery_route_inventory_present:snapshotInventoryPresent&&
+   recovery?.identityMatched!==false
  });
  const blockers=freeze(Object.entries(checks).filter(([,ok])=>!ok).map(([key])=>key));
  return freeze({
@@ -76,6 +77,8 @@ export function assessMuseumProviderReadinessStage({
   missingTables:freeze(missing),
   recoveryRoute:recovery?.route??(snapshotInventoryPresent?'snapshot_candidate':'none'),
   historyRetentionSeconds:recovery?.historyRetentionSeconds??null,
+  historyWindowPresent:recovery?.historyWindowPresent===true,
+  rootInstantRestoreEligible:recovery?.rootInstantRestoreEligible===true,
   snapshotInventoryPresent,
   // This is only the provider metadata inventory. A later READ-ONLY PG
   // inspection must prove actual constraints and user/session revocations.
