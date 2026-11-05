@@ -315,3 +315,15 @@ test('review refuses different timestamp, browser or participant name before wri
   assert.equal(row[4],'未確認');
  }
 });
+
+test('grant refuses blank or impossible gacha rights before audit writes',()=>{
+ for(const [column,value] of [[5,''],[7,-1],[7,500],[14,''],[1,'別人']]){
+  const x=sandbox(),g=x.rows['emuzii_ガチャ'][1];g[column]=value;
+  const writes=x.write.length;
+  assert.throws(()=>x.exec({action:'webAdminOpsGrant',operationId:'e'.repeat(32),
+   mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'現場確認済み'}),
+   /ガチャ管理行|権利数が不整合/);
+  assert.equal(x.write.length,writes,'invalid gacha rights must not create audit rows or grant credits');
+  assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,1);
+ }
+});
