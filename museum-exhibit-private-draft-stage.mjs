@@ -9,7 +9,8 @@ const OP=/^[a-f0-9]{32}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CONTROL=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 const KINDS=new Set(['gallery','icons','moments','events']);
-const FIELDS='credit,description,externalUrl,imageUrl,kind,occurredOn,title';
+const CATEGORIES=new Set(['イラスト','動画','音声・楽曲','ファンアート','その他']);
+const FIELDS='category,credit,description,externalUrl,imageUrl,kind,occurredOn,title';
 const fail=x=>{throw Error('MUSEUM_EXHIBIT_'+x)};
 const asRevision=x=>{
  const n=typeof x==='string'&&/^(0|[1-9]\d*)$/.test(x)?Number(x):x;
@@ -45,12 +46,13 @@ const isoDate=x=>{
 const normalize=draft=>{
  if(!draft||typeof draft!=='object'||Array.isArray(draft)||
     Object.keys(draft).sort().join(',')!==FIELDS)fail('DRAFT_FIELDS_INVALID');
- if(!KINDS.has(draft.kind)||!string(draft.title,120)||!draft.title.trim()||
+ if(!KINDS.has(draft.kind)||!CATEGORIES.has(draft.category)||
+    !string(draft.title,120)||!draft.title.trim()||
     !string(draft.description,2000)||!string(draft.credit,80)||
     !isoDate(draft.occurredOn)||!string(draft.imageUrl,1024)||
     !image(draft.imageUrl)||!https(draft.externalUrl))fail('DRAFT_CONTENT_INVALID');
  return Object.freeze({
-  kind:draft.kind,title:draft.title.trim(),description:draft.description,
+  kind:draft.kind,category:draft.category,title:draft.title.trim(),description:draft.description,
   credit:draft.credit.trim(),occurredOn:draft.occurredOn,
   imageUrl:draft.imageUrl,externalUrl:draft.externalUrl
  });
@@ -102,20 +104,20 @@ export async function saveMuseumExhibitPrivateDraftStage(client,{
    return Object.freeze({ok:true,replayed:true,exhibitId:a.exhibit_id.toLowerCase(),
     revision,privateDraftAtSave:true,published:false});
   }
-  const args=[fields.kind,fields.title,fields.description,fields.credit,
+  const args=[fields.kind,fields.category,fields.title,fields.description,fields.credit,
    fields.occurredOn,fields.imageUrl,fields.externalUrl];
   let result;
   if(action==='create'){
    result=await client.query(
-    "INSERT INTO museum_public_exhibits(kind,title,description,credit,occurred_on,image_url,external_url,status,revision) "+
-    "VALUES($1,$2,$3,$4,$5,$6,$7,'draft',0) RETURNING id,revision,status",
+    "INSERT INTO museum_public_exhibits(kind,category,title,description,credit,occurred_on,image_url,external_url,status,revision) "+
+    "VALUES($1,$2,$3,$4,$5,$6,$7,$8,'draft',0) RETURNING id,revision,status",
     args);
   }else{
    result=await client.query(
-    "UPDATE museum_public_exhibits SET kind=$1,title=$2,description=$3,credit=$4,"+
-    "occurred_on=$5,image_url=$6,external_url=$7,revision=revision+1,"+
+    "UPDATE museum_public_exhibits SET kind=$1,category=$2,title=$3,description=$4,credit=$5,"+
+    "occurred_on=$6,image_url=$7,external_url=$8,revision=revision+1,"+
     "rights_checked_at=NULL,privacy_checked_at=NULL,reviewed_by=NULL,published_at=NULL,"+
-    "updated_at=now() WHERE id=$8 AND revision=$9 AND status='draft' "+
+    "updated_at=now() WHERE id=$9 AND revision=$10 AND status='draft' "+
     "RETURNING id,revision,status",
     [...args,exhibitId.toLowerCase(),expectedRevision]);
   }
