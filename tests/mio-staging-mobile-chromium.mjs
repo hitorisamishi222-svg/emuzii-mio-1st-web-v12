@@ -408,6 +408,34 @@ try{
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('https://example.org/art')"),true);
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta a')"),null,
     'unreviewed external URLs are never rendered as clickable links');
+   // Detail edits must survive unrelated re-renders without an accidental
+   // save, then apply only after the owner explicitly clicks the edit action.
+   await evaluate(`(()=>{
+    const d=document.querySelector('#demoGallery .gallery-row:last-child .gallery-description-input');
+    d.value='保存前の説明ドラフト';
+    d.dispatchEvent(new Event('input',{bubbles:true}));
+    const filter=document.querySelector('#demoGalleryRoomFilter');
+    filter.value='icons';filter.dispatchEvent(new Event('change',{bubbles:true}));
+    filter.value='gallery';filter.dispatchEvent(new Event('change',{bubbles:true}));
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-description-input').value"),'保存前の説明ドラフト');
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-description').textContent.includes('架空の思い出と展示説明')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-detail-unsaved').textContent.includes('未保存')"),true);
+   await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-cancel-meta').click()");
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-description-input').value"),'架空の思い出と展示説明');
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:last-child');
+    const d=row.querySelector('.gallery-description-input');
+    const c=row.querySelector('.gallery-credit-input');
+    d.value='編集後の説明（未公開）';
+    c.value='編集後の架空制作者';
+    d.dispatchEvent(new Event('input',{bubbles:true}));
+    c.dispatchEvent(new Event('input',{bubbles:true}));
+    row.querySelector('.gallery-save-meta').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-description').textContent.includes('編集後の説明（未公開）')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-exhibit-meta').textContent.includes('編集後の架空制作者')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:last-child .gallery-detail-unsaved').textContent"),'');
    assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('架空作品D')"),false,
     'creating an unreviewed private exhibit never publishes it');
    assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(2)').disabled"),true);
@@ -731,6 +759,29 @@ try{
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
    await evaluate("document.querySelector('#demoReset').click()");
+   // Editing formerly reviewed metadata immediately invalidates the old
+   // approval and keeps the old public snapshot hidden after reapproval.
+   await evaluate(`(()=>{
+    const row=document.querySelector('#demoGallery .gallery-row:first-child');
+    const d=row.querySelector('.gallery-description-input');
+    d.value='大幅修正した展示説明';
+    d.dispatchEvent(new Event('input',{bubbles:true}));
+    row.querySelector('.gallery-save-meta').click();
+   })()`);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),1);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child').textContent.includes('公開確認待ち')"),true);
+   assert.equal(await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').disabled"),true);
+   // Reacquire the first work after each re-render.
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:first-child input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:nth-child(2) input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(4)').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .entry').length"),2);
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),1,
+    'reapproval must never revive a stale historical publication');
+   await evaluate("document.querySelector('#demoReset').click()");
+   assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPublished .entry').length"),2);
 
   }
  }
