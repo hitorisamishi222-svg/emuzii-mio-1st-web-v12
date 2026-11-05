@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#07172f"><title>翠央1周年｜ガチャ初回登録</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#174878,#07172f 68%);color:#edf8ff;font:16px/1.7 system-ui,-apple-system,"Noto Sans JP",sans-serif}main{max-width:580px;margin:auto;padding:20px 16px 70px}h1{font-size:26px}a{color:#bdeaff}.card{border:1px solid #6b9fc2;border-radius:22px;background:#0b2d55e8;padding:22px;margin:18px 0}label{display:block;font-weight:700;margin:10px 0 7px}input{display:block;width:100%;min-height:52px;border:1px solid #afddf8;border-radius:12px;padding:12px;background:#fff;color:#07213b;font:inherit}button,.action{display:block;width:100%;min-height:50px;border:0;border-radius:13px;padding:12px 16px;text-align:center;text-decoration:none;background:#f5d998;color:#082544;font-weight:800;font-size:16px;margin:16px 0}.secondary{background:#17476f;color:#fff;border:1px solid #91d0f4}.muted{color:#c0dae9;font-size:14px}#message{white-space:pre-wrap;overflow-wrap:anywhere;background:#173e67;border-radius:10px;padding:15px}button:disabled{opacity:.5}#form[hidden]{display:none}footer{font-size:13px;color:#b9d8e8}</style></head>
+<body><main><a href="/">← 翠央1周年トップへ</a><h1>🎁 メンシプガチャ 初回登録</h1>
+<p>ガチャだけ利用したい方も、ColorSing名で登録できます。皆勤賞の入力は必要ありません。</p>
+<section class="card"><h2>① まず本人の端末で登録</h2>
+<p class="muted">以前サイトに登録した方は、<strong>初回と同じ端末・同じブラウザ</strong>を使ってください。二重登録せず管理者へ連絡してください。</p>
+<form id="form" hidden><label for="name">ColorSing名</label><input id="name" maxlength="40" autocomplete="nickname" required placeholder="メンシプ加入時と同じ名前"><button id="submit" type="submit">管理者へ登録申請する</button></form>
+<p id="message" role="status" aria-live="polite">登録の受付状況を確認しています…</p>
+</section>
+<section class="card"><h2>② 管理者が確認・承認</h2><p>みお・えむじーが本人とメンシプの購入口数を確認し、ガチャ回数を付与します。</p><p>口数が既に登録済みの場合は重複して追加しません。</p></section>
+<section class="card"><h2>③ ガチャを回す</h2><p>管理者による承認が完了し、ガチャ受付がONになれば抽選できます。現在は運営の公開設定に従います。</p><a class="action secondary" href="/gacha.html">ガチャ画面へ進む</a></section>
+<footer>登録申請だけでは抽選権限は付与されません。本人確認と管理者承認が必要です。端末情報を消去・変更すると再認証が必要になる場合があります。</footer>
+<script>
+'use strict';
+const form=document.getElementById('form'),nameBox=document.getElementById('name'),message=document.getElementById('message'),submit=document.getElementById('submit');
+const KEY='mio_gacha_quick_registration_retry_v1';
+const tell=s=>message.textContent=s;
+async function post(url,data){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(data)});const v=await r.json();if(!r.ok)throw Error(v.error||'通信の確認に失敗しました');return v}
+(async()=>{
+ try{
+  const status=await fetch('/api/status',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',body:'{}'});
+  if(status.ok){const v=await status.json();if(v.ok&&v.status){tell('この端末には既存の登録情報があります。新しく登録せず、ガチャ画面で残回数を確認してください。');return}}
+  const res=await fetch('/api/register',{cache:'no-store'});if(!res.ok)throw Error('登録受付を確認できません');
+  const data=await res.json();if(data.registrationOpen!==true){tell('現在、登録受付の安全確認中です。管理者へお問い合わせください。');return}
+  form.hidden=false;tell('初めて登録する方は、メンシプ購入時のColorSing名を入力してください。');
+ }catch{tell('登録状態を確認できませんでした。重複登録を避けるため、管理者にお問い合わせください。')}
+})();
+form.addEventListener('submit',async e=>{
+ e.preventDefault();const name=nameBox.value.trim();if(!name)return;
+ submit.disabled=true;tell('登録申請を保存中…');
+ try{
+  let saved;try{saved=JSON.parse(localStorage.getItem(KEY)||'null')}catch{saved=null}
+  if(saved&&saved.name!==name)throw Error('前の登録確認が残っています。前の名前で再送するか管理者へ連絡してください');
+  if(!saved){const bytes=crypto.getRandomValues(new Uint8Array(32));saved={name,retryKey:Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''),retryIssuedAt:Date.now()};localStorage.setItem(KEY,JSON.stringify(saved))}
+  const response=await post('/api/register',{...saved,loginId:'',memberClaim:true});
+  if(!response.ok)throw Error('登録結果を確認できませんでした');
+  localStorage.removeItem(KEY);form.hidden=true;
+  tell('✅ 登録申請を受け付けました。\n名前：'+name+'\n状態：'+(response.status||'管理者の確認待ち')+'\n\nみお・えむじーの本人確認とメンシプ口数の反映をお待ちください。');
+ }catch(err){tell('登録が確定していません：'+err.message+'\n通信エラー時は同じ端末・同じ名前から再送してください。');}
+ finally{submit.disabled=false}
+});
+</script></main></body></html>
