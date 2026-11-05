@@ -4,7 +4,8 @@
 // Caller must independently establish the metadata came from the FULL provider
 // inventory; a hand-built list cannot certify real deployed configuration.
 const TARGET='feature/mio-v2-integration-mainbaseline-20261102';
-const KEY='GALLERY_DATABASE_URL';
+// Dedicated museum key: never reuse or reconfigure the shared gallery URL.
+const KEY='MIO_MUSEUM_GALLERY_DATABASE_URL';
 const SHA=/^[a-f0-9]{40}$/i;
 const PROJECT=/^prj_[A-Za-z0-9]+$/;
 const isRecord=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -35,7 +36,8 @@ export function assessMuseumPreviewEnvScopeStage({variables,deployment,expected}
     ['preview','production','development'].includes(t))&&
    (x.gitBranch===undefined||typeof x.gitBranch==='string')),
   one_branch_override:matching.length===1,
-  // Branch overrides do not make a broad Preview fallback safe. A newly
+  // This applies ONLY to the museum key; legacy gallery Preview settings
+  // are left intact for their existing routes. A newly
   // created Preview branch could silently inherit the dangerous DB URL.
   no_inherited_preview:inherited.length===0,
   preview_only_scope:matching.length===1&&
