@@ -12,14 +12,18 @@ test('old GAS is diagnosed only for authenticated Web admin read',()=>{
 });
 test('safe guidance stays accessible but no unauthorized admin or GAS changes are available',()=>{
  const html=load('gacha-web-gate.html'),js=load('gacha-admin-ops.js');
- const panel=html.split('<!-- MIO_ADMIN_PREVIEW_START -->')[1]?.split('<!-- MIO_ADMIN_PREVIEW_END -->')[0];
+ const panel=html.split('<!-- MIO_MUSEUM_PREVIEW_LOCK_OPEN_START -->')[1]?.split('<!-- MIO_MUSEUM_PREVIEW_LOCK_CLOSE_END -->')[0];
  assert.ok(panel,'Dedicated pending admin UI must exist');
- assert.match(panel,/管理者データとの接続停止中・書き込み停止中/);
+ assert.match(panel,/管理センターの書き込み停止中/);
+ assert.match(panel,/<fieldset id="museumOpsPreviewLock" disabled/);
+ assert.match(html,/content="connect-src 'none'; form-action 'none'"/);
  assert.match(panel,/既存GASを壊さない接続手順/);
  assert.match(panel,/MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102[.]md/);
  for(const id of ['opsReload','opsGrant','opsIntakeCreate']){
-  assert.match(panel,new RegExp('<button[^>]+id="'+id+'"[^>]+\\bdisabled\\b'));
+  assert.match(panel,new RegExp('<button[^>]+id="'+id+'"'),
+   'main operator controls must remain in a disabled fieldset');
  }
+
  assert.doesNotMatch(html,/<script[^>]+src="\/gacha-admin-ops[.]js"/,'do not start management writes');
  assert.doesNotMatch(panel,/Code[.]gs全貼り付け手順を開く|全貼り付け（部分追加なし）/);
  assert.match(js,/error\.code=json\.code/,'admin future error classification remains wired in archived module');
