@@ -3,6 +3,7 @@
 // This does NOT verify their provenance, restore backups or grant any action.
 // Never serialize credentials, environment variable values or participant rows.
 import {assessMuseumPreviewEnvScopeStage} from './museum-vercel-preview-env-scope-stage.mjs';
+import {assessMuseumNeonRecoveryRouteStage} from './museum-neon-recovery-route-stage.mjs';
 
 const TABLES=Object.freeze([
  'gallery_admin_users','gallery_admin_devices','gallery_admin_sessions',
@@ -21,7 +22,7 @@ const freeze=Object.freeze;
 
 export function assessMuseumProviderReadinessStage({
  previewVariables,deployment,expected,neonBranches,neonDatabases,
- neonTables,neonSnapshots
+ neonTables,neonSnapshots,neonProjectMetadata
 }={}){
  if(!record(expected)||!safeList(neonBranches,300)||
     !safeList(neonDatabases,300)||!safeList(neonTables,2000)||
@@ -45,6 +46,17 @@ export function assessMuseumProviderReadinessStage({
  const tableShape=tableNames.every(x=>typeof x==='string'&&NAME.test(x))&&
   new Set(tableNames).size===tableNames.length;
  const missing=TABLES.filter(t=>!tableNames.includes(t));
+ const snapshotInventoryPresent=neonSnapshots.some(x=>
+  record(x)&&x.branch_id===spec.galleryBranchId&&
+  typeof x.id==='string'&&x.id.length>0);
+ // A free-tier PITR window is a recovery CANDIDATE, not a restored backup.
+ // Project metadata must be independently read; client-provided claims are
+ // not accepted by any write endpoint.
+ const recovery=record(neonProjectMetadata)&&branch&&main?
+  assessMuseumNeonRecoveryRouteStage({
+   project:neonProjectMetadata,isolatedBranch:branch,
+   productionBranch:main,snapshots:neonSnapshots
+  }):null;
  const checks=freeze({
   preview_environment_isolated:preview.metadataConsistent,
   neon_gallery_branch_isolated:!!branch&&!!main&&branch.primary===false&&
@@ -52,16 +64,19 @@ export function assessMuseumProviderReadinessStage({
    branch.parent_id===main.id&&branch.name==='gallery-admin-isolated',
   neon_database_present:database,
   schema_table_inventory_complete:tableShape&&missing.length===0,
-  // A snapshot record is not a completed restore exercise.
-  snapshot_inventory_present:neonSnapshots.some(x=>
-   record(x)&&x.branch_id===spec.galleryBranchId&&
-   typeof x.id==='string'&&x.id.length>0)
+  // Either a branch snapshot or a verifiable PITR window is a possible
+  // recovery route. Neither constitutes an executed restore exercise.
+  recovery_route_inventory_present:snapshotInventoryPresent||
+   recovery?.pitrWindowAvailable===true
  });
  const blockers=freeze(Object.entries(checks).filter(([,ok])=>!ok).map(([key])=>key));
  return freeze({
   checks,
   blockers,
   missingTables:freeze(missing),
+  recoveryRoute:recovery?.route??(snapshotInventoryPresent?'snapshot_candidate':'none'),
+  historyRetentionSeconds:recovery?.historyRetentionSeconds??null,
+  snapshotInventoryPresent,
   // This is only the provider metadata inventory. A later READ-ONLY PG
   // inspection must prove actual constraints and user/session revocations.
   metadataInventoryComplete:blockers.length===0,
