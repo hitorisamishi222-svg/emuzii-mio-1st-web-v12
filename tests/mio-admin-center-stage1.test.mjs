@@ -160,6 +160,11 @@ test('operator cannot approve without explicitly choosing the membership result'
   assert.ok(approve);
   assert.equal(approve.disabled,false);
   await approve.click();
+  assert.match(b.el('opsStatus').textContent,/現場確認スイッチ/);
+  const onsite=flatten(b.el('opsPending')).find(x=>x.tagName==='input');
+  assert.ok(onsite);
+  onsite.checked=true;
+  await approve.click();
   assert.match(b.el('opsStatus').textContent,/メンシプ照合結果を管理者が選択してください/);
   assert.equal(b.requests.length,1,'no approval request without manual membership selection');
 });
