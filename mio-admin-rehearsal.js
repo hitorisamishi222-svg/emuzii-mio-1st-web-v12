@@ -29,12 +29,15 @@
    item.privacyConfirmed&&!item.archived;
  const draftDisplay=()=>s.gallery.filter(eligible).map(item=>({
   id:item.id,title:item.title,category:item.category,room:item.room,
+  description:item.description||'',credit:item.credit||'',
+  occurredOn:item.occurredOn||null,externalUrl:item.externalUrl||'',
   featured:item.featured,approvalEpoch:item.approvalEpoch,imageUrl:null // browser-selected photos are never published
  }));
  const galleryFingerprint=()=>JSON.stringify(s.gallery.map(item=>[
   item.id,item.title,item.category,item.room,item.visible,item.featured,
   item.reviewed,item.rightsConfirmed,item.privacyConfirmed,item.approvalEpoch,
-  item.archived,item.imageUrl
+  item.archived,item.imageUrl,item.description||'',item.credit||'',
+  item.occurredOn||null,item.externalUrl||''
  ]));
  let galleryPublished=[],galleryReviewFingerprint=null,restoreSelectedRevision=null;
  // A one-step undo only remembers order IDs. It never stores rights approval,
@@ -63,6 +66,51 @@
   return n;
  };
  const setMessage=(m)=>{$('demoMessage').textContent=m};
+ // Match the proposed server-side seven-field create-draft contract.
+ // This remains browser-memory-only; no fetch, cookies, or storage.
+ let newExhibitReviewed=null;
+ const freshExhibitDetails=()=>{
+  const title=$('demoGalleryNewTitle').value.trim();
+  const category=$('demoGalleryNewCategory').value;
+  const kind=$('demoGalleryNewRoom').value;
+  const description=$('demoGalleryNewDescription').value;
+  const credit=$('demoGalleryNewCredit').value.trim();
+  const occurredOn=$('demoGalleryNewOccurred').value||null;
+  const externalUrl=$('demoGalleryNewExternal').value.trim();
+  const bad=/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
+  if(!title||title.length>60||bad.test(title))throw Error('展示名は1〜60文字で入力してください。');
+  if(!['イラスト','動画','音声・楽曲','ファンアート','その他'].includes(category))
+   throw Error('展示の種類を選択してください。');
+  if(!knownGalleryRoom(kind))throw Error('展示室を選択してください。');
+  if(description.length>2000||bad.test(description)||credit.length>80||bad.test(credit))
+   throw Error('説明は2000文字以内、制作者名は80文字以内で入力してください。');
+  if(occurredOn){
+   const date=new Date(occurredOn+'T00:00:00Z');
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(occurredOn)||!Number.isFinite(date.getTime())||
+      date.toISOString().slice(0,10)!==occurredOn)throw Error('正しい作品日付を選んでください。');
+  }
+  if(externalUrl){
+   let url;
+   try{url=new URL(externalUrl)}catch{throw Error('紹介先はhttpsのURLだけを指定してください。');}
+   if(url.protocol!=='https:'||!url.hostname||url.username||url.password||url.hash||
+      /[\u0000-\u0020\u007f]/.test(externalUrl)||externalUrl.length>2048)
+    throw Error('紹介先はhttpsのURLだけを指定してください。');
+  }
+  return Object.freeze({kind,title,description,credit,occurredOn,imageUrl:'',externalUrl,category});
+ };
+ const invalidateNewExhibitReview=()=>{
+  newExhibitReviewed=null;
+  $('demoGalleryAdd').disabled=true;
+  $('demoGalleryNewPreview').textContent=
+   '入力内容の確認後にだけ、架空の非公開作品を追加できます。通信・アップロード・保存は行いません。';
+ };
+ const resetNewExhibitForm=()=>{
+  for(const id of ['demoGalleryNewTitle','demoGalleryNewDescription','demoGalleryNewCredit',
+   'demoGalleryNewOccurred','demoGalleryNewExternal'])$(id).value='';
+  $('demoGalleryNewCategory').value='イラスト';
+  $('demoGalleryNewRoom').value='gallery';
+  invalidateNewExhibitReview();
+ };
  const audit=what=>{
   s.log.unshift('操作 '+(s.log.length+1)+'：'+what);
   if(s.log.length>150)s.log.length=150;
@@ -606,22 +654,62 @@
  $('demoGalleryFilter').addEventListener('change',render);
  $('demoGalleryRoomFilter').addEventListener('change',render);
  $('demoGalleryPreviewRoom').addEventListener('change',render);
- $('demoGalleryAdd').addEventListener('click',()=>{
-  const title=$('demoGalleryNewTitle').value.trim();
-  const category=$('demoGalleryNewCategory').value;
-  const room=$('demoGalleryNewRoom').value;
-  if(!title||title.length>60){setMessage('模擬作品名は1〜60文字で入力してください。');return}
-  if(!['イラスト','動画','音声・楽曲','ファンアート','その他'].includes(category)){
-   setMessage('展示の種類を確認してください。');return
+ for(const id of ['demoGalleryNewTitle','demoGalleryNewCategory','demoGalleryNewRoom',
+  'demoGalleryNewDescription','demoGalleryNewCredit','demoGalleryNewOccurred',
+  'demoGalleryNewExternal']){
+  $(id).addEventListener('input',invalidateNewExhibitReview);
+  $(id).addEventListener('change',invalidateNewExhibitReview);
+ }
+ $('demoGalleryNewReview').addEventListener('click',()=>{
+  let details;
+  try{details=freshExhibitDetails()}catch(error){
+   invalidateNewExhibitReview();
+   setMessage(error.message);
+   $('demoGalleryNewPreview').textContent=error.message;
+   return;
   }
-  if(!knownGalleryRoom(room)){setMessage('配置する展示室を選択してください。');return}
-  if(s.gallery.length>=30){setMessage('模擬展示の上限は30件です。');return}
+  if(s.gallery.length>=30){
+   invalidateNewExhibitReview();
+   setMessage('模擬展示の上限は30件です。');return;
+  }
+  newExhibitReviewed=JSON.stringify(details);
+  const preview=$('demoGalleryNewPreview');
+  preview.replaceChildren(
+   make('strong','確認済み：非公開の仮下書き'),
+   make('p','作品名：'+details.title),
+   make('p','展示室：'+galleryRooms[details.kind]+' ／ '+details.category),
+   make('p','制作者：'+(details.credit||'未記入')),
+   make('p','作品日付：'+(details.occurredOn||'未設定')),
+   make('p','説明：'+(details.description||'未記入')),
+   make('p','紹介先：'+(details.externalUrl||'未設定')),
+   make('p','実DB保存・ファイル送信・公開は行いません。')
+  );
+  $('demoGalleryAdd').disabled=false;
+  setMessage('内容を確認しました。架空の非公開下書きとして追加できます。');
+ });
+ $('demoGalleryAdd').addEventListener('click',()=>{
+  let details;
+  try{details=freshExhibitDetails()}catch(error){
+   invalidateNewExhibitReview();setMessage(error.message);return;
+  }
+  if(!newExhibitReviewed||newExhibitReviewed!==JSON.stringify(details)){
+   invalidateNewExhibitReview();
+   setMessage('追加前に最新の入力内容を確認してください。');return;
+  }
+  if(s.gallery.length>=30){
+   invalidateNewExhibitReview();setMessage('模擬展示の上限は30件です。');return;
+  }
   const id='ART-DEMO-'+s.nextExhibit++;
-  s.gallery.push({id,title,category,room,visible:false,featured:false,
-   reviewed:false,rightsConfirmed:false,privacyConfirmed:false,approvalEpoch:0,archived:false,imageUrl:null});
-  audit(id+'：非公開の模擬下書きを追加');
-  $('demoGalleryNewTitle').value='';$('demoGalleryNewRoom').value='gallery';
-  setMessage('模擬展示を非公開で追加しました。模擬確認前はプレビューには表示されません。');
+  s.gallery.push({
+   id,title:details.title,category:details.category,room:details.kind,
+   description:details.description,credit:details.credit,
+   occurredOn:details.occurredOn,externalUrl:details.externalUrl,
+   visible:false,featured:false,reviewed:false,rightsConfirmed:false,
+   privacyConfirmed:false,approvalEpoch:0,archived:false,imageUrl:null
+  });
+  audit(id+'：内容確認後に非公開の模擬下書きを追加');
+  resetNewExhibitForm();
+  setMessage('架空の非公開下書きを追加しました。実DB保存や公開は行っていません。');
   render();
  });
  $('demoSearch').addEventListener('input',render);
@@ -640,8 +728,8 @@
   releaseGalleryImages(s.gallery);
   s=initial();resetPublication();
   $('demoGalleryDifference').textContent='公開済みの版との差分はまだ確認していません。';
-  $('demoGalleryNewTitle').value='';$('demoGalleryNewCategory').value='イラスト';
-  $('demoGalleryNewRoom').value='gallery';$('demoGalleryRoomFilter').value='all';
+  resetNewExhibitForm();
+  $('demoGalleryRoomFilter').value='all';
   $('demoGalleryPreviewRoom').value='all';
   $('demoGallerySearch').value='';$('demoGalleryFilter').value='all';$('demoSearch').value='';$('demoGrantAmount').value='1';
   $('demoOperationId').value='DEMO-OP-001';$('demoDropReply').checked=false;
