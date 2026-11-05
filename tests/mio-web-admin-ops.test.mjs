@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../GAS_WebAdminOps_20261030.gs',import.meta.url),'utf8');
+const reviewIdentity={expectedName:'初訪問者',expectedBrowserId:'MIO-W-222222222222222222222222',
+ expectedCreatedAt:'2026-10-19T12:00:00.000Z'};
 function sandbox(){
  const rows={
   'emuzii_Web登録':[['Web参加ID'],['MIO-W-1234567890abcdef12345678','token','新しい人','',new Date(),'承認待ち','未確認','MIO-0001','','','','確認待ち',...Array(9).fill('')]],
@@ -10,7 +12,7 @@ function sandbox(){
   'emuzii_ガチャ':[['参加者ID'],['MIO-0001','新しい人',0,0,0,2,0,2,0,0,0,'','OK','OK',2,0,'解放']],
   'emuzii_ガチャ付与履歴':[['日時']],
   'emuzii_当選履歴':[['抽選ID']],
-  'emuzii_新規簡易登録':[['登録日時'],['','初訪問者','MIO-W-222222222222222222222222','登録','未確認','']]
+  'emuzii_新規簡易登録':[['登録日時'],[reviewIdentity.expectedCreatedAt,'初訪問者',reviewIdentity.expectedBrowserId,'登録','未確認','']]
  };
  const write=[];
  const ss={
@@ -80,7 +82,7 @@ test('approval requires exact name and linked MIO ID, preserves token',()=>{
 });
 test('simple intake review is not registration approval',()=>{
  const x=sandbox();
- x.exec({action:'webAdminOpsReview',operationId:'b'.repeat(32),row:2,expectedStatus:'未確認'});
+ x.exec({action:'webAdminOpsReview',operationId:'b'.repeat(32),row:2,expectedStatus:'未確認',...reviewIdentity});
  assert.equal(x.rows['emuzii_新規簡易登録'][1][4],'確認済み');
  assert.equal(x.rows['emuzii_Web登録'][1][5],'承認待ち');
 });
@@ -238,7 +240,7 @@ test('uncertain receipt rejects ambiguous duplicate same-name same-note entries'
 
 test('review receipt can be recovered after status changed but audit left pending',()=>{
  const x=sandbox();
- const d={action:'webAdminOpsReview',operationId:'4'.repeat(32),row:2,expectedStatus:'未確認'};
+ const d={action:'webAdminOpsReview',operationId:'4'.repeat(32),row:2,expectedStatus:'未確認',...reviewIdentity};
  assert.equal(x.exec(d).status,'確認済み');
  const log=x.rows['emuzii_Web管理操作履歴'][1];
  assert.equal(log[3],'簡易受付:2');
@@ -251,19 +253,19 @@ test('review receipt can be recovered after status changed but audit left pendin
 });
 test('review operation ID may not be reused against another row or person',()=>{
  const x=sandbox();
- const d={action:'webAdminOpsReview',operationId:'5'.repeat(32),row:2,expectedStatus:'未確認'};
+ const d={action:'webAdminOpsReview',operationId:'5'.repeat(32),row:2,expectedStatus:'未確認',...reviewIdentity};
  x.exec(d);
  const log=x.rows['emuzii_Web管理操作履歴'][1];
  log[7]='処理中';
  x.rows['emuzii_新規簡易登録'].push(['','別の受付者','','登録','確認済み','']);
- assert.throws(()=>x.exec({...d,row:3}),/操作IDの再利用/);
+ assert.throws(()=>x.exec({...d,row:3}),/操作IDの再利用|対象者が変更/);
  assert.equal(log[7],'処理中');
  assert.throws(()=>x.exec({...d,expectedStatus:'管理確認待ち'}),/操作IDの再利用/);
  assert.equal(log[7],'処理中');
 });
 test('review cannot finalize when registered status changed externally',()=>{
  const x=sandbox();
- const d={action:'webAdminOpsReview',operationId:'6'.repeat(32),row:2,expectedStatus:'未確認'};
+ const d={action:'webAdminOpsReview',operationId:'6'.repeat(32),row:2,expectedStatus:'未確認',...reviewIdentity};
  x.exec(d);
  const log=x.rows['emuzii_Web管理操作履歴'][1];
  log[7]='処理中';
@@ -300,4 +302,16 @@ test('approved accounts with incomplete identity verification are still shown fo
  assert.equal(view.totalPending,1);
  assert.equal(view.rejectedCount,0);
  assert.equal(view.pending[0].status,'承認済み');
+});
+
+test('review refuses different timestamp, browser or participant name before writing',()=>{
+ for(const [col,val] of [[0,'2026-10-20T00:00:00.000Z'],[1,'別人の受付者'],[2,'MIO-W-'+'f'.repeat(24)]]){
+  const x=sandbox(),row=x.rows['emuzii_新規簡易登録'][1];
+  row[col]=val;
+  const before=x.write.length;
+  assert.throws(()=>x.exec({action:'webAdminOpsReview',operationId:'9'.repeat(32),
+     row:2,expectedStatus:'未確認',...reviewIdentity}),/対象者が変更/);
+  assert.equal(x.write.length,before,'identity mismatch must not create an audit log or change a person');
+  assert.equal(row[4],'未確認');
+ }
 });
