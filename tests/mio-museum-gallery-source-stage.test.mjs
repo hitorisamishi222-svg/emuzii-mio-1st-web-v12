@@ -12,14 +12,14 @@ const DRAFT_ID='102ecf25-1c7c-4a0c-92fb-01b8e394d673';
 const NEW='museum-'+ID;
 const DRAFT='museum-'+DRAFT_ID;
 const SRC=()=>[
- {id:ID,kind:'icons',title:'公開済みの架空イラスト',description:'展示説明',
+ {id:ID,kind:'icons',category:'イラスト',title:'公開済みの架空イラスト',description:'展示説明',
   credit:'権利確認済',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
   status:'published',revision:1,updated_at:new Date('2026-11-01T01:00:00Z'),
   rights_checked_at:new Date('2026-11-01T00:00:00Z'),
   privacy_checked_at:new Date('2026-11-01T00:00:00Z'),
   reviewed_by:'11111111-2222-4333-8444-555555555555',
   published_at:new Date('2026-11-01T00:00:00Z')},
- {id:DRAFT_ID,kind:'moments',title:'未承認の思い出画像',description:'非公開',
+ {id:DRAFT_ID,kind:'moments',category:'その他',title:'未承認の思い出画像',description:'非公開',
   credit:'非公開の作成者',image_url:'/assets/gallery-emuzii-mio-cover.svg',external_url:'',
   status:'draft',revision:0,updated_at:new Date('2026-11-01T01:00:00Z'),
   rights_checked_at:null,privacy_checked_at:null,
@@ -150,7 +150,7 @@ test('an approved future fan-art exhibit may be assigned to the primary gallery 
  const report=await loadMuseumModeratedCatalogStage(fake({exhibits}));
  const art=report.catalog.find(x=>x.id===NEW);
  assert.equal(art.room,'gallery');
- assert.equal(art.category,'ギャラリー');
+ assert.equal(art.category,'イラスト');
  assert.equal(art.hidden,false);
  assert.ok(report.verifiedApprovedIds.includes(NEW));
  const projection=projectPublishedMuseumGallery({
@@ -160,6 +160,21 @@ test('an approved future fan-art exhibit may be assigned to the primary gallery 
   publishedLayout:{revision:2,order:[NEW],visibleIds:[NEW],featuredId:NEW}
  });
  assert.equal(projection.items[0].room,'gallery');
+});
+test('museum media type survives changing rooms and updates approved review proof',async()=>{
+ const first=await loadMuseumModeratedCatalogStage(fake());
+ const exhibits=SRC();
+ exhibits[0].kind='moments';
+ exhibits[0].category='音声・楽曲';
+ const updated=await loadMuseumModeratedCatalogStage(fake({exhibits}));
+ const x=updated.catalog.find(y=>y.id===NEW);
+ assert.equal(x.room,'moments');
+ assert.equal(x.category,'音声・楽曲');
+ assert.notEqual(first.currentReviewHashes[NEW],updated.currentReviewHashes[NEW]);
+});
+test('unknown museum media type fails closed rather than collapsing into room name',async()=>{
+ const exhibits=SRC();exhibits[0].category='bad-category';
+ await deny(()=>loadMuseumModeratedCatalogStage(fake({exhibits})),'EXHIBIT_INVALID');
 });
 test('hidden exhibit metadata is still redacted when room allocation is retained',async()=>{
  const result=await loadMuseumModeratedCatalogStage(fake());
