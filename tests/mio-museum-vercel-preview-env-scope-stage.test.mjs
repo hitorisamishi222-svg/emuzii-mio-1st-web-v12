@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {assessMuseumPreviewEnvScopeStage as check} from '../museum-vercel-preview-env-scope-stage.mjs';
 
 const TARGET='feature/mio-v2-integration-mainbaseline-20261102';
-const KEY='GALLERY_DATABASE_URL';
+const KEY='MIO_MUSEUM_GALLERY_DATABASE_URL';
+const LEGACY='GALLERY_DATABASE_URL';
 const sha='a'.repeat(40);
 const candidate=()=>({
  variables:[
@@ -41,6 +42,17 @@ test('current Vercel pattern: unscoped Preview with another branch override fail
  assert.equal(result.metadataConsistent,false);
  assert.deepEqual(result.failed.filter(k=>k==='one_branch_override'||k==='no_inherited_preview'),
   ['one_branch_override','no_inherited_preview']);
+});
+test('shared legacy gallery Preview credentials are ignored, not modified or reused',()=>{
+ const x=candidate();
+ x.variables.push({id:'legacy-generic',key:LEGACY,target:['preview'],type:'encrypted'});
+ assert.equal(check(x).metadataConsistent,true);
+ const onlyLegacy=candidate();
+ onlyLegacy.variables=[
+  {id:'legacy',key:LEGACY,target:['preview'],type:'encrypted'}
+ ];
+ assert.equal(check(onlyLegacy).metadataConsistent,false);
+ assert.equal(check(onlyLegacy).checks.one_branch_override,false);
 });
 test('unscoped Preview always blocks readiness, even when a correct override exists',()=>{
  const x=candidate();
