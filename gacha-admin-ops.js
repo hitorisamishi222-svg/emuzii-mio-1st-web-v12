@@ -137,11 +137,13 @@ async function refresh({automatic=false}={}){
  finally{blocked(false);if(!editing)render()}
 }
 el('opsReload').addEventListener('click',refresh);
+el('opsNewName').addEventListener('input',()=>{el('opsOnsiteIntakeVerified').checked=false});
 el('opsIntakeCreate').addEventListener('click',async()=>{
  const name=el('opsNewName').value.trim(),note=el('opsNewNote').value.trim();
+ if(el('opsOnsiteIntakeVerified').checked!==true){notice('現場で来場者名と既存登録を確認してスイッチを入れてください',true);return}
  if(!name||name.length>40||note.length>120){notice('初訪問者名・メモを確認してください',true);return}
  if(!window.confirm(name+' の初訪問を受付記録へ追加しますか？\n※この操作だけでは参加者承認になりません。'))return;
- await mutate('intake',{name,note});
+ await mutate('intake',{name,note,onSiteVerified:true});
 });
 function updateQuick(){
  const summary=el('opsQuickSummary'),remaining=el('opsRemainingSummary');
@@ -255,9 +257,14 @@ function render(){
   wrap.append(node('strong',item.name));
   wrap.append(node('p','受付状態: '+item.status+' / 行 '+item.row));
   if(item.status!=='確認済み'){
+   const onsite=node('label',undefined,'ops-filter');
+   const verified=node('input');verified.type='checkbox';verified.setAttribute('aria-label','現場で簡易受付の本人を確認した');
+   onsite.append(verified,node('span','現場で受付内容と本人を確認した'));
+   wrap.append(onsite);
    wrap.append(button('受付内容を確認済みにする',async()=>{
+     if(verified.checked!==true){notice('現場で簡易受付の本人を確認してスイッチを入れてください',true);return}
      if(!window.confirm(item.name+' の簡易受付を確認済みにしますか？\n※参加者登録の承認・ガチャ付与は別操作です。'))return;
-     await mutate('review',{row:item.row,expectedStatus:item.status});
+     await mutate('review',{row:item.row,expectedStatus:item.status,onSiteVerified:true});
    }));
   }
   el('opsSimple').append(wrap);
