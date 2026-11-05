@@ -294,6 +294,19 @@ test('museum curator rehearsal is museum-only, offline and has a visible fail-cl
   assert.match(html,new RegExp('id="'+id+'"'));
  }
  assert.match(html,/id="simulatePublish" disabled/);
+ for(const id of ['undoOrder','historyVersion','historyPreview','reviewRestore','restoreHistory']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(js,/function undoLastOrder/);
+ assert.match(js,/orderUndo\.after!==signature\(\)/);
+ assert.match(js,/function safeOldWorks/);
+ assert.match(js,/current\.epoch===x\.epoch/);
+ assert.match(js,/function reviewHistoryRestore/);
+ assert.match(js,/function restoreHistory/);
+ assert.match(js,/history\.push\(\{version,items:/);
+ assert.match(js,/unsavedForm\(\)/);
+ assert.match(html,/失効した作品|古い版からも復活しません/);
+
  assert.match(js,/const eligible=/);
  assert.match(js,/const publication=/);
  assert.match(js,/function invalidateRights/);
