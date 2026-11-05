@@ -246,6 +246,31 @@ test('media category changes independently of exhibition room, and unknown type 
   draft:{...draft(),kind:'icons',category:'動画以外'}}),/MUSEUM_EXHIBIT_DRAFT_CONTENT_INVALID/);
  assert.equal(storage.calls.length,count);
 });
+test('phone form-shaped input maps room and media type separately through real owner stage composition',async()=>{
+ const {pool,storage}=setup();
+ const uiDraft={room:'moments',category:'音声・楽曲',title:'架空の歌の記録',
+  description:'思い出の音楽',credit:'架空の提供者',occurredOn:'2026-11-05',
+  externalUrl:'https://example.org/song'};
+ const created=await run(pool,{draft:undefined,uiDraft});
+ assert.equal(created.privateDraftAtSave,true);
+ assert.equal(created.published,false);
+ assert.equal(storage.works[EXHIBIT].kind,'moments');
+ assert.equal(storage.works[EXHIBIT].category,'音声・楽曲');
+ assert.equal(storage.works[EXHIBIT].image_url,'');
+ assert.equal(storage.works[EXHIBIT].occurred_on,'2026-11-05');
+ const before=storage.calls.length;
+ for(const wrong of [
+  {...uiDraft,status:'published'},
+  {...uiDraft,imageUrl:'https://example.com/private.png'},
+  {...uiDraft,room:'undefined'},
+  {...uiDraft,category:'未分類'}
+ ]){
+  await assert.rejects(()=>run(pool,{draft:undefined,uiDraft:wrong}),/MUSEUM_EXHIBIT_FORM_FIELDS_INVALID/);
+  assert.equal(storage.calls.length,before,'bad form must stop before the DB client');
+ }
+ await assert.rejects(()=>run(pool,{uiDraft}),/MUSEUM_EXHIBIT_EXACTLY_ONE_DRAFT_REQUIRED/);
+ assert.equal(storage.calls.length,before);
+});
 test('candidate DDL and stage module remain unrouted and contain no private data',()=>{
  const code=readFileSync(new URL('../museum-exhibit-private-draft-stage.mjs',import.meta.url),'utf8');
  const adapter=readFileSync(new URL('../museum-exhibit-owner-save-stage.mjs',import.meta.url),'utf8');
