@@ -277,8 +277,10 @@ function render(){
    wrap.append(onsite);
    wrap.append(button('受付内容を確認済みにする',async()=>{
      if(verified.checked!==true){notice('現場で簡易受付の本人を確認してスイッチを入れてください',true);return}
+     if(!item.createdAt||typeof item.browserId!=='string'){notice('受付日時か登録端末の情報が不足しています。確認操作を停止しました。',true);return}
      if(!window.confirm(item.name+' の簡易受付を確認済みにしますか？\n※参加者登録の承認・ガチャ付与は別操作です。'))return;
-     await mutate('review',{row:item.row,expectedStatus:item.status,onSiteVerified:true});
+     await mutate('review',{row:item.row,expectedStatus:item.status,expectedName:item.name,
+       expectedBrowserId:item.browserId||'',expectedCreatedAt:item.createdAt||'',onSiteVerified:true});
    }));
   }
   el('opsSimple').append(wrap);
