@@ -6,7 +6,7 @@ export const REQUIRED_MUSEUM_SCHEMA=Object.freeze({
  gallery_admin_sessions:['user_id','device_id','token_hash','expires_at','revoked_at'],
  gallery_admin_audit:['actor_id','action','target','result'],
  museum_public_exhibits:[
-  'id','kind','title','description','credit','occurred_on','image_url','external_url',
+  'id','kind','category','title','description','credit','occurred_on','image_url','external_url',
   'status','trashed_at','revision','rights_checked_at','privacy_checked_at',
   'reviewed_by','published_at','created_at','updated_at'
  ]
@@ -25,6 +25,7 @@ export const REQUIRED_COLUMN_TYPES=Object.freeze({
  'gallery_admin_sessions.token_hash':'text',
  'gallery_admin_audit.actor_id':'uuid',
  'museum_public_exhibits.id':'uuid',
+ 'museum_public_exhibits.category':'text',
  'museum_public_exhibits.occurred_on':'date',
  'museum_public_exhibits.reviewed_by':'uuid',
  'museum_public_exhibits.revision':'integer',
@@ -51,7 +52,7 @@ export const REQUIRED_NOT_NULL=Object.freeze({
  gallery_admin_sessions:['user_id','device_id','token_hash','expires_at'],
  gallery_admin_audit:['action','result'],
  museum_public_exhibits:[
-  'id','kind','title','description','credit','image_url','external_url',
+  'id','kind','category','title','description','credit','image_url','external_url',
   'status','revision','created_at','updated_at'
  ]
 });
