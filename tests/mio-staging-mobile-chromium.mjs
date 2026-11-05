@@ -15,6 +15,9 @@ const cwd=process.cwd(),allowed=new Map([
  ['/museum-approved-gallery.js',['museum-approved-gallery.js','text/javascript']],
  ['/museum-archive.html',['museum-archive.html','text/html']],
  ['/museum-archive.js',['museum-archive.js','text/javascript']],
+ ['/museum-curator-preview.html',['museum-curator-preview.html','text/html']],
+ ['/museum-curator-preview.css',['museum-curator-preview.css','text/css']],
+ ['/museum-curator-preview.js',['museum-curator-preview.js','text/javascript']],
  ['/mio-admin-rehearsal.html',['mio-admin-rehearsal.html','text/html']],
  ['/gacha-web-gate.html',['gacha-web-gate.html','text/html']],
  ['/mio-admin-rehearsal.js',['mio-admin-rehearsal.js','text/javascript']],
@@ -1217,6 +1220,25 @@ try{
    await mkdir('artifacts',{recursive:true});
    const proof=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-gas-local-check-390.png',Buffer.from(proof.data,'base64'));
+  }
+ }
+ // Exercise the separately scoped MIO gallery-editor rehearsal on real
+ // mobile Chromium; only fictional artwork and browser memory may change.
+ for(const width of [320,390]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  await cdp('Page.navigate',{url:root+'/museum-curator-preview.html'});
+  await poll(()=>evaluate("document.querySelectorAll('#workList .curator-entry').length===3"),18000);
+  const state=await evaluate("(()=>({width:innerWidth,doc:document.documentElement.scrollWidth,works:document.querySelectorAll('#workList .curator-entry').length,publicCards:document.querySelectorAll('#visitorPreview .curator-public-card').length}))()");
+  assert.ok(state.doc<=state.width+2,'curator preview overflow '+JSON.stringify(state));
+  assert.equal(state.works,3);
+  assert.equal(state.publicCards,2);
+  if(width===390){
+   const behavior=await evaluate('(()=>{const cards=()=>[...document.querySelectorAll("#workList .curator-entry")];const actions=()=>[...document.querySelectorAll(".curator-entry.is-selected button")];const press=label=>{const b=actions().find(x=>x.textContent.includes(label));if(!b)throw Error("Missing action "+label);b.click()};cards()[0].querySelector("button").click();const title=document.querySelector("#workTitle");title.value="架空の記念曲・編集後";title.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#saveWork").click();if(!cards()[0].textContent.includes("確認待ち・非公開"))throw Error("changed work was not unpublished");for(const id of ["rightsOk","privacyOk","contentOk"]){const input=document.getElementById(id);input.checked=true;input.dispatchEvent(new Event("change",{bubbles:true}))}if(document.querySelector("#approveWork").disabled)throw Error("mock approval still blocked");document.querySelector("#approveWork").click();press("公開予定にする");document.querySelector("#reviewPublish").click();if(document.querySelector("#simulatePublish").disabled)throw Error("review gate did not unlock");document.querySelector("#simulatePublish").click();const published=document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");press("公開予定を解除");const revoked=!document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");return{published,revoked,works:cards().length}})()');
+   assert.deepEqual(behavior,{published:true,revoked:true,works:3},
+    'publish and immediate revoke must remain fictional and safe');
+   await mkdir('artifacts',{recursive:true});
+   const frame=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-offline-mobile-curator-390.png',Buffer.from(frame.data,'base64'));
   }
  }
  // Real main operator markup, but ALL operator inputs are inside a native
