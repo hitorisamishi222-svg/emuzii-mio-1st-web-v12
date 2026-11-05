@@ -790,6 +790,10 @@ function mioAdminOpsSummary_(ss,webRows){
  var simple=[];for(var l=0;l<fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,createdAt:mioAdminOpsStr_(fr[0] instanceof Date?fr[0].toISOString():fr[0]),name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
  var roster=[];Object.keys(byId).forEach(function(id){var x=byId[id],gg=(grants[id]||[]),entry=gg[0];
   var healthy=!duplicatePeople[id]&&gg.length===1&&entry.checked===true&&
+   mioAdminOpsName_(entry.name)===mioAdminOpsName_(x.name)&&
+   mioAdminOpsStr_(gacha.filter(function(r){return mioAdminOpsStr_(r[0])===id})[0][5])!==''&&
+   mioAdminOpsStr_(gacha.filter(function(r){return mioAdminOpsStr_(r[0])===id})[0][7])!==''&&
+   mioAdminOpsStr_(gacha.filter(function(r){return mioAdminOpsStr_(r[0])===id})[0][14])!==''&&
    Number.isSafeInteger(entry.total)&&entry.total>=0&&Number.isSafeInteger(entry.remaining)&&entry.remaining>=0&&
    Number.isSafeInteger(entry.special)&&entry.special>=0&&entry.remaining<=entry.total;
   roster.push({mioId:id,name:x.name,gacha:healthy?entry:null,needsReview:!healthy});
@@ -978,6 +982,12 @@ function mioAdminOpsGrant_(ss,d){
  var people=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id),name=mioAdminOpsStr_(people.c[1]);
  var sheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ'),g=mioAdminOpsOne_(mioAdminOpsValues_(sheet,17),0,id);
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!=='OK'||g.c[13]!=='OK')throw new Error('ガチャ管理行に要確認の項目があります');
+ if([5,7,14].some(function(i){return mioAdminOpsStr_(g.c[i])==='';})||
+    !Number.isSafeInteger(Number(g.c[5]))||Number(g.c[5])<0||
+    !Number.isSafeInteger(Number(g.c[7]))||Number(g.c[7])<0||
+    !Number.isSafeInteger(Number(g.c[14]))||Number(g.c[14])<0||
+    Number(g.c[7])>Number(g.c[5]))
+    throw new Error('ガチャ台帳の権利数が不整合です。確認してから付与してください');
  var log=mioAdminOpsLog_(ss),prev=mioAdminOpsExisting_(log,op);
  if(prev){
    if(prev.c[2]!=='付与'||prev.c[4]!==id||Number(prev.c[5])!==expected||
