@@ -28,3 +28,30 @@
  .museum-archive .archive-filters{justify-content:start}
  .museum-archive .archive-filter{font-size:14px;flex:1;min-width:125px}
 }
+
+/* Gallery-first museum archive wayfinding. All room cards describe FUTURE
+   exhibits, not unreviewed content. No gacha, auth or backend selectors. */
+.museum-archive .archive-room-guide{margin:0 auto 35px;max-width:1100px}
+.museum-archive .archive-room-heading{text-align:center;margin:0 auto 19px;max-width:780px}
+.museum-archive .archive-room-heading h2{font-size:clamp(21px,3.6vw,29px);line-height:1.4;margin:7px 0;color:#fff0cd}
+.museum-archive .archive-room-heading p{font-size:14px;color:#d7e8f8;line-height:1.8;margin:8px auto}
+.museum-archive .archive-room-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.museum-archive .archive-room-card{display:flex;flex-direction:column;min-width:0;gap:13px;position:relative;
+ padding:18px;border:1px solid #e2ca8bb0;border-radius:19px;text-decoration:none;
+ background:radial-gradient(circle at 88% 10%,#e7c78230,transparent 45%),linear-gradient(142deg,#204a6c,#0b2444);
+ box-shadow:inset 0 0 0 1px #fff5d719,0 12px 29px #0006}
+.museum-archive .archive-room-card:hover{border-color:#fff0c6;transform:translateY(-2px)}
+.museum-archive .archive-room-icon{display:grid;place-items:center;width:56px;height:56px;font-size:29px;
+ border-radius:16px;border:1px solid #f1dba088;background:radial-gradient(circle,#7099b666,#103154)}
+.museum-archive .archive-room-copy{display:flex;flex:1;flex-direction:column;gap:8px}
+.museum-archive .archive-room-copy strong{font-size:19px;line-height:1.4;color:#fff3dc}
+.museum-archive .archive-room-copy span{font-size:14px;line-height:1.7;color:#d8e9f7}
+.museum-archive .archive-room-copy em{font-size:13px;font-style:normal;font-weight:800;color:#ffe1a4;margin-top:auto}
+@media(max-width:850px){.museum-archive .archive-room-grid{grid-template-columns:1fr}}
+@media(max-width:630px){
+ .museum-archive .archive-room-guide{margin-bottom:27px}
+ .museum-archive .archive-room-card{flex-direction:row;align-items:flex-start;padding:15px;gap:12px}
+ .museum-archive .archive-room-icon{flex:0 0 52px;width:52px;height:52px;font-size:25px}
+ .museum-archive .archive-room-copy strong{font-size:17px}
+}
+@media(prefers-reduced-motion:reduce){.museum-archive .archive-room-card{transform:none!important}}
