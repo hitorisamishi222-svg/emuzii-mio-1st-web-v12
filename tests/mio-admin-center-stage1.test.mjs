@@ -224,3 +224,20 @@ test('the real admin API blocks on-site writes without explicit verification',as
  assert.equal(result.status,200,'authenticated read does not require write release');
  assert.equal(result.payload.writeMode,'locked');
 });
+
+test('GAS incompatibility stops automatic polling but allows manual recovery check',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:false,code:'GAS_UPDATE_REQUIRED',
+  error:'既存GASの運営管理連携が未更新です'});
+ b.connect();await b.settled();
+ assert.equal(b.requests.length,1,'initial authenticated read attempted once');
+ assert.match(b.el('opsStatus').textContent,/管理者の認証は通過/);
+ assert.match(b.el('opsStatus').textContent,/自動再取得を停止/);
+ b.intervals[0].fn();await b.settled();
+ assert.equal(b.requests.length,1,'known unsupported GAS must not be polled every 30 sec');
+ b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,roster:[],pending:[],simple:[],grants:[]});
+ await b.el('opsReload').click();await b.settled();
+ assert.equal(b.requests.length,2,'operator can retry manually after GAS update');
+ b.intervals[0].fn();await b.settled();
+ assert.equal(b.requests.length,3,'successful read resumes polling');
+});
