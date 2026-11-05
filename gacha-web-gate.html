@@ -69,8 +69,8 @@ main{max-width:760px}
  <p id="opsStatus" class="ops-message" role="status" aria-live="polite">管理者コードまたはFace IDで接続してください。</p>
  <p id="opsRetryInfo" class="ops-error" hidden></p><button type="button" id="opsRetry" hidden disabled>前回と同じ操作IDで再確認</button>
  <div id="opsQuickPanel" class="ops-card" aria-labelledby="opsQuickTitle">
-  <h3 id="opsQuickTitle" class="ops-section-title">⚡ 残りのガチャ・即日対応</h3>
-  <p class="ops-caption">先に本人の元の登録ブラウザ・MIO-IDとメンシプ資格を確認。初訪問の簡易受付だけではガチャを解放できません。回数の追加は個別承認が必要。本人のガチャ画面の認証は省略しません。</p>
+  <h3 id="opsQuickTitle" class="ops-section-title">⚡ 現場個別承認・残りガチャ即対応</h3>
+  <p class="ops-caption">来場したお客様ごとに、管理者が元の登録ブラウザ・MIO-ID・メンシプを現場確認して個別承認します。全体公開や一斉承認は行いません。簡易受付だけではガチャを解放できず、本人の画面認証も省略しません。</p>
   <p id="opsQuickSummary" class="ops-message" role="status" aria-live="polite">管理者の接続待ちです。</p>
   <h4 class="ops-section-title" style="font-size:17px;margin-top:16px">残回数あり・優先確認一覧</h4>
   <div id="opsQuickList" class="ops-list" aria-label="ガチャ残回数がある参加者の読み取り専用一覧"><p>管理者認証後に表示します。</p></div>
@@ -93,7 +93,8 @@ main{max-width:760px}
    <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
    <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
   </div>
-  <button type="button" id="opsGrant" disabled>選択した参加者に回数を付与</button>
+  <label class="ops-filter" for="opsOnsiteGrantVerified"><input type="checkbox" id="opsOnsiteGrantVerified">現場で本人・購入実績・既存残回数・今回の追加理由を確認した</label>
+  <button type="button" id="opsGrant" disabled>現場確認した参加者に回数を付与</button>
   <p class="ops-caption">抽選結果不明時は、既存の確定履歴を先に照合してください。未確認の回数を自動付与しません。</p>
  </div>
  <div id="opsIntakeSection" class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
