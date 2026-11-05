@@ -131,6 +131,26 @@ el('opsIntakeCreate').addEventListener('click',async()=>{
  if(!window.confirm(name+' の初訪問を受付記録へ追加しますか？\n※この操作だけでは参加者承認になりません。'))return;
  await mutate('intake',{name,note});
 });
+// Read-only diagnostics: do not infer membership or browser possession from the roster.
+function updateSelectionCheck(){
+ const target=el('opsSelectedCheck');
+ if(!state||!selected){target.textContent='参加者を選択すると、確認すべき項目が表示されます。';return;}
+ const links=(Array.isArray(state.webLinks)?state.webLinks:[]).filter(x=>x?.mioId===selected.mioId&&x.verified===true);
+ const g=selected.gacha;
+ const checked=g?.checked===true;
+ const remaining=Number(g?.remaining);
+ const validBalance=checked&&Number.isSafeInteger(remaining)&&remaining>=0;
+ const normal=typeof snapshot?.normalOpen==='boolean'?(snapshot.normalOpen?'受付ON':'受付OFF'):'受付未確認';
+ const fest=typeof snapshot?.festOpen==='boolean'?(snapshot.festOpen?'受付ON':'受付OFF'):'受付未確認';
+ target.textContent='【'+selected.name+' / '+selected.mioId+'】'+
+  '\n① Web登録との照合：'+(links.length===1?'照合済みの登録あり':links.length>1?'複数の照合済み登録：運営確認':'照合済み登録を確認できません')+
+  '\n② メンシプ購入：この一覧だけでは判定不可。管理者が購入の根拠を別途照合してください'+
+  '\n③ ガチャ台帳：'+(checked?'入力・名前チェックOK':'要確認／未登録')+
+  '\n④ 残回数：'+(validBalance?remaining+'回（台帳上）':'要確認')+
+  '\n⑤ 通常 '+normal+' ／ ラキフェス '+fest+
+  '\n⑥ 最後に本人が元の登録ブラウザでガチャページの資格・残回数を再確認。'+
+  '\n※これは運営確認用で、抽選許可・本人認証・メンシプ資格の自動付与ではありません。';
+}
 function updateQuick(){
  const summary=el('opsQuickSummary'),remaining=el('opsRemainingSummary');
  if(!state){
@@ -157,7 +177,7 @@ for(const [id,target] of [['opsQuickIntake','opsIntakeSection'],['opsQuickApprov
   if(destination&&typeof destination.scrollIntoView==='function')destination.scrollIntoView({behavior:'smooth',block:'start'});
  });
 }
-window.addEventListener('mio:gate-state-changed',updateQuick);
+window.addEventListener('mio:gate-state-changed',()=>{updateQuick();updateSelectionCheck();});
 function render(){
  updateQuick();
  el('opsPending').replaceChildren();
@@ -233,7 +253,7 @@ function render(){
 function renderRoster(){
  const div=el('opsRoster'),query=el('opsSearch').value.trim().toLowerCase();
  div.replaceChildren();
- if(!state){selected=null;el('opsPerson').textContent='参加者を選択してください';return}
+ if(!state){selected=null;el('opsPerson').textContent='参加者を選択してください';updateSelectionCheck();return}
  const onlyRemaining=el('opsOnlyRemaining').checked;
  const all=(state.roster||[]).filter(x=>(x.name.toLowerCase().includes(query)||x.mioId.toLowerCase().includes(query))&&
   (!onlyRemaining||(x.gacha?.checked===true&&Number(x.gacha.remaining)>0)))
@@ -246,6 +266,7 @@ function renderRoster(){
       (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認');
     el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!g||!g.checked;
     updateQuick();
+    updateSelectionCheck();
   },true));
  }
  if(!all.length)div.append(node('p','該当者がいません。'));
@@ -257,6 +278,7 @@ function renderRoster(){
  }else el('opsPerson').textContent='参加者を選択してください';
  el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;
  updateQuick();
+ updateSelectionCheck();
 }
 el('opsSearch').addEventListener('input',renderRoster);
 el('opsOnlyRemaining').addEventListener('change',renderRoster);
