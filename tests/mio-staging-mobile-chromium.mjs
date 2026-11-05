@@ -346,9 +346,15 @@ try{
     field.value='架空作品B・展示名変更';
     document.querySelector('#demoGallery .gallery-row .gallery-actions button:first-child').click();
    })()`);
-   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示名変更')"),true);
+   // A title rename is now safety-sensitive: hidden until its new content
+   // receives fresh rights and privacy checks, never inheriting old consent.
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPreview').textContent.includes('展示名変更')"),false);
+   assert.equal(await evaluate("document.querySelector('#demoGalleryPublished').textContent.includes('架空作品B')"),false);
    assert.equal(await evaluate("document.querySelector('#demoGalleryUndoOrder').disabled"),true,
     'after an edit, old ordering history must not roll back the curator state');
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:first-child input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-review-checks label:nth-child(2) input').click()");
+   await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(6)').click()");
    await evaluate("document.querySelector('#demoGallery .gallery-row:first-child .gallery-actions button:nth-child(5)').click()");
    assert.equal(await evaluate("document.querySelectorAll('#demoGalleryPreview .gallery-featured').length"),1);
    assert.equal(await evaluate("document.querySelector('#demoGalleryPreview .gallery-featured').closest('.entry').textContent.includes('展示名変更')"),true);
