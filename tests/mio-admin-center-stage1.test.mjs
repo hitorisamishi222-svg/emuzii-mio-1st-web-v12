@@ -110,3 +110,202 @@ test('polling updates bell without erasing a focused operator input',async()=>{
   b.intervals[0].fn();await b.settled();
   assert.equal(b.requests.length,2,'background tab must not poll');
 });
+
+test('quick gacha operator workflow keeps existing gates and avoids unsafe GAS replacement', () => {
+  for (const id of ['opsQuickPanel','opsQuickSummary','opsQuickIntake','opsQuickApproval',
+    'opsQuickGrant','opsQuickGate','opsOnlyRemaining','opsRemainingSummary']) {
+    assert.ok(html.includes('id="'+id+'"'), 'missing quick operator control: '+id);
+  }
+  assert.match(html, /href="\/gacha\.html"/);
+  assert.match(html, /現行のCode\.gsを全文置換しないでください/);
+  assert.doesNotMatch(html, /Code\.gsの全貼り付け（部分追加なし）/);
+  assert.match(source, /mio:gate-state-changed/);
+  assert.match(source, /メンシプ照合結果を選択（必須）/);
+  assert.match(source, /member\.value='';/);
+});
+test('quick operator reads remaining eligible candidates without granting or bypassing membership', async () => {
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:false,totalPending:1,rejectedCount:0,
+    roster:[
+      {name:'参加者A',mioId:'MIO-0001',gacha:{checked:true,total:3,remaining:2,special:0}},
+      {name:'参加者B',mioId:'MIO-0002',gacha:{checked:true,total:3,remaining:0,special:0}},
+      {name:'参加者C',mioId:'MIO-0003',gacha:{checked:false,total:2,remaining:2,special:0}}
+    ],
+    pending:[{name:'参加者D',webId:'MIO-W-123456789012345678901234',
+      status:'承認待ち',mioId:'MIO-0004',member:'未確認'}],
+    simple:[],grants:[]});
+  b.connect();await b.settled();
+  assert.match(b.el('opsQuickSummary').textContent,/登録承認待ち 1件/);
+  assert.match(b.el('opsQuickSummary').textContent,/既存ガチャ残回数あり 1名/);
+  assert.match(b.el('opsQuickSummary').textContent,/管理書込 停止中/);
+  assert.match(b.el('opsQuickSummary').textContent,/残回数あり＝抽選許可ではありません/);
+  assert.equal(b.el('opsGrant').disabled,true);
+  b.el('opsOnlyRemaining').checked=true;
+  b.el('opsOnlyRemaining').events.get('change')();
+  const buttons=flatten(b.el('opsRoster')).filter(x=>x.tagName==='button');
+  assert.equal(buttons.length,1);
+  assert.match(buttons[0].textContent,/参加者A/);
+  const member=flatten(b.el('opsPending')).find(x=>x.tagName==='select');
+  assert.ok(member,'membership confirmation dropdown required');
+  assert.equal(member.value,'','operator must explicitly confirm member status');
+  assert.equal(b.requests.length,1,'read-only interaction must not write to server');
+});
+test('operator cannot approve without explicitly choosing the membership result',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,rejectedCount:0,roster:[],
+    pending:[{name:'試験参加者',webId:'MIO-W-123456789012345678901234',
+      status:'承認待ち',mioId:'MIO-0004',member:'確認済み'}],simple:[],grants:[]});
+  b.connect();await b.settled();
+  const approve=flatten(b.el('opsPending')).find(x=>x.tagName==='button'&&/本人照合して承認/.test(x.textContent));
+  assert.ok(approve);
+  assert.equal(approve.disabled,false);
+  await approve.click();
+  assert.match(b.el('opsStatus').textContent,/先に現場確認スイッチ/);
+  const onsite=flatten(b.el('opsPending')).find(x=>x.tagName==='input');
+  assert.ok(onsite,'individual onsite switch required');
+  onsite.checked=true;
+  await approve.click();
+  assert.match(b.el('opsStatus').textContent,/メンシプ照合結果を管理者が選択してください/);
+  assert.equal(b.requests.length,1,'no approval request without onsite and membership checks');
+});
+
+test('person readiness diagnosis keeps membership and browser possession unverified',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+    roster:[{name:'運営試験',mioId:'MIO-0088',gacha:{checked:true,total:5,remaining:3,special:0}}],
+    webLinks:[{name:'運営試験',webId:'MIO-W-123456789012345678901234',mioId:'MIO-0088',verified:true}],
+    simple:[],pending:[],grants:[]});
+  b.connect();await b.settled();
+  const select=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+  assert.ok(select);
+  await select.click();
+  const message=b.el('opsSelectedCheck').textContent;
+  assert.match(message,/照合済みの登録あり/);
+  assert.match(message,/メンシプ購入：この一覧だけでは判定不可/);
+  assert.match(message,/残回数：3回（台帳上）/);
+  assert.match(message,/受付OFF/);
+  assert.match(message,/抽選許可・本人認証・メンシプ資格の自動付与ではありません/);
+  assert.equal(b.requests.length,1,'person diagnostics cannot create a write request');
+});
+test('simple visitor intake is explicitly not a membership draw registration',()=>{
+  assert.match(html,/簡易受付だけではガチャを解放できず/);
+  assert.match(html,/簡易登録.*ガチャの本人認証にはなりません/);
+  assert.match(html,/href="\/join\.html"/);
+  assert.match(html,/id="opsSelectedCheck"/);
+});
+
+test('quick priority list highlights missing Web identity before remaining balance and never writes',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+    roster:[
+      {name:'本人照合済み候補',mioId:'MIO-0001',gacha:{checked:true,total:4,remaining:4,special:0}},
+      {name:'途中登録候補',mioId:'MIO-0002',gacha:{checked:true,total:2,remaining:2,special:0}},
+      {name:'残数なし',mioId:'MIO-0003',gacha:{checked:true,total:5,remaining:0,special:0}}
+    ],
+    webLinks:[{name:'本人照合済み候補',webId:'MIO-W-123456789012345678901234',mioId:'MIO-0001',verified:true}],
+    pending:[],simple:[],grants:[]});
+  b.connect();await b.settled();
+  const cards=b.el('opsQuickList').children;
+  assert.equal(cards.length,2,'only positive confirmed balances included');
+  assert.match(flatten(cards[0]).map(x=>x.textContent).join(' '),/途中登録候補/);
+  assert.match(flatten(cards[0]).map(x=>x.textContent).join(' '),/登録途中・旧登録の可能性あり/);
+  const choose=flatten(cards[0]).find(x=>x.tagName==='button');
+  await choose.click();
+  assert.match(b.el('opsSelectedCheck').textContent,/MIO-0002/);
+  assert.equal(b.requests.length,1,'read-only investigation cannot issue a write');
+});
+test('pending legacy duplicate cannot create a new MIO-ID by shortcut',async()=>{
+  const b=fakeBrowser();
+  b.setSnapshot({ok:true,writeEnabled:true,totalPending:1,rejectedCount:0,
+    roster:[{name:'登録途中の利用者',mioId:'MIO-0017',gacha:{checked:true,total:2,remaining:2,special:0}}],
+    pending:[{name:'登録途中の利用者',status:'承認待ち',webId:'MIO-W-123456789012345678901234',
+      mioId:'',member:'未確認'}],simple:[],grants:[]});
+  b.connect();await b.settled();
+  const wrap=b.el('opsPending');
+  assert.match(flatten(wrap).map(x=>x.textContent).join(' '),/新規IDを作成せず/);
+  assert.equal(flatten(wrap).filter(x=>x.tagName==='button'&&/新規作成/.test(x.textContent)).length,0);
+  assert.equal(b.requests.length,1,'new participant must never be issued from a name coincidence');
+});
+
+test('an onsite operator release is separate from full rollout and requires attestation',()=>{
+ const api=read('api-gacha-admin-ops.js');
+ assert.match(api,/MIO_GACHA_ONSITE_RELEASE/);
+ assert.match(api,/operator-verified-onsite-20261105/);
+ assert.match(api,/onsiteEnabled&&!standardEnabled/);
+ assert.match(api,/d\.onSiteVerified!==true/);
+ assert.match(api,/writeMode/);
+ assert.match(api,/authorizedCode\(d\.code/);
+ assert.match(api,/sessionOK\(req\)/);
+ assert.match(html,/id="opsOnsiteGrantVerified"/);
+ assert.match(source,/onSiteVerified:true/);
+});
+test('grant switch defaults to off even for verified participant until onsite check',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,writeMode:'onsite',totalPending:0,rejectedCount:0,
+   roster:[{name:'試験参加者',mioId:'MIO-0048',gacha:{checked:true,total:2,remaining:2,special:0}}],
+   pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ const person=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+ await person.click();
+ assert.equal(b.el('opsGrant').disabled,true,'onsite check must precede individual grant');
+ b.el('opsOnsiteGrantVerified').checked=true;
+ b.el('opsOnsiteGrantVerified').events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,false,'manually checked person can proceed to confirmation');
+ assert.equal(b.requests.length,1,'a switch alone never makes a backend write');
+});
+
+test('the real admin API blocks on-site writes without explicit verification',async()=>{
+ const api=read('api-gacha-admin-ops.js')
+   .replace(/^import .*;$/gm,'')
+   .replace('export default async function handler','async function handler')+
+   '\n globalThis.__handler=handler;';
+ let calls=[],authorized=true;
+ const context={
+  process:{env:{MIO_GACHA_ONSITE_RELEASE:'operator-verified-onsite-20261105'}},
+  prepare:()=>({}),authorizedCode:()=>authorized,sessionOK:async()=>false,
+  bridge:async(action,data)=>{calls.push({action,data});return action==='webAdminOpsRead'?
+   {ok:true,pending:[],roster:[],simple:[],grants:[],totalPending:0,rejectedCount:0}:
+   {ok:true,mioId:'MIO-0017',status:'承認済み'}},
+  console:{error(){}}
+ };
+ vm.runInNewContext(api,context);
+ const run=async(body)=>{
+  const req={headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+   origin:'https://emuzii-mio-1st-web-v12.vercel.app',
+   'content-type':'application/json'},body};
+  const output={status:0,payload:null};
+  const res={setHeader(){},status(n){output.status=n;return this},json(j){output.payload=j;return this}};
+  await context.__handler(req,res);return output;
+ };
+ const approval={code:'test-admin-secret-is-mocked',action:'approve',
+  webId:'MIO-W-123456789012345678901234',mioId:'MIO-0017',
+  expectedStatus:'承認待ち',memberConfirmed:true,operationId:'a'.repeat(32)};
+ let result=await run(approval);
+ assert.equal(result.status,400,'onsite approval denied without person switch');
+ assert.equal(calls.length,0);
+ result=await run({...approval,onSiteVerified:true});
+ assert.equal(result.status,200,'per-person attestation may reach existing GAS');
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].action,'webAdminOpsApprove');
+ assert.equal(calls[0].data.mioId,'MIO-0017');
+ const grant={code:approval.code,action:'grant',mioId:'MIO-0017',count:2,
+  expectedSpecial:0,reason:'現場確認の検証',operationId:'b'.repeat(32)};
+ result=await run(grant);
+ assert.equal(result.status,400,'no blind additional grant');
+ assert.equal(calls.length,1);
+ result=await run({...grant,onSiteVerified:true});
+ assert.equal(result.status,200);
+ assert.equal(calls.length,2);
+ authorized=false;
+ result=await run({...approval,onSiteVerified:true});
+ assert.equal(result.status,403,'operator login always required');
+ assert.equal(calls.length,2);
+ context.process.env.MIO_GACHA_ONSITE_RELEASE='';
+ authorized=true;
+ result=await run({...approval,onSiteVerified:true});
+ assert.equal(result.status,503,'field release must be intentionally enabled');
+ assert.equal(calls.length,2);
+ result=await run({code:approval.code,action:'read'});
+ assert.equal(result.status,200,'authenticated read does not require write release');
+ assert.equal(result.payload.writeMode,'locked');
+});

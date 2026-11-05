@@ -59,6 +59,9 @@ test('uncertain Web grant keeps the exact operation ID across explicit retry',as
  const rosterButton=get('opsRoster').children.find(x=>x.tag==='button');
  assert.ok(rosterButton,'participant selector should render');
  rosterButton.listeners.click();
+ assert.equal(get('opsGrant').disabled,true,'selection alone must not allow onsite grant');
+ get('opsOnsiteGrantVerified').checked=true;
+ get('opsOnsiteGrantVerified').listeners.change();
  assert.equal(get('opsGrant').disabled,false);
  await get('opsGrant').listeners.click();
  assert.equal(serverSpecial,3);

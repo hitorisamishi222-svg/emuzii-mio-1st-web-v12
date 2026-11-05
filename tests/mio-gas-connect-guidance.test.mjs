@@ -13,10 +13,11 @@ test('old GAS is diagnosed only for authenticated Web admin read',()=>{
 test('guide starts hidden but can be opened directly without admin login',()=>{
  const html=load('gacha-web-gate.html'),js=load('gacha-admin-ops.js');
  assert.match(html,/id="opsInstallGuide" hidden/);
- assert.match(html,/blob\/main\/GAS_Code_FULL_WEB_OPS_20261030\.gs/);
- assert.match(html,/全貼り付け（部分追加なし）/);
+ assert.match(html,/issues\/66/);
+ assert.match(html,/現行のCode.gsを全文置換しないでください/);
+ assert.doesNotMatch(html,/全貼り付け（部分追加なし）/);
  assert.doesNotMatch(html,/id="opsCopyDispatch"/);
- assert.match(html,/デプロイを管理/);
+ assert.match(html,/同じデプロイの新バージョン/);
  assert.match(html,/id="opsSetupToggle"/);
  assert.match(js,/setupToggle\.addEventListener\('click'/);
  assert.match(js,/showGuide\(opsGuide\.hidden\)/);
@@ -33,7 +34,7 @@ test('original gacha switch remains wired; write gate remains closed',()=>{
 
 test('unauthenticated guide does not expose keys or modify operational APIs',()=>{
  const html=load('gacha-web-gate.html');
- assert.match(html,/Code.gs全貼り付け手順を開く/);
+ assert.match(html,/稼働GASの安全な照合手順を開く/);
  assert.match(html,/aria-controls="opsInstallGuide"/);
  assert.match(html,/id="opsInstallGuide" hidden/);
  assert.doesNotMatch(html,/MIO_GACHA_WEB_KEY_SHA256\s*=|APPS_SCRIPT_SECRET\s*=/);

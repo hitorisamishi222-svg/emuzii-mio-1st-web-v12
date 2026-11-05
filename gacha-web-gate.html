@@ -46,13 +46,18 @@ main{max-width:760px}
 .ops-secondary{background:#22577e;color:#f1f8ff;border:1px solid #7eadd2;margin-top:12px}
 #opsCount{font-weight:800;font-size:18px}
 #opsRetry{background:#f9d3a5}
+.ops-filter{display:flex;align-items:center;gap:9px;margin:12px 0;font-weight:600}
+.ops-filter input{width:auto;min-width:20px;height:20px;accent-color:#9fe1b6}
+.ops-shortcut{min-height:52px}
+.ops-steps{margin:10px 0;padding-left:24px;color:#ecf5ff}
+.ops-steps li{margin:8px 0}
 @media(max-width:520px){.ops-grid{grid-template-columns:1fr}.ops-summary{align-items:flex-start}}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
 <section><h2>🔑 Face ID・パスキー</h2><p><small>初回だけ管理者コードで登録。次からはFace IDでログインできます。</small></p><button id="passkeyLogin" disabled>Face IDでログイン</button><button id="passkeyRegister" disabled style="margin-top:10px;background:#184d71;color:#f3f9ff;border:1px solid #83afce">この端末のFace IDを登録</button><p id="passkeyStatus" role="status" aria-live="polite">Face IDの利用状況を確認しています…</p></section>
 <section id="switches"><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
-<section class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
-<section class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
+<section id="normalSection" class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
+<section id="festSection" class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
 <p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
 <p><small>変更はGoogle管理台帳の実際の受付設定に反映します。利用者のガチャ回数・当選履歴は変更しません。</small></p>
 
@@ -63,32 +68,50 @@ main{max-width:760px}
  <div class="ops-summary"><strong id="opsCount">未接続</strong><button type="button" id="opsReload" class="ops-secondary" disabled style="width:auto;min-height:48px">一覧を更新</button></div>
  <p id="opsStatus" class="ops-message" role="status" aria-live="polite">管理者コードまたはFace IDで接続してください。</p>
  <p id="opsRetryInfo" class="ops-error" hidden></p><button type="button" id="opsRetry" hidden disabled>前回と同じ操作IDで再確認</button>
- <div class="ops-card"><h3 class="ops-section-title">承認待ち・本人確認</h3><div id="opsPending" class="ops-list"><p>未接続</p></div></div>
- <div class="ops-card"><h3 class="ops-section-title">ガチャ回数の確認・付与</h3>
+ <div id="opsQuickPanel" class="ops-card" aria-labelledby="opsQuickTitle">
+  <h3 id="opsQuickTitle" class="ops-section-title">⚡ 現場個別承認・残りガチャ即対応</h3>
+  <p class="ops-caption">来場したお客様ごとに、管理者が元の登録ブラウザ・MIO-ID・メンシプを現場確認して個別承認します。全体公開や一斉承認は行いません。簡易受付だけではガチャを解放できず、本人の画面認証も省略しません。</p>
+  <p id="opsQuickSummary" class="ops-message" role="status" aria-live="polite">管理者の接続待ちです。</p>
+  <h4 class="ops-section-title" style="font-size:17px;margin-top:16px">残回数あり・優先確認一覧</h4>
+  <div id="opsQuickList" class="ops-list" aria-label="ガチャ残回数がある参加者の読み取り専用一覧"><p>管理者認証後に表示します。</p></div>
+  <div class="ops-grid">
+   <button type="button" id="opsQuickIntake" class="ops-secondary ops-shortcut">① 未登録の方を受付・案内</button>
+   <button type="button" id="opsQuickApproval" class="ops-secondary ops-shortcut">② メンシプ確認・登録承認へ</button>
+   <button type="button" id="opsQuickGrant" class="ops-secondary ops-shortcut">③ 残回数確認・付与へ</button>
+   <button type="button" id="opsQuickGate" class="ops-secondary ops-shortcut">④ ガチャ受付ON/OFFへ</button>
+  </div>
+  <p class="ops-caption">⑤ 参加者ご自身が登録済みブラウザから <a href="/gacha.html" style="color:#bfe8ff">ガチャ画面</a> を開いて抽選。管理画面の操作だけでは抽選は実行されません。</p>
+ </div>
+ <div id="opsPendingSection" class="ops-card"><h3 class="ops-section-title">承認待ち・本人確認</h3><div id="opsPending" class="ops-list"><p>未接続</p></div></div>
+ <div id="opsGrantSection" class="ops-card"><h3 class="ops-section-title">ガチャ回数の確認・付与</h3>
   <div class="ops-field"><label for="opsSearch">参加者の名前・MIO-IDで検索</label><input id="opsSearch" type="search" placeholder="参加者を検索" autocomplete="off"></div>
+  <label class="ops-filter" for="opsOnlyRemaining"><input id="opsOnlyRemaining" type="checkbox">残回数がある参加者だけ表示</label>
+  <p id="opsRemainingSummary" class="ops-caption">残回数を照合中</p>
   <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <p id="opsSelectedCheck" class="ops-message" role="status" aria-live="polite">参加者を選択すると、確認すべき項目が表示されます。</p>
   <div class="ops-grid">
    <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
    <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
   </div>
-  <button type="button" id="opsGrant" disabled>選択した参加者に回数を付与</button>
+  <label class="ops-filter" for="opsOnsiteGrantVerified"><input type="checkbox" id="opsOnsiteGrantVerified">現場で本人・購入実績・既存残回数・今回の追加理由を確認した</label>
+  <button type="button" id="opsGrant" disabled>現場確認した参加者に回数を付与</button>
   <p class="ops-caption">抽選結果不明時は、既存の確定履歴を先に照合してください。未確認の回数を自動付与しません。</p>
  </div>
- <div class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
+ <div id="opsIntakeSection" class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
   <div class="ops-field"><label for="opsNewName">来場者名</label><input id="opsNewName" maxlength="40" placeholder="ColorSing名"></div>
   <div class="ops-field"><label for="opsNewNote">受付メモ</label><input id="opsNewNote" maxlength="120" placeholder="例：ガチャだけ参加"></div>
   <button type="button" id="opsIntakeCreate" disabled>初訪問を受付記録に追加</button>
-  <p class="ops-caption">初訪問の記録はガチャ承認・回数付与とは別の操作です。</p>
+  <p class="ops-caption"><strong>重要：</strong>ここは来場者の管理メモです。参加者本人のガチャ用Web登録や本人認証は発行しません。<a href="/join.html" style="color:#bfe8ff">サイトの簡易登録</a>もフォーム・ギャラリー用で、ガチャの本人認証にはなりません。未登録・別端末の方には既存MIO-IDがないか先に確認し、重複登録せず運営が対応してください。</p>
   <div id="opsSimple" class="ops-list"></div>
  </div>
  <details class="ops-card"><summary>ガチャ回数の付与履歴</summary><div id="opsGrants" class="ops-list"></div></details>
  <div class="ops-card">
-  <button id="opsSetupToggle" type="button" class="ops-secondary" aria-expanded="false" aria-controls="opsInstallGuide">Code.gs全貼り付け手順を開く</button>
+  <button id="opsSetupToggle" type="button" class="ops-secondary" aria-expanded="false" aria-controls="opsInstallGuide">稼働GASの安全な照合手順を開く</button>
   <div id="opsInstallGuide" hidden>
    <p>既存GAS本番の稼働版が未確認の場合、管理操作は停止されたままになります。既存のApps Scriptを新規作成せず、稼働コードを照合してください。</p>
-   <p>更新方式は<strong>Code.gsの全貼り付け（部分追加なし）</strong>。既存稼働コードとバックアップを照合し、許可された場合だけ統合版全文に置き換えます。</p>
-   <p>確認用ソース：<a href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/blob/main/GAS_Code_FULL_WEB_OPS_20261030.gs" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff">GAS_Code_FULL_WEB_OPS_20261030.gs</a>（この参照版を本番にそのまま適用してよいという意味ではありません）。</p>
-   <p>既存Apps Scriptの「デプロイを管理」から同じデプロイの<strong>新バージョン</strong>で更新します。稼働GASとデータの一致が未確認の間は一切変更しません。</p>
+   <p><strong>現行のCode.gsを全文置換しないでください。</strong>既存GAS全ファイルとデプロイ版をバックアップし、doPostと管理関数の重複・不足を照合します。必要な差分だけ別途審査するまで追加・更新は禁止です。</p>
+   <p>作業前に <a href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/issues/66" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff">稼働GAS照合・停止条件（Issue #66）</a> を確認してください。過去の統合版ソースをそのまま本番に貼り付けることは禁止です。</p>
+   <p>必要な変更が検証・承認された場合にのみ、既存Apps Scriptと同じデプロイの新バージョンを検討します。本番URL・データ・当選履歴を保持し、未確認の間は一切変更しません。</p>
   </div>
  </div>
 
@@ -170,6 +193,7 @@ async function change(mode){
  try{
   const result=await request({action:'set',mode,enabled,expected});
   snapshot=result;
+  window.dispatchEvent(new Event('mio:gate-state-changed'));
   say('✅ '+mode+'ガチャを'+(enabled?'ON':'OFF')+'に変更し、実際の受付設定まで確認しました。');
  }catch(e){snapshot=null;say('⚠️ '+e.message+'。再接続して現在の設定を確認してください。',true)}
  finally{busy=false;redraw()}

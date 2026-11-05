@@ -30,7 +30,7 @@ const setupToggle=el('opsSetupToggle');
 function showGuide(visible){
  opsGuide.hidden=!visible;
  setupToggle.setAttribute('aria-expanded',String(visible));
- setupToggle.textContent=visible?'接続手順を閉じる' :'Code.gs全貼り付け手順を開く';
+ setupToggle.textContent=visible?'接続手順を閉じる' :'稼働GASの安全な照合手順を開く';
 }
 setupToggle.addEventListener('click',()=>showGuide(opsGuide.hidden));
 function notice(t,bad=false){opsStatus.textContent=t;opsStatus.className=bad?'ops-error':'ops-ok'}
@@ -107,7 +107,8 @@ function request(action,values={}){
  });
 }
 function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('')}
-function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=v||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
+function grantReady(){return !processing&&!pending&&!!state?.writeEnabled&&!!selected?.gacha?.checked&&el('opsOnsiteGrantVerified').checked===true}
+function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=!grantReady();el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
 async function refresh({automatic=false}={}){
  if(processing||!ready()||(automatic&&(document.hidden||pending)))return;
  const editing=automatic&&!!document.querySelector('#opsAdminPanel input:focus, #opsAdminPanel select:focus');
@@ -131,7 +132,85 @@ el('opsIntakeCreate').addEventListener('click',async()=>{
  if(!window.confirm(name+' の初訪問を受付記録へ追加しますか？\n※この操作だけでは参加者承認になりません。'))return;
  await mutate('intake',{name,note});
 });
+// Read-only diagnostics: do not infer membership or browser possession from the roster.
+function updateSelectionCheck(){
+ const target=el('opsSelectedCheck');
+ if(!state||!selected){target.textContent='参加者を選択すると、確認すべき項目が表示されます。';return;}
+ const links=(Array.isArray(state.webLinks)?state.webLinks:[]).filter(x=>x?.mioId===selected.mioId&&x.verified===true);
+ const g=selected.gacha;
+ const checked=g?.checked===true;
+ const remaining=Number(g?.remaining);
+ const validBalance=checked&&Number.isSafeInteger(remaining)&&remaining>=0;
+ const normal=typeof snapshot?.normalOpen==='boolean'?(snapshot.normalOpen?'受付ON':'受付OFF'):'受付未確認';
+ const fest=typeof snapshot?.festOpen==='boolean'?(snapshot.festOpen?'受付ON':'受付OFF'):'受付未確認';
+ target.textContent='【'+selected.name+' / '+selected.mioId+'】'+
+  '\n① Web登録との照合：'+(links.length===1?'照合済みの登録あり':links.length>1?'複数の照合済み登録：運営確認':'照合済み登録を確認できません')+
+  '\n② メンシプ購入：この一覧だけでは判定不可。管理者が購入の根拠を別途照合してください'+
+  '\n③ ガチャ台帳：'+(checked?'入力・名前チェックOK':'要確認／未登録')+
+  '\n④ 残回数：'+(validBalance?remaining+'回（台帳上）':'要確認')+
+  '\n⑤ 通常 '+normal+' ／ ラキフェス '+fest+
+  '\n⑥ 最後に本人が元の登録ブラウザでガチャページの資格・残回数を再確認。'+
+  '\n※これは運営確認用で、抽選許可・本人認証・メンシプ資格の自動付与ではありません。';
+}
+function renderQuickList(eligible){
+ const list=el('opsQuickList');list.replaceChildren();
+ if(!state){list.append(node('p','管理者認証後に表示します。'));return;}
+ const webLinks=Array.isArray(state.webLinks)?state.webLinks:[];
+ const items=eligible.map(person=>{
+  const matches=webLinks.filter(x=>x?.mioId===person.mioId&&x.verified===true);
+  return {person,matches:matches.length};
+ }).sort((a,b)=>(Number(a.matches>0)-Number(b.matches>0))||
+  (Number(b.person.gacha?.remaining||0)-Number(a.person.gacha?.remaining||0)));
+ if(!items.length){list.append(node('p','管理台帳で残回数のある参加者は見つかりません。'));return;}
+ for(const item of items.slice(0,50)){
+  const p=item.person,card=node('div',undefined,'ops-item');
+  card.append(node('strong',p.name+' / '+p.mioId+' ・残り'+p.gacha.remaining+'回'));
+  const webStatus=item.matches===0?'⚠️ 承認済みWeb本人照合を確認できません':
+    item.matches===1?'Web本人照合：1件（抽選認証は別確認）':
+    '⚠️ Web本人照合が複数：端末を個別確認';
+  card.append(node('p',webStatus));
+  if(item.matches===0)card.append(node('small','登録途中・旧登録の可能性あり。新規MIO-IDや権利を追加せず、登録申請履歴と本人の元ブラウザを確認。'));
+  card.append(button('この参加者の確認へ',()=>{
+   selected=p;
+   el('opsSearch').value=p.mioId;
+   renderRoster();
+   const target=el('opsGrantSection');
+   if(typeof target.scrollIntoView==='function')target.scrollIntoView({behavior:'smooth',block:'start'});
+  },true));
+  list.append(card);
+ }
+}
+function updateQuick(){
+ const summary=el('opsQuickSummary'),remaining=el('opsRemainingSummary');
+ if(!state){
+  summary.textContent='管理者の接続待ちです。操作はできません。';
+  remaining.textContent='残回数を確認するには管理者で接続してください。';
+  renderQuickList([]);
+  return;
+ }
+ const roster=Array.isArray(state.roster)?state.roster:[];
+ const eligible=roster.filter(p=>p.gacha?.checked===true&&Number.isFinite(Number(p.gacha.remaining))&&Number(p.gacha.remaining)>0);
+ const unchecked=roster.filter(p=>p.gacha&&!p.gacha.checked);
+ const gate=typeof snapshot?.normalOpen==='boolean'?(snapshot.normalOpen?'通常受付 ON':'通常受付 OFF'):'通常受付 未確認';
+ const selectedLine=selected?'\n選択中：'+selected.name+' / '+selected.mioId+
+  '（残り '+(selected.gacha?.remaining??'要確認')+'回）':'\n参加者未選択';
+ summary.textContent='登録承認待ち '+(Number(state.totalPending)||0)+'件 / 既存ガチャ残回数あり '+eligible.length+
+  '名 / ガチャ管理行要確認 '+unchecked.length+'名\n'+gate+
+  ' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+' / 現場モード '+(state.writeMode==='onsite'?'個別承認':state.writeMode==='standard'?'既存運営モード':'停止中')+selectedLine+
+  '\n※残回数あり＝抽選許可ではありません。本人の登録端末・メンシプ資格を別途確認。';
+ remaining.textContent='既存ガチャ残回数あり '+eligible.length+'名。検索・絞り込みで対象を選択できます。';
+ renderQuickList(eligible);
+}
+for(const [id,target] of [['opsQuickIntake','opsIntakeSection'],['opsQuickApproval','opsPendingSection'],
+ ['opsQuickGrant','opsGrantSection'],['opsQuickGate','normalSection']]){
+ el(id).addEventListener('click',()=>{
+  const destination=el(target);
+  if(destination&&typeof destination.scrollIntoView==='function')destination.scrollIntoView({behavior:'smooth',block:'start'});
+ });
+}
+window.addEventListener('mio:gate-state-changed',()=>{updateQuick();updateSelectionCheck();});
 function render(){
+ updateQuick();
  el('opsPending').replaceChildren();
  el('opsSimple').replaceChildren();
  el('opsGrants').replaceChildren();
@@ -160,26 +239,38 @@ function render(){
   wrap.append(node('p','Web登録ID: '+item.webId));
   if(item.linkedName)wrap.append(node('p','照合先: '+item.linkedName+'（'+item.mioId+'）'));
   if(item.status==='承認待ち'){
+   const onsite=node('label',undefined,'ops-filter');
+   const onsiteBox=node('input');onsiteBox.type='checkbox';onsiteBox.setAttribute('aria-label','現場で本人とMIO-IDと元ブラウザを照合した');
+   onsite.append(onsiteBox,node('span','現場で本人・MIO-ID・元の登録ブラウザを照合した'));
+   wrap.append(onsite);
    const member=node('select',undefined,'ops-select');
    member.setAttribute('aria-label','メンシプ確認');
-   for(const [value,label] of [['no','メンシプ未確認'],['yes','メンシプ確認済み']]){
+   for(const [value,label] of [['','メンシプ照合結果を選択（必須）'],['no','メンシプ未確認（登録承認のみ）'],['yes','メンシプ購入確認済み']]){
     const opt=node('option',label);opt.value=value;member.append(opt);
    }
-   member.value=item.member==='確認済み'?'yes':'no';
+   // An existing sheet value cannot silently qualify as the operator's verification.
+   member.value='';
    wrap.append(member);
    const grant=button('本人照合して承認',async()=>{
+    if(onsiteBox.checked!==true){notice('先に現場確認スイッチで本人・MIO-ID・登録ブラウザを確認してください',true);return}
+    if(member.value!=='yes'&&member.value!=='no'){notice('メンシプ照合結果を管理者が選択してください',true);return}
     const target=window.prompt('照合済みの参加者ID（MIO-0000形式）を入力',item.mioId||'');
     if(target===null)return;
     const id=target.trim();
     if(!/^MIO-\d{4}$/.test(id)){notice('MIO-IDの形式を確認してください',true);return}
     if(!window.confirm(item.name+' / '+id+' を承認しますか？\n'+(member.value==='yes'?'メンシプ確認済み':'メンシプ未確認')))return;
-    await mutate('approve',{webId:item.webId,mioId:id,memberConfirmed:member.value==='yes',expectedStatus:'承認待ち'});
+    await mutate('approve',{webId:item.webId,mioId:id,memberConfirmed:member.value==='yes',expectedStatus:'承認待ち',onSiteVerified:true});
    });
    wrap.append(grant);
    if(!item.mioId){
-     wrap.append(button('初訪問者のMIO-IDを新規作成',async()=>{
+     const nameKey=s=>String(s||'').normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase();
+     const matches=(state.roster||[]).filter(r=>nameKey(r.name)===nameKey(item.name));
+     if(matches.length){
+       wrap.append(node('p','⚠️ 同名の既存MIO-ID候補あり（'+matches.map(x=>x.mioId).join(', ')+'）。新規IDを作成せず、本人の登録途中履歴・元ブラウザ・旧MIO-IDを確認してください。'));
+     }else wrap.append(button('初訪問者のMIO-IDを新規作成',async()=>{
+        if(onsiteBox.checked!==true){notice('新規ID発行前に現場で本人・既存登録の照合スイッチを入れてください',true);return}
        if(!window.confirm(item.name+' に新しい参加者IDを作成しますか？\n既存登録がある場合は作成されません。'))return;
-       await mutate('create',{webId:item.webId,expectedStatus:'承認待ち'});
+       await mutate('create',{webId:item.webId,expectedStatus:'承認待ち',onSiteVerified:true});
      }));
    }
   }
@@ -203,15 +294,21 @@ function render(){
 function renderRoster(){
  const div=el('opsRoster'),query=el('opsSearch').value.trim().toLowerCase();
  div.replaceChildren();
- if(!state){selected=null;el('opsPerson').textContent='参加者を選択してください';return}
- const all=(state.roster||[]).filter(x=>x.name.toLowerCase().includes(query)||x.mioId.toLowerCase().includes(query)).slice(0,45);
+ if(!state){selected=null;el('opsPerson').textContent='参加者を選択してください';updateSelectionCheck();return}
+ const onlyRemaining=el('opsOnlyRemaining').checked;
+ const all=(state.roster||[]).filter(x=>(x.name.toLowerCase().includes(query)||x.mioId.toLowerCase().includes(query))&&
+  (!onlyRemaining||(x.gacha?.checked===true&&Number(x.gacha.remaining)>0)))
+  .sort((a,b)=>onlyRemaining?Number(b.gacha?.remaining||0)-Number(a.gacha?.remaining||0):0).slice(0,45);
  for(const item of all){
   div.append(button(item.name+' ('+item.mioId+')',()=>{
     selected=item;
+    el('opsOnsiteGrantVerified').checked=false;
     const g=item.gacha;
     el('opsPerson').textContent=item.name+' / '+item.mioId+
       (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認');
-    el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!g||!g.checked;
+    el('opsGrant').disabled=!grantReady();
+    updateQuick();
+    updateSelectionCheck();
   },true));
  }
  if(!all.length)div.append(node('p','該当者がいません。'));
@@ -221,9 +318,13 @@ function renderRoster(){
   if(selected?.gacha)el('opsPerson').textContent=selected.name+' / '+selected.mioId+
     '　総権利 '+selected.gacha.total+' / 残り '+selected.gacha.remaining+' / 特別付与 '+selected.gacha.special;
  }else el('opsPerson').textContent='参加者を選択してください';
- el('opsGrant').disabled=processing||!!pending||!state?.writeEnabled||!selected?.gacha?.checked;
+ el('opsGrant').disabled=!grantReady();
+ updateQuick();
+ updateSelectionCheck();
 }
 el('opsSearch').addEventListener('input',renderRoster);
+el('opsOnlyRemaining').addEventListener('change',renderRoster);
+el('opsOnsiteGrantVerified').addEventListener('change',()=>{el('opsGrant').disabled=!grantReady()});
 async function verifyPending(){
  if(processing||!pending)return;
  const attempted=pending;
@@ -269,11 +370,12 @@ async function mutate(action,payload){
 }
 el('opsGrant').addEventListener('click',async()=>{
  const g=selected?.gacha,count=Number(el('opsQuantity').value),reason=el('opsReason').value.trim();
+ if(el('opsOnsiteGrantVerified').checked!==true){notice('現場で本人・購入・残回数・付与理由を照合してスイッチを入れてください',true);return}
  if(!g||!g.checked||!Number.isInteger(count)||count<1||count>50||reason.length<2||reason.length>120){
   notice('参加者・付与回数（1〜50）・理由を確認してください。',true);return;
  }
  if(!window.confirm(selected.name+' / '+selected.mioId+' に '+count+' 回付与しますか？\n現在の特別付与 '+g.special+' → '+(g.special+count)+'\n理由：'+reason))return;
- await mutate('grant',{mioId:selected.mioId,count,expectedSpecial:g.special,reason});
+ await mutate('grant',{mioId:selected.mioId,count,expectedSpecial:g.special,reason,onSiteVerified:true});
 });
 el('opsRoster').append(node('p','管理者コードで接続後に検索できます。'));
 window.addEventListener('mio:admin-connected',()=>{el('opsReload').disabled=false;void refresh();});
