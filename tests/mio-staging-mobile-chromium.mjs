@@ -1236,6 +1236,33 @@ try{
    const behavior=await evaluate('(()=>{const cards=()=>[...document.querySelectorAll("#workList .curator-entry")];const actions=()=>[...document.querySelectorAll(".curator-entry.is-selected button")];const press=label=>{const b=actions().find(x=>x.textContent.includes(label));if(!b)throw Error("Missing action "+label);b.click()};cards()[0].querySelector("button").click();const title=document.querySelector("#workTitle");title.value="架空の記念曲・編集後";title.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#saveWork").click();if(!cards()[0].textContent.includes("確認待ち・非公開"))throw Error("changed work was not unpublished");for(const id of ["rightsOk","privacyOk","contentOk"]){const input=document.getElementById(id);input.checked=true;input.dispatchEvent(new Event("change",{bubbles:true}))}if(document.querySelector("#approveWork").disabled)throw Error("mock approval still blocked");document.querySelector("#approveWork").click();press("公開予定にする");document.querySelector("#reviewPublish").click();if(document.querySelector("#simulatePublish").disabled)throw Error("review gate did not unlock");document.querySelector("#simulatePublish").click();const published=document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");press("公開予定を解除");const revoked=!document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");return{published,revoked,works:cards().length}})()');
    assert.deepEqual(behavior,{published:true,revoked:true,works:3},
     'publish and immediate revoke must remain fictional and safe');
+   const recovery=await evaluate(`(()=>{
+    const cards=()=>[...document.querySelectorAll('#workList .curator-entry')];
+    const ids=()=>cards().map(x=>x.querySelector('strong').textContent);
+    const original=ids();
+    const down=[...cards()[0].querySelectorAll('button')].find(x=>x.textContent.includes('下へ'));
+    down.click();
+    const moved=JSON.stringify(ids())!==JSON.stringify(original);
+    document.querySelector('#undoOrder').click();
+    const undone=JSON.stringify(ids())===JSON.stringify(original);
+    const savedTitle=document.querySelector('#workTitle').value;
+    const title=document.querySelector('#workTitle');
+    title.value='未保存の入力';title.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#reviewPublish').click();
+    const dirtyBlocked=document.querySelector('#simulatePublish').disabled;
+    title.value=savedTitle;title.dispatchEvent(new Event('input',{bubbles:true}));
+    const dropdown=document.querySelector('#historyVersion');
+    dropdown.value='1';dropdown.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#reviewRestore').click();
+    const canRestore=!document.querySelector('#restoreHistory').disabled;
+    document.querySelector('#restoreHistory').click();
+    const text=document.querySelector('#visitorPreview').textContent;
+    return {moved,undone,dirtyBlocked,canRestore,noRevivedWork:!text.includes('架空の記念曲・編集後'),
+      preservedAllowedWork:text.includes('架空の歴代アイコン')};
+   })()`);
+   assert.deepEqual(recovery,{moved:true,undone:true,dirtyBlocked:true,canRestore:true,
+    noRevivedWork:true,preservedAllowedWork:true},
+    'history restore must exclude revoked exhibits and undo must only change order');
    await mkdir('artifacts',{recursive:true});
    const frame=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-offline-mobile-curator-390.png',Buffer.from(frame.data,'base64'));
