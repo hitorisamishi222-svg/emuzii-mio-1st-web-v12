@@ -437,3 +437,18 @@ test('background polling never destroys an already checked onsite confirmation o
  b.intervals[0].fn();await b.settled();
  assert.equal(b.el('opsPending').children.length,2,'after confirmation, new roster results are visible');
 });
+
+test('operator sees duplicate-ID row as manual-review only, never a grant target',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,pending:[],simple:[],grants:[],
+  roster:[{name:'架空の重複参加者',mioId:'MIO-9003',gacha:null,needsReview:true}]});
+ b.connect();await b.settled();
+ const choose=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+ assert.ok(choose,'conflicted participant remains visible for manual investigation');
+ assert.match(choose.textContent,/台帳要確認/,'warning must be legible to operator');
+ await choose.click();
+ b.el('opsOnsiteGrantVerified').checked=true;
+ b.el('opsOnsiteGrantVerified').events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,true,'manual-review row never becomes a grant target');
+ assert.equal(b.requests.length,1,'no write attempt from reading conflicted data');
+});
