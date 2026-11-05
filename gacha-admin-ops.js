@@ -3,7 +3,7 @@
 (()=>{
 'use strict';
 const el=id=>document.getElementById(id);
-let state=null,selected=null,processing=false,lastPendingCount=null;
+let state=null,selected=null,processing=false,lastPendingCount=null,gasCompatibilityBlocked=false;
 const PENDING_KEY='mio_web_admin_pending_operation_v1';
 let pending=null;
 try{
@@ -110,19 +110,29 @@ function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.
 function grantReady(){return !processing&&!pending&&!!state?.writeEnabled&&!!selected?.gacha?.checked&&el('opsOnsiteGrantVerified').checked===true}
 function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=!grantReady();el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
 async function refresh({automatic=false}={}){
- if(processing||!ready()||(automatic&&(document.hidden||pending)))return;
+ if(processing||!ready()||(automatic&&(document.hidden||pending||gasCompatibilityBlocked)))return;
  const editing=automatic&&!!document.querySelector('#opsAdminPanel input:focus, #opsAdminPanel select:focus');
  blocked(true);
  if(!automatic)notice('管理台帳から最新の受付情報を取得中…');
  try{
   const response=await request('read');
   state=response;
+  gasCompatibilityBlocked=false;
   identityUpdated();
   showGuide(false);
   updateBell(Number(state.totalPending)||0);
   if(editing)el('opsCount').textContent='要確認 '+state.totalPending+' 件';else render();
   if(!automatic)notice(pending?'未確定の操作があります。再確認ボタンから同じIDで照合してください。':state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
- }catch(e){state=null;updateBell(0,{failed:true});render();showGuide(e.code==='GAS_UPDATE_REQUIRED');notice(e.message,true)}
+ }catch(e){
+  state=null;
+  gasCompatibilityBlocked=e.code==='GAS_UPDATE_REQUIRED';
+  updateBell(0,{failed:true});
+  render();
+  showGuide(gasCompatibilityBlocked);
+  notice(gasCompatibilityBlocked
+   ?'管理者の認証は通過しています。既存GASが運営管理の読取命令に未対応です。お客様のIDや管理者コードの再発行は不要です。接続が修正されるまで自動再取得を停止しました。'
+   :e.message,true);
+ }
  finally{blocked(false);if(!editing)render()}
 }
 el('opsReload').addEventListener('click',refresh);
