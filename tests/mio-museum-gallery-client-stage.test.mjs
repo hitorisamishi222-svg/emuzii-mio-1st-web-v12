@@ -5,7 +5,7 @@ import {withDedicatedMuseumStageClient} from '../museum-gallery-client-stage.mjs
 
 const proof=()=>({
  identityVerified:true,schemaReady:true,sourceReady:true,layoutReady:true,
- backupVerified:true,ownerApproved:true
+ previewEnvScopeVerified:true,backupVerified:true,ownerApproved:true
 });
 const mock=()=>{
  const state={connections:0,queryCount:0,releases:[],clients:[]};
@@ -42,7 +42,8 @@ test('stage wrapper uses one checked-out client for both identity and work and r
  assert.equal(state.releases[0],undefined);
 });
 test('no database work runs without independently verified branch/schema/backup and owner decision',async()=>{
- for(const key of ['identityVerified','schemaReady','sourceReady','layoutReady','backupVerified','ownerApproved']){
+ for(const key of ['identityVerified','schemaReady','sourceReady','layoutReady',
+  'previewEnvScopeVerified','backupVerified','ownerApproved']){
   const {pool,state}=mock();
   let executed=false;
   await assert.rejects(()=>run(pool,async()=>({...proof(),[key]:false}),
@@ -54,12 +55,24 @@ test('no database work runs without independently verified branch/schema/backup 
  }
 });
 test('missing or malformed proof never turns a connection into an authorized editor',async()=>{
- for(const invalid of [null,{},undefined,{...proof(),ownerApproved:'true'}]){
+ for(const invalid of [null,{},undefined,{...proof(),ownerApproved:'true'},
+  {...proof(),previewEnvScopeVerified:'true'}]){
   const {pool,state}=mock();
   await assert.rejects(()=>run(pool,async()=>invalid),/BINDING_NOT_VERIFIED/);
   assert.equal(state.releases.length,1);
   assert.ok(state.releases[0] instanceof Error);
  }
+});
+test('a fully valid legacy binding without Preview scope proof never invokes gallery work',async()=>{
+ const {pool,state}=mock();
+ let called=false;
+ const withoutScope=proof();delete withoutScope.previewEnvScopeVerified;
+ await assert.rejects(()=>run(pool,async()=>withoutScope,async()=>{
+  called=true;
+ }),/MUSEUM_CLIENT_BINDING_NOT_VERIFIED/);
+ assert.equal(called,false);
+ assert.equal(state.queryCount,0);
+ assert.ok(state.releases[0] instanceof Error);
 });
 test('a failed DB operation discards the connection rather than returning an aborted transaction',async()=>{
  const {pool,state}=mock();
