@@ -169,6 +169,7 @@ function mioAdminOpsApprove_(ss,d){
  if(w.c[5]!=='承認待ち')throw new Error('承認状態が変更されています');
  if(mioAdminOpsName_(w.c[2])!==mioAdminOpsName_(person.c[1]))throw new Error('参加者名が一致しません。別人を承認できません');
  if(w.c[7]&&mioAdminOpsStr_(w.c[7])!==id)throw new Error('別の参加者IDに紐付いています');
+ if(w.c[10]&&mioAdminOpsStr_(w.c[10])!==id)throw new Error('統合参加者IDが異なります。管理者による本人照合が必要です');
  if(w.c[15]&&mioAdminOpsStr_(w.c[15])!==id)throw new Error('端末復旧先IDと一致しません');
  if(String(w.c[16]||'')==='旧端末')throw new Error('旧端末の再承認は禁止です');
  if(mioAdminOpsValues_(web,21).some(function(r){return r[0]!==wid&&r[7]===id&&r[5]==='承認済み';}))
