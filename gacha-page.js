@@ -71,7 +71,14 @@ function setButtons(c){
   if(resultVisible){
     $('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').hidden=true;return;
   }
-  if(pending){showRetry();return}
+  if(pending){
+    showRetry();
+    if(!validPending(pending)){
+      $('retryDraw').disabled=true;
+      note('前回の抽選記録を確認しています。券を追加消費せず、安全に確認するためお待ちください。');
+    }
+    return
+  }
   $('retryDraw').hidden=true;
   $('reloadGacha').disabled=false;
   if(busy||confirming){$('drawNormal').disabled=true;$('drawFest').disabled=true;return}
@@ -136,13 +143,21 @@ async function loadCatalog(includeHistory=true){
   }catch(e){
     $('drawPanel').hidden=false;
     $('drawNormal').disabled=true;$('drawFest').disabled=true;
-    if(validPending(remember())){showRetry();note(connectionMessage)}
+    if(remember()){
+      showRetry();
+      if(!validPending(remember()))$('retryDraw').disabled=true;
+      note(connectionMessage);
+    }
     else note('通信が不安定です。回線がつながったら「設定・当選履歴を更新」を押してください。');
     return false
   }finally{
     busy=false;
     if(lastCatalog&&!confirming)setButtons(lastCatalog);
-    else if(validPending(remember())){$('retryDraw').hidden=false;$('retryDraw').disabled=false;$('retryDraw').textContent=retryLabel;}
+    else if(remember()){
+      $('retryDraw').hidden=false;
+      $('retryDraw').disabled=!validPending(remember());
+      $('retryDraw').textContent=retryLabel;
+    }
   }
 }
 async function execute(pending){
