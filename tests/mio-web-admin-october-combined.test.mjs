@@ -9,7 +9,7 @@ const module=read('GAS_WebAdminOps_20261030.gs');
 const site=read('mio-admin-ops-code-copy-20261106.html');
 const server=read('api-gacha-admin-ops.js');
 const legacyMarker='// 2026-11-06: Web admin operations; retains Oct-2026 checkin and existing onsite web gate.';
-const route="    if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n";
+const route="    if(/^webAdminOps(?:Read|Member|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n";
 const hash=source=>{
  let value=2166136261>>>0;
  for(let i=0;i<source.length;i++)value=Math.imul(value^source.charCodeAt(i),16777619)>>>0;
