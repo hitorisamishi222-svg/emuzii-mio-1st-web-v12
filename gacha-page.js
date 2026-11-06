@@ -31,13 +31,13 @@ const retryLabel='▶ もう一度ガチャを回す';
 const connectionMessage='回線の状態が不安定です。抽選結果とガチャ券を確認して、もう一度ガチャを回してください。';
 const returnedMessage='回線の状態が悪いため、再抽選いたします。尚、1回分のガチャ券は戻っています。下の「もう一度ガチャを回す」を押してください。';
 function validPending(p){return !!p&&/^[a-f0-9]{32}$/.test(p.drawId||'')&&['通常','ラキフェス'].includes(p.mode)}
+function validCount(v){return (typeof v==='number'||(typeof v==='string'&&/^(0|[1-9][0-9]*)$/.test(v)))&&Number.isSafeInteger(Number(v))&&Number(v)>=0}
 function validHistoryWinner(x,p){return x&&x.drawId===p.drawId&&x.mode===p.mode&&typeof x.prize==='string'&&!!x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0}
 function validDrawResponse(d,p){return !!d&&d.ok===true&&d.participantId===participant&&d.drawId===p.drawId&&d.mode===p.mode&&
  typeof d.prize==='string'&&!!d.prize.trim()&&Number.isSafeInteger(Number(d.ordinal))&&Number(d.ordinal)>0&&
- Number.isSafeInteger(Number(d.remaining))&&Number(d.remaining)>=0}
+ validCount(d.remaining)}
 function noTicketSpent(c,p){return validPending(p)&&Number.isSafeInteger(p.beforeRemaining)&&Number.isSafeInteger(p.beforeUsed)&&
- c?.participantId===participant&&c.confirmed===true&&Number.isSafeInteger(Number(c.remaining))&&
- Number.isSafeInteger(Number(c.used))&&Number(c.remaining)===p.beforeRemaining&&Number(c.used)===p.beforeUsed}
+ c?.participantId===participant&&c.confirmed===true&&validCount(c.remaining)&&validCount(c.used)&&Number(c.remaining)===p.beforeRemaining&&Number(c.used)===p.beforeUsed}
 function showRetry(){const retry=$('retryDraw');retry.hidden=false;retry.disabled=busy;retry.textContent=retryLabel;
  $('drawNormal').disabled=true;$('drawFest').disabled=true;$('reloadGacha').disabled=true}
 function showRecoveredWinner(x,p){renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
@@ -89,7 +89,7 @@ async function loadCatalog(includeHistory=true){
   busy=true;
   try{
     const c=await post('/api/gacha',{action:'catalog'});
-    if(c.ok!==true||!c.participantId||!Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<0)throw Error('catalog unavailable');
+    if(c.ok!==true||!c.participantId||!validCount(c.remaining)===false)throw Error('catalog unavailable');
     lastCatalog=c;participant=c.participantId;$('drawPanel').hidden=false;
     $('drawRemaining').textContent=`ガチャ残り ${c.remaining}回 ／ 使用済み ${c.used}回`;
     renderCatalog($('normalPrizes'),c.normal);
@@ -192,8 +192,8 @@ async function recoverPrevious(p){
     }else if(rows.length===0){
       const c=await post('/api/gacha',{action:'catalog'});
       if(c.ok!==true||c.participantId!==participant||c.confirmed!==true||
-         !Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<1||
-         !Number.isSafeInteger(Number(c.used))||Number(c.used)<0)
+         !validCount(c.remaining)||Number(c.remaining)<1||
+         !validCount(c.used))
         throw Error('entitlement not confirmed');
       // The same drawId is replayed only on this explicit user tap. If the
       // earlier response was lost after commit, GAS returns its original winner.
