@@ -25,6 +25,25 @@ function note(t){$('drawMessage').textContent=t||''}
 function remember(){try{return JSON.parse(localStorage.getItem(pendingKey())||'null')}catch{return null}}
 function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
 function safeImage(url){return typeof url==='string'&&/^https:\/\//i.test(url)?url:''}
+
+// One pending ID is the only safe recovery token: a lost reply may have been committed.
+const retryLabel='▶ もう一度ガチャを回す';
+const connectionMessage='回線の状態が不安定です。抽選結果とガチャ券を確認して、もう一度ガチャを回してください。';
+const returnedMessage='回線の状態が悪いため、再抽選いたします。尚、1回分のガチャ券は戻っています。下の「もう一度ガチャを回す」を押してください。';
+function validPending(p){return !!p&&/^[a-f0-9]{32}$/.test(p.drawId||'')&&['通常','ラキフェス'].includes(p.mode)}
+function validHistoryWinner(x,p){return x&&x.drawId===p.drawId&&x.mode===p.mode&&typeof x.prize==='string'&&!!x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0}
+function validDrawResponse(d,p){return !!d&&d.ok===true&&d.participantId===participant&&d.drawId===p.drawId&&d.mode===p.mode&&
+ typeof d.prize==='string'&&!!d.prize.trim()&&Number.isSafeInteger(Number(d.ordinal))&&Number(d.ordinal)>0&&
+ Number.isSafeInteger(Number(d.remaining))&&Number(d.remaining)>=0}
+function noTicketSpent(c,p){return validPending(p)&&Number.isSafeInteger(p.beforeRemaining)&&Number.isSafeInteger(p.beforeUsed)&&
+ c?.participantId===participant&&c.confirmed===true&&Number.isSafeInteger(Number(c.remaining))&&
+ Number.isSafeInteger(Number(c.used))&&Number(c.remaining)===p.beforeRemaining&&Number(c.used)===p.beforeUsed}
+function showRetry(){const retry=$('retryDraw');retry.hidden=false;retry.disabled=busy;retry.textContent=retryLabel;
+ $('drawNormal').disabled=true;$('drawFest').disabled=true}
+function showRecoveredWinner(x,p){renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
+ prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),image:String(x.image||''),replayed:true});
+ forget();$('retryDraw').hidden=true;note('前回の当選結果を表示しています。ガチャ券の二重消費はありません。')}
+
 function rarityKey(v){const r=String(v||'').toUpperCase();return r.includes('UR')?'ur':r.includes('SR')?'sr':r==='R'||r.includes('レア')?'r':'n'}
 function clearEffects(){const stage=$('gachaStage');stage?.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur');document.querySelectorAll('.gacha-particle,.gacha-flash,.gacha-ring').forEach(x=>x.remove())}
 function particles(count,kind){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const stage=$('gachaStage');if(!stage)return;for(let i=0;i<count;i++){const x=document.createElement('i');x.className=`gacha-particle ${kind}`;x.style.setProperty('--x',`${Math.random()*100}%`);x.style.setProperty('--dx',`${(Math.random()-.5)*260}px`);x.style.setProperty('--delay',`${Math.random()*.35}s`);x.style.setProperty('--dur',`${1.05+Math.random()*1.25}s`);x.textContent=Math.random()>.46?'✦':Math.random()>.5?'◆':'★';stage.append(x);setTimeout(()=>x.remove(),3000)}}
