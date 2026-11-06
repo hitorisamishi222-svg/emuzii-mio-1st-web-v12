@@ -116,7 +116,7 @@ async function loadCatalog(includeHistory=true){
           note(rows.length===0&&noTicketSpent(c,pending)?returnedMessage:connectionMessage);
         }
       }
-    }else{
+    }else if($('drawResultCard').hidden){
       note(statusText(c));
     }
     $('drawHistory').replaceChildren();
@@ -155,13 +155,14 @@ async function execute(pending){
   note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
   try{
-    const d=await post('/api/gacha',{action:'draw',...pending});
+    const d=await post('/api/gacha',{action:'draw',drawId:pending.drawId,mode:pending.mode});
+    if(!validDrawResponse(d,pending))throw Error('draw receipt incomplete');
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
     renderResult(d);forget();
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
   }catch(e){
-    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
+    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(connectionMessage);showRetry();refreshAfter=true
   }finally{
     clearAnimationTimers();$('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active','royal-charge','royal-release','royal-climax');busy=false;$('skipDraw').hidden=true;$('skipDraw').disabled=true;$('retryDraw').disabled=false;
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
