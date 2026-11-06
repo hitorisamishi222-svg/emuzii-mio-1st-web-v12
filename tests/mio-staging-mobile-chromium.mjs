@@ -1232,6 +1232,28 @@ try{
   assert.ok(state.doc<=state.width+2,'curator preview overflow '+JSON.stringify(state));
   assert.equal(state.works,3);
   assert.equal(state.publicCards,2);
+
+  const roomPreview=await evaluate(`(()=>{
+   const room=document.querySelector('#visitorRoom');
+   const count=()=>document.querySelectorAll('#visitorPreview .curator-public-card').length;
+   const change=value=>{room.value=value;room.dispatchEvent(new Event('change',{bubbles:true}));return count()};
+   const icons=change('icons'),moments=change('moments'),events=change('events');
+   const gallery=change('gallery'),all=change('all');
+   const editor=document.querySelector('#filterRoom');
+   editor.value='moments';editor.dispatchEvent(new Event('change',{bubbles:true}));
+   const editorCount=document.querySelectorAll('#workList .curator-entry').length;
+   const visitorUnaffected=count();
+   editor.value='all';editor.dispatchEvent(new Event('change',{bubbles:true}));
+   return {icons,moments,events,gallery,all,editorCount,visitorUnaffected,
+     status:document.querySelector('#visitorCount').textContent};
+  })()`);
+  assert.deepEqual({icons:roomPreview.icons,moments:roomPreview.moments,events:roomPreview.events,
+    gallery:roomPreview.gallery,all:roomPreview.all,editorCount:roomPreview.editorCount,
+    visitorUnaffected:roomPreview.visitorUnaffected},
+    {icons:1,moments:0,events:0,gallery:1,all:2,editorCount:1,visitorUnaffected:2},
+    'visitor room selection must be independent of draft editor filters');
+  assert.ok(roomPreview.status.includes('全展示 2件'));
+
   if(width===390){
    const behavior=await evaluate('(()=>{const cards=()=>[...document.querySelectorAll("#workList .curator-entry")];const actions=()=>[...document.querySelectorAll(".curator-entry.is-selected button")];const press=label=>{const b=actions().find(x=>x.textContent.includes(label));if(!b)throw Error("Missing action "+label);b.click()};cards()[0].querySelector("button").click();const title=document.querySelector("#workTitle");title.value="架空の記念曲・編集後";title.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#saveWork").click();if(!cards()[0].textContent.includes("確認待ち・非公開"))throw Error("changed work was not unpublished");for(const id of ["rightsOk","privacyOk","contentOk"]){const input=document.getElementById(id);input.checked=true;input.dispatchEvent(new Event("change",{bubbles:true}))}if(document.querySelector("#approveWork").disabled)throw Error("mock approval still blocked");document.querySelector("#approveWork").click();press("公開予定にする");document.querySelector("#reviewPublish").click();if(document.querySelector("#simulatePublish").disabled)throw Error("review gate did not unlock");document.querySelector("#simulatePublish").click();const published=document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");press("公開予定を解除");const revoked=!document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");return{published,revoked,works:cards().length}})()');
    assert.deepEqual(behavior,{published:true,revoked:true,works:3},
