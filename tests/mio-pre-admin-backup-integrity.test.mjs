@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const load=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const marker='// -- みお Web運営管理 (2026-10-30)';
-const route='    if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n';
+const route='    if(/^webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n';
 
 test('full-paste GAS preserves pre-Web-admin functions without rewriting existing core',()=>{
  const full=load('GAS_Code_FULL_WEB_OPS_20261030.gs');
