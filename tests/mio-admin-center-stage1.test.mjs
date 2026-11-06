@@ -64,7 +64,7 @@ function fakeBrowser() {
     crypto:{getRandomValues(b){return b}},console};
   vm.runInNewContext(source,context);
   return {
-    el,document,requests,intervals,
+    el,document,window,requests,intervals,
     connect(){context.snapshot={normalOpen:false,festOpen:false};events.get('window:mio:admin-connected')()},
     setSnapshot:record=>{next=record},
     async settled(){await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve))}
@@ -512,4 +512,35 @@ test('review API rejects historical already-approved and test-only labels even w
   assert.equal(res.statusCode,400,status+' is not an actionable pending state');
  }
  assert.equal(bridged,0,'historical statuses never reach the GAS bridge');
+});
+
+test('member confirmation button for an existing approved browser requires onsite verification',async()=>{
+ const b=fakeBrowser();
+ const webId='MIO-W-1234567890abcdef12345678';
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,rejectedCount:0,
+   approvedBrowsers:[{webId,mioId:'MIO-0001',name:'承認済み参加者',status:'承認済み',
+     member:'未確認',verified:true}],
+   roster:[{name:'承認済み参加者',mioId:'MIO-0001',
+     gacha:{checked:true,total:3,remaining:2,special:0}}],
+   pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ const choose=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+ assert.ok(choose);choose.click();
+ let actions=flatten(b.el('opsMemberBrowsers')).filter(x=>x.tagName==='button');
+ assert.equal(actions.length,1,'member action is per verified browser');
+ assert.equal(actions[0].disabled,true,'operator must attest before confirmation');
+ b.el('opsMemberVerified').checked=true;
+ b.el('opsMemberVerified').events.get('change')();
+ actions=flatten(b.el('opsMemberBrowsers')).filter(x=>x.tagName==='button');
+ assert.equal(actions[0].disabled,false);
+ b.window.confirm=()=>true;
+ await actions[0].click();await b.settled();
+ const d=JSON.parse(b.requests[1].o.body);
+ assert.equal(d.action,'member');
+ assert.equal(d.webId,webId);
+ assert.equal(d.mioId,'MIO-0001');
+ assert.equal(d.expectedMember,'未確認');
+ assert.equal(d.memberConfirmed,true);
+ assert.equal(d.onSiteVerified,true);
+ assert.match(d.operationId,/^[a-f0-9]{32}$/);
 });
