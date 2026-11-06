@@ -18,6 +18,7 @@ const itemBy=id=>items.find(x=>x.id===id);
 const eligible=x=>x.visible&&x.reviewed&&x.rights&&x.privacy&&!x.archived;
 const publication=()=>items.filter(eligible).map(x=>({id:x.id,title:x.title,room:x.room,category:x.category,description:x.description,featured:x.featured,epoch:x.epoch}));
 let published=publication(),history=[{version:1,items:publication()}],orderUndo=null,restoreApproval=null;
+let pendingSwitch=null;
 const signature=()=>JSON.stringify(items.map(x=>[x.id,...fields.map(k=>x[k]),x.reviewed,x.rights,x.privacy,x.visible,x.featured,x.archived,x.epoch]));
 const status=s=>{$('editStatus').textContent=s;};
 function touched(){approvedHash=null;restoreApproval=null;$('simulatePublish').disabled=true;$('restoreHistory').disabled=true;}
@@ -51,7 +52,9 @@ function cleanSelected(){const x=itemBy(selected);if(!x)return false;
 try{return JSON.stringify(currentValues(x))===JSON.stringify(values())&&!$('workImage').files?.length;}catch{return false;}
 }
 function checkButton(){$('approveWork').disabled=!cleanSelected()||!['rightsOk','privacyOk','contentOk'].every(id=>$(id).checked);}
+function clearPendingSwitch(){pendingSwitch=null;$('pendingFormSwitch').hidden=true;}
 function choose(x){
+clearPendingSwitch();
 selected=x?.id||null;
 for(const k of fields)$(map[k]).value=x?.[k]||'';
 if(!x){$('workRoom').value='gallery';$('workCategory').value='イラスト';}
@@ -124,6 +127,42 @@ return Boolean($('workTitle').value.trim()||$('workDescription').value||
  $('workCredit').value.trim()||$('workDate').value||$('workUrl').value.trim()||
  $('workRoom').value!=='gallery'||$('workCategory').value!=='イラスト');
 }
+
+function requestSelection(x){
+ if(x?.id&&x.id===selected){status('この作品はすでに編集中です。未保存の入力は保持しています。');return;}
+ if(unsavedForm()){
+  pendingSwitch={type:'choose',id:x?.id||null};
+  $('pendingSwitchText').textContent='入力内容を破棄して'+
+   (x?.title?'「'+x.title+'」へ切り替えます。':'新しい作品の入力へ切り替えます。')+
+   '保存したい場合は「編集を続ける」を選んでください。';
+  $('pendingFormSwitch').hidden=false;
+  status('未保存の入力があります。切り替える前に確認してください。');
+  return;
+ }
+ choose(x);status(x?'「'+x.title+'」を編集します。':'新しい作品の入力に切り替えました。');
+}
+function requestReset(){
+ if(unsavedForm()){
+  pendingSwitch={type:'reset'};
+  $('pendingSwitchText').textContent='未保存の入力を含む架空データを初期化します。'+
+   '取り消す場合は「編集を続ける」を選んでください。';
+  $('pendingFormSwitch').hidden=false;
+  status('未保存の入力があります。初期化する前に確認してください。');
+  return;
+ }
+ reset();
+}
+function applyPendingSwitch(){
+ const action=pendingSwitch;clearPendingSwitch();
+ if(!action)return;
+ if(action.type==='reset'){reset();return;}
+ if(action.type!=='choose')return;
+ const x=action.id===null?null:itemBy(action.id);
+ if(action.id!==null&&!x){status('選択作品が見つかりません。編集中の入力を保持しています。');return;}
+ choose(x);
+ status('未保存の入力を破棄して'+(x?'「'+x.title+'」へ':'新規入力へ')+'切り替えました。');
+}
+
 const historyRecord=()=>history.find(x=>String(x.version)===$('historyVersion').value);
 const safeOldWorks=entry=>entry?entry.items.filter(x=>{
  const current=itemBy(x.id);return current&&eligible(current)&&current.epoch===x.epoch;
@@ -184,7 +223,7 @@ const info=node('div');info.append(node('strong',x.title),node('p',rooms[x.room]
 const state=x.archived?'保管中':x.visible?'公開予定':x.reviewed?'確認済み・非公開':'確認待ち・非公開';
 info.append(node('p',state+(x.featured?' · ✦注目':'')));head.append(thumb,info);art.append(head);
 const actions=node('div',undefined,'curator-actions');
-actions.append(button('編集',()=>{choose(x);status('「'+x.title+'」を選択しました。');}),
+actions.append(button('編集',()=>requestSelection(x)),
 button('↑ 上へ',()=>move(x.id,-1),i===0),
 button('↓ 下へ',()=>move(x.id,1),i===visible.length-1),
 button(x.visible?'公開予定を解除':'公開予定にする',()=>changeItem(x.id,'visibility')),
@@ -242,7 +281,9 @@ $('publishStatus').textContent='初期の架空展示へ戻しました。';
 status('架空作品を初期化しました。実データは変更していません。');
 }
 $('curatorForm').addEventListener('submit',save);
-$('newWork').addEventListener('click',()=>{choose(null);status('新しい架空展示の入力に切り替えました。');});
+$('newWork').addEventListener('click',()=>requestSelection(null));
+$('cancelFormSwitch').addEventListener('click',()=>{clearPendingSwitch();status('編集中の入力を保持しました。');});
+$('discardFormSwitch').addEventListener('click',applyPendingSwitch);
 for(const k of fields)$(map[k]).addEventListener('input',clearChecks);
 $('workImage').addEventListener('change',checkButton);
 for(const id of ['rightsOk','privacyOk','contentOk'])$(id).addEventListener('change',checkButton);
@@ -261,7 +302,7 @@ $('reviewRestore').addEventListener('click',reviewHistoryRestore);
 $('restoreHistory').addEventListener('click',restoreHistory);
 $('reviewPublish').addEventListener('click',review);
 $('simulatePublish').addEventListener('click',publish);
-$('resetDemo').addEventListener('click',reset);
+$('resetDemo').addEventListener('click',requestReset);
 window.addEventListener('pagehide',()=>{for(const id of images.keys())forgetImage(id);});
 choose(null);updateHistoryPicker();
 $('publishStatus').textContent='架空の初期展示を表示しています。実公開ではありません。';
