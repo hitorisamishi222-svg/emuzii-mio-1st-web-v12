@@ -271,7 +271,7 @@ function render(){
   const wrap=node('article',undefined,'ops-item');
   wrap.append(node('strong',item.name));
   wrap.append(node('p','受付状態: '+item.status+' / 行 '+item.row));
-  if(item.status!=='確認済み'){
+  if(['未確認','管理確認待ち'].includes(item.status)){
    const onsite=node('label',undefined,'ops-filter');
    const verified=node('input');verified.type='checkbox';verified.setAttribute('aria-label','現場で簡易受付の本人を確認した');
    onsite.append(verified,node('span','現場で受付内容と本人を確認した'));
@@ -283,6 +283,8 @@ function render(){
      await mutate('review',{row:item.row,expectedStatus:item.status,expectedName:item.name,
        expectedBrowserId:item.browserId||'',expectedCreatedAt:item.createdAt||'',onSiteVerified:true});
    }));
+  }else if(item.status!=='確認済み'){
+   wrap.append(node('p','⚠️ 過去の登録・承認・動作確認の記録です。操作対象外のため変更しません。'));
   }
   el('opsSimple').append(wrap);
  }
