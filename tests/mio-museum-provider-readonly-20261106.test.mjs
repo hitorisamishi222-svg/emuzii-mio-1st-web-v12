@@ -36,7 +36,7 @@ test('2026-11-06 read-only observation captures only schema names and env scopes
   assert.equal(observation[key],false,key);
  const raw=JSON.stringify(observation);
  assert.doesNotMatch(raw,/postgres(?:ql)?:\/\/|password=|token_hash|client_secret|authorization\s*:/i);
- assert.deepEqual(Object.keys(observation.neon.existingTables).filter(x=>x.startsWith('museum_')),[]);
+ assert.deepEqual(observation.neon.existingTables.filter(x=>x.startsWith('museum_')),[]);
 });
 test('verified metadata remains BLOCKED: five museum tables, dedicated Preview key and restorable backup missing',()=>{
  const report=assessMuseumProviderReadinessStage(fixture());
