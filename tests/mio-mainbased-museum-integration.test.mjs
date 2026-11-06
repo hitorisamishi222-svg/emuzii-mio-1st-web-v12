@@ -244,6 +244,27 @@ test('static approved-work view rejects hidden works and renders existing track/
  assert.equal(nodes.filter(x=>x.tag==='a')[0].href,media.video);
  assert.equal(nodes.filter(x=>x.textContent==='未公開作品').length,0);
 });
+test('public legacy gallery links can deep-link to one approved work without a private-work lookup',()=>{
+ const html=read('museum-approved-gallery.html');
+ const js=read('museum-approved-gallery.js');
+ assert.match(html,/id="approvedGalleryFocus"[^>]*hidden/);
+ assert.match(html,/id="approvedGalleryClear"/);
+ assert.match(html,/id="approvedGalleryFocusText"/);
+ assert.match(html,/\.museum-approved-permalink/);
+ assert.match(js,/const publicId=/);
+ assert.match(js,/knownIds\.has\(wanted\)/);
+ assert.match(js,/x\.hidden!==false/);
+ assert.match(js,/permalink\.href='\/museum-approved-gallery\.html\?work='\+encodeURIComponent\(item\.id\)/);
+ assert.match(js,/const visible=\(workFocus\.id===null\|\|item\.id===workFocus\.id\)/);
+ assert.match(js,/window\.history\[replace\?'replaceState':'pushState'\]/);
+ assert.match(js,/workFocus=workFromUrl\(\)/);
+ assert.match(js,/window\.addEventListener\('popstate'/);
+ assert.doesNotMatch(js,/\/api\/|document\.cookie|localStorage|sessionStorage|innerHTML\s*=/);
+ for(const item of approvedGalleryItems){
+  assert.match(item.id,/^[a-z0-9-]{3,70}$/);
+  assert.equal(item.hidden,false);
+ }
+});
 test('museum large update is gallery-first, hides attendance navigation without deleting legacy assets and defers chat',()=>{
  const top=read('museum.html');
  assert.ok(top.indexOf('id="exhibits"')>0);
