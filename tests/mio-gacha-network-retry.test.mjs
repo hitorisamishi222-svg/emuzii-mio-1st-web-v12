@@ -19,7 +19,7 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,fail
   const handlers=new Map();
   return {tagName:tag,handlers,hidden:true,disabled:false,value:'',textContent:'',className:'',title:'',
    style:{setProperty(){}},children:[],
-   classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},after(){},remove(){},
+   classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},after(){},remove(){},focus(){},
    replaceChildren(...v){this.children=v},append(...v){this.children.push(...v)},
    addEventListener(e,cb){handlers.set(e,cb)},get offsetWidth(){return 1}};
  }
@@ -57,6 +57,7 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,fail
  return {el,saved,calls,ctx,flush,load:()=>vm.runInContext('loadCatalog()',ctx),
   execute:()=>vm.runInContext('execute(remember())',ctx),
   close:async()=>{el('drawResultCard').hidden=true;windowHandlers.get('mio:gacha-prize-closed')?.();await flush()},
+  storage:async()=>{windowHandlers.get('storage')?.({key});await flush()},
   click:async()=>{el('retryDraw').handlers.get('click')();await flush()}};
 }
 
@@ -222,4 +223,37 @@ test('closing prize in static preview never requests a real API',async()=>{
  const h=harness({preview:true,savedPending:null});
  await h.close();
  assert.deepEqual(h.calls,[]);
+});
+
+test('an overlapping tab cannot start a new draw during an open confirmation',async()=>{
+ const h=harness({savedPending:null});
+ await h.load();
+ const confirmation=vm.runInContext("start('通常')",h.ctx);
+ await h.flush();
+ // Another browser tab saves its in-flight draw before this confirmation is accepted.
+ h.saved.set(key,JSON.stringify(pending()));
+ h.el('gachaConfirmYes').onclick();
+ await confirmation;
+ assert.equal(h.calls.filter(x=>x.action==='draw').length,0);
+ assert.equal(JSON.parse(h.saved.get(key)).drawId,oldId);
+ assert.equal(h.el('retryDraw').hidden,false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+});
+test('storage events from another tab lock buttons while pending, refresh only after clearing',async()=>{
+ const h=harness({savedPending:null});
+ await h.load();
+ assert.equal(h.el('drawNormal').disabled,false);
+ h.saved.set(key,JSON.stringify(pending()));
+ const count=h.calls.length;
+ await h.storage();
+ assert.equal(h.calls.length,count,'receiving cross-tab pending must not call draw');
+ assert.equal(h.el('retryDraw').hidden,false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ h.saved.delete(key);
+ await h.storage();
+ assert.equal(h.calls.some(x=>x.action==='draw'),false);
+ assert.equal(h.el('retryDraw').hidden,true);
+ assert.equal(h.el('drawNormal').disabled,false,'re-enabled after fresh successful catalog and history');
 });
