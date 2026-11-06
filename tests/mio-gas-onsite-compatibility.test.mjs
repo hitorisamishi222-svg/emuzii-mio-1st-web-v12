@@ -20,8 +20,8 @@ test('standalone admin module is an exact copy, NEVER append to integrated candi
   const fullNames=new Set(defs(full));
   const partNames=defs(moduleOnly);
   const overlap=partNames.filter(x=>fullNames.has(x));
-  assert.equal(partNames.length,19,'audit function inventory before GAS changes');
-  assert.equal(overlap.length,19,'all 19 functions already included in integrated candidate');
+  assert.equal(partNames.length,20,'audit function inventory before GAS changes');
+  assert.equal(overlap.length,20,'all 20 functions already included in integrated candidate');
   const first='function mioAdminOps_(ss,d){';
   assert.equal(full.slice(full.indexOf(first)).trimEnd(),
     moduleOnly.slice(moduleOnly.indexOf(first)).trimEnd(),
@@ -34,7 +34,7 @@ test('admin dispatch runs only AFTER shared-secret verification and BEFORE parti
   const begin=full.indexOf('function doPost(e)');
   const secret=full.indexOf("if(!secret||!equal_(d.secret,secret))",begin);
   const gate=full.indexOf("if(d.action==='webGateRead'||d.action==='webGateSet')",begin);
-  const admin=full.indexOf("if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))",begin);
+  const admin=full.indexOf("if(/^webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)$/.test(d.action))",begin);
   const identity=full.indexOf("if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId",begin);
   assert.ok(begin>=0&&secret>begin&&gate>secret&&admin>gate&&identity>admin,
     'an ops dispatcher in the wrong place would bypass authentication or reject all admin reads');
