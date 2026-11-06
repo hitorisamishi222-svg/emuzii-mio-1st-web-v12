@@ -307,6 +307,20 @@ test('museum curator rehearsal is museum-only, offline and has a visible fail-cl
  assert.match(js,/unsavedForm\(\)/);
  assert.match(html,/失効した作品|古い版からも復活しません/);
 
+ for(const id of ['visitorRoom','visitorCount']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ for(const room of ['gallery','icons','moments','events']){
+  assert.match(html,new RegExp('<option value="'+room+'">'));
+ }
+ assert.match(js,/const selectedRoom=\$\('visitorRoom'\)\.value/);
+ assert.match(js,/now&&eligible\(now\)&&now\.epoch===x\.epoch/);
+ assert.match(js,/const shown=allApproved\.filter/);
+ assert.match(js,/visitorRoom'\)\.addEventListener\('change',showVisitor\)/);
+ assert.match(css,/\.museum-curator \.curator-visitor-controls/);
+ assert.match(css,/\.museum-curator \.curator-empty-room/);
+
+
  assert.match(js,/const eligible=/);
  assert.match(js,/const publication=/);
  assert.match(js,/function invalidateRights/);
