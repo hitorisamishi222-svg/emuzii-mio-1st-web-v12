@@ -7,17 +7,23 @@ function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,
 async function post(path,body={}){
   const retryableRead=path==='/api/status'||(path==='/api/gacha'&&['catalog','history'].includes(body.action));
   for(let attempt=0;attempt<3;attempt++){
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    // A lost reply must not hold the draw UI indefinitely. Aborting the browser
+    // request does NOT cancel a possibly committed GAS draw: keep its drawId.
+    const deadline=controller?setTimeout(()=>controller.abort(),retryableRead?15000:35000):null;
     try{
-      const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});
+      const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body),...(controller?{signal:controller.signal}:{})});
       const d=parse(await r.text());
       if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}
       return d
     }catch(e){
-      const transient=e.status===502||e.status===504||
+      const transient=[408,429,500,502,503,504].includes(e.status)||
         (e.status===409&&/処理中|連携先に接続できません|連携処理を完了できませんでした|タイムアウト/.test(String(e.message||'')))||
-        (e.status==null&&e instanceof TypeError);
+        (e.status==null&&(e instanceof TypeError||e.name==='AbortError'));
       if(!retryableRead||!transient||attempt===2)throw e;
       await new Promise(resolve=>setTimeout(resolve,1800*(attempt+1)+Math.random()*2200));
+    }finally{
+      if(deadline!==null)clearTimeout(deadline);
     }
   }
 }
