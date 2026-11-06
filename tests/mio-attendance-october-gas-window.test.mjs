@@ -44,6 +44,7 @@ function fixture({today='2026-11-06',keyword='correct',attempts=0,confirmed=[],o
   checkinAttempts_:()=>state.attempts,
   setCheckinAttempts_:(id,day,count)=>{assert.equal(id,PERSON);state.attempts=count},
   SpreadsheetApp:{flush:()=>state.flush++},
+  CHECKIN_MAX_ATTEMPTS:2,
   Date,Number,String,Math,isFinite
  };
  const f=vm.runInNewContext(code+'\ncheckinAction_',scope);
