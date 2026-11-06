@@ -44,8 +44,9 @@ export default async function handler(req,res){
  }else if(d.action==='grant'){
   if(typeof d.mioId!=='string'||!/^MIO-\d{4}$/.test(d.mioId)||
      !Number.isInteger(d.count)||d.count<1||d.count>50||
-     !Number.isSafeInteger(d.expectedSpecial)||d.expectedSpecial<0||
+     !Number.isSafeInteger(d.expectedSpecial)||d.expectedSpecial<0||!Number.isSafeInteger(d.expectedSpecial+d.count)||
      typeof d.reason!=='string'||d.reason.trim().length<2||d.reason.length>120||
+     /^[=+\-@]/.test(d.reason.trim())||/[\x00-\x1f]/.test(d.reason)||
      !ID.test(d.operationId||''))
      return reply(res,400,'付与内容が不正です');
   Object.assign(data,{mioId:d.mioId,count:d.count,expectedSpecial:d.expectedSpecial,reason:d.reason.trim(),operationId:d.operationId});
@@ -56,7 +57,8 @@ export default async function handler(req,res){
   Object.assign(data,{webId:d.webId,expectedStatus:d.expectedStatus,operationId:d.operationId});
  }else if(d.action==='intake'){
   if(typeof d.name!=='string'||!d.name.trim()||d.name.trim().length>40||
-     typeof d.note!=='string'||d.note.length>120||!ID.test(d.operationId||''))
+     typeof d.note!=='string'||d.note.length>120||
+     /^[=+\-@]/.test(d.note.trim())||/[\x00-\x1f]/.test(d.note)||!ID.test(d.operationId||''))
      return reply(res,400,'初訪問受付の入力を確認してください');
   Object.assign(data,{name:d.name.trim(),note:d.note.trim(),operationId:d.operationId});
  }else if(d.action==='review'){
