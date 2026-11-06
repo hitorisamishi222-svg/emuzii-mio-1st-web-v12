@@ -61,12 +61,14 @@ const digest=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 
 export async function saveMuseumExhibitPrivateDraftStage(client,{
  request,operationId,action,draft,exhibitId=null,expectedRevision=null,
- verifyOwner
+ preserveExistingImage=false,verifyOwner
 }={}){
  if(!client||typeof client.query!=='function')fail('DEDICATED_CLIENT_REQUIRED');
  if(typeof verifyOwner!=='function')fail('OWNER_VERIFIER_REQUIRED');
  if(typeof operationId!=='string'||!OP.test(operationId))fail('OPERATION_ID_INVALID');
  if(action!=='create'&&action!=='edit')fail('ACTION_INVALID');
+ if(typeof preserveExistingImage!=='boolean'||
+    action==='create'&&preserveExistingImage)fail('IMAGE_POLICY_INVALID');
  if(action==='create'&&(exhibitId!==null||expectedRevision!==null))fail('CREATE_ARGUMENT_INVALID');
  if(action==='edit'&&(!UUID.test(exhibitId||'')||
     !Number.isSafeInteger(expectedRevision)||expectedRevision<0||
@@ -82,7 +84,8 @@ export async function saveMuseumExhibitPrivateDraftStage(client,{
      !UUID.test(owner.user_id))fail('OWNER_AUTH_REQUIRED');
   const actor=owner.user_id.toLowerCase();
   const payloadHash=digest({actor,action,exhibitId:action==='edit'?exhibitId.toLowerCase():null,
-   expectedRevision:action==='edit'?expectedRevision:null,fields});
+   expectedRevision:action==='edit'?expectedRevision:null,
+   preserveExistingImage,fields});
   const prior=await client.query(
    'SELECT actor_id,action,payload_hash,exhibit_id,revision FROM museum_exhibit_draft_operations_stage WHERE operation_id=$1',
    [operationId]);
@@ -115,11 +118,12 @@ export async function saveMuseumExhibitPrivateDraftStage(client,{
   }else{
    result=await client.query(
     "UPDATE museum_public_exhibits SET kind=$1,category=$2,title=$3,description=$4,credit=$5,"+
-    "occurred_on=$6,image_url=$7,external_url=$8,revision=revision+1,"+
+    "occurred_on=$6,image_url=CASE WHEN $11::boolean THEN image_url ELSE $7 END,"+
+    "external_url=$8,revision=revision+1,"+
     "rights_checked_at=NULL,privacy_checked_at=NULL,reviewed_by=NULL,published_at=NULL,"+
     "updated_at=now() WHERE id=$9 AND revision=$10 AND status='draft' "+
     "RETURNING id,revision,status",
-    [...args,exhibitId.toLowerCase(),expectedRevision]);
+    [...args,exhibitId.toLowerCase(),expectedRevision,preserveExistingImage]);
   }
   if(!result||result.rowCount===0&&action==='edit')fail('REVISION_OR_STATE_CONFLICT');
   const data=rows(result,1)[0];
