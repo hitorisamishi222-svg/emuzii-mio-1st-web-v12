@@ -76,8 +76,9 @@ test('owner may read one verified private draft to populate an editor without ch
  assert.equal(data.item.imageUrl,'/assets/gallery-emuzii-mio-cover.svg');
  assert.equal(Object.isFrozen(data),true);
  assert.equal(Object.isFrozen(data.item),true);
- assert.deepEqual(state.queries.map(x=>x.sql.split(' ')[0]),
-  ['BEGIN','SELECT','COMMIT']);
+ assert.equal(state.queries[0].sql,'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+ assert.equal(state.queries.at(-1).sql,'COMMIT');
+ assert.equal(state.queries.filter(x=>/\bSELECT\b/.test(x.sql)).length,2);
  assert.ok(state.queries.every(x=>!/^\s*(INSERT|UPDATE|DELETE|ALTER|DROP|TRUNCATE)\b/i.test(x.sql)));
  assert.equal(state.rollbacks,0);
  assert.equal(state.releases.length,0);
