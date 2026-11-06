@@ -12,7 +12,7 @@ const catalog=(patch={})=>({ok:true,participantId:identity,confirmed:true,remain
  normalOpen:true,festOpen:true,normal:{ready:true,prizes:[],message:'抽選できます'},
  fest:{ready:true,prizes:[],message:'抽選できます'},...patch});
 
-function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,failHistory=false,failCatalog=false,savedPending=pending()}={}){
+function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,failHistory=false,failCatalog=false,preview=false,savedPending=pending()}={}){
  const saved=new Map(savedPending?[[key,JSON.stringify(savedPending)]]:[]);
  const elements=new Map(),calls=[],windowHandlers=new Map();
  function element(tag='div'){
@@ -42,7 +42,7 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,fail
   document:{getElementById:el,createElement:element,querySelectorAll:()=>[],addEventListener(){},hidden:false},
   window:{matchMedia:()=>({matches:true}),dispatchEvent(){},addEventListener(e,handler){windowHandlers.set(e,handler)},setInterval(){},confirm(){throw Error('retry must not open a second confirmation')}},
   localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
-  location:{hostname:'emuzii-mio-1st-web-v12.vercel.app'},
+  location:{hostname:preview?'127.0.0.1':'emuzii-mio-1st-web-v12.vercel.app'},
   fetch:async(_url,{body})=>{const req=JSON.parse(body);const d=await send(req.action,req);
    return {ok:d?.ok!==false,status:d?.ok===false?409:200,text:async()=>JSON.stringify(d)};},
   setTimeout:(fn)=>{queueMicrotask(fn);return 1},clearTimeout(){},setInterval(){},
@@ -216,4 +216,10 @@ test('malformed persisted pending draw never enables another ticket spend',async
  assert.equal(h.el('retryDraw').disabled,true);
  assert.equal(h.el('reloadGacha').disabled,true);
  assert.equal(h.calls.some(c=>c.action==='draw'),false);
+});
+
+test('closing prize in static preview never requests a real API',async()=>{
+ const h=harness({preview:true,savedPending:null});
+ await h.close();
+ assert.deepEqual(h.calls,[]);
 });
