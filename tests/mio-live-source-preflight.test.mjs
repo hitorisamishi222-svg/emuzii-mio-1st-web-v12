@@ -6,12 +6,12 @@ const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const full=read('GAS_Code_FULL_WEB_OPS_20261030.gs');
 const moduleOnly=read('GAS_WebAdminOps_20261030.gs');
 const marker='function mioAdminOps_(ss,d){';
-const dispatchLine="if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));";
+const dispatchLine="if(/^webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));";
 const oldCandidate=full.slice(0,full.indexOf(marker)).replace(dispatchLine,'');
 test('read-only source audit recognizes matched integrated candidate as a connection-test candidate',()=>{
  const out=auditGas([full],moduleOnly);
  assert.equal(out.status,'READ_ONLY_CONNECTION_TEST_NEXT');
- assert.equal(out.presentOpsCount,19);
+ assert.equal(out.presentOpsCount,20);
  assert.equal(out.doPostCount,1);
  assert.equal(out.canSafelyPatch,false);
  assert.deepEqual(out.duplicates,[]);
@@ -28,7 +28,7 @@ test('source audit stops partial migration, duplicate module and missing secrets
  assert.equal(missingModule.status,'STOP');
  const twice=auditGas([full,moduleOnly],moduleOnly);
  assert.equal(twice.status,'STOP');
- assert.ok(twice.duplicates.length>=19);
+ assert.ok(twice.duplicates.length>=20);
  const noSecret=auditGas([oldCandidate.replace('equal_(d.secret,secret)','true')],moduleOnly);
  assert.equal(noSecret.status,'STOP');
  const missingAll=auditGas([],moduleOnly);
