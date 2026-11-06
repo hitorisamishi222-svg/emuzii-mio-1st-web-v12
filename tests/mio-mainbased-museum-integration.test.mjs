@@ -12,6 +12,7 @@ const config=JSON.parse(read('vercel.json'));
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 const baseline=JSON.parse(read('tests/fixtures/mio-protected-main-baseline-20261102.json'));
 const observedMain=JSON.parse(read('tests/fixtures/mio-observed-main-gacha-operator-20261105.json'));
+const octoberMain=JSON.parse(read('tests/fixtures/mio-observed-main-october-restoration-20261106.json'));
 const shaOfFile=path=>{
  const bytes=readFileSync(new URL('../'+path,import.meta.url));
  return createHash('sha1').update('blob '+bytes.length).update(Buffer.from([0])).update(bytes).digest('hex');
@@ -39,24 +40,39 @@ const unchanged=[
  'assets/gallery-emuzii-mio-cover.svg'
 ];
 
-test('all old production authentication, draw, attendance and approved media blobs are byte-identical to origin/main',()=>{
- // This is a structural check of the protected source, not live GAS/DB validation.
+test('2026-11-06 current main remains byte-identical and its six approved October repair paths are pinned',()=>{
+ // Never relax the initial baseline nor silently bless a new production change.
  assert.equal(baseline.baselineCommit,'bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b');
+ assert.equal(observedMain.observedMainCommit,'84c623de9961a801f30b978bda8b8bea7a0daf4e');
+ assert.equal(octoberMain.previousObservedMainCommit,observedMain.observedMainCommit);
+ assert.equal(octoberMain.previousMuseumBaseline,baseline.baselineCommit);
+ assert.equal(octoberMain.observedMainCommit,'d9c09ed87cb6c6963e43db807a9bd87c6ed0b4e2');
  assert.equal(Object.keys(baseline.productionFileBlobs).length,unchanged.length+1);
+ const six=[
+  '.github/workflows/mio-attendance-october-recovery.yml',
+  'APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs',
+  'app.js','index.html',
+  'tests/mio-attendance-october-gas-window.test.mjs',
+  'tests/mio-attendance-october-recovery.test.mjs'
+ ];
+ assert.deepEqual(Object.keys(octoberMain.changedFileBlobs).sort(),six.sort(),
+  'the restored October repair must have exactly six reviewed paths');
+ // Only Oct repair's app.js/index.html may be revised among protected legacy files.
  for(const path of unchanged){
-  assert.equal(shaOfFile(path),baseline.productionFileBlobs[path],
-   'PROTECTED MAIN FILE CHANGED: '+path);
+  const expected=octoberMain.changedFileBlobs[path]||baseline.productionFileBlobs[path];
+  assert.match(expected,/^[a-f0-9]{40}$/);
+  assert.equal(shaOfFile(path),expected,
+   'PROTECTED CURRENT PRODUCTION FILE CHANGED: '+path);
  }
- // Also protect against main advancing after the snapshot when a remote ref is present.
+ // Keep actual 2026-11-06 repaired GAS source and regression fixtures intact.
+ for(const path of six){
+  assert.equal(shaOfFile(path),octoberMain.changedFileBlobs[path],
+   'OCTOBER REPAIR WAS DROPPED OR MODIFIED: '+path);
+ }
  if(hasMainRef()){
   const liveMainSha=git('rev-parse','origin/main');
-  // A narrowly pinned known divergence is not an admin-feature merge.
-  assert.ok(liveMainSha===baseline.baselineCommit||
-   liveMainSha===observedMain.observedMainCommit,
-   'UNREVIEWED MAIN UPDATE: stop staging until new production changes are reviewed');
-  assert.equal(observedMain.previousMuseumBaseline,baseline.baselineCommit);
-  assert.equal(observedMain.observedMainCommit,
-   '84c623de9961a801f30b978bda8b8bea7a0daf4e');
+  assert.equal(liveMainSha,octoberMain.observedMainCommit,
+   'UNREVIEWED NEW MAIN UPDATE: re-audit production before staging integration');
   assert.deepEqual(Object.keys(observedMain.changedFileBlobs).sort(),[
    '.github/workflows/mio-admin-ops.yml',
    'docs/MIO_GAS_FULL_REPLACE_SETUP.md',
@@ -67,19 +83,19 @@ test('all old production authentication, draw, attendance and approved media blo
    'tests/mio-gas-connect-guidance.test.mjs',
    'tests/mio-gas-full-install.test.mjs'
   ].sort());
-  if(liveMainSha===observedMain.observedMainCommit){
-   for(const [path,blob] of Object.entries(observedMain.changedFileBlobs)){
-    assert.match(blob,/^[a-f0-9]{40}$/,path);
-    assert.equal(git('rev-parse','origin/main:'+path),blob,
-     'observed operator source changed without review: '+path);
-   }
+  for(const [path,blob] of Object.entries(octoberMain.changedFileBlobs)){
+   assert.equal(git('rev-parse','origin/main:'+path),blob,
+    'current main Oct recovery blob differs from reviewed manifest: '+path);
   }
-  for(const path of unchanged){
+  for(const path of unchanged.concat([
+   'APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs'
+  ])){
    assert.equal(git('rev-parse','HEAD:'+path),git('rev-parse','origin/main:'+path),
-    'Protected main file differs from live baseline: '+path);
+    'Protected museum stage differs from current production: '+path);
   }
  }
 });
+
 test('latest main operator source is staged but protected from live actions on museum Preview',()=>{
  const html=read('gacha-web-gate.html');
  const mainScriptSha=observedMain.changedFileBlobs['gacha-admin-ops.js'];
