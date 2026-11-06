@@ -144,3 +144,13 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - `museum-neon-recovery-route-stage.mjs` の判定を修正し、子ブランチの6時間履歴を `historical_inspection_only` と表示。`pitrWindowAvailable=false`、`rootInstantRestoreEligible=false`、`timestampBranchCreationAvailableThroughConnector=false` とし、`museum-provider-readiness-stage.mjs` で**履歴があるだけでは復元経路の準備条件を通さない**。
 - 次の実復元演習は、同じ既存Neonプロジェクト内の**別名・一時的な非本番ブランチ**を指定時刻の履歴から作れる機能の利用可否、費用、期限切れ後の削除を確認した上で、復元先の独立性・テーブル定義・件数・個人情報保護を検証する必要がある。管理者・ガチャ・皆勤データが含まれるため、いかなる作業も元DBを上書きしない。
 - 復元先作成ができない場合は、機能の不足として停止する。**本番側のrootブランチを復元先に使うこと、子ブランチのHEAD複製を復元成功に見せかけること、無料枠を超える課金を無確認で発生させることはしない**。
+
+
+## 2026-11-06追記：未適用SQLの内容固定と手動移行前の停止判定
+
+- 同日の接続元メタデータ／読み取り専用SQL照合：Neonプロジェクト `dry-feather-67791501` の非primary分離ブランチ `br-bold-credit-b7y6frdo` は `main` の子、既存表14件、記念館用表5件は未作成。Snapshot一覧は0件。Vercelで既存 `GALLERY_DATABASE_URL` を復号せず確認したが、専用 `MIO_MUSEUM_GALLERY_DATABASE_URL` は見つからなかった。これらは照合時点の事実で、将来の状態や復元成功を保証しない。
+- `museum-migration-plan-stage.mjs` を追加。**既存の3つの未適用SQLファイル**のGit blobを固定して照合し、内容が1文字でも変われば、接続前の手動レビューへ進めない。依存関係順は `db/museum-public-exhibits.sql` → `db/museum-gallery-layout-stage.sql` → `db/museum-exhibit-draft-operations-stage.sql`。
+- 事前取得済みの**公開スキーマのテーブル名のみ**を入力し、管理者認証の既存表／作品モデレーション表の依存関係、記念館対象5表の完全未作成、一部だけ設置された不整合をチェックする。既存表に対する `IF NOT EXISTS` を誤ったスキーマの黙認に使わない。
+- 独立ブランチ認証、専用Preview接続、バックアップ復元演習、オーナー承認が**すべて真と仮定された合成テストでも**、この検査は `hasExecutableMigration=false`・`canMigrate/canWrite/canPublish/canDeploy=false` を維持する。プロバイダー由来の真正な証拠や実際の管理者許可は一切ここで生成しない。
+- `tests/mio-museum-migration-plan-stage.test.mjs` を既存の記念館CI（`tests/mio-museum-*.test.mjs`）に追加し、SQL改変・余計なSQL・欠落ソース・部分設置・依存欠落・不正なメタデータを拒否するテストを追加。`.github/workflows/mio-mainbased-museum-staging.yml` に新コードの構文検査も追加した。
+- **この段階でDDL実行、DBテーブル作成、管理者資格情報取得、環境変数設定、バックアップ作成・復元、管理画面への保存接続はしていない。** 既存の本番URL・GAS・参加者・皆勤・ガチャ・FA・当選結果は無変更。記念館Draft PR #76は未公開・未マージを維持。
