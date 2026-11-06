@@ -28,7 +28,16 @@ async function post(path,body={}){
   }
 }
 function note(t){$('drawMessage').textContent=t||''}
-function remember(){try{return JSON.parse(localStorage.getItem(pendingKey())||'null')}catch{return null}}
+function remember(){
+  // Corrupt or unreadable local storage must not be treated as "no pending draw".
+  // Never invent a fresh drawId when a previous request may have committed.
+  try{
+    const raw=localStorage.getItem(pendingKey());
+    if(raw===null)return null;
+    const value=JSON.parse(raw);
+    return value&&typeof value==='object'?value:{drawId:'',mode:''};
+  }catch{return {drawId:'',mode:''}}
+}
 function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
 function safeImage(url){return typeof url==='string'&&/^https:\/\//i.test(url)?url:''}
 
