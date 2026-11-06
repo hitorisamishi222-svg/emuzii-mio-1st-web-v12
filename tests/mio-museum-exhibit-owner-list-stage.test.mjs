@@ -81,7 +81,7 @@ test('read-only transaction lists draft columns only with deterministic paginati
  assert.equal(Object.isFrozen(first.items[0]),true);
  assert.equal(state.calls[0].sql,'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
  assert.equal(state.calls.at(-1).sql,'COMMIT');
- assert.ok(state.calls.every(x=>!/INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER|JOIN\s+participants/i.test(x.sql)));
+ assert.ok(state.calls.every(x=>!/\b(?:INSERT|UPDATE|DELETE|DROP|TRUNCATE|ALTER)\b|\bJOIN\s+participants\b/i.test(x.sql)));
  const second=await run(client,{limit:2,cursor:first.nextCursor});
  assert.deepEqual(second.items.map(x=>x.id),[C]);
  assert.equal(second.hasMore,false);
