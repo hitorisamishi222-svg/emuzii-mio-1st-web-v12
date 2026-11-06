@@ -273,7 +273,32 @@ history.push({version,items:published.map(x=>({...x}))});
 invalidateOrderUndo();touched();render();updateHistoryPicker();
 $('publishStatus').textContent='模擬公開第'+version+'版として復元しました。過去版を直接書き換えず、失効した作品は復活させません。';
 }
+function updateOverview(){
+ // Mutually exclusive categories. Only the currently validated published
+ // revision can be counted as "模擬公開中"; approved but unpublished is pending.
+ const active=new Set(published.filter(x=>{
+  const current=itemBy(x.id);
+  return current&&eligible(current)&&current.epoch===x.epoch;
+ }).map(x=>x.id));
+ const counts={published:0,ready:0,review:0,private:0,archived:0};
+ for(const item of items){
+  if(item.archived){counts.archived++;continue;}
+  if(active.has(item.id)){counts.published++;continue;}
+  if(eligible(item)){counts.ready++;continue;}
+  if(item.reviewed&&item.rights&&item.privacy){counts.private++;continue;}
+  counts.review++;
+ }
+ const map={
+  overviewPublished:counts.published,overviewReady:counts.ready,
+  overviewReview:counts.review,overviewPrivate:counts.private,
+  overviewArchived:counts.archived
+ };
+ for(const [id,num] of Object.entries(map))$(id).textContent=String(num);
+ $('overviewStatus').textContent='架空作品 '+items.length+
+  '件を分類しています。外部サーバー・実DBへの照会や公開は行っていません。';
+}
 function render(){
+updateOverview();
 const list=$('workList');list.replaceChildren();
 const visible=filtered();$('countText').textContent='架空作品 '+visible.length+'件 / 全'+items.length+'件';
 visible.forEach((x,i)=>{
@@ -331,7 +356,7 @@ $('publishStatus').textContent='差分確認：追加 '+added+'件、非掲載 '
 }
 function publish(){
 if(unsavedForm()||!approvedHash||approvedHash!==signature()){touched();$('publishStatus').textContent='状態が変わりました。再確認してください。';return;}
-published=publication();version++;history.push({version,items:published.map(x=>({...x}))});invalidateOrderUndo();touched();showVisitor();updateHistoryPicker();
+published=publication();version++;history.push({version,items:published.map(x=>({...x}))});invalidateOrderUndo();touched();updateOverview();showVisitor();updateHistoryPicker();
 $('publishStatus').textContent='画面内の模擬公開版 '+version+' を更新しました。実サイトとDBは変更していません。';
 }
 function reset(){
