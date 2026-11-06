@@ -478,3 +478,38 @@ test('API rejects a review when original customer identity is missing',async()=>
  }
  assert.equal(bridged,0,'an incomplete onsite identity must never reach the GAS bridge');
 });
+
+test('historical intake statuses are visible but never actionable',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,roster:[],pending:[],grants:[],
+  simple:['動作確認用','本人確認・登録承認済み','登録承認済み']
+  .map((status,i)=>({row:i+2,name:'架空受付者'+i,status,
+   createdAt:'2026-10-19T12:00:00.000Z',browserId:'MIO-W-'+'c'.repeat(24)}))});
+ b.connect();await b.settled();
+ const elements=flatten(b.el('opsSimple'));
+ assert.equal(elements.filter(x=>x.tagName==='button'&&/受付内容を確認済みにする/.test(x.textContent)).length,0,
+  'historical approval and test-only rows cannot have a review button');
+ assert.equal(elements.filter(x=>/操作対象外のため変更しません/.test(x.textContent)).length>=3,true);
+ assert.equal(b.requests.length,1,'rendering existing records must never write');
+});
+test('review API rejects historical already-approved and test-only labels even when onsite confirmed',async()=>{
+ const source=read('api-gacha-admin-ops.js').replace(/^import .*;$/gm,'')
+ .replace('export default async function handler','async function handler')+'\n globalThis.__handler=handler;';
+ let bridged=0;
+ const ctx={process:{env:{MIO_GACHA_ONSITE_RELEASE:'operator-verified-onsite-20261105'}},
+  prepare:()=>true,authorizedCode:()=>true,sessionOK:async()=>false,
+  bridge:async()=>{bridged++;return {ok:true}},console:{error(){}}};
+ vm.runInNewContext(source,ctx);
+ for(const status of ['動作確認用','本人確認・登録承認済み','登録承認済み','確認済み']){
+  const req={headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+    origin:'https://emuzii-mio-1st-web-v12.vercel.app',
+    'content-type':'application/json'},
+    body:{code:'mock',action:'review',row:2,expectedStatus:status,expectedName:'架空受付者',
+     expectedBrowserId:'MIO-W-'+'c'.repeat(24),expectedCreatedAt:'2026-10-19T12:00:00.000Z',
+     operationId:'f'.repeat(32),onSiteVerified:true}};
+  const res={statusCode:0,setHeader(){},status(n){this.statusCode=n;return this},json(o){this.body=o;return this}};
+  await ctx.__handler(req,res);
+  assert.equal(res.statusCode,400,status+' is not an actionable pending state');
+ }
+ assert.equal(bridged,0,'historical statuses never reach the GAS bridge');
+});
