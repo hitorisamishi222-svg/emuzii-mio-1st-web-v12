@@ -10,7 +10,7 @@ const RELEASE='verified-existing-gas-ops-20261030';
 // Writes still require existing GAS webAdminOps support and administrator auth.
 const ONSITE_RELEASE='operator-verified-onsite-20261105';
 const reply=(res,status,message)=>res.status(status).json({ok:false,error:message});
-const operations={read:'webAdminOpsRead',approve:'webAdminOpsApprove',grant:'webAdminOpsGrant',review:'webAdminOpsReview',intake:'webAdminOpsIntake',create:'webAdminOpsCreate'};
+const operations={read:'webAdminOpsRead',approve:'webAdminOpsApprove',member:'webAdminOpsMember',grant:'webAdminOpsGrant',review:'webAdminOpsReview',intake:'webAdminOpsIntake',create:'webAdminOpsCreate'};
 const ID=/^[a-f0-9]{32}$/;
 export default async function handler(req,res){
  if(!prepare(req,res))return;
@@ -41,6 +41,13 @@ export default async function handler(req,res){
     d.expectedStatus!=='承認待ち'||typeof d.memberConfirmed!=='boolean'||!ID.test(d.operationId||''))
     return reply(res,400,'承認内容が不正です');
   Object.assign(data,{webId:d.webId,mioId:d.mioId,expectedStatus:d.expectedStatus,memberConfirmed:d.memberConfirmed,operationId:d.operationId});
+ }else if(d.action==='member'){
+  if(typeof d.webId!=='string'||!/^MIO-W-[a-f0-9]{24}$/.test(d.webId)||
+     typeof d.mioId!=='string'||!/^MIO-\d{4}$/.test(d.mioId)||
+     d.expectedMember!=='未確認'||d.memberConfirmed!==true||!ID.test(d.operationId||''))
+     return reply(res,400,'メンシプの本人確認情報が不足しています');
+  Object.assign(data,{webId:d.webId,mioId:d.mioId,expectedMember:d.expectedMember,
+    memberConfirmed:true,operationId:d.operationId});
  }else if(d.action==='grant'){
   if(typeof d.mioId!=='string'||!/^MIO-\d{4}$/.test(d.mioId)||
      !Number.isInteger(d.count)||d.count<1||d.count>50||
@@ -77,7 +84,7 @@ export default async function handler(req,res){
   if(d.action==='read'){
    if(!Array.isArray(result.pending)||!Array.isArray(result.roster)||!Array.isArray(result.simple))
      throw Error('受付状態を読み取れません');
-   return res.status(200).json({ok:true,writeEnabled,writeMode,pending:result.pending,roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0,rejectedCount:result.rejectedCount||0});
+   return res.status(200).json({ok:true,writeEnabled,writeMode,pending:result.pending,approvedBrowsers:Array.isArray(result.approvedBrowsers)?result.approvedBrowsers:[],roster:result.roster,simple:result.simple,grants:Array.isArray(result.grants)?result.grants:[],totalPending:result.totalPending||0,rejectedCount:result.rejectedCount||0});
   }
   return res.status(200).json({ok:true,result:{replayed:!!result.replayed,mioId:result.mioId||null,status:result.status||null,granted:result.granted||null,special:result.special??null,member:result.member||null}});
  }catch(e){
