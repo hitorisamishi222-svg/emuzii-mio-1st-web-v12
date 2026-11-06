@@ -13,7 +13,12 @@ test('full-paste GAS preserves pre-Web-admin functions without rewriting existin
  assert.ok(end>30000);
  const prefix=full.slice(0,end);
  assert.equal(prefix.split(route).length,2,'dispatch must exist exactly once');
- assert.equal(prefix.replace(route,''),baseline,'existing core changed; compare backup and release');
+ // The only allowed pre-module change besides the authenticated dispatch is
+ // expanding its existing diagnostic catch allowlist to the new Member action.
+ const restored=prefix.replace(route,'').replace(
+   'webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)',
+   'webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
+ assert.equal(restored,baseline,'existing core changed beyond allowlisted dispatch and diagnostic route');
  assert.ok(full.includes('function mioAdminOpsGrant_('));
  assert.ok(full.includes('function mioAdminOpsApprove_('));
  assert.equal(baseline.includes('function mioAdminOpsGrant_('),false);
