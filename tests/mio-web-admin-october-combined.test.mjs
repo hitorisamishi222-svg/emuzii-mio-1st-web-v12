@@ -32,7 +32,7 @@ test('all original live Code.gs bytes are preserved except one signed management
 test('20 management functions appended exactly once, module matches reviewed previous source',()=>{
  const segment=full.slice(full.indexOf(legacyMarker)+legacyMarker.length);
  assert.equal(segment.trim(),module.trim());
- assert.match(module,/function mioAdminOpsMember_\\s*\\(/);
+ assert.ok(module.includes('function mioAdminOpsMember_('));
  assert.match(module,/expectedCreatedAt/);
  assert.match(module,/expectedBrowserId/);
  assert.match(module,/expectedName/);
