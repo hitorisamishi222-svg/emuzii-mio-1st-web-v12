@@ -108,3 +108,11 @@
  .museum-curator .curator-overview-card{min-height:70px;padding:9px 10px}
  .museum-curator .curator-overview-card span{font-size:11px}
 }
+
+/* Browser-only cover preflight: no remote upload and no persistent records. */
+.museum-curator .curator-local-image-status{padding:12px 14px;margin:10px 0 16px;
+ min-height:48px;line-height:1.65;border-radius:12px;overflow-wrap:anywhere;
+ border:1px solid #a5cdeb;background:#0a2b47;color:#f0e8d0;font-size:13px}
+.museum-curator #checkLocalImage{min-height:48px}
+@media(max-width:470px){.museum-curator .curator-local-image-status{font-size:12px;
+ padding:11px 12px}}
