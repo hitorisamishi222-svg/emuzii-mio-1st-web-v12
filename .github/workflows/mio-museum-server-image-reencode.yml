@@ -1,0 +1,40 @@
+name: MIO museum real server-side image re-encoding safety
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum-media-decode-reencode-stage.mjs
+      - package.json
+      - tests/mio-museum-media-full-decode-reencode-stage.test.mjs
+      - .github/workflows/mio-museum-server-image-reencode.yml
+  pull_request:
+    paths:
+      - museum-media-decode-reencode-stage.mjs
+      - package.json
+      - tests/mio-museum-media-full-decode-reencode-stage.test.mjs
+      - .github/workflows/mio-museum-server-image-reencode.yml
+permissions:
+  contents: read
+jobs:
+  real-image-binary-decode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    name: Real Sharp image decode, metadata stripping and re-encode
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned isolated test dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+      - name: Check server source syntax
+        run: |
+          node --check museum-media-decode-reencode-stage.mjs
+          node --check tests/mio-museum-media-full-decode-reencode-stage.test.mjs
+      - name: Execute real browser-compatible JPEG and WEBP image fixtures
+        run: node --test tests/mio-museum-media-full-decode-reencode-stage.test.mjs
+      - name: Ensure no staged tracked source was changed
+        run: git diff --exit-code -- . ':!package-lock.json'
