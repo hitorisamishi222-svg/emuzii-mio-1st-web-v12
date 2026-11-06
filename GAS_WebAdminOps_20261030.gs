@@ -84,7 +84,8 @@ function mioAdminOpsExisting_(log,requestId){
 }
 function mioAdminOpsWriteLog_(log,requestId,kind,webId,mioId,oldV,newV,note,name){
  var row=log.getLastRow()+1;
- log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',note,name]]);
+ // Always escape free-text audit cells; formulas are never trusted instructions.
+ log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',safeText_(note),safeText_(name)]]);
  SpreadsheetApp.flush();return row;
 }
 
@@ -216,7 +217,7 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var gacha=mioAdminOpsSheet_(ss,'emuzii_ガチャ');
  var g=mioAdminOpsOne_(mioAdminOpsValues_(gacha,17),0,id);
  var values=gacha.getRange(g.row,6,1,3).getValues()[0];
- sh.getRange(row,1,1,10).setValues([[new Date(),id,name,count,reason,before,after,
+ sh.getRange(row,1,1,10).setValues([[new Date(),id,safeText_(name),count,safeText_(reason),before,after,
    Number(values[0]),Number(values[2]),op]]);
  SpreadsheetApp.flush();
  var check=sh.getRange(row,2,1,9).getValues()[0];
@@ -229,7 +230,9 @@ function mioAdminOpsGrant_(ss,d){
  var op=mioAdminOpsRequest_(d),id=mioAdminOpsStr_(d.mioId),count=d.count,expected=d.expectedSpecial;
  var reason=mioAdminOpsStr_(d.reason);
  if(!/^MIO-\d{4}$/.test(id)||!Number.isInteger(count)||count<1||count>50||
- !Number.isSafeInteger(expected)||expected<0||reason.length<2||reason.length>120)throw new Error('付与条件を確認してください');
+ !Number.isSafeInteger(expected)||expected<0||!Number.isSafeInteger(expected+count)||
+ reason.length<2||reason.length>120||/^[=+\-@]/.test(reason)||/[\x00-\x1f]/.test(reason))
+   throw new Error('付与条件を確認してください');
  var people=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id),name=mioAdminOpsStr_(people.c[1]);
  var sheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ'),g=mioAdminOpsOne_(mioAdminOpsValues_(sheet,17),0,id);
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!=='OK'||g.c[13]!=='OK')throw new Error('ガチャ管理行に要確認の項目があります');
@@ -313,7 +316,8 @@ function mioAdminOpsReview_(ss,d){
 
 function mioAdminOpsIntake_(ss,d){
  var id=mioAdminOpsRequest_(d),name=mioAdminOpsStr_(d.name),note=mioAdminOpsStr_(d.note);
- if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name))
+ if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name)||
+    /^[=+\-@]/.test(note)||/[\x00-\x1f]/.test(note))
    throw new Error('受付名・メモを確認してください');
  var history=mioAdminOpsLog_(ss),past=mioAdminOpsExisting_(history,id);
  if(past){
