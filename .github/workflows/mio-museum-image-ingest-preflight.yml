@@ -1,0 +1,35 @@
+name: MIO museum media ingest staging safety
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum-image-ingest-preflight-stage.mjs
+      - tests/mio-museum-image-ingest-preflight-stage.test.mjs
+      - .github/workflows/mio-museum-image-ingest-preflight.yml
+  pull_request:
+    paths:
+      - museum-image-ingest-preflight-stage.mjs
+      - tests/mio-museum-image-ingest-preflight-stage.test.mjs
+      - .github/workflows/mio-museum-image-ingest-preflight.yml
+permissions:
+  contents: read
+jobs:
+  validate-unrouted-image-binary:
+    runs-on: ubuntu-latest
+    name: Private image format, metadata, size and dimension validation
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax check
+        run: |
+          node --check museum-image-ingest-preflight-stage.mjs
+          node --check tests/mio-museum-image-ingest-preflight-stage.test.mjs
+      - name: Offline only image ingest checks
+        run: node --test tests/mio-museum-image-ingest-preflight-stage.test.mjs
+      - name: No modifications to checked-out files
+        run: git diff --exit-code
