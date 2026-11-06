@@ -42,7 +42,7 @@ function showRetry(){const retry=$('retryDraw');retry.hidden=false;retry.disable
  $('drawNormal').disabled=true;$('drawFest').disabled=true;$('reloadGacha').disabled=true}
 function showRecoveredWinner(x,p){renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
  prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),image:String(x.image||''),replayed:true});
- forget();$('retryDraw').hidden=true;note('前回の当選結果を表示しています。ガチャ券の二重消費はありません。')}
+ forget();$('retryDraw').hidden=true;$('reloadGacha').disabled=false;note('前回の当選結果を表示しています。ガチャ券の二重消費はありません。')}
 
 function rarityKey(v){const r=String(v||'').toUpperCase();return r.includes('UR')?'ur':r.includes('SR')?'sr':r==='R'||r.includes('レア')?'r':'n'}
 function clearEffects(){const stage=$('gachaStage');stage?.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur');document.querySelectorAll('.gacha-particle,.gacha-flash,.gacha-ring').forEach(x=>x.remove())}
@@ -159,7 +159,7 @@ async function execute(pending){
     const d=await post('/api/gacha',{action:'draw',drawId:pending.drawId,mode:pending.mode});
     if(!validDrawResponse(d,pending))throw Error('draw receipt incomplete');
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
-    renderResult(d);forget();
+    renderResult(d);forget();$('reloadGacha').disabled=false;
     note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
     refreshAfter=true
   }catch(e){
