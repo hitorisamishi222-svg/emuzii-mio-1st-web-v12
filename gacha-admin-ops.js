@@ -334,7 +334,13 @@ function renderMemberBrowsers(){
 function renderRoster(){
  const div=el('opsRoster'),query=el('opsSearch').value.trim().toLowerCase();
  div.replaceChildren();
- if(!state){selected=null;el('opsPerson').textContent='参加者を選択してください';return}
+ if(!state){
+  selected=null;
+  el('opsMemberVerified').checked=false;
+  el('opsPerson').textContent='参加者を選択してください';
+  renderMemberBrowsers();
+  return;
+ }
  const onlyRemaining=el('opsOnlyRemaining').checked;
  const all=(state.roster||[]).filter(x=>(x.name.toLowerCase().includes(query)||x.mioId.toLowerCase().includes(query))&&
   (!onlyRemaining||(x.gacha?.checked===true&&Number(x.gacha.remaining)>0)))
