@@ -1,5 +1,7 @@
 const $=id=>document.getElementById(id);
 const attendanceDay=$('attendanceDay');
+const attendanceCalendar=$('attendanceCalendar');
+let attendanceDayChosen=false;
 let attendanceConfirmedDays=new Set(),attendanceLockedDays=new Set(),attendanceAchieved=false;
 const NAME_KEY='mioColorSingName';
 const LOGIN_ID_KEY='mioLoginId';
@@ -43,19 +45,62 @@ function setLocalAttempts(day,count){try{const v=readLocalAttempts();v[String(da
 
 if(attendanceDay){
   if(attendanceDay.options.length===0){for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=String(d);o.textContent=`10/${d}`;attendanceDay.appendChild(o)}}
-  const now=new Date();attendanceDay.value=String(Math.min(31,Math.max(1,now.getMonth()===9?now.getDate():1)));
+  // The 2026-10 anniversary calendar stays available after October.
+  // Never turn it into a November calendar merely because today changed.
+  attendanceDay.value='1';
+}
+if(attendanceCalendar){
+  const firstWeekday=(new Date(Date.UTC(2026,9,1)).getUTCDay()+6)%7;
+  for(let i=0;i<firstWeekday;i++){
+    const gap=document.createElement('span');gap.className='attendance-pad';gap.setAttribute('aria-hidden','true');attendanceCalendar.appendChild(gap);
+  }
+  for(let n=1;n<=31;n++){
+    const cell=document.createElement('button');cell.type='button';cell.dataset.day=String(n);
+    cell.textContent=String(n);cell.setAttribute('aria-label','10月'+n+'日を選択');
+    cell.addEventListener('click',()=>{
+      attendanceDay.value=String(n);attendanceDayChosen=true;syncAttendanceLock();
+    });
+    attendanceCalendar.appendChild(cell);
+  }
+}
+// A previously completed or locked October 1 must not make every visitor
+// think all of October has closed. This is a DISPLAY-ONLY recommendation;
+// actual acceptance remains with the existing authenticated GAS checkin.
+function preferAvailableOctoberDay(){
+  if(!attendanceDay||attendanceDayChosen||attendanceAchieved)return;
+  const current=Number(attendanceDay.value);
+  if(!attendanceConfirmedDays.has(current)&&!attendanceLockedDays.has(current)&&localAttempts(current)<2)return;
+  const available=Array.from({length:31},(_,i)=>i+1).find(day=>
+    !attendanceConfirmedDays.has(day)&&!attendanceLockedDays.has(day)&&localAttempts(day)<2);
+  if(available)attendanceDay.value=String(available);
 }
 function syncAttendanceLock(){
   const d=Number(attendanceDay?.value||0),done=attendanceConfirmedDays.has(d),locked=attendanceLockedDays.has(d)||localAttempts(d)>=2,k=$('attendanceKeyword'),b=$('attendanceSubmit'),m=$('attendanceMessage');
   if(locked)attendanceLockedDays.add(d);
   if(attendanceDay){for(const o of attendanceDay.options){const n=Number(o.value);o.textContent=`10/${n}${attendanceConfirmedDays.has(n)?' ✓確認済み':attendanceLockedDays.has(n)||localAttempts(n)>=2?' 🔒入力終了':''}`}}
+  if(attendanceCalendar){for(const cell of attendanceCalendar.querySelectorAll('button[data-day]')){
+    const n=Number(cell.dataset.day),confirmed=attendanceConfirmedDays.has(n),maxed=attendanceLockedDays.has(n)||localAttempts(n)>=2;
+    const state=confirmed?'confirmed':maxed?'locked':'open';
+    cell.dataset.state=state;cell.setAttribute('aria-pressed',String(n===d));
+    cell.textContent=String(n)+(confirmed?' ✓':maxed?' 🔒':'');
+    cell.setAttribute('aria-label',`10月${n}日 ${confirmed?'確認済み':maxed?'入力終了':'入力可能'}${n===d?' 選択中':''}`);
+  }}
+  const monthInfo=$('attendanceMonthStatus');
+  if(monthInfo){
+    const open=Array.from({length:31},(_,i)=>i+1).filter(day=>
+      !attendanceConfirmedDays.has(day)&&!attendanceLockedDays.has(day)&&localAttempts(day)<2);
+    monthInfo.textContent=attendanceAchieved?'10月の皆勤達成済み。記録はそのまま保持されています。':
+      open.length?`2026年10月の記録を表示中。入力可能な日付 ${open.length}日。選択中：10/${d}。※最終的な受付可否は管理側で判定します。`:
+      '10月は入力可能な日付が表示されていません。確認済み・入力上限などを管理者に確認してください。';
+  }
   if(k){k.disabled=attendanceAchieved||done||locked;k.placeholder=done?'この日は確認済みです':locked?'入力回数の上限に達しました':'その日に発表された文字'}
   if(b){b.disabled=attendanceAchieved||done||locked;b.textContent=done?'確認済み':locked?'入力不可':'確認文字を送信'}
   if(done&&m)m.textContent=`10/${d} は確認済みです。再入力はできません。`;
   else if(locked&&m)m.textContent='入力不可のためライバーにご連絡ください。';
   else if(!attendanceAchieved&&m&&/(確認済み|入力不可)/.test(m.textContent||''))m.textContent='';
 }
-attendanceDay?.addEventListener('change',syncAttendanceLock);
+attendanceDay?.addEventListener('change',()=>{attendanceDayChosen=true;syncAttendanceLock()});
+syncAttendanceLock();
 try{const saved=localStorage.getItem(NAME_KEY);if(saved&&$('name'))$('name').value=saved}catch{}
 try{const savedLoginId=localStorage.getItem(LOGIN_ID_KEY);if(savedLoginId&&$('loginId'))$('loginId').value=savedLoginId}catch{}
 
@@ -87,6 +132,7 @@ function display(d){
     attendanceAchieved=!!p.attendanceAchieved;
     if(Array.isArray(p.attendanceConfirmedDays))attendanceConfirmedDays=new Set(p.attendanceConfirmedDays.map(Number));
     if(Array.isArray(p.attendanceLockedDays))attendanceLockedDays=new Set(p.attendanceLockedDays.map(Number));
+    preferAvailableOctoberDay();
     syncAttendanceLock();
     $('fa').textContent=(Number(p.fa)||0)+'作品';
     const faBits=[];if(p.faLastAt)faBits.push(`最終応募：${formatServerDate(p.faLastAt)}`);if(p.faLatestStatus)faBits.push(p.faLatestStatus);showMeta('faMeta',faBits.join('／'));
