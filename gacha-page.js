@@ -348,7 +348,7 @@ function refreshOpenState(){
   void loadCatalog(false);
 }
 window.setInterval(refreshOpenState,30000);
-window.addEventListener('mio:gacha-prize-closed',()=>{if(!busy){$('drawNormal').disabled=true;$('drawFest').disabled=true;void loadCatalog()}});
+window.addEventListener('mio:gacha-prize-closed',()=>{if(isPreview)return; if(!busy){$('drawNormal').disabled=true;$('drawFest').disabled=true;void loadCatalog()}});
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
 window.addEventListener('pageshow',refreshOpenState);
