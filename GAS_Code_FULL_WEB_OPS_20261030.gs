@@ -1064,7 +1064,8 @@ function mioAdminOpsReview_(ss,d){
 
 function mioAdminOpsIntake_(ss,d){
  var id=mioAdminOpsRequest_(d),name=mioAdminOpsStr_(d.name),note=mioAdminOpsStr_(d.note);
- if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name))
+ if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name)||
+    /^[=+\-@]/.test(note)||/[\x00-\x1f]/.test(note))
    throw new Error('受付名・メモを確認してください');
  var history=mioAdminOpsLog_(ss),past=mioAdminOpsExisting_(history,id);
  if(past){
