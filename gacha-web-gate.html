@@ -84,6 +84,11 @@ main{max-width:760px}
   <label class="ops-filter" for="opsOnlyRemaining"><input id="opsOnlyRemaining" type="checkbox">残回数がある参加者だけ表示</label>
   <p id="opsRemainingSummary" class="ops-caption">残回数を照合中</p>
   <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <div id="opsMemberSection" class="ops-card"><h3 class="ops-section-title">承認済み参加者のメンシプ購入確認</h3>
+   <p class="ops-caption">上で参加者を選択すると、その人の承認済みブラウザを表示します。既存登録や当選履歴、ガチャ券には変更しません。</p>
+   <label class="ops-filter" for="opsMemberVerified"><input type="checkbox" id="opsMemberVerified">本人・既存ブラウザ・メンシプ購入内容を管理者が確認した</label>
+   <div id="opsMemberBrowsers" class="ops-list"><p>対象の参加者を選択してください。</p></div>
+  </div>
   <div class="ops-grid">
    <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
    <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
