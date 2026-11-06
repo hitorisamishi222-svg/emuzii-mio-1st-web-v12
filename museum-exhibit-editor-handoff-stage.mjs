@@ -51,6 +51,7 @@ export function prepareMuseumDraftEditorHandoffStage(detail,{
     detail.editable!==true||detail.onlyPrivateDrafts!==true||
     !own(detail.item,ITEM_FIELDS))fail('DETAIL_UNVERIFIED');
  const item=detail.item;
+ if(typeof item.id!=='string'||!UUID.test(item.id))fail('NOT_EDITABLE');
  if(item.id.toLowerCase()!==selectedId.toLowerCase()||
     item.revision!==selectedRevision)fail('STALE_OR_WRONG_SELECTION');
  if(item.status!=='draft'||item.editable!==true||!UUID.test(item.id)||
