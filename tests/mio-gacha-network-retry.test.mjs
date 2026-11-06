@@ -206,3 +206,14 @@ test('zero remaining does not block recovery of an older committed draw receipt'
  assert.equal(h.el('drawPrizeName').textContent,winner.prize);
  assert.equal(h.saved.has(key),false);
 });
+
+test('malformed persisted pending draw never enables another ticket spend',async()=>{
+ const h=harness();
+ h.saved.set(key,'{not-valid-json');
+ assert.equal(await h.load(),true);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ assert.equal(h.el('retryDraw').disabled,true);
+ assert.equal(h.el('reloadGacha').disabled,true);
+ assert.equal(h.calls.some(c=>c.action==='draw'),false);
+});
