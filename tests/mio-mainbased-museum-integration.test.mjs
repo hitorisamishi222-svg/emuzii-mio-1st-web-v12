@@ -297,7 +297,9 @@ test('museum large update is gallery-first, hides attendance navigation without 
  // NOT deleted or moved just because the new visitor navigation hides its entry.
  for(const path of ['index.html','app.js','api-checkin.js']){
   assert.ok(exists(path));
-  assert.equal(shaOfFile(path),baseline.productionFileBlobs[path]);
+  const current=octoberMain.changedFileBlobs[path]||baseline.productionFileBlobs[path];
+  assert.equal(shaOfFile(path),current,
+   'attendance-safe museum may not revert current October-repaired production '+path);
  }
 });
 test('memory archive has three clearly unpublished responsive room guides without exposing private work',()=>{
