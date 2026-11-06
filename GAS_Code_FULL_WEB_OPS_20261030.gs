@@ -833,7 +833,7 @@ function mioAdminOpsExisting_(log,requestId){
 }
 function mioAdminOpsWriteLog_(log,requestId,kind,webId,mioId,oldV,newV,note,name){
  var row=log.getLastRow()+1;
- log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',note,name]]);
+ log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',safeText_(note),safeText_(name)]]);
  SpreadsheetApp.flush();return row;
 }
 
