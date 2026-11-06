@@ -174,7 +174,7 @@ async function execute(pending){
     const d=await post('/api/gacha',{action:'draw',drawId:pending.drawId,mode:pending.mode});
     if(!validDrawResponse(d,pending))throw Error('draw receipt incomplete');
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
-    renderResult(d);forget();$('reloadGacha').disabled=false;
+    renderResult(d);forget();$('retryDraw').hidden=true;$('reloadGacha').disabled=false;
     $('drawRemaining').textContent=`ガチャ残り ${d.remaining}回（確定）`;
     note(`${d.ordinal}回目の当選結果を表示しています。残り ${d.remaining}回。`);
     refreshAfter=false
