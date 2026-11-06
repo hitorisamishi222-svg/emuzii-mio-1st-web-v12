@@ -127,7 +127,7 @@ test('no client-selected image URL, actor, publication flag, EXIF, MIME spoof or
 });
 
 test('malformed operation id and fault-injection configuration never create a stored entry',()=>{
- for(const op of ['',null,'1'.repeat(32),'A'.repeat(32),'0'.repeat(31),'0'.repeat(33)]){
+ for(const op of ['',null,'g'.repeat(32),'A'.repeat(32),'0'.repeat(31),'0'.repeat(33)]){
   assert.throws(()=>memory().saveAndVerify({operationId:op,payload:payload()}),
    /OPERATION_ID_INVALID/);
  }
