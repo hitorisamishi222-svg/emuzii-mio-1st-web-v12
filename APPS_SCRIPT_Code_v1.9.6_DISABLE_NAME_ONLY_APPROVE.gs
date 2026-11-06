@@ -419,13 +419,19 @@ function checkinAction_(ss,r,d){
   if(!keyword||keyword.length>40)return {ok:false,error:'今日の確認文字を入力してください'};
 
   var now=new Date(),ymd=jstYmd_(now);
-  if(ymd<'2026-10-01'||ymd>'2026-10-31')return {ok:false,error:'皆勤賞の確認期間外です'};
+  // The October 2026 calendar is an archived monthly campaign, not a
+  // deadline that automatically deletes or closes the original 31-day record.
+  // The manager will control future months' visibility separately.
+  // Preserve the old pre-October safeguard; after October any of its
+  // missing dates may be submitted subject to original identity/attempt gates.
+  if(ymd<'2026-10-01')return {ok:false,error:'10月の皆勤賞はまだ始まっていません'};
 
   var day=Number(d.day);
   if(!isFinite(day)||day<1||day>31||Math.floor(day)!==day)return {ok:false,error:'10/1〜10/31の日付を選んでください'};
 
   var todayDay=Number(ymd.slice(8,10));
-  if(day>todayDay)return {ok:false,error:'未来の日付はまだ入力できません'};
+  if(ymd.slice(0,7)==='2026-10'&&day>todayDay)
+    return {ok:false,error:'未来の日付はまだ入力できません'};
 
   var admin=ss.getSheetByName('emuzii_管理画面');
   var expected=String(admin.getRange(76+day,2).getDisplayValue()||'').trim();
