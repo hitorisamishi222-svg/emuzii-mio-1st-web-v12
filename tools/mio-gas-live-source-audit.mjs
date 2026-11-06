@@ -17,8 +17,8 @@ export function auditGas(sourceFiles,expectedModule){
   report.issues.push('稼働中の全GASファイルが未取得');return report;
  }
  const expected=functionNames(expectedModule);
- if(expected.length!==19||new Set(expected).size!==expected.length){
-  report.issues.push('候補19関数の定義が不正');return report;
+ if(expected.length!==20||new Set(expected).size!==expected.length){
+  report.issues.push('候補20関数の定義が不正');return report;
  }
  const names=sourceFiles.flatMap(functionNames);
  const counts=new Map();
@@ -34,7 +34,7 @@ export function auditGas(sourceFiles,expectedModule){
  report.missingHelpers=requiredHelpers.filter(n=>!counts.has(n));
  if(report.missingHelpers.length)report.issues.push('管理機能が依存する既存ヘルパーがありません');
  if(report.doPostCount!==1)report.issues.push('doPostが1つではない');
- if(report.duplicates.length)report.issues.push('重複関数あり（統合候補と単独19関数を両方追加しないこと）');
+ if(report.duplicates.length)report.issues.push('重複関数あり（統合候補と単独20関数を両方追加しないこと）');
  const owner=sourceFiles.filter(s=>functionNames(s).includes('doPost'));
  const action=owner.length===1?fnBody(owner[0],'doPost'):'';
  const lock=action.indexOf('LockService.getScriptLock()');
