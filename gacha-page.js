@@ -175,8 +175,9 @@ async function execute(pending){
     if(!validDrawResponse(d,pending))throw Error('draw receipt incomplete');
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
     renderResult(d);forget();$('reloadGacha').disabled=false;
-    note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
-    refreshAfter=true
+    $('drawRemaining').textContent=`ガチャ残り ${d.remaining}回（確定）`;
+    note(`${d.ordinal}回目の当選結果を表示しています。残り ${d.remaining}回。`);
+    refreshAfter=false
   }catch(e){
     clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(connectionMessage);showRetry();refreshAfter=true
   }finally{
@@ -222,7 +223,8 @@ async function recoverPrevious(p){
     showRetry();
   }finally{
     busy=false;
-    if(found){$('retryDraw').hidden=true;$('reloadGacha').disabled=false;void loadCatalog();}
+    if(found){$('retryDraw').hidden=true;$('reloadGacha').disabled=false;
+      $('drawRemaining').textContent='前回の当選結果を確認しました。景品を閉じると残回数を更新します。';}
     else if(retrySameId){void execute(p);}
     else{if(lastCatalog)setButtons(lastCatalog);if(validPending(remember()))$('retryDraw').disabled=false;}
   }
@@ -320,7 +322,7 @@ function refreshOpenState(){
   void loadCatalog(false);
 }
 window.setInterval(refreshOpenState,30000);
-window.addEventListener('mio:gacha-prize-closed',()=>{if(lastCatalog&&!busy)setButtons(lastCatalog)});
+window.addEventListener('mio:gacha-prize-closed',()=>{if(!busy){$('drawNormal').disabled=true;$('drawFest').disabled=true;void loadCatalog()}});
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
 window.addEventListener('pageshow',refreshOpenState);
