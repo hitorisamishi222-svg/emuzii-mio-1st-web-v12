@@ -1,0 +1,128 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+
+const source=readFileSync(new URL('../gacha-page.js',import.meta.url),'utf8');
+const identity='MIO-W-'+'a'.repeat(24),oldId='b'.repeat(32),key='mio_pending_draw_'+identity;
+const winner={drawId:oldId,mode:'通常',prize:'確定した景品',ordinal:2,rarity:'SR',image:''};
+const pending=()=>({drawId:oldId,mode:'通常',beforeRemaining:3,beforeUsed:1});
+const catalog=(patch={})=>({ok:true,participantId:identity,confirmed:true,remaining:3,used:1,
+ nextOrdinal:2,webDrawsUsed:1,festAvailableFrom:5,festEntitled:false,festUnlocked:false,
+ normalOpen:true,festOpen:true,normal:{ready:true,prizes:[],message:'抽選できます'},
+ fest:{ready:true,prizes:[],message:'抽選できます'},...patch});
+
+function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,savedPending=pending()}={}){
+ const saved=new Map(savedPending?[[key,JSON.stringify(savedPending)]]:[]);
+ const elements=new Map(),calls=[];
+ function element(tag='div'){
+  const handlers=new Map();
+  return {tagName:tag,handlers,hidden:true,disabled:false,value:'',textContent:'',className:'',title:'',
+   style:{setProperty(){}},children:[],
+   classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},after(){},remove(){},
+   replaceChildren(...v){this.children=v},append(...v){this.children.push(...v)},
+   addEventListener(e,cb){handlers.set(e,cb)},get offsetWidth(){return 1}};
+ }
+ const el=id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id)};
+ el('drawResultCard').hidden=true;el('retryDraw').hidden=true;
+ const send=async(action,payload)=>{
+  calls.push({action,...payload});
+  if(action==='catalog')return c;
+  if(action==='history')return {ok:true,participantId:identity,history};
+  if(action==='draw'){
+   if(failedDraw){failedDraw=false;throw new TypeError('network disconnected')}
+   if(drawResponse)return drawResponse;
+   if(!history.some(r=>r.drawId===payload.drawId))history.push({...winner,drawId:payload.drawId,mode:payload.mode});
+   return {ok:true,participantId:identity,drawId:payload.drawId,mode:payload.mode,
+     prize:winner.prize,ordinal:winner.ordinal,rarity:winner.rarity,image:'',remaining:2};
+  }
+  throw Error('unexpected action '+action);
+ };
+ const ctx=vm.createContext({
+  document:{getElementById:el,createElement:element,querySelectorAll:()=>[],addEventListener(){},hidden:false},
+  window:{matchMedia:()=>({matches:true}),dispatchEvent(){},addEventListener(){},setInterval(){},confirm(){throw Error('retry must not open a second confirmation')}},
+  localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
+  location:{hostname:'emuzii-mio-1st-web-v12.vercel.app'},
+  fetch:async(_url,{body})=>{const req=JSON.parse(body);const d=await send(req.action,req);
+   return {ok:d?.ok!==false,status:d?.ok===false?409:200,text:async()=>JSON.stringify(d)};},
+  setTimeout:(fn)=>{queueMicrotask(fn);return 1},clearTimeout(){},setInterval(){},
+  performance:{now:()=>1000},
+  crypto:{randomUUID:()=>oldId},Event:class{constructor(type){this.type=type}},
+  CustomEvent:class{constructor(type,options){this.type=type;this.detail=options?.detail}},
+  Date,JSON,Math,Number,Promise,Uint8Array
+ });
+ vm.runInContext(source.replace(/void boot\(\);\s*$/,''),ctx,{filename:'gacha-page.js'});
+ vm.runInContext('participant='+JSON.stringify(identity),ctx);
+ async function flush(){for(let i=0;i<40;i++)await new Promise(r=>setImmediate(r))}
+ return {el,saved,calls,ctx,flush,load:()=>vm.runInContext('loadCatalog()',ctx),
+  execute:()=>vm.runInContext('execute(remember())',ctx),
+  click:async()=>{el('retryDraw').handlers.get('click')();await flush()}};
+}
+
+test('a confirmed draw is restored as the original visible prize on reconnect',async()=>{
+ const h=harness({history:[winner]});
+ assert.equal(await h.load(),true);
+ assert.equal(h.el('drawPrizeName').textContent,winner.prize);
+ assert.equal(h.el('drawResultCard').hidden,false);
+ assert.equal(h.el('retryDraw').hidden,true);
+ assert.equal(h.saved.has(key),false);
+ assert.equal(h.calls.some(c=>c.action==='draw'),false);
+});
+test('when history and entitlement counters show an unused ticket, show friendly retry only',async()=>{
+ const h=harness();
+ assert.equal(await h.load(),true);
+ assert.match(h.el('drawMessage').textContent,/回線の状態が悪いため、再抽選いたします/);
+ assert.match(h.el('drawMessage').textContent,/1回分のガチャ券は戻っています/);
+ assert.equal(h.el('retryDraw').hidden,false);
+ assert.equal(h.el('retryDraw').disabled,false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ assert.equal(h.el('reloadGacha').disabled,true);
+ assert.equal(h.calls.some(c=>c.action==='draw'),false,'no auto-redraw on page refresh');
+ await h.click();
+ const spend=h.calls.filter(c=>c.action==='draw');
+ assert.equal(spend.length,1);
+ assert.equal(spend[0].drawId,oldId,'retry reuses the old draw ID');
+ assert.equal(h.saved.has(key),false);
+ assert.equal(h.el('drawPrizeName').textContent,winner.prize);
+});
+test('a changed balance cannot claim a returned ticket',async()=>{
+ const h=harness({c:catalog({remaining:2,used:2})});
+ await h.load();
+ assert.doesNotMatch(h.el('drawMessage').textContent,/戻っています/);
+ assert.equal(h.el('retryDraw').disabled,false);
+ assert.equal(h.el('drawNormal').disabled,true);
+});
+test('a lost reply after server commit recovers the saved winner without a second draw',async()=>{
+ const history=[];
+ const h=harness({history,failedDraw:true});
+ // Simulate server commit before the response is dropped.
+ const first=h.ctx.fetch;
+ h.ctx.fetch=async(url,options)=>{
+  const d=JSON.parse(options.body);
+  if(d.action==='draw'&&history.length===0){
+   history.push(winner);
+   throw new TypeError('response lost after commit');
+  }
+  return first(url,options);
+ };
+ await h.execute();
+ assert.equal(h.el('drawPrizeName').textContent,winner.prize);
+ assert.equal(h.saved.has(key),false);
+ assert.equal(h.calls.filter(x=>x.action==='draw').length,0,'same confirmed receipt is recovered by history');
+});
+test('an incomplete 200 draw response is never displayed as a prize and pending ID survives',async()=>{
+ const h=harness({drawResponse:{ok:true,participantId:identity,drawId:oldId,mode:'通常',remaining:2}});
+ await h.execute();
+ assert.equal(h.el('drawResultCard').hidden,true);
+ assert.equal(h.saved.has(key),true);
+ assert.equal(h.el('retryDraw').hidden,false);
+ assert.equal(h.el('drawNormal').disabled,true);
+});
+test('invalid local draw ID is not sent to the draw endpoint',async()=>{
+ const h=harness({savedPending:{drawId:'wrong',mode:'通常'}});
+ await h.click();
+ assert.equal(h.calls.length,0);
+ assert.equal(h.saved.has(key),true);
+ assert.equal(h.el('retryDraw').disabled,true);
+});
