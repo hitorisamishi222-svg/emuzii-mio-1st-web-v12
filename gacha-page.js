@@ -89,7 +89,7 @@ async function loadCatalog(includeHistory=true){
   busy=true;
   try{
     const c=await post('/api/gacha',{action:'catalog'});
-    if(c.ok!==true||!c.participantId||!validCount(c.remaining)===false)throw Error('catalog unavailable');
+    if(c.ok!==true||!c.participantId||!validCount(c.remaining)||!validCount(c.used))throw Error('catalog unavailable');
     lastCatalog=c;participant=c.participantId;$('drawPanel').hidden=false;
     $('drawRemaining').textContent=`ガチャ残り ${c.remaining}回 ／ 使用済み ${c.used}回`;
     renderCatalog($('normalPrizes'),c.normal);
