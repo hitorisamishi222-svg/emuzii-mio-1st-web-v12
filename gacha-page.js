@@ -39,7 +39,7 @@ function noTicketSpent(c,p){return validPending(p)&&Number.isSafeInteger(p.befor
  c?.participantId===participant&&c.confirmed===true&&Number.isSafeInteger(Number(c.remaining))&&
  Number.isSafeInteger(Number(c.used))&&Number(c.remaining)===p.beforeRemaining&&Number(c.used)===p.beforeUsed}
 function showRetry(){const retry=$('retryDraw');retry.hidden=false;retry.disabled=busy;retry.textContent=retryLabel;
- $('drawNormal').disabled=true;$('drawFest').disabled=true}
+ $('drawNormal').disabled=true;$('drawFest').disabled=true;$('reloadGacha').disabled=true}
 function showRecoveredWinner(x,p){renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
  prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),image:String(x.image||''),replayed:true});
  forget();$('retryDraw').hidden=true;note('前回の当選結果を表示しています。ガチャ券の二重消費はありません。')}
@@ -73,6 +73,7 @@ function setButtons(c){
   }
   if(pending){showRetry();return}
   $('retryDraw').hidden=true;
+  $('reloadGacha').disabled=false;
   if(busy||confirming){$('drawNormal').disabled=true;$('drawFest').disabled=true;return}
   const start=Number(c.festAvailableFrom)||5,normalOpen=c.normalOpen===true,festOpen=c.festOpen===true;
   const reason=!c.confirmed?'管理者の承認待ち':Number(c.remaining)<1?'残り回数がありません':!normalOpen&&!festOpen?'管理画面で受付停止中':!c.normal?.ready&&!c.fest?.ready?'景品が未設定':'';
@@ -206,7 +207,7 @@ async function recoverPrevious(p){
     showRetry();
   }finally{
     busy=false;
-    if(found){$('retryDraw').hidden=true;void loadCatalog();}
+    if(found){$('retryDraw').hidden=true;$('reloadGacha').disabled=false;void loadCatalog();}
     else if(retrySameId){void execute(p);}
     else{if(lastCatalog)setButtons(lastCatalog);if(validPending(remember()))$('retryDraw').disabled=false;}
   }
@@ -272,7 +273,7 @@ async function start(mode){
   let approved=false;
   try{approved=await confirmDraw(mode)}finally{confirming=false}
   if(!approved){setButtons(c);note(statusText(c));return}
-  const p={drawId:makeId(),mode};
+  const p={drawId:makeId(),mode,beforeRemaining:Number(c.remaining),beforeUsed:Number(c.used)};
   try{localStorage.setItem(pendingKey(),JSON.stringify(p))}catch{
     note('端末に抽選確認情報を保存できないため開始しません。');
     setButtons(c);
