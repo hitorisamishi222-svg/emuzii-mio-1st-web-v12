@@ -50,7 +50,7 @@
 <div class="curator-field"><label for="workDate">作品の日付（任意）</label><input id="workDate" type="date"></div>
 </div>
 <div class="curator-field"><label for="workUrl">紹介URL（任意・httpsのみ）</label><input id="workUrl" type="url" maxlength="2048" placeholder="https://example.com/"></div>
-<div class="curator-field"><label for="workImage">表紙画像（任意・端末内プレビューのみ）</label><input id="workImage" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-describedby="imageHelp"><p id="imageHelp" class="curator-small">最大12MB。画像は送信しません。仮公開版にも画像はコピーしません。</p><button type="button" id="clearImage" class="curator-secondary">仮画像を消す</button></div>
+<div class="curator-field"><label for="workImage">表紙画像（任意・端末内プレビューのみ）</label><input id="workImage" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-describedby="imageHelp"><p id="imageHelp" class="curator-small">最大12MB。画像は送信しません。仮公開版にも画像はコピーしません。</p><div class="curator-actions"><button type="button" id="checkLocalImage" class="curator-secondary">🖼️ 画像を端末内で圧縮・照合</button><button type="button" id="clearImage" class="curator-secondary">仮画像を消す</button></div><p id="localImageStatus" class="curator-local-image-status" role="status" aria-live="polite">画像を選ぶと、端末内で圧縮と一致確認を試せます。送信・サーバー保存・実公開はしません。</p></div>
 <div class="curator-actions"><button type="submit" id="saveWork">非公開下書きを追加</button><button type="button" class="curator-secondary" id="newWork">新しい作品へ</button></div>
 </form>
 <div class="curator-draft-recovery" aria-label="架空下書きの読み直し">
@@ -125,5 +125,6 @@
 </div>
 <footer class="museum-footer"><p>🔒 この確認ページには実参加者・実作品・本番データはありません。ガチャWeb管理とは独立しています。</p></footer>
 </main>
+<script defer src="/museum-image-client.js"></script>
 <script defer src="/museum-curator-preview.js"></script>
 </body></html>
