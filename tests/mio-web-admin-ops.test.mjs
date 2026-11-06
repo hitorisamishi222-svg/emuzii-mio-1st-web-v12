@@ -395,3 +395,11 @@ test('audit and grant-history free text are guarded by safeText',()=>{
  assert.match(source,/safeText_\(note\),safeText_\(name\)/);
  assert.match(source,/\[\[new Date\(\),id,safeText_\(name\),count,safeText_\(reason\)/);
 });
+
+test('Web-ID placeholder is linkable without accepting a different MIO-ID',()=>{
+ const x=sandbox(),w=x.rows['emuzii_Web登録'][1];
+ w[7]='';w[10]=w[0];
+ const out=x.exec({action:'webAdminOpsApprove',operationId:'4'.repeat(32),webId:w[0],mioId:'MIO-0001',memberConfirmed:false,expectedStatus:'承認待ち'});
+ assert.equal(out.status,'承認済み');
+ assert.equal(w[10],'MIO-0001');
+});
