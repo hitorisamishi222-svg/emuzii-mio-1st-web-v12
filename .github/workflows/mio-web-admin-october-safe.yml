@@ -1,0 +1,33 @@
+name: MIO web admin October live-source safety
+on:
+  push:
+    branches:
+      - feature/mio-onsite-october-admin-integration-20261106
+  pull_request:
+    paths:
+      - GAS_Code_OCTOBER_WITH_ADMIN_OPS_20261106.gs
+      - GAS_WebAdminOps_20261030.gs
+      - mio-admin-ops-code-copy-20261106.html
+      - api-gacha-admin-ops.js
+      - tests/mio-web-admin-october-combined.test.mjs
+      - .github/workflows/mio-web-admin-october-safe.yml
+permissions:
+  contents: read
+jobs:
+  preserve-live-october-then-admin:
+    runs-on: ubuntu-latest
+    name: Exact October Code.gs preservation + authenticated Ops
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Basic syntax checks
+        run: |
+          node --check --input-type=commonjs < GAS_Code_OCTOBER_WITH_ADMIN_OPS_20261106.gs
+          node --check --input-type=commonjs < GAS_WebAdminOps_20261030.gs
+          node --check tests/mio-web-admin-october-combined.test.mjs
+      - name: Offline-only read and approved baseline preservation
+        run: node --test tests/mio-web-admin-october-combined.test.mjs
