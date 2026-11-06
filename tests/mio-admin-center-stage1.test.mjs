@@ -544,3 +544,46 @@ test('member confirmation button for an existing approved browser requires onsit
  assert.equal(d.onSiteVerified,true);
  assert.match(d.operationId,/^[a-f0-9]{32}$/);
 });
+
+test('failed admin refresh clears old membership buttons and confirmation',async()=>{
+ const b=fakeBrowser();
+ const webId='MIO-W-1234567890abcdef12345678';
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,rejectedCount:0,
+  approvedBrowsers:[{webId,mioId:'MIO-0001',name:'登録者',member:'未確認',verified:true}],
+  roster:[{mioId:'MIO-0001',name:'登録者',gacha:{checked:true,remaining:2,total:3,special:0}}],
+  pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ flatten(b.el('opsRoster')).find(x=>x.tagName==='button').click();
+ b.el('opsMemberVerified').checked=true;
+ b.el('opsMemberVerified').events.get('change')();
+ assert.equal(flatten(b.el('opsMemberBrowsers')).filter(x=>x.tagName==='button').length,1);
+ b.setSnapshot({ok:false,error:'通信が不安定です'});
+ b.el('opsReload').events.get('click')();await b.settled();
+ assert.equal(b.el('opsMemberVerified').checked,false);
+ assert.equal(flatten(b.el('opsMemberBrowsers')).filter(x=>x.tagName==='button').length,0);
+ assert.equal(b.requests.length,2,'only two read requests; no mutation');
+});
+test('member API requires the operator confirmation and a valid browser identity',async()=>{
+ const source=read('api-gacha-admin-ops.js').replace(/^import .*;$/gm,'')
+  .replace('export default async function handler','async function handler')+'\n globalThis.__handler=handler;';
+ let calls=0;
+ const ctx={process:{env:{MIO_GACHA_ONSITE_RELEASE:'operator-verified-onsite-20261105'}},
+  prepare:()=>true,authorizedCode:()=>true,sessionOK:async()=>false,
+  bridge:async()=>{calls++;return {ok:true,member:'確認済み'}},console:{error(){}}};
+ vm.runInNewContext(source,ctx);
+ const base={code:'mock',action:'member',webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+  expectedMember:'未確認',memberConfirmed:true,operationId:'a'.repeat(32),onSiteVerified:true};
+ const send=async body=>{
+  const res={statusCode:0,setHeader(){},status(x){this.statusCode=x;return this},json(x){this.body=x;return this}};
+  await ctx.__handler({headers:{host:'emuzii-mio-1st-web-v12.vercel.app',
+   origin:'https://emuzii-mio-1st-web-v12.vercel.app','content-type':'application/json'},body},res);
+  return res;
+ };
+ assert.equal((await send({...base,onSiteVerified:false})).statusCode,400);
+ assert.equal((await send({...base,webId:'invalid'})).statusCode,400);
+ assert.equal((await send({...base,expectedMember:'確認済み'})).statusCode,400);
+ assert.equal(calls,0,'invalid or unverified membership must never reach GAS');
+ const good=await send(base);
+ assert.equal(good.statusCode,200);
+ assert.equal(calls,1);
+});
