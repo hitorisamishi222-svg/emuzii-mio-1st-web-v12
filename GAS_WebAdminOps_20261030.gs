@@ -267,7 +267,11 @@ function mioAdminOpsGrant_(ss,d){
 }
 function mioAdminOpsReview_(ss,d){
  var op=mioAdminOpsRequest_(d),row=d.row,status=mioAdminOpsStr_(d.expectedStatus);
- if(!Number.isInteger(row)||row<2||row>1000||status.length>60)throw new Error('簡易登録確認の指定が不正です');
+ // Historical statuses (including already-approved and test-only rows) are read-only.
+ // Never silently replace a legacy registration/approval label with generic '確認済み'.
+ if(!Number.isInteger(row)||row<2||row>1000||
+    ['未確認','管理確認待ち'].indexOf(status)<0)
+   throw new Error('既存の受付状態は操作対象外です。過去の承認記録を変更しません');
  var sheet=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
  var data=sheet.getRange(row,1,1,6).getValues()[0];
  var name=mioAdminOpsStr_(data[1]),actual=mioAdminOpsStr_(data[4])||'未確認';
