@@ -965,7 +965,7 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var gacha=mioAdminOpsSheet_(ss,'emuzii_ガチャ');
  var g=mioAdminOpsOne_(mioAdminOpsValues_(gacha,17),0,id);
  var values=gacha.getRange(g.row,6,1,3).getValues()[0];
- sh.getRange(row,1,1,10).setValues([[new Date(),id,name,count,reason,before,after,
+ sh.getRange(row,1,1,10).setValues([[new Date(),id,safeText_(name),count,safeText_(reason),before,after,
    Number(values[0]),Number(values[2]),op]]);
  SpreadsheetApp.flush();
  var check=sh.getRange(row,2,1,9).getValues()[0];
