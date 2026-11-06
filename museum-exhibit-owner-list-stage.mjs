@@ -124,3 +124,60 @@ export async function listMuseumPrivateDraftsStage(client,{
   fail('QUERY_FAILED');
  }
 }
+
+
+// Owner-only detail read for selecting a draft from the inbox. Read and edit
+// are intentionally two distinct operations: a future edit MUST supply the
+// revision returned here, then CAS it against status='draft' on its own
+// verified transaction. This lookup never changes review/publication state.
+export async function getMuseumPrivateDraftStage(client,{
+ request,verifyOwner,exhibitId,expectedRevision=null
+}={}){
+ if(!client||typeof client.query!=='function')fail('DEDICATED_CLIENT_REQUIRED');
+ if(typeof verifyOwner!=='function')fail('OWNER_VERIFIER_REQUIRED');
+ if(typeof exhibitId!=='string'||!UUID.test(exhibitId))fail('EXHIBIT_ID_INVALID');
+ if(expectedRevision!==null&&(!Number.isSafeInteger(expectedRevision)||
+   expectedRevision<0||expectedRevision>2147483647))fail('EXPECTED_REVISION_INVALID');
+ let active=false,commitAttempted=false;
+ try{
+  const begun=await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
+  if(begun?.command!=='BEGIN')fail('BEGIN_UNVERIFIED');
+  active=true;
+  const owner=await verifyOwner(client,request);
+  if(!owner||owner.role!=='owner'||typeof owner.user_id!=='string'||
+    !UUID.test(owner.user_id))fail('OWNER_AUTH_REQUIRED');
+  // Never query a deleted/hidden/published item and never expose moderation,
+  // session, user/device, member or prize records to the browser.
+  const result=await client.query(
+   'SELECT id,kind,category,title,description,credit,occurred_on,image_url,external_url,'+
+   "status,revision,updated_at FROM museum_public_exhibits "+
+   "WHERE id=$1::uuid AND status='draft' LIMIT 2",
+   [exhibitId.toLowerCase()]
+  );
+  if(!result||result.command!=='SELECT'||![0,1].includes(result.rowCount)||
+    !Array.isArray(result.rows)||result.rows.length!==result.rowCount)
+   fail('DETAIL_RESULT_UNVERIFIED');
+  const item=result.rowCount===1?validRow(result.rows[0]):null;
+  if(item&&item.id!==exhibitId.toLowerCase())fail('DETAIL_ID_MISMATCH');
+  if(item&&expectedRevision!==null&&expectedRevision!==item.revision)
+   fail('REVISION_CHANGED');
+  commitAttempted=true;
+  const done=await client.query('COMMIT');
+  if(done?.command!=='COMMIT')fail('COMMIT_UNVERIFIED');
+  active=false;
+  return Object.freeze({
+   found:item!==null,item,editable:item!==null,
+   // No information about the state of missing or non-draft exhibits.
+   onlyPrivateDrafts:true
+  });
+ }catch(error){
+  if(active&&!commitAttempted){
+   try{const rolled=await client.query('ROLLBACK');
+    if(rolled?.command!=='ROLLBACK')fail('ROLLBACK_UNVERIFIED');
+   }catch{fail('ROLLBACK_UNVERIFIED')}
+  }
+  if(commitAttempted)fail('COMMIT_UNVERIFIED');
+  if(error instanceof Error&&error.message.startsWith('MUSEUM_DRAFT_LIST_'))throw error;
+  fail('QUERY_FAILED');
+ }
+}
