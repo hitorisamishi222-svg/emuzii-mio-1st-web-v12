@@ -96,6 +96,8 @@ jobs:
           node --check museum-exhibit-owner-list-stage.mjs
           node --check museum-exhibit-owner-list-entry-stage.mjs
           node --check museum-exhibit-editor-handoff-stage.mjs
+          node --check museum-exhibit-owner-roundtrip-stage.mjs
+          node --check tests/mio-museum-exhibit-owner-roundtrip-stage.test.mjs
           node --check tests/mio-museum-exhibit-editor-handoff-stage.test.mjs
           node --check museum-media-fallback.js
           node --check tests/mio-mainbased-museum-integration.test.mjs
