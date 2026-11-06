@@ -54,3 +54,14 @@
 .museum-curator .curator-restore .curator-public-card{border-color:#b4cfe29e;background:#0e2a47}
 .museum-curator .curator-restore .curator-actions button:disabled{opacity:.46}
 .museum-curator #undoOrder:disabled{opacity:.46}
+
+/* Public-facing look inside the *fictional* curator preview; never loads real exhibits. */
+.museum-curator .curator-visitor-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:12px;padding:12px 0 4px}
+.museum-curator .curator-viewer-count{border:1px solid #e6d19a80;border-radius:12px;padding:11px 13px;background:#123658;color:#ffe6b6;font-weight:750;min-height:48px;font-size:13px}
+.museum-curator .curator-viewer-badges{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.museum-curator .curator-viewer-room,.museum-curator .curator-viewer-category,.museum-curator .curator-feature{display:inline-flex;align-items:center;min-height:25px;border-radius:8px;padding:3px 7px;font-size:11px;line-height:1.5;font-weight:800}
+.museum-curator .curator-viewer-room{background:#284f70;color:#e2efff;border:1px solid #8cc0dd85}
+.museum-curator .curator-viewer-category{background:#183b60;color:#e2efff;border:1px solid #8cc0dd55}
+.museum-curator .curator-feature{border:1px solid #f6d9a69c;background:#614a29b0;color:#ffe8b4}
+.museum-curator .curator-empty-room{grid-column:1/-1;padding:18px;border:1px dashed #edcd916c;border-radius:12px;text-align:center;color:#deebf7;background:#0b2443}
+@media(max-width:570px){.museum-curator .curator-visitor-controls{grid-template-columns:1fr;gap:0}}
