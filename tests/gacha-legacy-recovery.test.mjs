@@ -56,7 +56,7 @@ async function click(h){
 
 test('recovery only reads saved draw history and never creates a new draw',async()=>{
   const h=harness();await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog','history']);
+  assert.deepEqual(h.requests.map(x=>x.action),['history']);
   assert.equal(h.saved.has(key),false);
   assert.equal(h.$('drawPrizeName').textContent,'保存済み景品');
   assert.equal(h.$('drawResultCard').hidden,false);
@@ -65,7 +65,7 @@ test('recovery only reads saved draw history and never creates a new draw',async
 test('when not yet committed, one explicit retry spends at most one ticket under same draw ID',async()=>{
   const h=harness(new Map([[key,JSON.stringify(pending)]]),[]);
   await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog','draw','catalog','history']);
+  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog','draw']);
   assert.equal(h.requests.filter(x=>x.action==='draw').length,1);
   assert.equal(h.saved.has(key),false);
   assert.equal(h.$('drawPrizeName').textContent,winner.prize);
