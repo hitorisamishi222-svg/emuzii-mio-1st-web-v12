@@ -232,7 +232,7 @@ test('static approved-work view rejects hidden works and renders existing track/
  const code=original.replace(/^import \{approvedGalleryItems\} from ['"]\.\/gallery-items\.js['"];?\s*$/m,'');
  assert.notEqual(code,original);
  const nodes=[];
- const node=tag=>{const a={tag,children:[],textContent:'',src:'',href:'',attrs:{},
+ const node=tag=>{const a={tag,children:[],textContent:'',src:'',href:'',attrs:{},dataset:{},
   append(...x){this.children.push(...x)},replaceChildren(...x){this.children=x},
   setAttribute(k,v){this.attrs[k]=v}};nodes.push(a);return a;};
  const list=node('section'),status=node('div');
