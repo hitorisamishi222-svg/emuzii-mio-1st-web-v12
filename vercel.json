@@ -386,6 +386,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "attendance-months-preview.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "attendance-month-config-preview.mjs",
+      "use": "@vercel/static"
+    },
+    {
       "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
     }
