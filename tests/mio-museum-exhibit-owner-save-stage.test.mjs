@@ -79,12 +79,14 @@ const setup=(options={})=>{
      if(sql.startsWith('UPDATE museum_public_exhibits SET kind=')){
       assert.match(sql,/status='draft'/);
       assert.match(sql,/rights_checked_at=NULL,privacy_checked_at=NULL,reviewed_by=NULL,published_at=NULL/);
+      assert.match(sql,/image_url=CASE WHEN \$11::boolean THEN image_url ELSE \$7 END/);
+      assert.equal(typeof args[10],'boolean');
       const current=this.active.works[args[8]];
       if(!current||current.status!=='draft'||current.revision!==args[9])
        return result([],'UPDATE');
       Object.assign(current,{
        kind:args[0],category:args[1],title:args[2],description:args[3],
-       credit:args[4],occurred_on:args[5],image_url:args[6],
+       credit:args[4],occurred_on:args[5],image_url:args[10]?current.image_url:args[6],
        external_url:args[7],
        revision:current.revision+1,rights_checked_at:null,privacy_checked_at:null,
        reviewed_by:null,published_at:null
@@ -273,6 +275,36 @@ test('phone form-shaped input maps room and media type separately through real o
  await assert.rejects(()=>run(pool,{uiDraft}),/MUSEUM_EXHIBIT_EXACTLY_ONE_DRAFT_REQUIRED/);
  assert.equal(storage.calls.length,before);
 });
+
+test('phone-only editing preserves the existing private cover and never replaces it with blank form image',async()=>{
+ const {pool,storage}=setup();
+ await run(pool,{draft:{...draft(),imageUrl:'/assets/gallery-emuzii-mio-cover.svg'}});
+ assert.equal(storage.works[EXHIBIT].image_url,'/assets/gallery-emuzii-mio-cover.svg');
+ const uiDraft={room:'icons',category:'イラスト',title:'架空の表紙つき作品・改訂',
+  description:'本文だけ変更',credit:'架空の作者',occurredOn:'2026-11-05',
+  externalUrl:'https://example.org/work'};
+ const saved=await run(pool,{operationId:OP2,action:'edit',exhibitId:EXHIBIT,
+  expectedRevision:0,draft:undefined,uiDraft});
+ assert.equal(saved.revision,1);
+ assert.equal(saved.published,false);
+ assert.equal(storage.works[EXHIBIT].title,uiDraft.title);
+ assert.equal(storage.works[EXHIBIT].image_url,'/assets/gallery-emuzii-mio-cover.svg');
+ const sql=storage.calls.find(x=>x.sql.startsWith('UPDATE museum_public_exhibits'));
+ assert.equal(sql.args[10],true);
+ assert.equal(storage.works[EXHIBIT].rights_checked_at,null);
+ assert.equal(storage.works[EXHIBIT].published_at,null);
+});
+test('the complete server draft edit retains explicit image clearing instead of implicit preservation',async()=>{
+ const {pool,storage}=setup();
+ await run(pool,{draft:{...draft(),imageUrl:'/assets/gallery-emuzii-mio-cover.svg'}});
+ const updated=await run(pool,{operationId:OP2,action:'edit',exhibitId:EXHIBIT,
+  expectedRevision:0,draft:{...draft(),imageUrl:''}});
+ assert.equal(updated.revision,1);
+ assert.equal(storage.works[EXHIBIT].image_url,'');
+ const sql=storage.calls.find(x=>x.sql.startsWith('UPDATE museum_public_exhibits'));
+ assert.equal(sql.args[10],false);
+});
+
 test('candidate DDL and stage module remain unrouted and contain no private data',()=>{
  const code=readFileSync(new URL('../museum-exhibit-private-draft-stage.mjs',import.meta.url),'utf8');
  const adapter=readFileSync(new URL('../museum-exhibit-owner-save-stage.mjs',import.meta.url),'utf8');
