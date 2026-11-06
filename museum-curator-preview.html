@@ -65,6 +65,18 @@
 <p class="curator-small">公開予定の作品だけが対象です。編集しただけでは表示は切り替わりません。</p>
 <div class="curator-actions"><button type="button" id="reviewPublish" class="curator-secondary">公開予定との差分を確認</button><button type="button" id="simulatePublish" disabled>確認済み内容を模擬公開</button></div>
 <p id="publishStatus" class="curator-status" role="status" aria-live="polite">未確認です。実サイトへの公開は行いません。</p>
+<div class="curator-visitor-controls" aria-label="来場者向け展示のプレビュー切り替え">
+  <div class="curator-field"><label for="visitorRoom">見たい展示室を選択</label>
+    <select id="visitorRoom">
+      <option value="all">💎 すべての展示室</option>
+      <option value="gallery">🎵 翠央っ子ギャラリー</option>
+      <option value="icons">👑 歴代アイコン館</option>
+      <option value="moments">📸 思い出アルバム</option>
+      <option value="events">🏆 イベントの記録</option>
+    </select>
+  </div>
+  <div id="visitorCount" class="curator-viewer-count" role="status" aria-live="polite">公開プレビューを準備しています…</div>
+</div>
 <div id="visitorPreview" class="curator-public-grid" aria-label="仮公開した展示"></div>
 <div class="curator-restore" aria-label="模擬公開履歴と復元">
 <h3>✦ 過去の模擬公開版</h3>
