@@ -22,6 +22,18 @@
 <p>作品の追加・編集・並び替え・注目表示・公開確認を<strong>架空の作品だけ</strong>で体験できます。ガチャ管理・会員管理とは別の画面です。</p>
 <div class="curator-caution" role="status"><strong>🧪 操作練習専用・未公開</strong>：入力した内容はこの画面の中だけで一時的に扱い、ページを閉じると消えます。本番保存、画像アップロード、DB接続、公開、会員操作は行いません。</div>
 </section>
+<section class="curator-overview" aria-labelledby="overviewHeading">
+<h2 id="overviewHeading">✦ 作品の状態がひと目でわかる</h2>
+<p class="curator-small">練習中の架空作品だけを集計しています。実際の掲載件数ではありません。</p>
+<div class="curator-overview-grid" aria-label="架空作品の状態別件数">
+<div class="curator-overview-card"><span>模擬公開中</span><strong id="overviewPublished">0</strong></div>
+<div class="curator-overview-card"><span>公開待ち</span><strong id="overviewReady">0</strong></div>
+<div class="curator-overview-card"><span>確認待ち</span><strong id="overviewReview">0</strong></div>
+<div class="curator-overview-card"><span>確認済み・非公開</span><strong id="overviewPrivate">0</strong></div>
+<div class="curator-overview-card"><span>保管中</span><strong id="overviewArchived">0</strong></div>
+</div>
+<p id="overviewStatus" class="curator-small" role="status" aria-live="polite">架空展示の状態を集計しています。</p>
+</section>
 <div class="curator-columns">
 <section class="curator-panel curator-editor" aria-labelledby="editorHeading">
 <h2 id="editorHeading">✦ 展示作品を追加・編集</h2>
