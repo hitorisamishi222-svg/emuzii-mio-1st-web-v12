@@ -1285,6 +1285,39 @@ try{
   assert.ok(roomPreview.status.includes('全展示 2件'));
 
   if(width===390){
+   // A visitor-friendly curator must not silently lose typed details when
+   // changing the selected exhibit or resetting the fictional workspace.
+   const switching=await evaluate(`(()=>{
+    const cards=()=>[...document.querySelectorAll('#workList .curator-entry')];
+    const editAt=n=>cards()[n].querySelector('button').click();
+    const title=document.querySelector('#workTitle');
+    const warning=document.querySelector('#pendingFormSwitch');
+    editAt(0);
+    title.value='未保存の作品タイトル';title.dispatchEvent(new Event('input',{bubbles:true}));
+    editAt(1);
+    const blocked=!warning.hidden&&title.value==='未保存の作品タイトル';
+    document.querySelector('#cancelFormSwitch').click();
+    const cancelled=warning.hidden&&title.value==='未保存の作品タイトル';
+    editAt(1);document.querySelector('#discardFormSwitch').click();
+    const switched=warning.hidden&&title.value==='架空の歴代アイコン';
+    title.value='編集中の2作品目';title.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#newWork').click();
+    const newBlocked=!warning.hidden&&title.value==='編集中の2作品目';
+    document.querySelector('#discardFormSwitch').click();
+    const newBlank=title.value===''&&!document.querySelector('.curator-entry.is-selected');
+    title.value='未保存の新規作品';title.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#resetDemo').click();
+    const resetBlocked=!warning.hidden&&title.value==='未保存の新規作品';
+    document.querySelector('#cancelFormSwitch').click();
+    const resetCancelled=warning.hidden&&title.value==='未保存の新規作品';
+    document.querySelector('#resetDemo').click();
+    document.querySelector('#discardFormSwitch').click();
+    const reset=warning.hidden&&title.value===''&&cards().length===3;
+    return {blocked,cancelled,switched,newBlocked,newBlank,resetBlocked,resetCancelled,reset};
+   })()`);
+   assert.deepEqual(switching,{blocked:true,cancelled:true,switched:true,newBlocked:true,
+    newBlank:true,resetBlocked:true,resetCancelled:true,reset:true},
+    'unsaved curator fields must require explicit discard before choosing or reset');
    const behavior=await evaluate('(()=>{const cards=()=>[...document.querySelectorAll("#workList .curator-entry")];const actions=()=>[...document.querySelectorAll(".curator-entry.is-selected button")];const press=label=>{const b=actions().find(x=>x.textContent.includes(label));if(!b)throw Error("Missing action "+label);b.click()};cards()[0].querySelector("button").click();const title=document.querySelector("#workTitle");title.value="架空の記念曲・編集後";title.dispatchEvent(new Event("input",{bubbles:true}));document.querySelector("#saveWork").click();if(!cards()[0].textContent.includes("確認待ち・非公開"))throw Error("changed work was not unpublished");for(const id of ["rightsOk","privacyOk","contentOk"]){const input=document.getElementById(id);input.checked=true;input.dispatchEvent(new Event("change",{bubbles:true}))}if(document.querySelector("#approveWork").disabled)throw Error("mock approval still blocked");document.querySelector("#approveWork").click();press("公開予定にする");document.querySelector("#reviewPublish").click();if(document.querySelector("#simulatePublish").disabled)throw Error("review gate did not unlock");document.querySelector("#simulatePublish").click();const published=document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");press("公開予定を解除");const revoked=!document.querySelector("#visitorPreview").textContent.includes("架空の記念曲・編集後");return{published,revoked,works:cards().length}})()');
    assert.deepEqual(behavior,{published:true,revoked:true,works:3},
     'publish and immediate revoke must remain fictional and safe');
