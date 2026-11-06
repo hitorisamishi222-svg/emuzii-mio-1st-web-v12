@@ -316,6 +316,12 @@ async function start(mode){
   let approved=false;
   try{approved=await confirmDraw(mode)}finally{confirming=false}
   if(!approved){setButtons(c);note(statusText(c));return}
+  // Another tab may have started a draw while this confirmation was visible.
+  // Never issue a second drawId if a pending one appeared during the dialog.
+  if(remember()){
+    showRetry();note('別の画面で開始したガチャの結果を先に確認します。もう一度ガチャを回すを押してください。');
+    return;
+  }
   const p={drawId:makeId(),mode,beforeRemaining:Number(c.remaining),beforeUsed:Number(c.used)};
   try{localStorage.setItem(pendingKey(),JSON.stringify(p))}catch{
     note('端末に抽選確認情報を保存できないため開始しません。');
@@ -352,6 +358,15 @@ window.addEventListener('mio:gacha-prize-closed',()=>{if(isPreview)return; if(!b
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
 window.addEventListener('pageshow',refreshOpenState);
+window.addEventListener('storage',event=>{
+  if(event.key!==pendingKey()||!participant||busy||!$('drawResultCard').hidden)return;
+  if(remember()){showRetry();note(connectionMessage)}
+  else{
+    // The other tab finished its transaction; do not enable stale draw buttons.
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;
+    void loadCatalog();
+  }
+});
 async function boot(){if(isPreview){$('previewNotice').hidden=false;$('gachaUserMessage').textContent='プレビューでは実抽選・参加者情報・景品情報を読み込みません。';$('drawPanel').hidden=false;$('drawRemaining').textContent='プレビュー表示（抽選停止中）';$('drawNormal').disabled=true;$('drawFest').disabled=true;$('drawNormal').textContent='メンシプガチャ（プレビュー）';$('drawFest').textContent='ラキフェス（プレビュー）';$('drawMessage').textContent='筐体と画面レイアウトの確認用です。抽選はできません。';$('gachaCatalogModes').hidden=true;$('retryDraw').hidden=true;$('reloadGacha').hidden=true;$('gachaHistoryTitle').hidden=true;$('drawHistory').hidden=true;$('gachaHistoryNote').hidden=true;return;}try{const s=await post('/api/status');participant=s.participantId;$('gachaUser').hidden=false;$('gachaApproval').textContent=s.status||'';$('gachaName').textContent=(s.name||'')+' さん';$('gachaId').textContent='登録ID：'+s.participantId;if(s.status!=='承認済み'){throw Error('管理者の登録承認後にガチャを利用できます。')}$('gachaUserMessage').textContent='ガチャ情報を読み込んでいます…';const loaded=await loadCatalog();$('gachaUserMessage').textContent=loaded?'ガチャ情報を表示しました。':validPending(remember())?'回線が不安定です。前回の抽選IDは保護しています。下の「もう一度ガチャを回す」で再開できます。':remember()?'前回の抽選記録を安全に確認しています。新しいガチャ券は消費しません。':'回線が不安定です。下の「設定・当選履歴を更新」から再試行してください。'}catch(e){$('gachaUserMessage').textContent=e.status===401?'このブラウザには登録時の認証情報がありません。LINE・Xから開いている場合は、メニューの「ブラウザで開く」から登録時のSafari・Chromeなどで開き直してください。再登録は不要です。':e.message;$('gachaUserMessage').classList.add('error')}}
 void boot();
 
