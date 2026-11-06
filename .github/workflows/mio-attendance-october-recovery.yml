@@ -1,0 +1,35 @@
+name: MIO October attendance recovery safety
+on:
+  push:
+    branches:
+      - hotfix/attendance-october-day-selection-20261106
+  pull_request:
+    paths:
+      - app.js
+      - APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs
+      - tests/mio-attendance-october-gas-window.test.mjs
+      - index.html
+      - tests/mio-attendance-october-recovery.test.mjs
+      - .github/workflows/mio-attendance-october-recovery.yml
+permissions:
+  contents: read
+jobs:
+  october-calendar-readonly-safety:
+    name: October calendar + unchanged legacy checkin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax check legacy entry scripts
+        run: |
+          node --check app.js
+          node --check tests/mio-attendance-october-gas-window.test.mjs
+          node --check api-checkin.js
+          node --check api-status.js
+          node --check tests/mio-attendance-october-recovery.test.mjs
+      - name: Calendar selection and server lock preservation
+        run: node --test tests/mio-attendance-october-recovery.test.mjs tests/mio-attendance-october-gas-window.test.mjs
