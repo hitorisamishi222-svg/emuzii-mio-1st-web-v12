@@ -39,7 +39,7 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,fail
   throw Error('unexpected action '+action);
  };
  const ctx=vm.createContext({
-  document:{getElementById:el,createElement:element,querySelectorAll:()=>[],addEventListener(){},hidden:false},
+  document:{getElementById:el,createElement:element,querySelectorAll:()=>[],addEventListener(){},removeEventListener(){},hidden:false},
   window:{matchMedia:()=>({matches:true}),dispatchEvent(){},addEventListener(e,handler){windowHandlers.set(e,handler)},setInterval(){},confirm(){throw Error('retry must not open a second confirmation')}},
   localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
   location:{hostname:preview?'127.0.0.1':'emuzii-mio-1st-web-v12.vercel.app'},
