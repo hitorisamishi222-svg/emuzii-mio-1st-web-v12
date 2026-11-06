@@ -1,0 +1,20 @@
+name: MIO safe integration verification (PR81 + PR82)
+on:
+  push:
+    branches:
+      - verify/mio-gacha-regression-combined-20261106
+  workflow_dispatch:
+jobs:
+  full-static-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install project dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Check the gacha client syntax
+        run: node --check gacha-page.js
+      - name: Execute complete regression suite against combined candidate
+        run: npm test
