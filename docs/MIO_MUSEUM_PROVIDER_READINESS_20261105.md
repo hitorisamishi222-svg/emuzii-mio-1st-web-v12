@@ -164,3 +164,13 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - 取得する各作品は \`status='draft'\` のみ。公開・非公開化・保管・削除された作品を編集画面の対象に混ぜない。閲覧側の既存ギャラリーとも接続しない。
 - \`tests/mio-museum-exhibit-owner-list-stage.test.mjs\` で、ページ送り／絞り込み／差し込みSQLの拒否／非オーナー・Origin不一致・認証失敗／DBエラーの秘匿／既存データの無変更を模擬テストする。既存CIの構文チェックにも追加。
 - **APIとしての公開、実Neonへの接続、作品の実保存、現行Vercel環境変数の変更は実施していない**。記念館用5テーブル・復元確認・専用Preview接続証明が未合格のため、この契約を実稼働画面へつなぐ操作は引き続き禁止。
+
+
+## 2026-11-06追記：非公開下書き1件の読み込み・版数確認（未接続）
+
+- `museum-exhibit-owner-list-stage.mjs` に `getMuseumPrivateDraftStage` を追加し、`museum-exhibit-owner-list-entry-stage.mjs` に `getMuseumOwnerDraftStage` を追加。前回の非公開下書き一覧から作品を選ぶ際の、**1件だけの読み取り専用**処理を用意した。
+- `id` はUUIDを事前検証してプレースホルダーで渡し、SQLでは `WHERE id=$1::uuid AND status='draft'` を必須とする。管理者Cookie、承認端末、既存Origin照合、**同一接続上の隔離DB/スキーマ/復元/管理者承認ゲート**の成功が必要。
+- 対象不在・公開済み・保管済み・非表示は一律 `found:false`。権利確認や認証・会員データは返さない。返却できた下書きは厳格に型・URL・列を検証し、`revision` を添えて編集時の楽観ロックに引き継げるようにする。
+- 一覧を見た後に改訂されている場合、指定された `expectedRevision` と最新値が一致しなければ停止。実際の編集処理も `revision` と `status='draft'` の一致を求める既存の非公開保存候補を使用する。履歴の差異による古い上書きを許可しない。
+- `tests/mio-museum-exhibit-owner-detail-stage.test.mjs` で、ownerのみの読み取り、存在しないID/非下書きの不開示、版数の不一致、SQL入力値、接続エラー秘匿、認証・DB証明不足時の拒否を検証。現在の記念館CIの対象。
+- **実DB接続・API公開・管理画面への連動は未実施。** 専用5テーブル・独立バックアップ復元実証・専用Preview接続・実オーナー端末の検証が終わるまで有効化しない。参加者、皆勤、ガチャ、本番GAS、既存Vercel環境変数、本番URLは無変更。
