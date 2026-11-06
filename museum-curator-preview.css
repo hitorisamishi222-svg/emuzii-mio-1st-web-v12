@@ -73,3 +73,10 @@
 .museum-curator .curator-switch-guard p{font-size:13px;line-height:1.8;color:#f4e7d5;margin:8px 0}
 .museum-curator .curator-switch-guard .curator-actions{margin-top:12px}
 .museum-curator .curator-switch-guard button{min-height:48px}
+
+/* In-browser draft verification is rehearsal only, not a server receipt. */
+.museum-curator .curator-draft-recovery{margin:15px 0 18px;padding:17px;border:1px solid #b0d5eb8c;border-radius:15px;background:linear-gradient(145deg,#143a5b,#0a2848)}
+.museum-curator .curator-draft-recovery h3{font-size:16px;color:#ffebbc;margin:0 0 6px}
+.museum-curator .curator-draft-recovery .curator-actions{margin:12px 0}
+.museum-curator .curator-draft-recovery button{min-height:48px}
+.museum-curator #draftRecoveryStatus{padding:10px 12px;border:1px solid #80b3d680;border-radius:10px;background:#09243e;color:#f1e2c4;min-height:43px}
