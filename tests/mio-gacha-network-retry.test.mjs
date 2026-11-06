@@ -14,7 +14,7 @@ const catalog=(patch={})=>({ok:true,participantId:identity,confirmed:true,remain
 
 function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,savedPending=pending()}={}){
  const saved=new Map(savedPending?[[key,JSON.stringify(savedPending)]]:[]);
- const elements=new Map(),calls=[];
+ const elements=new Map(),calls=[],windowHandlers=new Map();
  function element(tag='div'){
   const handlers=new Map();
   return {tagName:tag,handlers,hidden:true,disabled:false,value:'',textContent:'',className:'',title:'',
@@ -40,7 +40,7 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,save
  };
  const ctx=vm.createContext({
   document:{getElementById:el,createElement:element,querySelectorAll:()=>[],addEventListener(){},hidden:false},
-  window:{matchMedia:()=>({matches:true}),dispatchEvent(){},addEventListener(){},setInterval(){},confirm(){throw Error('retry must not open a second confirmation')}},
+  window:{matchMedia:()=>({matches:true}),dispatchEvent(){},addEventListener(e,handler){windowHandlers.set(e,handler)},setInterval(){},confirm(){throw Error('retry must not open a second confirmation')}},
   localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
   location:{hostname:'emuzii-mio-1st-web-v12.vercel.app'},
   fetch:async(_url,{body})=>{const req=JSON.parse(body);const d=await send(req.action,req);
@@ -56,6 +56,7 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,save
  async function flush(){for(let i=0;i<40;i++)await new Promise(r=>setImmediate(r))}
  return {el,saved,calls,ctx,flush,load:()=>vm.runInContext('loadCatalog()',ctx),
   execute:()=>vm.runInContext('execute(remember())',ctx),
+  close:async()=>{el('drawResultCard').hidden=true;windowHandlers.get('mio:gacha-prize-closed')?.();await flush()},
   click:async()=>{el('retryDraw').handlers.get('click')();await flush()}};
 }
 
@@ -133,4 +134,36 @@ test('null ticket counts never authorize a returned-ticket statement',async()=>{
  assert.doesNotMatch(h.el('drawMessage').textContent,/戻っています/);
  assert.equal(h.saved.has(key),true);
  assert.equal(h.el('retryDraw').hidden,false);
+});
+
+test('confirmed receipt stays visible without another network read until the prize is closed',async()=>{
+ const h=harness();
+ await h.execute();
+ assert.deepEqual(h.calls.map(x=>x.action),['draw']);
+ assert.equal(h.el('drawPrizeName').textContent,winner.prize);
+ assert.equal(h.el('drawResultCard').hidden,false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.saved.has(key),false);
+ await h.close();
+ assert.deepEqual(h.calls.map(x=>x.action),['draw','catalog','history']);
+ assert.equal(h.el('retryDraw').hidden,true);
+});
+test('corrupt saved draw ID remains locked after catalog reload',async()=>{
+ const h=harness({savedPending:{drawId:'broken',mode:'通常'}});
+ await h.load();
+ assert.equal(h.el('retryDraw').hidden,false);
+ assert.equal(h.el('retryDraw').disabled,true);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ assert.equal(h.el('reloadGacha').disabled,true);
+ assert.equal(h.calls.some(x=>x.action==='draw'),false);
+});
+test('double-tapping the recovery control submits at most one draw',async()=>{
+ const h=harness({history:[]});
+ await h.load();
+ const click=h.el('retryDraw').handlers.get('click');
+ click();click();await h.flush();
+ assert.equal(h.calls.filter(x=>x.action==='draw').length,1);
+ assert.equal(h.saved.has(key),false);
+ assert.equal(h.el('drawPrizeName').textContent,winner.prize);
 });
