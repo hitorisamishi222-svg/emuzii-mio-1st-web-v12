@@ -173,47 +173,42 @@ async function execute(pending){
 // A missing or old result stays pending; never spend another right implicitly.
 async function recoverPrevious(p){
   if(isPreview||busy)return;
-  if(!p||!/^[a-f0-9]{32}$/.test(p.drawId)||!['通常','ラキフェス'].includes(p.mode)){
-    note('前回のガチャの記録を確認できませんでした。何度も押さず、運営に画面を見せてください。');
+  if(!validPending(p)){
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;
+    $('retryDraw').hidden=false;$('retryDraw').disabled=true;
+    note('前回の抽選記録を確認できません。ガチャ券は減らさず、記録の確認が必要です。');
     return;
   }
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;
-  let recovered=false,resume=false;
-  note('前回のガチャの結果を確認しています。');
+  let found=false,retrySameId=false;
+  note('前回の当選結果とガチャ券を確認しています…');
   try{
-    const history=await post('/api/gacha',{action:'history'});
-    if(history.participantId!==participant||!Array.isArray(history.history))throw Error('当選履歴の本人確認に失敗しました');
-    const rows=history.history.filter(x=>x.drawId===p.drawId);
-    if(rows.length===0){
-      // No committed result for this exact ID. Reusing this ID is idempotent on
-      // the GAS backend (ScriptLock + drawId lookup before an append).
-      // Require an explicit second confirmation before spending a right.
+    const h=await post('/api/gacha',{action:'history'});
+    if(h.ok!==true||h.participantId!==participant||!Array.isArray(h.history))throw Error('history unavailable');
+    const rows=h.history.filter(x=>x.drawId===p.drawId);
+    if(rows.length===1&&validHistoryWinner(rows[0],p)){
+      showRecoveredWinner(rows[0],p);found=true;
+    }else if(rows.length===0){
       const c=await post('/api/gacha',{action:'catalog'});
-      if(c.participantId!==participant||c.confirmed!==true||
+      if(c.ok!==true||c.participantId!==participant||c.confirmed!==true||
          !Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<1||
          !Number.isSafeInteger(Number(c.used))||Number(c.used)<0)
-        throw Error('前回の抽選と残り回数を運営が確認中です');
-      resume=window.confirm('前回のガチャの続きを再開します。\n\nすでに当選していれば、同じ結果を表示します。\nまだ当選が決まっていなければ、ガチャ券を1回使って抽選します。\n\n続けますか？');
-      if(!resume)note('今回は再開せずに保留しました。続けるときは「前回のガチャを再開する」を押してね。');
-    }else if(rows.length===1&&rows[0].mode===p.mode&&typeof rows[0].prize==='string'&&rows[0].prize.trim()&&
-      Number.isSafeInteger(Number(rows[0].ordinal))&&Number(rows[0].ordinal)>=1){
-      const x=rows[0];
-      renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
-        prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
-        image:String(x.image||''),replayed:true});
-      forget();recovered=true;
-      note('前回の当選結果を確認できたよ！景品を閉じると次のガチャに進めます。');
+        throw Error('entitlement not confirmed');
+      // The same drawId is replayed only on this explicit user tap. If the
+      // earlier response was lost after commit, GAS returns its original winner.
+      retrySameId=true;
     }else{
-      throw Error('前回の抽選履歴に不整合があります');
+      note('前回の当選履歴を確認中です。ガチャ券を二重に使わず、もう一度確認できます。');
+      showRetry();
     }
   }catch(e){
-    $('retryDraw').hidden=false;
-    note((e?.message||'当選結果を確認できませんでした')+'。同じ抽選IDを保持しています。運営へご連絡ください。');
+    note(connectionMessage);
+    showRetry();
   }finally{
-    busy=false;$('retryDraw').disabled=false;
-    if(recovered)void loadCatalog();
-    else if(resume)void execute(p);
-    else if(lastCatalog)setButtons(lastCatalog);
+    busy=false;
+    if(found){$('retryDraw').hidden=true;void loadCatalog();}
+    else if(retrySameId){void execute(p);}
+    else{if(lastCatalog)setButtons(lastCatalog);if(validPending(remember()))$('retryDraw').disabled=false;}
   }
 }
 function confirmDraw(mode){
