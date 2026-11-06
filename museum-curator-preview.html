@@ -41,6 +41,14 @@
 <div class="curator-field"><label for="workImage">表紙画像（任意・端末内プレビューのみ）</label><input id="workImage" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-describedby="imageHelp"><p id="imageHelp" class="curator-small">最大12MB。画像は送信しません。仮公開版にも画像はコピーしません。</p><button type="button" id="clearImage" class="curator-secondary">仮画像を消す</button></div>
 <div class="curator-actions"><button type="submit" id="saveWork">非公開下書きを追加</button><button type="button" class="curator-secondary" id="newWork">新しい作品へ</button></div>
 </form>
+<div id="pendingFormSwitch" class="curator-switch-guard" hidden role="group" aria-labelledby="pendingSwitchTitle">
+ <strong id="pendingSwitchTitle">未保存の入力があります</strong>
+ <p id="pendingSwitchText">このまま切り替えると現在の入力が消えます。続けて編集するか、入力を破棄するか選んでください。</p>
+ <div class="curator-actions">
+  <button type="button" id="cancelFormSwitch" class="curator-secondary">編集を続ける</button>
+  <button type="button" id="discardFormSwitch">入力を破棄して切り替える</button>
+ </div>
+</div>
 <div class="curator-review" aria-label="模擬公開の事前確認">
 <h3>公開前チェック（操作練習）</h3>
 <label><input type="checkbox" id="rightsOk"> 掲載・使用許可を確認したことにする</label>
