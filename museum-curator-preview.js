@@ -11,6 +11,7 @@ const sample=()=>[
 ];
 let items=sample(),selected=null,next=4,approvedHash=null,version=1;
 const images=new Map(),fields=['title','room','category','description','credit','occurredOn','externalUrl'];
+let imageCheckEpoch=0;
 const map={title:'workTitle',room:'workRoom',category:'workCategory',description:'workDescription',credit:'workCredit',occurredOn:'workDate',externalUrl:'workUrl'};
 const node=(tag,value,cls)=>{const n=document.createElement(tag);if(value!==undefined)n.textContent=String(value);if(cls)n.className=cls;return n;};
 const button=(label,fn,off=false)=>{const b=node('button',label,'curator-secondary');b.type='button';b.disabled=off;if(!off)b.addEventListener('click',fn);return b;};
@@ -44,6 +45,50 @@ const f=$('workImage').files?.[0];if(!f)return null;
 if(!['image/png','image/jpeg','image/webp','image/heic','image/heif'].includes(f.type)||f.size<=0||f.size>12*1024*1024)throw Error('写真はJPEG・PNG・WebP・HEICの12MB以下にしてください。');
 return f;
 }
+function invalidateLocalImageCheck(){
+ imageCheckEpoch++;
+ $('localImageStatus').textContent='画像は端末内で確認できます。送信・保存・公開はしません。';
+}
+async function checkLocalImage(){
+ const run=++imageCheckEpoch;
+ let file;
+ try{file=fileCandidate();}catch(error){
+  $('localImageStatus').textContent=error.message||'対応する画像か確認してください。';return;
+ }
+ if(!file){
+  $('localImageStatus').textContent='先に写真を選択してください。外部送信はしません。';return;
+ }
+ if(!window.MioMuseumImage||typeof window.MioMuseumImage.encode!=='function'){
+  $('localImageStatus').textContent='このブラウザでは画像変換の準備ができませんでした。';return;
+ }
+ $('localImageStatus').textContent='端末内で圧縮中…ページを閉じると結果は消えます。';
+ try{
+  const image=await window.MioMuseumImage.encode(file);
+  // Browser-only digest/roundtrip. This is NOT a server decode, backup,
+  // ownership check, image-upload result or proof of media rights.
+  if(!window.crypto?.subtle||typeof atob!=='function')throw Error('LOCAL_DIGEST_UNAVAILABLE');
+  const raw=atob(image.base64),bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+  if(bytes.length!==image.bytes)throw Error('LOCAL_BYTE_MISMATCH');
+  const hash=await window.crypto.subtle.digest('SHA-256',bytes);
+  const hex=[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  if(run!==imageCheckEpoch||$('workImage').files?.[0]!==file)return;
+  $('localImageStatus').textContent='✅ 端末内だけで圧縮・バイト数・SHA-256を確認しました。'+
+   ' 元画像 '+Math.ceil(file.size/1024)+'KB → '+Math.ceil(image.bytes/1024)+'KB、'+
+   image.width+'×'+image.height+'px、'+(image.format==='webp'?'WebP':'JPEG')+
+   '。照合番号：'+hex.slice(0,16)+'…。サーバー保存・掲載許可の確認ではありません。';
+ }catch(error){
+  if(run!==imageCheckEpoch||$('workImage').files?.[0]!==file)return;
+  const supported=new Set(['SOURCE_IMAGE_TOO_LARGE','SOURCE_FORMAT_NOT_ALLOWED',
+   'IMAGE_DECODE_UNAVAILABLE','INVALID_DIMENSIONS','CANVAS_UNAVAILABLE',
+   'IMAGE_COMPRESS_FAILED','IMAGE_ENCODE_FAILED','IMAGE_READ_FAILED',
+   'LOCAL_DIGEST_UNAVAILABLE','LOCAL_BYTE_MISMATCH']);
+  const known=supported.has(error?.message);
+  $('localImageStatus').textContent='画像の端末内チェックは完了できませんでした。'+
+   (known?'（'+error.message+'）':' この端末の画像形式と対応状況を確認してください。')+
+   ' 外部への送信は行っていません。';
+ }
+}
 function forgetImage(id){const p=images.get(id);if(p)URL.revokeObjectURL(p);images.delete(id);}
 function imageFor(id,file){if(!file)return;forgetImage(id);images.set(id,URL.createObjectURL(file));}
 function clearChecks(){for(const id of ['rightsOk','privacyOk','contentOk'])$(id).checked=false;checkButton();}
@@ -59,6 +104,7 @@ selected=x?.id||null;
 for(const k of fields)$(map[k]).value=x?.[k]||'';
 if(!x){$('workRoom').value='gallery';$('workCategory').value='イラスト';}
 $('workImage').value='';
+invalidateLocalImageCheck();
 $('saveWork').textContent=x?'変更を非公開下書きに反映':'非公開下書きを追加';
 clearChecks();render();
 $('draftRecoveryStatus').textContent=selected&&saveReceipt?.id===selected?
@@ -373,11 +419,13 @@ $('discardFormSwitch').addEventListener('click',applyPendingSwitch);
 $('verifyDemoDraft').addEventListener('click',verifyDemoDraft);
 $('reloadDemoDraft').addEventListener('click',requestReloadDemoDraft);
 for(const k of fields)$(map[k]).addEventListener('input',clearChecks);
-$('workImage').addEventListener('change',checkButton);
+$('workImage').addEventListener('change',()=>{invalidateLocalImageCheck();checkButton();});
+$('checkLocalImage').addEventListener('click',checkLocalImage);
 for(const id of ['rightsOk','privacyOk','contentOk'])$(id).addEventListener('change',checkButton);
 $('approveWork').addEventListener('click',approve);
 $('clearImage').addEventListener('click',()=>{
 $('workImage').value='';
+invalidateLocalImageCheck();
 if(selected&&images.has(selected)){forgetImage(selected);invalidateRights(itemBy(selected));invalidateOrderUndo();touched();render();}
 clearChecks();status('端末内の仮画像を消しました。本番画像は変更していません。');
 });
