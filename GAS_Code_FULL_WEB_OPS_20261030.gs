@@ -978,7 +978,9 @@ function mioAdminOpsGrant_(ss,d){
  var op=mioAdminOpsRequest_(d),id=mioAdminOpsStr_(d.mioId),count=d.count,expected=d.expectedSpecial;
  var reason=mioAdminOpsStr_(d.reason);
  if(!/^MIO-\d{4}$/.test(id)||!Number.isInteger(count)||count<1||count>50||
- !Number.isSafeInteger(expected)||expected<0||reason.length<2||reason.length>120)throw new Error('付与条件を確認してください');
+ !Number.isSafeInteger(expected)||expected<0||!Number.isSafeInteger(expected+count)||
+ reason.length<2||reason.length>120||/^[=+\-@]/.test(reason)||/[\x00-\x1f]/.test(reason))
+   throw new Error('付与条件を確認してください');
  var people=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id),name=mioAdminOpsStr_(people.c[1]);
  var sheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ'),g=mioAdminOpsOne_(mioAdminOpsValues_(sheet,17),0,id);
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!=='OK'||g.c[13]!=='OK')throw new Error('ガチャ管理行に要確認の項目があります');
