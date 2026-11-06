@@ -30,7 +30,7 @@ export async function decodeAndReencodeMuseumImageStage(payload){
     metadata.width*metadata.height>INPUT_PIXEL_LIMIT)
   fail('INPUT_FRAME_MISMATCH');
  // libvips fully decodes source pixels, reduces dimensions if necessary and
- // explicitly writes a brand-new WebP. No withMetadata/keepMetadata calls.
+ // explicitly writes a brand-new WebP without preserving source metadata.
  // Fixed white canvas handles alpha, preventing unintended black backgrounds.
  let clean=null,cleanInfo=null;
  const attempts=[
