@@ -21,6 +21,9 @@ export async function saveMuseumOwnerExhibitStage(pool,{
   verifyBinding,
   perform:client=>saveMuseumExhibitPrivateDraftStage(client,{
    request,operationId,action,draft:canonicalDraft,exhibitId,expectedRevision,
+   // Owner UI has no image URL field; editing it must NOT clear a stored cover.
+   // This policy is decided server-side from the mutually exclusive uiDraft path.
+   preserveExistingImage:action==='edit'&&uiDraft!==undefined,
    verifyOwner:verifyMuseumGalleryOwnerStage
   })
  });
