@@ -18,8 +18,8 @@ const itemBy=id=>items.find(x=>x.id===id);
 const eligible=x=>x.visible&&x.reviewed&&x.rights&&x.privacy&&!x.archived;
 const publication=()=>items.filter(eligible).map(x=>({id:x.id,title:x.title,room:x.room,category:x.category,description:x.description,featured:x.featured,epoch:x.epoch}));
 let published=publication(),history=[{version:1,items:publication()}],orderUndo=null,restoreApproval=null;
-let pendingSwitch=null;
-const signature=()=>JSON.stringify(items.map(x=>[x.id,...fields.map(k=>x[k]),x.reviewed,x.rights,x.privacy,x.visible,x.featured,x.archived,x.epoch]));
+let pendingSwitch=null,saveReceipt=null;
+const signature=()=>JSON.stringify(items.map(x=>[x.id,...fields.map(k=>x[k]),x.reviewed,x.rights,x.privacy,x.visible,x.featured,x.archived,x.epoch,x.draftRevision||0]));
 const status=s=>{$('editStatus').textContent=s;};
 function touched(){approvedHash=null;restoreApproval=null;$('simulatePublish').disabled=true;$('restoreHistory').disabled=true;}
 function invalidateOrderUndo(){orderUndo=null;$('undoOrder').disabled=true;}
@@ -61,6 +61,9 @@ if(!x){$('workRoom').value='gallery';$('workCategory').value='イラスト';}
 $('workImage').value='';
 $('saveWork').textContent=x?'変更を非公開下書きに反映':'非公開下書きを追加';
 clearChecks();render();
+$('draftRecoveryStatus').textContent=selected&&saveReceipt?.id===selected?
+ 'この作品の前回の仮保存を照合できます。実DBではありません。':
+ '選択した作品について仮保存した後、ここで照合できます。';
 }
 function save(e){
 e.preventDefault();
@@ -71,12 +74,13 @@ const x=itemBy(selected);if(!x)throw Error('作品を選び直してください
 const changed=JSON.stringify(currentValues(x))!==JSON.stringify(v)||Boolean(file);
 if(!changed){status('変更はありません。');return;}
 Object.assign(x,v);imageFor(x.id,file);
+x.draftRevision=(x.draftRevision||0)+1;
 x.epoch++;x.reviewed=false;x.rights=false;x.privacy=false;x.visible=false;x.featured=false;
-invalidateOrderUndo();touched();choose(x);status('変更を反映。掲載確認・公開予定は解除したので再確認してください。');
+invalidateOrderUndo();touched();choose(x);rememberDraft(x);status('変更を反映。掲載確認・公開予定は解除したので再確認してください。');
 }else{
 const id='DEMO-'+String(next++).padStart(2,'0');
 const x={id,...v,epoch:1,reviewed:false,rights:false,privacy:false,visible:false,featured:false,archived:false};
-items.unshift(x);imageFor(id,file);invalidateOrderUndo();touched();choose(x);
+items.unshift(x);imageFor(id,file);invalidateOrderUndo();touched();choose(x);rememberDraft(x);
 status('非公開の架空展示を追加しました。外部には保存していません。');
 }
 }catch(err){status(err.message||'入力を確認してください。');}
@@ -120,6 +124,56 @@ if(byId.size!==items.length||orderUndo.before.length!==items.length||
 items=orderUndo.before.map(id=>byId.get(id));
 invalidateOrderUndo();touched();render();status('直前の表示順だけを元に戻しました。掲載許可は変更していません。');
 }
+
+function syncDraftRecoveryControls(){
+ const x=itemBy(selected);
+ $('reloadDemoDraft').disabled=!x;
+ $('verifyDemoDraft').disabled=!x||saveReceipt?.id!==x.id;
+}
+function rememberDraft(x){
+ // A receipt is only an in-memory simulation, never durable evidence.
+ saveReceipt=Object.freeze({
+  id:x.id,revision:x.draftRevision||0,
+  metadata:JSON.stringify(currentValues(x)),image:images.get(x.id)||null
+ });
+ $('draftRecoveryStatus').textContent='仮保存しました（作品 '+x.id+
+  '・編集第'+saveReceipt.revision+'版）。「仮保存の内容を照合」で確認できます。';
+ syncDraftRecoveryControls();
+}
+function verifyDemoDraft(){
+ const x=itemBy(selected),receipt=saveReceipt;
+ if(!x||!receipt||receipt.id!==x.id){
+  $('draftRecoveryStatus').textContent='この作品には今回の仮保存記録がありません。';
+  return;
+ }
+ if(unsavedForm()){
+  $('draftRecoveryStatus').textContent='未保存の入力があります。保存前の内容を反映するか、保存済みの内容を読み直してください。';
+  return;
+ }
+ if((x.draftRevision||0)!==receipt.revision||
+  JSON.stringify(currentValues(x))!==receipt.metadata||
+  (images.get(x.id)||null)!==receipt.image){
+  $('draftRecoveryStatus').textContent='仮保存後に内容が変わりました。公開前に内容を確認し直してください。';
+  return;
+ }
+ $('draftRecoveryStatus').textContent='照合OK：架空作品 '+x.id+'、編集第'+
+  receipt.revision+'版の入力内容が一致しています。実DBには保存していません。';
+}
+function requestReloadDemoDraft(){
+ const x=itemBy(selected);
+ if(!x){status('読み直す架空作品を先に選んでください。');return;}
+ if(unsavedForm()){
+  pendingSwitch={type:'reload',id:x.id};
+  $('pendingSwitchText').textContent='未保存の変更を破棄して、「'+x.title+
+   '」のこの画面内に仮保存された内容を読み直します。';
+  $('pendingFormSwitch').hidden=false;
+  status('未保存の入力があります。読み直す前に確認してください。');
+  return;
+ }
+ choose(x);
+ status('この画面内の仮保存内容を読み直しました。外部サーバーからは取得していません。');
+}
+
 function unsavedForm(){
 if($('workImage').files?.length)return true;
 if(selected)return !cleanSelected();
@@ -156,6 +210,13 @@ function applyPendingSwitch(){
  const action=pendingSwitch;clearPendingSwitch();
  if(!action)return;
  if(action.type==='reset'){reset();return;}
+ if(action.type==='reload'){
+  const x=itemBy(action.id);
+  if(!x||selected!==action.id){status('対象が変更されたため入力を保持しました。');return;}
+  choose(x);
+  status('未保存の入力を破棄して、この画面内の仮保存内容を読み直しました。');
+  return;
+ }
  if(action.type!=='choose')return;
  const x=action.id===null?null:itemBy(action.id);
  if(action.id!==null&&!x){status('選択作品が見つかりません。編集中の入力を保持しています。');return;}
@@ -232,7 +293,7 @@ button(x.archived?'保管を解除':'保管する',()=>changeItem(x.id,'archive'
 art.append(actions);list.append(art);
 });
 if(!visible.length)list.append(node('p','条件に合う架空作品はありません。','curator-status'));
-checkButton();showVisitor();
+checkButton();syncDraftRecoveryControls();showVisitor();
 }
 function showVisitor(){
 const root=$('visitorPreview');root.replaceChildren();
@@ -275,7 +336,7 @@ $('publishStatus').textContent='画面内の模擬公開版 '+version+' を更�
 }
 function reset(){
 for(const id of images.keys())forgetImage(id);
-items=sample();next=4;version=1;published=publication();history=[{version:1,items:published.map(x=>({...x}))}];invalidateOrderUndo();touched();choose(null);updateHistoryPicker();
+items=sample();saveReceipt=null;next=4;version=1;published=publication();history=[{version:1,items:published.map(x=>({...x}))}];invalidateOrderUndo();touched();choose(null);updateHistoryPicker();
 $('filterRoom').value='all';$('filterText').value='';render();
 $('publishStatus').textContent='初期の架空展示へ戻しました。';
 status('架空作品を初期化しました。実データは変更していません。');
@@ -284,6 +345,8 @@ $('curatorForm').addEventListener('submit',save);
 $('newWork').addEventListener('click',()=>requestSelection(null));
 $('cancelFormSwitch').addEventListener('click',()=>{clearPendingSwitch();status('編集中の入力を保持しました。');});
 $('discardFormSwitch').addEventListener('click',applyPendingSwitch);
+$('verifyDemoDraft').addEventListener('click',verifyDemoDraft);
+$('reloadDemoDraft').addEventListener('click',requestReloadDemoDraft);
 for(const k of fields)$(map[k]).addEventListener('input',clearChecks);
 $('workImage').addEventListener('change',checkButton);
 for(const id of ['rightsOk','privacyOk','contentOk'])$(id).addEventListener('change',checkButton);
