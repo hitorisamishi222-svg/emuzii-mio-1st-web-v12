@@ -154,3 +154,13 @@ DBの実接続検証・復元演習・権限確認・オーナー承認なしに
 - 独立ブランチ認証、専用Preview接続、バックアップ復元演習、オーナー承認が**すべて真と仮定された合成テストでも**、この検査は `hasExecutableMigration=false`・`canMigrate/canWrite/canPublish/canDeploy=false` を維持する。プロバイダー由来の真正な証拠や実際の管理者許可は一切ここで生成しない。
 - `tests/mio-museum-migration-plan-stage.test.mjs` を既存の記念館CI（`tests/mio-museum-*.test.mjs`）に追加し、SQL改変・余計なSQL・欠落ソース・部分設置・依存欠落・不正なメタデータを拒否するテストを追加。`.github/workflows/mio-mainbased-museum-staging.yml` に新コードの構文検査も追加した。
 - **この段階でDDL実行、DBテーブル作成、管理者資格情報取得、環境変数設定、バックアップ作成・復元、管理画面への保存接続はしていない。** 既存の本番URL・GAS・参加者・皆勤・ガチャ・FA・当選結果は無変更。記念館Draft PR #76は未公開・未マージを維持。
+
+
+## 2026-11-06追記：オーナーの非公開下書き一覧（未接続・読取専用）
+
+- 新規 \`museum-exhibit-owner-list-stage.mjs\` と \`museum-exhibit-owner-list-entry-stage.mjs\`。既存の所有者Cookie＋承認端末・Origin確認と、同一のチェックアウト済み専用PGクライアントでの接続元／構造／復元／オーナー承認検証を通過する場合だけ、将来非公開の作品下書きを読むための開発用契約。
+- SQLは \`BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY\` の後、既存の認証ヘルパーで**owner**を確認し、\`museum_public_exhibits\` の **\`status='draft'\` のみ**を、固定の列リスト・プレースホルダーで取得する。管理者端末識別、セッショントークン、皆勤、ガチャ、参加者、掲載権利の詳細を選択しない。
+- 20件／ページ（1～50件の範囲のみ）で、\`updated_at,id\` を使うキーセット方式のページ送りを追加。展示室の任意絞り込み。UUID、列型、ページ順序、作品種別、説明文、公開リンクと画像URL、版数を検証し、予期しないDB結果は非公開エラーにする。
+- 取得する各作品は \`status='draft'\` のみ。公開・非公開化・保管・削除された作品を編集画面の対象に混ぜない。閲覧側の既存ギャラリーとも接続しない。
+- \`tests/mio-museum-exhibit-owner-list-stage.test.mjs\` で、ページ送り／絞り込み／差し込みSQLの拒否／非オーナー・Origin不一致・認証失敗／DBエラーの秘匿／既存データの無変更を模擬テストする。既存CIの構文チェックにも追加。
+- **APIとしての公開、実Neonへの接続、作品の実保存、現行Vercel環境変数の変更は実施していない**。記念館用5テーブル・復元確認・専用Preview接続証明が未合格のため、この契約を実稼働画面へつなぐ操作は引き続き禁止。
