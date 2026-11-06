@@ -65,3 +65,11 @@
 .museum-curator .curator-feature{border:1px solid #f6d9a69c;background:#614a29b0;color:#ffe8b4}
 .museum-curator .curator-empty-room{grid-column:1/-1;padding:18px;border:1px dashed #edcd916c;border-radius:12px;text-align:center;color:#deebf7;background:#0b2443}
 @media(max-width:570px){.museum-curator .curator-visitor-controls{grid-template-columns:1fr;gap:0}}
+
+/* Unsaved draft choice: distinct from the rights and publication controls. */
+.museum-curator .curator-switch-guard{border:1px solid #ffe0a5;border-radius:14px;padding:15px 16px;margin:16px 0;background:#263953;color:#ffebc8;box-shadow:0 10px 24px #0004}
+.museum-curator .curator-switch-guard[hidden]{display:none!important}
+.museum-curator .curator-switch-guard strong{font-weight:900;color:#fff5d8}
+.museum-curator .curator-switch-guard p{font-size:13px;line-height:1.8;color:#f4e7d5;margin:8px 0}
+.museum-curator .curator-switch-guard .curator-actions{margin-top:12px}
+.museum-curator .curator-switch-guard button{min-height:48px}
