@@ -403,3 +403,47 @@ test('Web-ID placeholder is linkable without accepting a different MIO-ID',()=>{
  assert.equal(out.status,'承認済み');
  assert.equal(w[10],'MIO-0001');
 });
+
+test('approved participant membership can be confirmed without crediting gacha tickets',()=>{
+ const x=sandbox(),webId='MIO-W-1234567890abcdef12345678',mioId='MIO-0001';
+ x.exec({action:'webAdminOpsApprove',operationId:'1'.repeat(32),webId,mioId,memberConfirmed:false,expectedStatus:'承認待ち'});
+ const before=x.rows['emuzii_ガチャ'][1].slice();
+ const identity=x.rows['emuzii_Web登録'][1][1];
+ const action={action:'webAdminOpsMember',operationId:'2'.repeat(32),webId,mioId,
+   expectedMember:'未確認',memberConfirmed:true};
+ const view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.approvedBrowsers.length,1);
+ assert.equal(view.approvedBrowsers[0].member,'未確認');
+ assert.equal(view.approvedBrowsers[0].verified,true);
+ const first=x.exec(action);
+ assert.equal(first.ok,true);
+ assert.equal(first.member,'確認済み');
+ assert.equal(x.rows['emuzii_Web登録'][1][6],'確認済み');
+ assert.equal(x.rows['emuzii_Web登録'][1][1],identity,'token never changes');
+ assert.equal(x.rows['emuzii_Web登録'][1][5],'承認済み','approval is not repeated');
+ assert.deepEqual(x.rows['emuzii_ガチャ'][1],before,'no ticket change');
+ assert.equal(x.exec(action).replayed,true);
+ assert.equal(x.rows['emuzii_Web管理操作履歴'].length,3,'both events are audited exactly once');
+ assert.equal(x.write.some(item=>item.name==='emuzii_当選履歴'),false);
+});
+test('member confirmation refuses another browser, other MIO ID, or unverified registration',()=>{
+ const x=sandbox(),webId='MIO-W-1234567890abcdef12345678',mioId='MIO-0001';
+ const d={action:'webAdminOpsMember',operationId:'2'.repeat(32),
+   webId,mioId,expectedMember:'未確認',memberConfirmed:true};
+ assert.throws(()=>x.exec(d),/承認済み本人/);
+ x.exec({action:'webAdminOpsApprove',operationId:'1'.repeat(32),webId,mioId,memberConfirmed:false,expectedStatus:'承認待ち'});
+ assert.throws(()=>x.exec({...d,webId:'MIO-W-'+'b'.repeat(24)}),/見つかりません/);
+ assert.throws(()=>x.exec({...d,mioId:'MIO-0002'}),/対象の参加者が見つかりません/);
+ assert.throws(()=>x.exec({...d,memberConfirmed:false}),/指定が不正/);
+ assert.equal(x.rows['emuzii_Web登録'][1][6],'未確認');
+});
+test('member confirmation operation ID cannot be replayed for another person or state',()=>{
+ const x=sandbox(),webId='MIO-W-1234567890abcdef12345678',mioId='MIO-0001';
+ x.exec({action:'webAdminOpsApprove',operationId:'1'.repeat(32),webId,mioId,memberConfirmed:false,expectedStatus:'承認待ち'});
+ const d={action:'webAdminOpsMember',operationId:'2'.repeat(32),webId,mioId,expectedMember:'未確認',memberConfirmed:true};
+ x.exec(d);
+ assert.throws(()=>x.exec({...d,expectedMember:'確認済み'}),/指定が不正/);
+ assert.throws(()=>x.exec({...d,mioId:'MIO-0002'}),/対象の参加者が見つかりません/);
+ x.rows['emuzii_Web登録'][1][6]='未確認';
+ assert.throws(()=>x.exec(d),/状態が変わっています/);
+});
