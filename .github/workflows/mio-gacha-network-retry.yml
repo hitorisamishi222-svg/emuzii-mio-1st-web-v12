@@ -1,0 +1,25 @@
+name: MIO gacha network retry focus
+on:
+  pull_request:
+    paths:
+      - 'gacha-page.js'
+      - 'gacha.html'
+      - 'tests/mio-gacha-network-retry.test.mjs'
+      - 'tests/mio-gacha-network-timeout.test.mjs'
+      - 'tests/gacha-legacy-recovery.test.mjs'
+      - '.github/workflows/mio-gacha-network-retry.yml'
+  push:
+    branches:
+      - feature/mio-gacha-network-retry-20261106
+jobs:
+  network-safe-retry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check production-bound client syntax
+        run: node --check gacha-page.js
+      - name: Test loss, recovery, unchanged ticket and stable draw ID
+        run: node --test tests/mio-gacha-network-retry.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-gacha-network-timeout.test.mjs
