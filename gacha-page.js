@@ -201,9 +201,9 @@ async function execute(pending){
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
   }
 }
-// The old retry button re-sent action:'draw'. That can create a new draw if
-// the first request never committed. Recover ONLY from existing signed history.
-// A missing or old result stays pending; never spend another right implicitly.
+// The previous response may be lost after GAS committed a prize. First check
+// authenticated history; only on an EXPLICIT retry tap may we resend the SAME
+// drawId. GAS ScriptLock and drawId lookup prevent a second committed draw.
 async function recoverPrevious(p){
   if(isPreview||busy)return;
   if(!validPending(p)){
