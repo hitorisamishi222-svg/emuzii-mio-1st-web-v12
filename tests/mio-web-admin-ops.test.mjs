@@ -447,3 +447,22 @@ test('member confirmation operation ID cannot be replayed for another person or 
  x.rows['emuzii_Web登録'][1][6]='未確認';
  assert.throws(()=>x.exec(d),/状態が変わっています/);
 });
+
+test('membership browser list excludes retired and unverified devices',()=>{
+ const x=sandbox(),webId='MIO-W-1234567890abcdef12345678',mioId='MIO-0001';
+ x.exec({action:'webAdminOpsApprove',operationId:'1'.repeat(32),webId,mioId,memberConfirmed:false,expectedStatus:'承認待ち'});
+ const current=x.rows['emuzii_Web登録'][1];
+ let view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.approvedBrowsers.length,1);
+ assert.equal(view.approvedBrowsers[0].verified,true);
+ current[16]='旧端末';
+ view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.approvedBrowsers[0].verified,false);
+ assert.throws(()=>x.exec({action:'webAdminOpsMember',operationId:'2'.repeat(32),webId,mioId,
+  expectedMember:'未確認',memberConfirmed:true}),/承認済み本人/);
+ current[16]='使用中';
+ current[10]='MIO-0002';
+ view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.approvedBrowsers[0].verified,false,'different integrated MIO-ID never verifies a browser');
+ assert.equal(x.rows['emuzii_Web登録'][1][6],'未確認');
+});
