@@ -61,7 +61,7 @@ export default async function handler(req,res){
   Object.assign(data,{name:d.name.trim(),note:d.note.trim(),operationId:d.operationId});
  }else if(d.action==='review'){
   if(!Number.isInteger(d.row)||d.row<2||d.row>1000||
-     typeof d.expectedStatus!=='string'||!d.expectedStatus.trim()||d.expectedStatus.length>60||
+     !['未確認','管理確認待ち'].includes(d.expectedStatus)||
      typeof d.expectedName!=='string'||!d.expectedName.trim()||d.expectedName.length>80||
      typeof d.expectedBrowserId!=='string'||d.expectedBrowserId.length>120||
      typeof d.expectedCreatedAt!=='string'||!d.expectedCreatedAt.trim()||d.expectedCreatedAt.length>100||
