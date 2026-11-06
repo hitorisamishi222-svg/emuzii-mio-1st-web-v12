@@ -225,6 +225,36 @@ try{
    assert.equal(await evaluate("document.querySelector('[data-gallery-kind=\\\"音声・楽曲\\\"]').getAttribute('aria-pressed')"),'true');
    await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
    await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
+   // One-item share links are formed from the *approved static IDs* only.
+   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html?work=mio-awakening-song'});
+   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('指定された承認済み作品1件')"),18000);
+   assert.deepEqual(await evaluate(`(()=>({
+    visible:[...document.querySelectorAll('.museum-approved-card:not([hidden])')].map(x=>x.dataset.exhibitId),
+    links:[...document.querySelectorAll('.museum-approved-permalink')].map(x=>x.getAttribute('href')),
+    focused:!document.querySelector('#approvedGalleryFocus').hidden
+   }))()`),{
+    visible:['mio-awakening-song'],
+    links:['/museum-approved-gallery.html?work=mio-awakening-video',
+     '/museum-approved-gallery.html?work=mio-awakening-song'],
+    focused:true
+   });
+   // Navigating to a nonapproved, unknown work ID must never reveal it.
+   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html?work=unapproved-secret-id'});
+   await poll(()=>evaluate("document.querySelector('#approvedGalleryFocusText')?.textContent.includes('公開一覧で確認できません')"),18000);
+   assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),2);
+   assert.equal(await evaluate("document.body.textContent.includes('unapproved-secret-id')"),false);
+   await evaluate("document.querySelector('#approvedGalleryClear').click()");
+   assert.equal(await evaluate("new URLSearchParams(location.search).has('work')"),false);
+   assert.equal(await evaluate("document.querySelector('#approvedGalleryFocus').hidden"),true);
+   // The music and video category filter must clear any item-only focus.
+   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html?work=mio-awakening-song'});
+   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('指定された承認済み作品1件')"),18000);
+   await evaluate("document.querySelector('[data-gallery-kind=\\\"動画\\\"]').click()");
+   assert.equal(await evaluate("new URLSearchParams(location.search).get('kind')"),'video');
+   assert.equal(await evaluate("new URLSearchParams(location.search).has('work')"),false);
+   assert.equal(await evaluate("document.querySelectorAll('.museum-approved-card:not([hidden])').length"),1);
+   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
+   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
   }
   if(width===390){
    await mkdir('artifacts',{recursive:true});
