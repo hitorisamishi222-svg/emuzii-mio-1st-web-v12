@@ -45,7 +45,7 @@ function jpegDimensions(b){
  return frame;
 }
 function webpDimensions(b){
- if(b.length<30||b.toString('ascii',0,4)!=='RIFF'||
+ if(b.length<26||b.toString('ascii',0,4)!=='RIFF'||
   b.toString('ascii',8,12)!=='WEBP'||b.readUInt32LE(4)!==b.length-8)
   fail('WEBP_STRUCTURE_INVALID');
  let pos=12,ext=null,image=null,hasFrame=false;
