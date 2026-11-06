@@ -369,3 +369,29 @@ test('only the new manager-intake pending state can be confirmed besides 未確�
  assert.equal(row[4],'確認済み');
  assert.ok(x.write.length>before);
 });
+
+test('existing integrated MIO-ID cannot be replaced during approval',()=>{
+ const x=sandbox(),w=x.rows['emuzii_Web登録'][1];
+ w[10]='MIO-0002';
+ const req={action:'webAdminOpsApprove',operationId:'6'.repeat(32),
+  webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+  expectedStatus:'承認待ち',memberConfirmed:true};
+ assert.throws(()=>x.exec(req),/統合参加者IDが異なります/);
+ assert.equal(w[10],'MIO-0002');
+ assert.equal(w[5],'承認待ち');
+ assert.equal(x.write.some(q=>q.name==='emuzii_Web登録'),false);
+});
+test('operator grant and intake reject spreadsheet expressions and overflow before writes',()=>{
+ const x=sandbox(),op='5'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',
+  count:1,expectedSpecial:2,reason:'=1+1'};
+ assert.throws(()=>x.exec(grant),/付与条件/);
+ assert.throws(()=>x.exec({...grant,reason:'イベント付与',expectedSpecial:Number.MAX_SAFE_INTEGER}),/付与条件/);
+ const intake={action:'webAdminOpsIntake',operationId:op,name:'確認用',note:'=1+1'};
+ assert.throws(()=>x.exec(intake),/受付名・メモ/);
+ assert.equal(x.write.length,0);
+});
+test('audit and grant-history free text are guarded by safeText',()=>{
+ assert.match(source,/safeText_\(note\),safeText_\(name\)/);
+ assert.match(source,/\[\[new Date\(\),id,safeText_\(name\),count,safeText_\(reason\)/);
+});
