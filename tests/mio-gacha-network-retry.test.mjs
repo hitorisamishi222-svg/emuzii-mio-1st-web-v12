@@ -126,3 +126,11 @@ test('invalid local draw ID is not sent to the draw endpoint',async()=>{
  assert.equal(h.saved.has(key),true);
  assert.equal(h.el('retryDraw').disabled,true);
 });
+
+test('null ticket counts never authorize a returned-ticket statement',async()=>{
+ const h=harness({c:catalog({remaining:null,used:1})});
+ assert.equal(await h.load(),false);
+ assert.doesNotMatch(h.el('drawMessage').textContent,/戻っています/);
+ assert.equal(h.saved.has(key),true);
+ assert.equal(h.el('retryDraw').hidden,false);
+});
