@@ -46,13 +46,14 @@ function fixture(options={}){
   get query(){throw Error('POOL_QUERY_BYPASS')},
   async connect(){
    const client={
-    active:null,readonly:false,
+    active:null,readonly:false,mutated:false,
     async query(sql,args=[]){
      state.calls.push({sql,args,connection:state.connections.length});
      if(sql==='BEGIN ISOLATION LEVEL SERIALIZABLE'||
         sql==='BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY'){
       assert.equal(this.active,null);
       this.readonly=sql.includes('READ ONLY');
+      this.mutated=false;
       this.active=structuredClone({works:state.works,receipts:state.receipts,countCreates:state.countCreates});
       return {command:'BEGIN'};
      }
@@ -66,8 +67,12 @@ function fixture(options={}){
        state.works=this.active.works;
        state.receipts=this.active.receipts;
        state.countCreates=this.active.countCreates;
-       state.commits++;
-       state.afterWrite?.(state);
+       // An idempotent receipt replay uses a write-capable transaction but
+       // does not actually mutate records; it must not count as another save.
+       if(this.mutated){
+        state.commits++;
+        state.afterWrite?.(state);
+       }
       }
       this.active=null;
       if(write&&state.failAck){
@@ -89,6 +94,7 @@ function fixture(options={}){
      if(sql.startsWith('INSERT INTO museum_public_exhibits(')){
       assert.equal(this.readonly,false);
       assert.equal(this.active.works[WORK],undefined);
+      this.mutated=true;
       this.active.countCreates++;
       this.active.works[WORK]={
        id:WORK,kind:args[0],category:args[1],title:args[2],
@@ -104,6 +110,7 @@ function fixture(options={}){
       const record=this.active.works[args[8]];
       if(!record||record.status!=='draft'||record.revision!==args[9])
        return sqlRows([],'UPDATE');
+      this.mutated=true;
       Object.assign(record,{
        kind:args[0],category:args[1],title:args[2],
        description:args[3],credit:args[4],occurred_on:args[5],
@@ -117,6 +124,7 @@ function fixture(options={}){
       assert.equal(this.readonly,false);
       const [operation_id,actor_id,exhibit_id,action,payload_hash,revision]=args;
       assert.equal(this.active.receipts[operation_id],undefined);
+      this.mutated=true;
       this.active.receipts[operation_id]={actor_id,action,payload_hash,exhibit_id,revision};
       return sqlRows([{operation_id}],'INSERT');
      }
