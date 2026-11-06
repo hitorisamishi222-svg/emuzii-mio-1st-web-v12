@@ -386,6 +386,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "mio-admin-ops-code-copy-20261106.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
     }
