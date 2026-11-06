@@ -9,6 +9,7 @@ function mioAdminOps_(ss,d){
  var action=String(d.action||'');
  if(action==='webAdminOpsRead')return mioAdminOpsRead_(ss,d);
  if(action==='webAdminOpsApprove')return mioAdminOpsApprove_(ss,d);
+ if(action==='webAdminOpsMember')return mioAdminOpsMember_(ss,d);
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
  if(action==='webAdminOpsCreate')return mioAdminOpsCreate_(ss,d);
  if(action==='webAdminOpsReview')return mioAdminOpsReview_(ss,d);
@@ -48,7 +49,7 @@ function mioAdminOpsSummary_(ss,webRows){
    Number.isSafeInteger(entry.special)&&entry.special>=0&&entry.remaining<=entry.total;
   roster.push({mioId:id,name:x.name,gacha:healthy?entry:null,needsReview:!healthy});
  });
- return {ok:true,pending:pending,roster:roster,simple:simple.slice(-60).reverse(),totalPending:web.filter(function(x){return x.status==='承認待ち'||(x.status==='承認済み'&&x.integrity!=='確認済み');}).length,rejectedCount:web.filter(function(x){return x.status==='却下'}).length};
+ return {ok:true,pending:pending,approvedBrowsers:web.filter(function(r){return r.status==='承認済み'&&/^MIO-\d{4}$/.test(r.mioId);}).map(function(r){return {webId:r.webId,mioId:r.mioId,name:r.name,member:r.member,verified:r.integrity==='確認済み'};}),roster:roster,simple:simple.slice(-60).reverse(),totalPending:web.filter(function(x){return x.status==='承認待ち'||(x.status==='承認済み'&&x.integrity!=='確認済み');}).length,rejectedCount:web.filter(function(x){return x.status==='却下'}).length};
 }
 function mioAdminOpsRead_(ss,d){
  var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
@@ -138,6 +139,52 @@ function mioAdminOpsCreate_(ss,d){
    throw new Error('新規参加者IDの確認に失敗しました');
  log.getRange(logRow,8).setValue('確定');
  return {ok:true,mioId:id,name:name};
+}
+
+/** Confirm membership on precisely one approved browser. Never change gacha credits. */
+function mioAdminOpsMember_(ss,d){
+ var op=mioAdminOpsRequest_(d),wid=mioAdminOpsStr_(d.webId),id=mioAdminOpsStr_(d.mioId);
+ if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||!/^MIO-\d{4}$/.test(id)||
+    d.expectedMember!=='未確認'||d.memberConfirmed!==true)
+   throw new Error('メンシプ確認の指定が不正です');
+ var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
+ var w=mioAdminOpsOne_(all,0,wid),person=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id);
+ var name=mioAdminOpsStr_(person.c[1]);
+ // Exact existing browser, master ID and identity confirmation; no nickname-only approval.
+ if(!name||mioAdminOpsName_(w.c[2])!==mioAdminOpsName_(name)||
+    w.c[5]!=='承認済み'||mioAdminOpsStr_(w.c[7])!==id||
+    mioAdminOpsStr_(w.c[10])!==id||w.c[11]!=='確認済み'||
+    w.c[16]==='旧端末'||!webIntegrityOk_(w.c)||
+    (w.c[15]&&mioAdminOpsStr_(w.c[15])!==id))
+   throw new Error('承認済み本人・既存ブラウザIDの照合が必要です');
+ var note='本人・メンシプ購入確認済み',log=mioAdminOpsLog_(ss),previous=mioAdminOpsExisting_(log,op);
+ if(previous){
+   if(previous.c[2]!=='メンシプ確認'||previous.c[3]!==wid||previous.c[4]!==id||
+      mioAdminOpsStr_(previous.c[5])!=='未確認'||mioAdminOpsStr_(previous.c[6])!=='確認済み'||
+      mioAdminOpsStr_(previous.c[8])!==note||
+      mioAdminOpsName_(previous.c[9])!==mioAdminOpsName_(name))
+     throw new Error('メンシプ操作IDの再利用は禁止です');
+   if(previous.c[7]==='確定'){
+     if(w.c[6]!=='確認済み')throw new Error('確認済みのメンシプ状態が変わっています');
+     return {ok:true,replayed:true,mioId:id,member:'確認済み'};
+   }
+   if(previous.c[7]!=='処理中')throw new Error('メンシプ操作履歴を管理者が確認中です');
+   if(w.c[6]!=='未確認'&&w.c[6]!=='確認済み')throw new Error('メンシプ状態が変更されています');
+ }else if(w.c[6]!=='未確認'){
+   throw new Error('メンシプ状態が変更されています。再読み込みしてください');
+ }
+ var row=previous?previous.row:mioAdminOpsWriteLog_(log,op,'メンシプ確認',wid,id,'未確認','確認済み',note,name);
+ if(w.c[6]!=='確認済み'){
+   web.getRange(w.row,7).setValue('確認済み'); // Only G; no participant IDs or credits.
+   SpreadsheetApp.flush();
+ }
+ var current=web.getRange(w.row,1,1,21).getValues()[0];
+ if(current[6]!=='確認済み'||current[5]!=='承認済み'||
+    mioAdminOpsStr_(current[7])!==id||mioAdminOpsStr_(current[10])!==id||
+    current[11]!=='確認済み'||!webIntegrityOk_(current))
+   throw new Error('メンシプ確認結果の整合を確認できません');
+ log.getRange(row,8).setValue('確定');
+ return {ok:true,mioId:id,member:'確認済み',replayed:!!previous};
 }
 
 function mioAdminOpsApprove_(ss,d){
