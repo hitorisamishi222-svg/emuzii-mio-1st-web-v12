@@ -1285,6 +1285,44 @@ try{
   assert.ok(roomPreview.status.includes('全展示 2件'));
 
   if(width===390){
+   const draftRecovery=await evaluate(`(()=>{
+    const cards=()=>[...document.querySelectorAll('#workList .curator-entry')];
+    cards()[0].querySelector('button').click();
+    const title=document.querySelector('#workTitle');
+    const message=document.querySelector('#draftRecoveryStatus');
+    const verify=document.querySelector('#verifyDemoDraft');
+    const reload=document.querySelector('#reloadDemoDraft');
+    title.value='架空の記念曲・仮保存確認';
+    title.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#saveWork').click();
+    const saved=verify.disabled===false&&reload.disabled===false&&
+     message.textContent.includes('仮保存しました');
+    verify.click();
+    const verified=message.textContent.includes('照合OK')&&
+     message.textContent.includes('実DBには保存していません');
+    title.value='未保存の説明を書き換え途中';
+    title.dispatchEvent(new Event('input',{bubbles:true}));
+    verify.click();
+    const dirtyBlocked=message.textContent.includes('未保存の入力があります');
+    reload.click();
+    const warning=document.querySelector('#pendingFormSwitch');
+    const warningShown=!warning.hidden&&title.value==='未保存の説明を書き換え途中';
+    document.querySelector('#cancelFormSwitch').click();
+    const cancelKept=warning.hidden&&title.value==='未保存の説明を書き換え途中';
+    reload.click();
+    document.querySelector('#discardFormSwitch').click();
+    const restored=warning.hidden&&title.value==='架空の記念曲・仮保存確認';
+    verify.click();
+    const reverified=message.textContent.includes('照合OK');
+    document.querySelector('#resetDemo').click();
+    const reset=cards().length===3&&title.value===''&&verify.disabled&&reload.disabled;
+    return {saved,verified,dirtyBlocked,warningShown,cancelKept,restored,reverified,reset};
+   })()`);
+   assert.deepEqual(draftRecovery,{saved:true,verified:true,dirtyBlocked:true,
+    warningShown:true,cancelKept:true,restored:true,reverified:true,reset:true},
+    'fictional draft receipt must verify, block dirty reload, and not survive reset');
+  }
+  if(width===390){
    // A visitor-friendly curator must not silently lose typed details when
    // changing the selected exhibit or resetting the fictional workspace.
    const switching=await evaluate(`(()=>{
