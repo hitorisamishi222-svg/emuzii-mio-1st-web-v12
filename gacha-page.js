@@ -166,11 +166,13 @@ async function loadCatalog(includeHistory=true){
   }finally{
     busy=false;
     if(healthy&&lastCatalog&&!confirming)setButtons(lastCatalog);
-    else{$('drawNormal').disabled=true;$('drawFest').disabled=true;}
-    else if(remember()){
-      $('retryDraw').hidden=false;
-      $('retryDraw').disabled=!validPending(remember());
-      $('retryDraw').textContent=retryLabel;
+    else{
+      $('drawNormal').disabled=true;$('drawFest').disabled=true;
+      if(remember()){
+        $('retryDraw').hidden=false;
+        $('retryDraw').disabled=!validPending(remember());
+        $('retryDraw').textContent=retryLabel;
+      }
     }
   }
 }
