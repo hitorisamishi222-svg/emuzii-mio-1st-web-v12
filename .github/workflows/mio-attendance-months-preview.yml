@@ -1,0 +1,32 @@
+name: MIO attendance monthly manager rehearsal safety
+on:
+  push:
+    branches:
+      - feature/mio-month-calendar-admin-preview-20261106
+  pull_request:
+    paths:
+      - attendance-months-preview.html
+      - attendance-month-config-preview.mjs
+      - tests/mio-attendance-month-config-preview.test.mjs
+      - vercel.json
+      - .github/workflows/mio-attendance-months-preview.yml
+permissions:
+  contents: read
+jobs:
+  monthly-calendar-browser-memory-only:
+    runs-on: ubuntu-latest
+    name: Month admin rehearsal keeps October history intact
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax and configuration verification
+        run: |
+          node --check attendance-month-config-preview.mjs
+          node --check tests/mio-attendance-month-config-preview.test.mjs
+          node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"
+      - name: Calendar retention, visibility, and mock DOM operation
+        run: node --test tests/mio-attendance-month-config-preview.test.mjs
