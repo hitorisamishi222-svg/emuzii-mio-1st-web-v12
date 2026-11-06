@@ -88,40 +88,61 @@ async function loadCatalog(includeHistory=true){
   busy=true;
   try{
     const c=await post('/api/gacha',{action:'catalog'});
+    if(c.ok!==true||!c.participantId||!Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<0)throw Error('catalog unavailable');
     lastCatalog=c;participant=c.participantId;$('drawPanel').hidden=false;
     $('drawRemaining').textContent=`ガチャ残り ${c.remaining}回 ／ 使用済み ${c.used}回`;
-    renderCatalog($('normalPrizes'),c.normal);renderCatalog($('festPrizes'),c.fest);
-    setButtons(c);
+    renderCatalog($('normalPrizes'),c.normal);
+    renderCatalog($('festPrizes'),c.fest);
     const pending=remember();
-    note(pending?'前回のガチャが途中で止まっています。下の「前回のガチャを再開する」を押してね。':statusText(c));
-    if(!includeHistory)return true;
+    if(!includeHistory){
+      note(pending?connectionMessage:statusText(c));
+      return true
+    }
     const h=await post('/api/gacha',{action:'history'});
-    // A completed draw may have reached GAS even when its browser reply failed.
-    // Only release the device-local pending lock after confirming the SAME
-    // draw ID and mode in this authenticated user's committed history.
-    if(pending&&h.participantId===participant&&Array.isArray(h.history)){
-      const matching=h.history.filter(x=>x.drawId===pending.drawId&&x.mode===pending.mode&&
-        typeof x.prize==='string'&&x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0);
-      if(matching.length===1){
-        forget();
-        note('前回の当選結果を確認できました。当選履歴に保存済みです。通常のガチャに戻れます。');
+    if(h.ok!==true||h.participantId!==participant||!Array.isArray(h.history))throw Error('history unavailable');
+    if(pending){
+      if(!validPending(pending)){
+        note('前回の抽選記録を確認しています。ガチャ券は勝手に消費しません。');
+        showRetry();$('retryDraw').disabled=true;
+      }else{
+        const rows=h.history.filter(x=>x.drawId===pending.drawId);
+        if(rows.length===1&&validHistoryWinner(rows[0],pending)){
+          // Even when the response to draw was lost, the confirmed winner is visible.
+          showRecoveredWinner(rows[0],pending);
+        }else{
+          showRetry();
+          // "Returned" is shown only after BOTH authenticated history and
+          // entitlement counters show that the previous draw has not spent a right.
+          note(rows.length===0&&noTicketSpent(c,pending)?returnedMessage:connectionMessage);
+        }
       }
+    }else{
+      note(statusText(c));
     }
     $('drawHistory').replaceChildren();
-    if(!h.history?.length){
-      const li=document.createElement('li');li.className='muted';li.textContent='まだ当選履歴はありません。';$('drawHistory').append(li)
+    if(!h.history.length){
+      const li=document.createElement('li');li.className='muted';
+      li.textContent='まだ当選履歴はありません。';$('drawHistory').append(li);
     }else for(const x of h.history){
       const li=document.createElement('li');li.className=`history-item ${x.mode==='ラキフェス'?'fest-history':''}`;
       const image=safeImage(x.image);
       if(image){const img=document.createElement('img');img.src=image;img.alt='';img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});li.append(img)}
       const text=document.createElement('span'),title=document.createElement('strong'),sub=document.createElement('small');
       title.textContent=x.prize;sub.textContent=`${x.ordinal}回目 · ${x.mode}${x.rarity?' · '+x.rarity:''}${x.date?' · '+fmtDate(x.date):''}`;
-      text.append(title,sub);li.append(text);$('drawHistory').append(li)
+      text.append(title,sub);li.append(text);$('drawHistory').append(li);
     }
     return true
   }catch(e){
-    $('drawPanel').hidden=false;$('drawNormal').disabled=true;$('drawFest').disabled=true;note(e.message);return false
-  }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
+    $('drawPanel').hidden=false;
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;
+    if(validPending(remember())){showRetry();note(connectionMessage)}
+    else note('通信が不安定です。回線がつながったら「設定・当選履歴を更新」を押してください。');
+    return false
+  }finally{
+    busy=false;
+    if(lastCatalog&&!confirming)setButtons(lastCatalog);
+    else if(validPending(remember())){$('retryDraw').hidden=false;$('retryDraw').disabled=false;$('retryDraw').textContent=retryLabel;}
+  }
 }
 async function execute(pending){
   if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
