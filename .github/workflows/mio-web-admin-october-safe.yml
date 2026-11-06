@@ -10,6 +10,7 @@ on:
       - mio-admin-ops-code-copy-20261106.html
       - api-gacha-admin-ops.js
       - tests/mio-web-admin-october-combined.test.mjs
+      - tests/mio-admin-livedata-shape-readonly.test.mjs
       - .github/workflows/mio-web-admin-october-safe.yml
 permissions:
   contents: read
@@ -29,5 +30,6 @@ jobs:
           node --check --input-type=commonjs < GAS_Code_OCTOBER_WITH_ADMIN_OPS_20261106.gs
           node --check --input-type=commonjs < GAS_WebAdminOps_20261030.gs
           node --check tests/mio-web-admin-october-combined.test.mjs
+          node --check tests/mio-admin-livedata-shape-readonly.test.mjs
       - name: Offline-only read and approved baseline preservation
-        run: node --test tests/mio-web-admin-october-combined.test.mjs
+        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs
