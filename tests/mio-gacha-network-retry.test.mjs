@@ -192,3 +192,17 @@ test('missing catalogue prizes fail closed, never allow a draw',async()=>{
  assert.equal(h.el('drawFest').disabled,true);
  assert.equal(h.saved.has(key),true);
 });
+
+test('zero remaining does not block recovery of an older committed draw receipt',async()=>{
+ const h=harness({history:[],c:catalog({remaining:0,used:4}),
+   drawResponse:{ok:true,participantId:identity,drawId:oldId,mode:'通常',
+    prize:winner.prize,ordinal:2,rarity:'SR',remaining:0,replayed:true}});
+ await h.load();
+ assert.equal(h.el('retryDraw').hidden,false);
+ await h.click();
+ const draws=h.calls.filter(x=>x.action==='draw');
+ assert.equal(draws.length,1);
+ assert.equal(draws[0].drawId,oldId);
+ assert.equal(h.el('drawPrizeName').textContent,winner.prize);
+ assert.equal(h.saved.has(key),false);
+});
