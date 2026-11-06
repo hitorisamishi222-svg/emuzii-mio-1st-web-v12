@@ -1262,6 +1262,32 @@ try{
   assert.ok(state.doc<=state.width+2,'curator preview overflow '+JSON.stringify(state));
   assert.equal(state.works,3);
   assert.equal(state.publicCards,2);
+  // The owner can actually encode a synthetic image locally in both phone
+  // widths. Nothing is POSTed or saved outside this one browser tab.
+  const local=await evaluate(`(async()=>{
+   const input=document.querySelector('#workImage');
+   const before=document.querySelector('#localImageStatus').textContent;
+   document.querySelector('#checkLocalImage').click();
+   const empty=document.querySelector('#localImageStatus').textContent.includes('先に写真');
+   const c=document.createElement('canvas');c.width=12;c.height=7;
+   const cx=c.getContext('2d');cx.fillStyle='#447799';cx.fillRect(0,0,12,7);
+   const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));
+   const photo=new File([blob],'curator-synthetic.png',{type:'image/png'});
+   const dt=new DataTransfer();dt.items.add(photo);
+   input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));
+   document.querySelector('#checkLocalImage').click();
+   return {empty,before,rawBytes:photo.size,button:document.querySelector('#checkLocalImage').getBoundingClientRect().height};
+  })()`);
+  assert.equal(local.empty,true,'the local check must require the owner to select a file');
+  assert.ok(local.button>=44,'owner-only mobile photo button too small');
+  assert.ok(local.rawBytes>0);
+  await poll(()=>evaluate("document.querySelector('#localImageStatus').textContent.startsWith('✅')"),18000);
+  const localResult=await evaluate("document.querySelector('#localImageStatus').textContent");
+  assert.match(localResult,/端末内だけで圧縮・バイト数・SHA-256を確認/);
+  assert.match(localResult,/サーバー保存・掲載許可の確認ではありません/);
+  await evaluate("(()=>{const input=document.querySelector('#workImage');input.value='';input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  assert.ok(!(await evaluate("document.querySelector('#localImageStatus').textContent")).startsWith('✅'),
+   'changing the selected image must revoke the previous image-check status');
   const overview=await evaluate("(()=>[...['overviewPublished','overviewReady','overviewReview','overviewPrivate','overviewArchived'].map(id=>Number(document.getElementById(id)?.textContent))])()");
   assert.deepEqual(overview,[2,0,1,0,0],
    'gallery overview must count two synthetic published works and one review-pending draft');
