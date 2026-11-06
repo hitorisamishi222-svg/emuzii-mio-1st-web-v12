@@ -14,7 +14,9 @@ test('private HTML copying source is exactly the same as the full-paste GAS file
  assert.equal(decoded.split('function mioAdminOpsGrant_(').length-1,1);
  assert.doesNotMatch(html,/id="code"/);
  assert.match(html,/clipboard\.writeText\(raw\)/);
- assert.match(html,/部分追加はしません/);
+ assert.match(html,/本番への全文貼り付け禁止/);
+ assert.doesNotMatch(html,/既存の Code\.gs に全貼り付けしてください/);
+ assert.match(html,/稼働GASの全ファイルとデプロイバージョンを照合/);
 });
 test('private clipboard helper must not be publicly deployed by Vercel',()=>{
  const cfg=JSON.parse(from('vercel.json'));
