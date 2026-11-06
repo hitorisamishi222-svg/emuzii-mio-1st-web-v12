@@ -94,9 +94,13 @@ function statusText(c){if(c.gateConfigured===false)return '管理者のガチャ
 async function loadCatalog(includeHistory=true){
   if(busy)return false;
   busy=true;
+  let healthy=false;
   try{
     const c=await post('/api/gacha',{action:'catalog'});
-    if(c.ok!==true||!c.participantId||!validCount(c.remaining)||!validCount(c.used))throw Error('catalog unavailable');
+    if(c.ok!==true||!c.participantId||!validCount(c.remaining)||!validCount(c.used)||
+       (participant&&c.participantId!==participant)||typeof c.normal!=='object'||!c.normal||
+       typeof c.fest!=='object'||!c.fest||!Array.isArray(c.normal.prizes)||!Array.isArray(c.fest.prizes))
+      throw Error('catalog unavailable');
     lastCatalog=c;participant=c.participantId;$('drawPanel').hidden=false;
     $('drawRemaining').textContent=`ガチャ残り ${c.remaining}回 ／ 使用済み ${c.used}回`;
     renderCatalog($('normalPrizes'),c.normal);
@@ -104,6 +108,7 @@ async function loadCatalog(includeHistory=true){
     const pending=remember();
     if(!includeHistory){
       note(pending?connectionMessage:statusText(c));
+      healthy=true;
       return true
     }
     const h=await post('/api/gacha',{action:'history'});
@@ -139,6 +144,7 @@ async function loadCatalog(includeHistory=true){
       title.textContent=x.prize;sub.textContent=`${x.ordinal}回目 · ${x.mode}${x.rarity?' · '+x.rarity:''}${x.date?' · '+fmtDate(x.date):''}`;
       text.append(title,sub);li.append(text);$('drawHistory').append(li);
     }
+    healthy=true;
     return true
   }catch(e){
     $('drawPanel').hidden=false;
@@ -147,12 +153,14 @@ async function loadCatalog(includeHistory=true){
       showRetry();
       if(!validPending(remember()))$('retryDraw').disabled=true;
       note(connectionMessage);
-    }
-    else note('通信が不安定です。回線がつながったら「設定・当選履歴を更新」を押してください。');
+    }else if(!$('drawResultCard').hidden){
+      note('当選結果は表示済みです。景品を閉じた後に残回数を更新してください。');
+    }else note('通信が不安定です。回線がつながったら「設定・当選履歴を更新」を押してください。');
     return false
   }finally{
     busy=false;
-    if(lastCatalog&&!confirming)setButtons(lastCatalog);
+    if(healthy&&lastCatalog&&!confirming)setButtons(lastCatalog);
+    else{$('drawNormal').disabled=true;$('drawFest').disabled=true;}
     else if(remember()){
       $('retryDraw').hidden=false;
       $('retryDraw').disabled=!validPending(remember());
