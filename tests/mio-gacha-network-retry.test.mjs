@@ -12,7 +12,7 @@ const catalog=(patch={})=>({ok:true,participantId:identity,confirmed:true,remain
  normalOpen:true,festOpen:true,normal:{ready:true,prizes:[],message:'抽選できます'},
  fest:{ready:true,prizes:[],message:'抽選できます'},...patch});
 
-function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,savedPending=pending()}={}){
+function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,failHistory=false,failCatalog=false,savedPending=pending()}={}){
  const saved=new Map(savedPending?[[key,JSON.stringify(savedPending)]]:[]);
  const elements=new Map(),calls=[],windowHandlers=new Map();
  function element(tag='div'){
@@ -27,8 +27,8 @@ function harness({history=[],c=catalog(),drawResponse=null,failedDraw=false,save
  el('drawResultCard').hidden=true;el('retryDraw').hidden=true;
  const send=async(action,payload)=>{
   calls.push({action,...payload});
-  if(action==='catalog')return c;
-  if(action==='history')return {ok:true,participantId:identity,history};
+  if(action==='catalog'){if(failCatalog)throw new TypeError('catalog offline');return c;}
+  if(action==='history'){if(failHistory)throw new TypeError('history offline');return {ok:true,participantId:identity,history};}
   if(action==='draw'){
    if(failedDraw){failedDraw=false;throw new TypeError('network disconnected')}
    if(drawResponse)return drawResponse;
@@ -166,4 +166,29 @@ test('double-tapping the recovery control submits at most one draw',async()=>{
  assert.equal(h.calls.filter(x=>x.action==='draw').length,1);
  assert.equal(h.saved.has(key),false);
  assert.equal(h.el('drawPrizeName').textContent,winner.prize);
+});
+
+test('catalog outage keeps all draw controls disabled even without a pending operation',async()=>{
+ const h=harness({savedPending:null,failCatalog:true});
+ assert.equal(await h.load(),false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ assert.equal(h.calls.some(x=>x.action==='draw'),false);
+});
+test('history outage never unlocks stale catalog draw controls',async()=>{
+ const h=harness({failHistory:true});
+ assert.equal(await h.load(),false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ assert.equal(h.el('retryDraw').hidden,false);
+ assert.equal(h.el('retryDraw').disabled,false);
+ assert.equal(h.saved.has(key),true);
+ assert.doesNotMatch(h.el('drawMessage').textContent,/戻っています/);
+});
+test('missing catalogue prizes fail closed, never allow a draw',async()=>{
+ const h=harness({c:catalog({normal:null})});
+ assert.equal(await h.load(),false);
+ assert.equal(h.el('drawNormal').disabled,true);
+ assert.equal(h.el('drawFest').disabled,true);
+ assert.equal(h.saved.has(key),true);
 });
