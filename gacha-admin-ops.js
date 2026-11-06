@@ -8,7 +8,7 @@ const PENDING_KEY='mio_web_admin_pending_operation_v1';
 let pending=null;
 try{
  const saved=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');
- if(saved&&['approve','grant','create','intake','review'].includes(saved.action)&&
+ if(saved&&['approve','member','grant','create','intake','review'].includes(saved.action)&&
     typeof saved.operationId==='string'&&/^[a-f0-9]{32}$/.test(saved.operationId))
   // Any restored pending operation might have reached GAS before the browser closed.
   pending={...saved,submitted:true};
@@ -129,6 +129,11 @@ async function refresh({automatic=false}={}){
       next.total!==previous.total||next.special!==previous.special||
       next.checked!==previous.checked||current.name!==selected.name)
      el('opsOnsiteGrantVerified').checked=false;
+  }
+  if(selected&&el('opsMemberVerified').checked===true){
+   const last=(state?.approvedBrowsers||[]).filter(x=>x.mioId===selected.mioId);
+   const next=(response.approvedBrowsers||[]).filter(x=>x.mioId===selected.mioId);
+   if(JSON.stringify(last)!==JSON.stringify(next))el('opsMemberVerified').checked=false;
   }
   state=response;
   gasCompatibilityBlocked=false;
@@ -289,6 +294,43 @@ function render(){
   el('opsSimple').append(wrap);
  }
 }
+function renderMemberBrowsers(){
+ const host=el('opsMemberBrowsers');host.replaceChildren();
+ if(!state||!selected){
+  host.append(node('p','対象の参加者を選択してください。'));return;
+ }
+ const links=(state.approvedBrowsers||[]).filter(x=>
+   x.mioId===selected.mioId&&x.verified===true&&
+   nameKey(x.name)===nameKey(selected.name));
+ if(!links.length){
+  host.append(node('p','本人確認済みの承認ブラウザがありません。端末の照合が必要です。'));return;
+ }
+ for(const item of links){
+  const row=node('article',undefined,'ops-item');
+  row.append(node('strong',item.name+' / '+item.mioId));
+  row.append(node('p','既存ブラウザ：'+item.webId+'　メンシプ：'+item.member));
+  if(item.member==='未確認'){
+   const confirmButton=button('この登録端末のメンシプを確認済みにする',async()=>{
+    if(el('opsMemberVerified').checked!==true){
+      notice('本人・既存ブラウザ・購入内容の確認チェックを入れてください',true);return;
+    }
+    if(!state?.approvedBrowsers?.some(x=>x.webId===item.webId&&
+       x.mioId===selected.mioId&&x.member==='未確認'&&x.verified===true)){
+      notice('台帳の状態が変わっています。再読み込みしてください',true);return;
+    }
+    if(!window.confirm(item.name+' / '+item.mioId+' の既存端末 '+item.webId+
+       ' のメンシプを確認済みにしますか？\nガチャ券や登録IDは変更しません。'))return;
+    await mutate('member',{webId:item.webId,mioId:item.mioId,
+      expectedMember:'未確認',memberConfirmed:true,onSiteVerified:true});
+   });
+   confirmButton.disabled=confirmButton.disabled||el('opsMemberVerified').checked!==true;
+   row.append(confirmButton);
+  }else if(item.member==='確認済み'){
+   row.append(node('p','✅ この登録端末はメンシプ確認済みです。'));
+  }else row.append(node('p','⚠️ 状態不明のため確認操作できません。'));
+  host.append(row);
+ }
+}
 function renderRoster(){
  const div=el('opsRoster'),query=el('opsSearch').value.trim().toLowerCase();
  div.replaceChildren();
@@ -301,11 +343,12 @@ function renderRoster(){
   div.append(button(item.name+' ('+item.mioId+')'+(item.needsReview?' ⚠️ 台帳要確認':''),()=>{
     selected=item;
     el('opsOnsiteGrantVerified').checked=false;
+    el('opsMemberVerified').checked=false;
     const g=item.gacha;
     el('opsPerson').textContent=item.name+' / '+item.mioId+
       (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認');
     el('opsGrant').disabled=!grantReady();
-    updateQuick();
+    updateQuick();renderMemberBrowsers();
   },true));
  }
  if(!all.length)div.append(node('p','該当者がいません。'));
@@ -316,8 +359,9 @@ function renderRoster(){
     '　総権利 '+selected.gacha.total+' / 残り '+selected.gacha.remaining+' / 特別付与 '+selected.gacha.special;
  }else el('opsPerson').textContent='参加者を選択してください';
  el('opsGrant').disabled=!grantReady();
- updateQuick();
+ updateQuick();renderMemberBrowsers();
 }
+el('opsMemberVerified').addEventListener('change',renderMemberBrowsers);
 el('opsSearch').addEventListener('input',renderRoster);
 el('opsOnlyRemaining').addEventListener('change',renderRoster);
 el('opsOnsiteGrantVerified').addEventListener('change',()=>{el('opsGrant').disabled=!grantReady()});
@@ -364,7 +408,8 @@ async function verifyPending(){
 el('opsRetry').addEventListener('click',()=>{
  if(!pending||processing)return;
  const label=pending.action==='grant'?pending.mioId+' に '+pending.count+'回付与'
-   :pending.action==='approve'?pending.webId+' の登録承認':'管理操作 '+pending.action;
+   :pending.action==='approve'?pending.webId+' の登録承認'
+   :pending.action==='member'?pending.webId+' のメンシプ確認':'管理操作 '+pending.action;
  if(window.confirm(label+' の結果を、前回と同じ操作IDで確認しますか？\n新しい付与や承認を作らず、既存の操作を照合します。'))
   void verifyPending();
 });
