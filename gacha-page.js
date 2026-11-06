@@ -224,11 +224,12 @@ async function recoverPrevious(p){
     }else if(rows.length===0){
       const c=await post('/api/gacha',{action:'catalog'});
       if(c.ok!==true||c.participantId!==participant||c.confirmed!==true||
-         !validCount(c.remaining)||Number(c.remaining)<1||
-         !validCount(c.used))
+         !validCount(c.remaining)||!validCount(c.used))
         throw Error('entitlement not confirmed');
-      // The same drawId is replayed only on this explicit user tap. If the
-      // earlier response was lost after commit, GAS returns its original winner.
+      // Even if current remaining is zero, a previously COMMITTED draw could be
+      // older than the 50-history display window. GAS checks the SAME drawId
+      // before any ticket availability check and returns the original winner.
+      // If uncommitted and no tickets remain, GAS refuses a new draw safely.
       retrySameId=true;
     }else{
       note('前回の当選履歴を確認中です。ガチャ券を二重に使わず、もう一度確認できます。');
