@@ -16,5 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install existing test dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
       - name: Verify registration read-only status and authorised-browser regression
         run: node --test tests/browser-registration-status.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs
