@@ -1262,6 +1262,11 @@ try{
   assert.ok(state.doc<=state.width+2,'curator preview overflow '+JSON.stringify(state));
   assert.equal(state.works,3);
   assert.equal(state.publicCards,2);
+  const overview=await evaluate("(()=>[...['overviewPublished','overviewReady','overviewReview','overviewPrivate','overviewArchived'].map(id=>Number(document.getElementById(id)?.textContent))])()");
+  assert.deepEqual(overview,[2,0,1,0,0],
+   'gallery overview must count two synthetic published works and one review-pending draft');
+  assert.equal(overview.reduce((a,b)=>a+b,0),state.works,
+   'gallery overview categories must not double-count works');
 
   const roomPreview=await evaluate(`(()=>{
    const room=document.querySelector('#visitorRoom');
