@@ -5,6 +5,7 @@ on:
       - 'gacha-page.js'
       - 'gacha.html'
       - 'tests/mio-gacha-network-retry.test.mjs'
+      - 'tests/gacha-legacy-recovery.test.mjs'
       - '.github/workflows/mio-gacha-network-retry.yml'
   push:
     branches:
@@ -20,4 +21,4 @@ jobs:
       - name: Check production-bound client syntax
         run: node --check gacha-page.js
       - name: Test loss, recovery, unchanged ticket and stable draw ID
-        run: node --test tests/mio-gacha-network-retry.test.mjs
+        run: node --test tests/mio-gacha-network-retry.test.mjs tests/gacha-legacy-recovery.test.mjs
