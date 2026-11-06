@@ -197,16 +197,29 @@ checkButton();showVisitor();
 }
 function showVisitor(){
 const root=$('visitorPreview');root.replaceChildren();
-const eligiblePublished=published.filter(x=>{const now=itemBy(x.id);return now&&eligible(now)&&now.epoch===x.epoch;});
-eligiblePublished.forEach(x=>{
-const card=node('div',undefined,'curator-public-card');
-if(x.featured)card.append(node('span','✦ 注目作品','curator-feature'));
-card.append(node('strong',x.title),node('p',rooms[x.room]+' · '+x.category));
+const selectedRoom=$('visitorRoom').value;
+const allApproved=published.filter(x=>{
+ const now=itemBy(x.id);
+ return now&&eligible(now)&&now.epoch===x.epoch&&Object.hasOwn(rooms,x.room);
+});
+const shown=allApproved.filter(x=>selectedRoom==='all'||x.room===selectedRoom);
+const roomLabel=selectedRoom==='all'?'すべての展示室':rooms[selectedRoom]||'不明な展示室';
+$('visitorCount').textContent='架空の模擬公開版 '+version+' · '+roomLabel+'：'+shown.length+
+ '件（全展示 '+allApproved.length+'件）';
+shown.forEach(x=>{
+const card=node('article',undefined,'curator-public-card');
+const badge=node('div',undefined,'curator-viewer-badges');
+badge.append(node('span',rooms[x.room],'curator-viewer-room'));
+badge.append(node('span',x.category,'curator-viewer-category'));
+if(x.featured)badge.append(node('span','✦ 注目作品','curator-feature'));
+card.append(badge,node('strong',x.title));
 if(x.description)card.append(node('p',x.description));
-card.append(node('p','架空展示 · 公開の模擬確認'));
+card.append(node('p','架空展示 · 来場者向けプレビュー'));
 root.append(card);
 });
-if(!eligiblePublished.length)root.append(node('p','模擬公開済みの作品はありません。','curator-small'));
+if(!shown.length)root.append(node('p',
+ selectedRoom==='all'?'模擬公開済みの作品はありません。':'この展示室に模擬公開済みの作品はありません。',
+ 'curator-empty-room'));
 }
 function review(){
 if(unsavedForm()){touched();$('publishStatus').textContent='未保存の入力があります。先に下書きを反映するか新規入力をクリアしてください。';return;}
@@ -241,6 +254,7 @@ clearChecks();status('端末内の仮画像を消しました。本番画像は�
 });
 $('filterRoom').addEventListener('change',render);
 $('filterText').addEventListener('input',render);
+$('visitorRoom').addEventListener('change',showVisitor);
 $('undoOrder').addEventListener('click',undoLastOrder);
 $('historyVersion').addEventListener('change',renderHistoryPreview);
 $('reviewRestore').addEventListener('click',reviewHistoryRestore);
