@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const load=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const marker='// -- みお Web運営管理 (2026-10-30)';
-const route='    if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n';
+const route='    if(/^webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n';
 
 test('full-paste GAS preserves pre-Web-admin functions without rewriting existing core',()=>{
  const full=load('GAS_Code_FULL_WEB_OPS_20261030.gs');
@@ -13,7 +13,12 @@ test('full-paste GAS preserves pre-Web-admin functions without rewriting existin
  assert.ok(end>30000);
  const prefix=full.slice(0,end);
  assert.equal(prefix.split(route).length,2,'dispatch must exist exactly once');
- assert.equal(prefix.replace(route,''),baseline,'existing core changed; compare backup and release');
+ // The only allowed pre-module change besides the authenticated dispatch is
+ // expanding its existing diagnostic catch allowlist to the new Member action.
+ const restored=prefix.replace(route,'').replace(
+   'webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)',
+   'webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)');
+ assert.equal(restored,baseline,'existing core changed beyond allowlisted dispatch and diagnostic route');
  assert.ok(full.includes('function mioAdminOpsGrant_('));
  assert.ok(full.includes('function mioAdminOpsApprove_('));
  assert.equal(baseline.includes('function mioAdminOpsGrant_('),false);

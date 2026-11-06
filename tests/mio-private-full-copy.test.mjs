@@ -14,7 +14,9 @@ test('private HTML copying source is exactly the same as the full-paste GAS file
  assert.equal(decoded.split('function mioAdminOpsGrant_(').length-1,1);
  assert.doesNotMatch(html,/id="code"/);
  assert.match(html,/clipboard\.writeText\(raw\)/);
- assert.match(html,/部分追加はしません/);
+ assert.match(html,/本番への全文貼り付け禁止/);
+ assert.doesNotMatch(html,/既存の Code\.gs に全貼り付けしてください/);
+ assert.match(html,/稼働GASの全ファイルとデプロイバージョンを照合/);
 });
 test('private clipboard helper must not be publicly deployed by Vercel',()=>{
  const cfg=JSON.parse(from('vercel.json'));
@@ -37,6 +39,8 @@ test('Vercel public build allowlist cannot expose GAS source, private copy helpe
 });
 test('admin mutations stay disabled unless deliberately released after GAS rollout',()=>{
  const api=from('api-gacha-admin-ops.js');
- assert.match(api,/const writeEnabled=process\.env\.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE/);
+ assert.match(api,/const standardEnabled=process\.env\.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE/);
+ assert.match(api,/const onsiteEnabled=process\.env\.MIO_GACHA_ONSITE_RELEASE===ONSITE_RELEASE/);
+ assert.match(api,/d\.onSiteVerified!==true/);
  assert.match(api,/d\.action!=='read'&&!writeEnabled/);
 });
