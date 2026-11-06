@@ -97,7 +97,7 @@ function fakeBrowser(){
  let confirmResult=true;
  const script=html.split('<script type="module">')[1]?.split('</script>')[0];
  assert.ok(script?.startsWith('\nimport'));
- const scriptNoImport=script.replace(/^import [^\n]+\n/,'');
+ const scriptNoImport=script.replace(/^\s*import [^\n]+\n/,'');
  assert.doesNotMatch(scriptNoImport,/^import /m);
  const sandbox={document:{getElementById:id=>els[id],createElement:el},
   window:{confirm:()=>confirmResult},console,
