@@ -347,3 +347,25 @@ test('grant refuses blank or impossible gacha rights before audit writes',()=>{
   assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,1);
  }
 });
+
+test('legacy simple-intake labels are immutable during Web review',()=>{
+ for(const legacy of ['動作確認用','本人確認・登録承認済み','登録承認済み','却下','確認済み']){
+  const x=sandbox(),record=x.rows['emuzii_新規簡易登録'][1];
+  record[4]=legacy;
+  const before=x.write.length;
+  assert.throws(()=>x.exec({action:'webAdminOpsReview',operationId:'8'.repeat(32),
+    row:2,expectedStatus:legacy,...reviewIdentity}),/既存の受付状態は操作対象外/);
+  assert.equal(record[4],legacy,'legacy state must never be overwritten');
+  assert.equal(x.write.length,before,'not even an audit write may occur for protected statuses');
+ }
+});
+test('only the new manager-intake pending state can be confirmed besides 未確認',()=>{
+ const x=sandbox(),row=x.rows['emuzii_新規簡易登録'][1];
+ row[4]='管理確認待ち';
+ const before=x.write.length;
+ const r=x.exec({action:'webAdminOpsReview',operationId:'7'.repeat(32),
+  row:2,expectedStatus:'管理確認待ち',...reviewIdentity});
+ assert.equal(r.status,'確認済み');
+ assert.equal(row[4],'確認済み');
+ assert.ok(x.write.length>before);
+});
