@@ -41,6 +41,15 @@
 <div class="curator-field"><label for="workImage">表紙画像（任意・端末内プレビューのみ）</label><input id="workImage" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" aria-describedby="imageHelp"><p id="imageHelp" class="curator-small">最大12MB。画像は送信しません。仮公開版にも画像はコピーしません。</p><button type="button" id="clearImage" class="curator-secondary">仮画像を消す</button></div>
 <div class="curator-actions"><button type="submit" id="saveWork">非公開下書きを追加</button><button type="button" class="curator-secondary" id="newWork">新しい作品へ</button></div>
 </form>
+<div class="curator-draft-recovery" aria-label="架空下書きの読み直し">
+ <h3>✦ 保存した内容の確認（練習用）</h3>
+ <p class="curator-small">この画面のメモリに仮保存した内容を照合・読み直します。サーバーへの保存やバックアップではありません。</p>
+ <div class="curator-actions">
+  <button type="button" id="verifyDemoDraft" class="curator-secondary" disabled>仮保存の内容を照合</button>
+  <button type="button" id="reloadDemoDraft" class="curator-secondary" disabled>保存済みの内容を読み直す</button>
+ </div>
+ <p id="draftRecoveryStatus" role="status" aria-live="polite" class="curator-small">保存後に作品を選ぶと確認できます。</p>
+</div>
 <div id="pendingFormSwitch" class="curator-switch-guard" hidden role="group" aria-labelledby="pendingSwitchTitle">
  <strong id="pendingSwitchTitle">未保存の入力があります</strong>
  <p id="pendingSwitchText">このまま切り替えると現在の入力が消えます。続けて編集するか、入力を破棄するか選んでください。</p>
