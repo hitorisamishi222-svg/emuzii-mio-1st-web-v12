@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>みお皆勤賞・月別カレンダー管理（操作練習）</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
+*{box-sizing:border-box}body{margin:0;color:#f7f5eb;background:radial-gradient(ellipse at 20% 0%,#143f71,#06162e 66%);line-height:1.7}
+main{max-width:1120px;margin:auto;padding:24px 16px 80px}h1{font-size:clamp(24px,4.5vw,36px);line-height:1.4;color:#fff1c4}h2{font-size:21px;color:#ffedbc}h3{font-size:17px;margin:.2em 0}.eyebrow{color:#f4d48f;letter-spacing:.15em;font-size:12px}
+.panel{padding:clamp(17px,2vw,27px);background:#102a4de8;border:1px solid #b7d1e888;border-radius:18px;margin:18px 0;box-shadow:0 17px 36px #0003}
+.warning{padding:14px 16px;background:#372f27;border:1px solid #eac38d;border-radius:11px;color:#ffedcf}
+button,input{font:inherit;min-height:48px}button{background:#e7c98a;border:1px solid #e7c98a;color:#071c34;padding:9px 15px;border-radius:11px;font-weight:700;cursor:pointer}
+button.secondary{background:#1a3e67;color:#ecf5ff;border:1px solid #b7d6ef80}
+button:focus-visible,input:focus-visible{outline:3px solid #fff0a3;outline-offset:3px}
+button:disabled{opacity:.5;cursor:not-allowed}
+label{display:block;margin:10px 0 4px;font-weight:650}
+input{width:100%;border-radius:10px;border:1px solid #89acc9;background:#06182f;color:white;padding:8px 12px}
+form .fields{display:grid;grid-template-columns:minmax(170px,1fr) minmax(200px,2fr);gap:14px}
+form button{margin-top:16px}
+.explainer{color:#bfd0e3;font-size:13px}
+.months{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px}
+.month-card{background:#071d39;border:1px solid #658db7;border-radius:15px;padding:17px}
+.month-card p{margin:6px 0 12px}
+.pill{display:inline-block;background:#28456a;border-radius:99px;padding:3px 10px;color:#ffdf9f;font-size:12px}
+.legacy{background:#1c504e;color:#e2fff4}
+.month-footer{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.month-card button{font-size:14px}
+.preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:15px}
+.calendar{border:1px solid #6385a7;border-radius:14px;padding:17px;background:#081e39}
+.weekdays,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.weekdays span{text-align:center;color:#b9cbe0;font-size:12px}
+.days span{text-align:center;border-radius:8px;padding:9px 1px;background:#17375c;color:#dbeeff;font-size:13px}
+.days span.pad{background:none}
+.note{font-size:12px;color:#f2cda1}
+#status{border:1px solid #6b98c5;background:#0a2948;border-radius:9px;padding:10px 12px;min-height:50px}
+a{color:#f6d891}footer{padding-top:18px;color:#b6cbe2;font-size:12px}
+@media(max-width:520px){form .fields{grid-template-columns:1fr}.panel{margin:14px 0}.days,.weekdays{gap:3px}.days span{font-size:12px;padding:7px 1px}}
+</style></head>
+<body><main>
+<p class="eyebrow">MIO ANNIVERSARY · MONTHLY ATTENDANCE</p>
+<h1>📅 みお皆勤賞 月別カレンダー管理</h1>
+<div class="warning"><strong>開発用の操作練習版です。</strong> この画面の変更はブラウザ内だけ。実際の管理者認証、参加者データ、10月の確認文字、スプレッドシート、GAS、本番サイトには接続していません。画面を閉じると変更は消えます。</div>
+<section class="panel" aria-labelledby="create-heading">
+<h2 id="create-heading">新しい月のカレンダーを仮作成</h2>
+<p class="explainer">管理者画面の操作を先に試すための機能です。新しい月は初期状態で非表示。管理者が明示的に表示へ切り替える想定です。</p>
+<form id="addMonth" autocomplete="off">
+<div class="fields">
+<div><label for="newMonth">年月</label><input type="month" id="newMonth" name="month" min="2026-10" max="2100-12" value="2026-11" required></div>
+<div><label for="newTitle">カレンダー名</label><input id="newTitle" name="title" maxlength="60" value="11月の皆勤賞" required></div>
+</div>
+<button type="submit">新しい月を仮追加</button>
+</form>
+<p id="status" role="status" aria-live="polite">2026年10月の既存カレンダーを保持した状態から開始しています。</p>
+</section>
+<section class="panel" aria-labelledby="manager-heading">
+<h2 id="manager-heading">管理者用・表示と非表示の切り替え（練習）</h2>
+<p class="explainer">非表示にしてもカレンダー自体は削除しません。10月の実データや回答履歴は一切変更されません。</p>
+<div id="monthList" class="months" aria-live="polite"></div>
+<p><button id="resetDemo" type="button" class="secondary">練習状態を初期化する</button></p>
+</section>
+<section class="panel" aria-labelledby="visitor-heading">
+<h2 id="visitor-heading">訪問者に見えるカレンダーのプレビュー</h2>
+<p class="explainer">ここで見える日付はレイアウト確認用。押しても確認文字の送信はできません。</p>
+<div id="visitorMonths" class="preview"></div>
+</section>
+<footer>本番の10月分の復旧は別途、既存Apps Scriptへの修正反映が必要です。<a href="/">本番のトップへ</a></footer>
+</main>
+<script type="module">
+import {initialMonthPreview,addMonthPreview,setMonthVisibilityPreview,getVisibleMonthsPreview} from './attendance-month-config-preview.mjs';
+let months=initialMonthPreview();
+const $=id=>document.getElementById(id);
+function label(month){const [y,m]=month.split('-');return y+'年'+Number(m)+'月'}
+function create(tag,cls,text){
+ const el=document.createElement(tag);
+ if(cls)el.className=cls;
+ if(text!==undefined)el.textContent=text;
+ return el;
+}
+function makeCalendar(month){
+ const section=create('section','calendar');
+ section.setAttribute('aria-label',label(month.month)+' の閲覧プレビュー');
+ section.appendChild(create('h3','',label(month.month)+'：'+month.title));
+ const weekdays=create('div','weekdays');
+ for(const day of ['月','火','水','木','金','土','日'])weekdays.appendChild(create('span','',day));
+ weekdays.setAttribute('aria-hidden','true');section.appendChild(weekdays);
+ const cells=create('div','days');
+ const [year,m]=month.month.split('-').map(Number);
+ const offset=(new Date(Date.UTC(year,m-1,1)).getUTCDay()+6)%7;
+ for(let n=0;n<offset;n++)cells.appendChild(create('span','pad',''));
+ for(let n=1;n<=month.dayCount;n++)cells.appendChild(create('span','',String(n)));
+ section.appendChild(cells);
+ section.appendChild(create('p','note','日付の表示のみ。確認文字の入力と実データ参照は未接続です。'));
+ return section;
+}
+function render(){
+ $('monthList').replaceChildren();
+ for(const item of months){
+  const card=create('article','month-card');
+  card.appendChild(create('span','pill'+(item.source==='legacy-october'?' legacy':''),item.source==='legacy-october'?'既存の10月カレンダー':'新規月（練習）'));
+  card.appendChild(create('h3','',label(item.month)));
+  card.appendChild(create('p','',item.title+' · '+item.dayCount+'日間'));
+  const footer=create('div','month-footer');
+  footer.appendChild(create('strong','',item.visible?'表示中':'非表示（記録は保持）'));
+  const toggle=create('button','secondary',item.visible?'非表示にする':'表示する');
+  toggle.type='button';toggle.setAttribute('aria-pressed',String(item.visible));
+  toggle.setAttribute('aria-label',label(item.month)+'を'+(item.visible?'非表示':'表示')+'にする');
+  toggle.addEventListener('click',()=>{
+   months=setMonthVisibilityPreview(months,{month:item.month,visible:!item.visible});
+   $('status').textContent=label(item.month)+'を'+(item.visible?'非表示':'表示')+'に切り替えました（練習のみ）。記録は削除していません。';
+   render();
+  });
+  footer.appendChild(toggle);card.appendChild(footer);$('monthList').appendChild(card);
+ }
+ $('visitorMonths').replaceChildren();
+ const visible=getVisibleMonthsPreview(months);
+ if(!visible.length)$('visitorMonths').appendChild(create('p','explainer','現在表示される月はありません。非表示にしても記録は保持されます。'));
+ for(const item of visible)$('visitorMonths').appendChild(makeCalendar(item));
+}
+$('addMonth').addEventListener('submit',event=>{
+ event.preventDefault();
+ try{
+  const month=$('newMonth').value,title=$('newTitle').value;
+  months=addMonthPreview(months,{month,title});
+  $('status').textContent=label(month)+'を非表示の状態で仮追加しました（このブラウザのメモリのみ）。';
+  render();
+ }catch(error){
+  $('status').textContent=error?.message==='ATTENDANCE_MONTH_PREVIEW_MONTH_ALREADY_EXISTS'?
+   'この年月のカレンダーはすでに存在します。既存の月の表示切り替えをご利用ください。':
+   '年月または名前を確認してください。変更は行っていません。';
+ }
+});
+$('resetDemo').addEventListener('click',()=>{
+ if(!window.confirm('練習中の月の追加と表示設定を初期化しますか？本番データには一切影響しません。'))return;
+ months=initialMonthPreview();
+ $('status').textContent='練習状態を初期化しました。2026年10月の既存カレンダーは残しています。';
+ render();
+});
+render();
+</script></body></html>
