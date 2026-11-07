@@ -88,13 +88,14 @@ const mergeableHead=(source)=>{
   const start=source.indexOf('\nfunction checkinAction_(');
   return start<0?null:source.slice(0,start+1);
 };
-// Validate the reviewed patch has NEVER changed any protected check-in/draw
-// function. Merge only pre-checkin functions and append the operator's exact
-// original protected tail. A generic full-file merge can rewrite that tail
-// even when the reviewed fix targets only registration.
-if(!protectedTail(oldSource) || protectedTail(oldSource)!==protectedTail(newSource) ||
+// A reviewed fix may separately contain an October campaign correction.
+// This registration-only merge NEVER imports such protected-tail changes;
+// it preserves the operator's original check-in/gacha tail byte-for-byte.
+// Reject missing or ambiguous boundaries, rather than falling back to a
+// dangerous full-file merge.
+if(!protectedTail(oldSource) || !protectedTail(newSource) || !protectedTail(currentSource) ||
    !mergeableHead(currentSource) || !mergeableHead(oldSource) || !mergeableHead(newSource)){
-  console.error('Protected check-in/gacha reference changed or boundary is missing. No output written.');
+  console.error('Protected check-in/gacha boundary is missing. No output written.');
   process.exit(3);
 }
 const temporary=mkdtempSync(join(tmpdir(),'mio-gas-merge-'));
