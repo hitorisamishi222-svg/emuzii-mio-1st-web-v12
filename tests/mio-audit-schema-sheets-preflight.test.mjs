@@ -75,16 +75,24 @@ test('renamed grant header, missing audit tab status, and wrong grid sizing all 
    sheetNames:[GRANT_TAB,AUDIT_TAB],auditHeaders:['wrong',...AUDIT_HEADERS.slice(1)]
  })).reason,'AUDIT_TAB_EXISTS_UNEXPECTED');
 });
-test('already prepared audit/J1 requires empty J2 onwards; header-only not a conflict',()=>{
+test('existing exact audit tab and J1 header remain ready; no new operation is suggested',()=>{
  const v=[['Web操作ID']];
  const result=auditLiveSheetRead(fixture({
   sheetNames:[GRANT_TAB,AUDIT_TAB],auditHeaders:[...AUDIT_HEADERS],
   displayedRead:{range,values:v},formulaRead:{range,values:v}
  }));
- // The adapter is for pre-migration blank J only, so an installed header
- // must be checked through the migration planner, never silently dropped.
- assert.equal(result.status,'STOP');
- assert.equal(result.reason,'J_COLUMN_VALUE_OR_FORMULA_OCCUPIED');
+ assert.equal(result.ok,true);
+ assert.equal(result.status,'ALREADY_READY');
+ assert.deepEqual(result.operations,[]);
+ assert.equal(result.writeAllowed,false);
+});
+test('J1 formula pretending to be a proper static label is rejected',()=>{
+ const result=auditLiveSheetRead(fixture({
+  displayedRead:{range,values:[['Web操作ID']]},
+  formulaRead:{range,values:[['=IF(TRUE,"Web操作ID","")']]}
+ }));
+ assert.equal(result.reason,'J_HEADER_VALUE_FORMULA_MISMATCH');
+ assert.deepEqual(result.operations,[]);
 });
 test('module contains no live API requests or write actions',()=>{
  const src=readFileSync(new URL('../tools/mio-audit-schema-sheets-preflight.mjs',import.meta.url),'utf8');
