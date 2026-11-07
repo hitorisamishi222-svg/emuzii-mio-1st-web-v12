@@ -99,12 +99,17 @@ export async function storeAndVerifyMuseumPrivateBlobStage({
  assertTokenStore(dedicatedToken,storeId);
  if(sdk!==undefined&&(!sdk||typeof sdk.put!=='function'||typeof sdk.get!=='function'))
   fail('SDK_INVALID');
- let evidence;
- try{evidence=await verifyTrustedScope()}catch{fail('TRUSTED_SCOPE_UNVERIFIED')}
- if(!evidence||!UUID.test(evidence.ownerId||'')||
-    evidence.dedicatedStoreId!==storeId||
-    !REQUIRED.every(key=>evidence[key]===true))
-  fail('TRUSTED_SCOPE_UNVERIFIED');
+ async function trustedScope(expectedOwner=null){
+  let evidence;
+  try{evidence=await verifyTrustedScope()}catch{fail('TRUSTED_SCOPE_UNVERIFIED')}
+  if(!evidence||!UUID.test(evidence.ownerId||'')||
+     evidence.dedicatedStoreId!==storeId||
+     !REQUIRED.every(key=>evidence[key]===true)||
+     (expectedOwner!==null&&evidence.ownerId.toLowerCase()!==expectedOwner))
+   fail('TRUSTED_SCOPE_UNVERIFIED');
+  return evidence;
+ }
+ const evidence=await trustedScope();
  // Never infer any of those approvals from browser input, a pathname, or the
  // presence of the old shared BLOB_READ_WRITE_TOKEN.
  let image;
@@ -117,12 +122,18 @@ export async function storeAndVerifyMuseumPrivateBlobStage({
  const owner=evidence.ownerId.toLowerCase();
  const pathname='museum-private/'+owner+'/'+operationId+'.webp';
  const client=sdk||{put:blobPut,get:blobGet};
+ // The pixel decoder runs asynchronously. A previously approved device,
+ // session or restore gate may have been revoked while it worked.
+ await trustedScope(owner);
  const prior=await retrieve(client,storeId,dedicatedToken,pathname);
  if(prior!==null){
   verifyBytes(prior,image);
   return Object.freeze({ok:true,privateOnly:true,replayed:true,
    bytes:image.bytes,width:image.width,height:image.height,sha256:image.sha256});
  }
+ // Missing-item check and upload are separate async operations: check that
+ // owner / store / release gates have NOT been revoked before the first PUT.
+ await trustedScope(owner);
  let writeUncertain=false;
  try{
   const uploaded=await client.put(pathname,Buffer.from(image.content),{
