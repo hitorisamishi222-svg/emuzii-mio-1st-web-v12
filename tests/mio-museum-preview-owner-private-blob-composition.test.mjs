@@ -78,9 +78,12 @@ function setup(db=fakeDB(),priv=fakePrivate(),extra={}){
   verifyDedicatedPrivateStore:extra.verifyDedicatedPrivateStore||validProof,
   pool:db.pool,sdk:priv.sdk};
 }
+// The composition takes (checked-out DB pool, server-only options), not a request body.
+const run=({pool,...options})=>save(pool,options);
+
 test('real pixel conversion + existing owner/approved device query + private Blob mock succeeds',async()=>{
  const db=fakeDB(),blob=fakePrivate();
- const result=await save({...setup(db,blob),payload:await image()});
+ const result=await run({...setup(db,blob),payload:await image()});
  assert.equal(result.ok,true);assert.equal(result.privateOnly,true);
  assert.equal(result.replayed,false);
  assert.match(result.sha256,/^[a-f0-9]{64}$/);
@@ -110,8 +113,8 @@ test('real pixel conversion + existing owner/approved device query + private Blo
 });
 test('replaying same operation ID is read-only; SQL owner session verified again',async()=>{
  const db=fakeDB(),blob=fakePrivate(),payload=await image(),config=setup(db,blob);
- const first=await save({...config,payload});
- const replay=await save({...config,payload});
+ const first=await run({...config,payload});
+ const replay=await run({...config,payload});
  assert.equal(first.replayed,false);assert.equal(replay.replayed,true);
  assert.equal(blob.logs.puts.length,1);
  assert.equal(blob.logs.gets.length,3);
@@ -127,7 +130,7 @@ test('Preview owner session is required; production and third-party Origin canno
   r=>{r.headers['sec-fetch-site']='cross-site'}
  ]){
   const db=fakeDB(),blob=fakePrivate(),request=req();change(request);
-  await assert.rejects(save({...setup(db,blob,{request}),payload:await image()}),
+  await assert.rejects(run({...setup(db,blob,{request}),payload:await image()}),
    /OWNER_SESSION_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(blob.logs.gets.length,0);
@@ -143,7 +146,7 @@ test('wrong branch, SHA and project fail even if cookie looks valid',async()=>{
   x=>{x.expected.hostname='emuzii-mio-1st-web-v12-evil.vercel.app'}
  ]){
   const db=fakeDB(),blob=fakePrivate();
-  await assert.rejects(save({...setup(db,blob,{getTrustedDeployment:()=>{const x=deployment();modifier(x);return x;}}),
+  await assert.rejects(run({...setup(db,blob,{getTrustedDeployment:()=>{const x=deployment();modifier(x);return x;}}),
    payload:await image()}),/OWNER_SESSION_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(db.logs.query.length,0);
@@ -152,7 +155,7 @@ test('wrong branch, SHA and project fail even if cookie looks valid',async()=>{
 test('non-owner and revoked device sessions block both read and put',async()=>{
  for(const db of [fakeDB({role:'admin'}),fakeDB({revokedAt:0}),fakeDB({unexpectedRows:true})]){
   const blob=fakePrivate();
-  await assert.rejects(save({...setup(db,blob),payload:await image()}),
+  await assert.rejects(run({...setup(db,blob),payload:await image()}),
    /OWNER_SESSION_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(blob.logs.gets.length,0);
@@ -161,7 +164,7 @@ test('non-owner and revoked device sessions block both read and put',async()=>{
 test('owner/device revoked while image decoding or before first PUT: no write',async()=>{
  for(const revokedAt of [1,2]){
   const db=fakeDB({revokedAt}),blob=fakePrivate();
-  await assert.rejects(save({...setup(db,blob),payload:await image()}),
+  await assert.rejects(run({...setup(db,blob),payload:await image()}),
    /TRUSTED_SCOPE_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(blob.logs.gets.length,revokedAt===1?0:1);
@@ -169,7 +172,7 @@ test('owner/device revoked while image decoding or before first PUT: no write',a
 });
 test('isolated DB backup/schema not verified: no authentication query or Blob call',async()=>{
  const db=fakeDB({failBinding:true}),blob=fakePrivate();
- await assert.rejects(save({...setup(db,blob),payload:await image()}),
+ await assert.rejects(run({...setup(db,blob),payload:await image()}),
   /MUSEUM_CLIENT_BINDING_NOT_VERIFIED/);
  assert.equal(db.logs.query.length,0);
  assert.equal(blob.logs.puts.length,0);
@@ -180,7 +183,7 @@ test('private provider proof missing one protection: no Blob read/write',async()
   'restorationDrillVerified','ownerApproved'];
  for(const key of keys){
   const db=fakeDB(),blob=fakePrivate();
-  await assert.rejects(save({...setup(db,blob,{verifyDedicatedPrivateStore:()=>({...validProof(),[key]:false})}),
+  await assert.rejects(run({...setup(db,blob,{verifyDedicatedPrivateStore:()=>({...validProof(),[key]:false})}),
    payload:await image()}),/PRIVATE_STORE_UNVERIFIED/);
   assert.equal(db.logs.query.length,1);
   assert.equal(blob.logs.puts.length+blob.logs.gets.length,0);
@@ -188,7 +191,7 @@ test('private provider proof missing one protection: no Blob read/write',async()
 });
 test('token-embedded store ID must agree even when owner and provider are apparently verified',async()=>{
  const db=fakeDB(),blob=fakePrivate();
- await assert.rejects(save({...setup(db,blob,{dedicatedToken:'vercel_blob_rw_otherstore001_'+'T'.repeat(64)}),
+ await assert.rejects(run({...setup(db,blob,{dedicatedToken:'vercel_blob_rw_otherstore001_'+'T'.repeat(64)}),
   payload:await image()}),/DEDICATED_TOKEN_STORE_MISMATCH/);
  assert.equal(db.logs.connect,0);
  assert.equal(blob.logs.puts.length+blob.logs.gets.length,0);
@@ -197,7 +200,7 @@ test('server-only callback dependencies required, no arbitrary body-supplied app
  const db=fakeDB(),blob=fakePrivate(),payload=await image();
  for(const omit of ['verifyBinding','getTrustedDeployment','verifyDedicatedPrivateStore']){
   const config=setup(db,blob);config[omit]=undefined;
-  await assert.rejects(save({...config,payload}),/SERVER_DEPENDENCIES_REQUIRED/);
+  await assert.rejects(run({...config,payload}),/SERVER_DEPENDENCIES_REQUIRED/);
  }
  assert.equal(db.logs.connect,0);
  assert.equal(blob.logs.puts.length,0);
