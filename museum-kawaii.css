@@ -285,3 +285,44 @@ body.museum .museum-archive .archive-room-guide{color:inherit}
  .museum-button,.museum-foyer-link,.museum-card,.museum-showcase-item{
   transition:none!important;transform:none!important}
 }
+
+/* Curator operational surfaces — cheerful but unmistakable states. */
+.museum-curator .curator-review,.museum-curator .curator-status,.museum-curator .curator-entry,
+.museum-curator .curator-public-card,.museum-curator .curator-restore .curator-public-card{
+ background:#fff9fd;border:1px solid #ebc8dc;color:#684360;border-radius:18px}
+.museum-curator .curator-entry.is-selected{border:2px solid #b94781;background:#fff2f9}
+.museum-curator .curator-entry p,.museum-curator .curator-public-card p,
+.museum-curator .curator-switch-guard p,.museum-curator #draftRecoveryStatus{color:#765b70}
+.museum-curator .curator-thumb{background:#f7e5f3;border:1px solid #e7bcd4}
+.museum-curator .curator-review input[type=checkbox]{accent-color:#b33e79}
+.museum-curator .curator-public-card strong,.museum-curator .curator-entry strong{color:#743e61}
+.museum-curator button{background:#b5417b;border:1px solid #a53871;color:#fff;box-shadow:0 6px 17px #b66c962c}
+.museum-curator button.curator-secondary{background:#fff8fd;border:1px solid #d89ebc;color:#8a3d67}
+.museum-curator .curator-local-image-status{border-radius:16px}
+.museum-curator .curator-draft-recovery{background:#fff7fc}
+.museum-curator .curator-switch-guard{background:#fff6e9;border-color:#eec59e;color:#76533f}
+.museum-curator .curator-switch-guard p{color:#76533f}
+.museum-curator .curator-empty-room{border-style:dashed}
+.museum-curator .curator-visitor-controls{gap:13px}
+.museum-curator .curator-viewer-count{color:#8d426a}
+/* The optional device diagnostic is a helper, not a second design universe. */
+body.museum-device{color:#61415c}
+.museum-device main{max-width:780px;margin:0 auto;padding:20px 16px 70px}
+.museum-device a{color:#a04475}
+.museum-device h1,.museum-device h2{color:#843e68}
+.museum-device .panel,.museum-device .status{background:#fff9fd;
+ border:1px solid #e8bfd5;border-radius:20px;color:#714c67;
+ box-shadow:0 8px 24px #a66a8e14}
+.museum-device .note{color:#715e73}
+.museum-device button{background:#b4427b;color:#fff;border:1px solid #a63870;
+ border-radius:999px}
+.museum-device button.secondary{background:#fff7fc;color:#8c416b;border-color:#ddaec6}
+.museum-device input[type=file]{background:#fff;color:#5b3855;border-color:#d7a4c1}
+.museum-device .ok{color:#276e54}
+.museum-device .warn{color:#8d501a}
+.museum-device dd,.museum-device dt{border-bottom-color:#edc9dc}
+@media(prefers-reduced-motion:reduce){
+ body.museum *,body.museum *::before,body.museum *::after{
+  scroll-behavior:auto!important;animation-duration:0s!important;
+  transition-duration:0s!important}
+}
