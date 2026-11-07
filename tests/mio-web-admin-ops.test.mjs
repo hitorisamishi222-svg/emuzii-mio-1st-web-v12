@@ -10,7 +10,8 @@ function sandbox(){
   'emuzii_Web登録':[['Web参加ID'],['MIO-W-1234567890abcdef12345678','token','新しい人','',new Date(),'承認待ち','未確認','MIO-0001','','','','確認待ち',...Array(9).fill('')]],
   'emuzii_参加者':[['参加者ID'],['MIO-0001','新しい人']],
   'emuzii_ガチャ':[['参加者ID'],['MIO-0001','新しい人',0,0,0,2,0,2,0,0,0,'','OK','OK',2,0,'解放']],
-  'emuzii_ガチャ付与履歴':[['日時']],
+  'emuzii_ガチャ付与履歴':[['日時','','','','','','','','','Web操作ID']],
+  'emuzii_Web管理操作履歴':[['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名']],
   'emuzii_当選履歴':[['抽選ID']],
   'emuzii_新規簡易登録':[['登録日時'],[reviewIdentity.expectedCreatedAt,'初訪問者',reviewIdentity.expectedBrowserId,'登録','未確認','']]
  };
