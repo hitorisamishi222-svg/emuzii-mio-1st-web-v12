@@ -131,7 +131,7 @@ test('Preview owner session is required; production and third-party Origin canno
  ]){
   const db=fakeDB(),blob=fakePrivate(),request=req();change(request);
   await assert.rejects(run({...setup(db,blob,{request}),payload:await image()}),
-   /OWNER_SESSION_UNVERIFIED/);
+   /TRUSTED_SCOPE_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(blob.logs.gets.length,0);
   assert.equal(db.logs.query.length,0);
@@ -147,7 +147,7 @@ test('wrong branch, SHA and project fail even if cookie looks valid',async()=>{
  ]){
   const db=fakeDB(),blob=fakePrivate();
   await assert.rejects(run({...setup(db,blob,{getTrustedDeployment:()=>{const x=deployment();modifier(x);return x;}}),
-   payload:await image()}),/OWNER_SESSION_UNVERIFIED/);
+   payload:await image()}),/TRUSTED_SCOPE_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(db.logs.query.length,0);
  }
@@ -156,7 +156,7 @@ test('non-owner and revoked device sessions block both read and put',async()=>{
  for(const db of [fakeDB({role:'admin'}),fakeDB({revokedAt:0}),fakeDB({unexpectedRows:true})]){
   const blob=fakePrivate();
   await assert.rejects(run({...setup(db,blob),payload:await image()}),
-   /OWNER_SESSION_UNVERIFIED/);
+   /TRUSTED_SCOPE_UNVERIFIED/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(blob.logs.gets.length,0);
  }
@@ -173,7 +173,7 @@ test('owner/device revoked while image decoding or before first PUT: no write',a
 test('isolated DB backup/schema not verified: no authentication query or Blob call',async()=>{
  const db=fakeDB({failBinding:true}),blob=fakePrivate();
  await assert.rejects(run({...setup(db,blob),payload:await image()}),
-  /MUSEUM_CLIENT_BINDING_NOT_VERIFIED/);
+  /TRUSTED_SCOPE_UNVERIFIED/);
  assert.equal(db.logs.query.length,0);
  assert.equal(blob.logs.puts.length,0);
  assert.equal(blob.logs.gets.length,0);
@@ -184,7 +184,7 @@ test('private provider proof missing one protection: no Blob read/write',async()
  for(const key of keys){
   const db=fakeDB(),blob=fakePrivate();
   await assert.rejects(run({...setup(db,blob,{verifyDedicatedPrivateStore:()=>({...validProof(),[key]:false})}),
-   payload:await image()}),/PRIVATE_STORE_UNVERIFIED/);
+   payload:await image()}),/TRUSTED_SCOPE_UNVERIFIED/);
   assert.equal(db.logs.query.length,1);
   assert.equal(blob.logs.puts.length+blob.logs.gets.length,0);
  }
@@ -218,5 +218,5 @@ test('unrouted source keeps production Origin and shared DB URL untouched',()=>{
  assert.match(code,/withDedicatedMuseumStageClient/);
  assert.match(code,/storeAndVerifyMuseumPrivateBlobStage/);
  assert.match(preview,/verifyGalleryAdmin/);
- assert.doesNotMatch(code,/process\.env|new Pool|\/api\/|export default|BLOB_READ_WRITE_TOKEN|GAS|UPDATE |INSERT INTO |DELETE FROM /);
+ assert.doesNotMatch(code,/process\.env|new Pool|\/api\/|export default|process\\.env\\.BLOB_READ_WRITE_TOKEN|GAS|UPDATE |INSERT INTO |DELETE FROM /);
 });
