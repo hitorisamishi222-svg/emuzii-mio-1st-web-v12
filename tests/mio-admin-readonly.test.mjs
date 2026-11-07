@@ -11,7 +11,8 @@ test('admin connection read is allowed before write release; mutations remain lo
  assert.match(api,/authorizedCode\(d\.code/);
  assert.match(api,/sessionOK\(req\)/);
  assert.match(api,/if\(d\.action!=='read'&&!writeEnabled\)[\s\S]*?return reply\(res,503/);
- assert.match(api,/json\(\{ok:true,writeEnabled,writeMode,pending/);
+ assert.match(api,/writeEnabled:writeEnabled&&result\.schemaReady===true/);
+ assert.match(api,/schemaReady:result\.schemaReady===true/);
 });
 test('all Web administrative mutation buttons stay disabled until release confirmed',()=>{
  const ui=get('gacha-admin-ops.js');
