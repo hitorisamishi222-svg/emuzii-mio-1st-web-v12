@@ -16,6 +16,8 @@ on:
       - tests/mio-gas-connection-target-audit.test.mjs
       - tools/mio-gas-deployed-version-audit.mjs
       - tests/mio-gas-deployed-version-audit.test.mjs
+      - tools/mio-audit-schema-migration-plan.mjs
+      - tests/mio-audit-schema-migration-plan.test.mjs
 permissions:
   contents: read
 jobs:
@@ -40,5 +42,7 @@ jobs:
           node --check tools/mio-gas-connection-target-audit.mjs
           node --check tests/mio-gas-deployed-version-audit.test.mjs
           node --check tools/mio-gas-deployed-version-audit.mjs
+          node --check tools/mio-audit-schema-migration-plan.mjs
+          node --check tests/mio-audit-schema-migration-plan.test.mjs
       - name: Offline-only read and approved baseline preservation
-        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs
+        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs tests/mio-audit-schema-migration-plan.test.mjs
