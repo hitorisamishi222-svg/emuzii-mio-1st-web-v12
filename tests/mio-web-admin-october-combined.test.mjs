@@ -29,7 +29,7 @@ test('all original live Code.gs bytes are preserved except one signed management
  assert.match(full,/ymd\.slice\(0,7\)==='2026-10'&&day>todayDay/);
  assert.doesNotMatch(full,/if\(ymd<'2026-10-01'\|\|ymd>'2026-10-31'\)/);
 });
-test('20 management functions appended exactly once, module matches reviewed previous source',()=>{
+test('21 management functions appended exactly once, module matches reviewed previous source',()=>{
  const segment=full.slice(full.indexOf(legacyMarker)+legacyMarker.length);
  assert.equal(segment.trim(),module.trim());
  assert.ok(module.includes('function mioAdminOpsMember_('));
@@ -37,7 +37,7 @@ test('20 management functions appended exactly once, module matches reviewed pre
  assert.match(module,/expectedBrowserId/);
  assert.match(module,/expectedName/);
  const functions=[...module.matchAll(/\bfunction\s+(mioAdminOps\w*_?)\s*\(/g)].map(x=>x[1]);
- assert.equal(functions.length,20);
+ assert.equal(functions.length,21);
  for(const name of functions){
   assert.equal((full.match(new RegExp('\\bfunction\\s+'+name+'\\s*\\(','g'))||[]).length,1,name);
  }
