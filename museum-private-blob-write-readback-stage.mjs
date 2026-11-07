@@ -10,13 +10,16 @@ import {decodeAndReencodeMuseumImageStage} from './museum-media-decode-reencode-
 
 const OP=/^[a-f0-9]{32}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const STORE=/^[a-z0-9-]{8,80}$/;
+// Vercel SDK accepts both prefixed store_<id> and bare <id>.
+// CDN host ALWAYS uses the bare form. Never alter case or drop arbitrary text.
+const STORE=/^(?:store_)?[a-z0-9-]{8,80}$/;
+const bareStoreId=id=>id.startsWith('store_')?id.slice(6):id;
 const REQUIRED=['ownerAuthenticated','approvedDeviceAuthenticated','previewBindingVerified',
  'dedicatedPrivateStoreVerified','isolatedDatabaseVerified',
  'backupRestorationVerified','ownerApproved'];
 const LIMIT=700_000;
 const fail=code=>{throw Error('MUSEUM_PRIVATE_BLOB_STAGE_'+code)};
-const expectedUrl=(storeId,pathname)=>'https://'+storeId+'.private.blob.vercel-storage.com/'+pathname;
+const expectedUrl=(storeId,pathname)=>'https://'+bareStoreId(storeId)+'.private.blob.vercel-storage.com/'+pathname;
 const sha=content=>createHash('sha256').update(content).digest('hex');
 function validateBlobMetadata(blob,storeId,pathname){
  if(!blob||blob.pathname!==pathname||
