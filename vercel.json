@@ -402,6 +402,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "museum-kawaii.css",
+      "use": "@vercel/static"
+    },
+    {
       "src": "museum-archive.html",
       "use": "@vercel/static"
     },
@@ -620,6 +624,13 @@
     {
       "src": "/museum.css",
       "dest": "/museum.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-kawaii.css",
+      "dest": "/museum-kawaii.css",
       "headers": {
         "X-Content-Type-Options": "nosniff"
       }
