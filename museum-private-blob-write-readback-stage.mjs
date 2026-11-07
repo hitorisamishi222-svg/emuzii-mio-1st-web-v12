@@ -120,8 +120,12 @@ export async function storeAndVerifyMuseumPrivateBlobStage({
   if(!uploaded||uploaded.pathname!==pathname||
      uploaded.url!==expectedUrl(storeId,pathname))
    fail('PRIVATE_STORE_METADATA_MISMATCH');
- }catch{
-  // Write may have committed despite lost ACK; never issue another PUT now.
+ }catch(error){
+  // An acknowledged result from the wrong or a public store must never be
+  // repaired into success by reading an unrelated private object.
+  if(error?.message==='MUSEUM_PRIVATE_BLOB_STAGE_PRIVATE_STORE_METADATA_MISMATCH')
+   throw error;
+  // A failed write may have committed despite lost ACK; do not repeat PUT.
   writeUncertain=true;
  }
  let readback;
