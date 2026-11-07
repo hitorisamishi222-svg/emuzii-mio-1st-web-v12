@@ -25,7 +25,7 @@ const media={
  cover:'/assets/gallery-emuzii-mio-cover.svg'
 };
 const museumPages=['museum.html','mio-profile.html','museum-archive.html','museum-approved-gallery.html','museum-device-check.html'];
-const museumFiles=[...museumPages,'museum.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js','museum-curator-preview.html','museum-curator-preview.css','museum-curator-preview.js'];
+const museumFiles=[...museumPages,'museum.css','museum-kawaii.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js','museum-curator-preview.html','museum-curator-preview.css','museum-curator-preview.js'];
 const rehearsalFiles=['mio-admin-rehearsal.html','mio-admin-rehearsal.js'];
 const gasLocalFiles=['mio-gas-local-check.html','mio-gas-local-check.js'];
 const stagedAssets=[...museumFiles,...rehearsalFiles,...gasLocalFiles];
