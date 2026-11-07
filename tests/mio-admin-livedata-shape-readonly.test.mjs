@@ -62,7 +62,7 @@ function createRuntime(sheetRows){
  }
  const mock={
   Date,Math,String,Number,JSON,
-  SpreadsheetApp:{openById(){return {getSheetByName(name){if(!sheets[name])throw Error('unknown sheet '+name);return sheets[name]},insertSheet(){writes.push({type:'insertSheet'});throw Error('read-only violation')}}},flush(){writes.push({type:'flush'});throw Error('read-only violation')}},
+  SpreadsheetApp:{openById(){return {getSheetByName(name){if(name==='emuzii_Web管理操作履歴')return null;if(!sheets[name])throw Error('unknown sheet '+name);return sheets[name]},insertSheet(){writes.push({type:'insertSheet'});throw Error('read-only violation')}}},flush(){writes.push({type:'flush'});throw Error('read-only violation')}},
   ContentService:{MimeType:{JSON:'JSON'},createTextOutput(text){return {setMimeType(){return {text}}}}},
   LockService:{getScriptLock(){return {tryLock(){return true},releaseLock(){}}}},
   PropertiesService:{getScriptProperties(){return {getProperty(key){return key==='BRIDGE_SECRET'?'synthetic-test-only':''}}}}
