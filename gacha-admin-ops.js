@@ -193,7 +193,7 @@ function updateQuick(){
   '名 / ガチャ管理行要確認 '+unchecked.length+'名\n'+
   '端末照合候補：単独 '+linkReview.single+'名 / なし '+linkReview.missing+'名 / 複数 '+linkReview.multiple+'名\n'+gate+
   ' / 監査台帳 '+(state.schemaReady===true?'準備済み':'未準備')+' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+' / 現場モード '+(state.writeMode==='onsite'?'個別承認':state.writeMode==='standard'?'既存運営モード':'停止中')+selectedLine+
-  '\n※端末照合候補は登録台帳の予備チェックです。残回数・ブラウザ一致だけでは本人確認や抽選許可になりません。';
+  '\n※残回数あり＝抽選許可ではありません。端末照合候補は台帳の予備チェックです。残回数・ブラウザ一致だけでは本人確認や抽選許可になりません。';
  remaining.textContent='既存ガチャ残回数あり '+eligible.length+'名。検索・絞り込みで対象を選択できます。';
 }
 for(const [id,target] of [['opsQuickIntake','opsIntakeSection'],['opsQuickApproval','opsPendingSection'],
