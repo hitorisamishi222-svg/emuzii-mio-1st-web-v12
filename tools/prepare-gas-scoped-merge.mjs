@@ -100,12 +100,17 @@ try{
   }else{
     const merged=merge.stdout;
     const oldTail=protectedTail(currentSource);
-    if(!oldTail||protectedTail(merged)!==oldTail ||
-       sheetIds.some(k=>getConfig(merged,k)!==getConfig(currentSource,k)) ||
-       !merged.includes('if(!validPrevious)return json_({ok:false') ||
-       !merged.includes('pendingReview:true,needsIdentityProof:true,autoApproved:false') ||
-       !merged.includes('var existingLoginId=loginIdFormat_(web.getRange(foundRow,LOGIN_ID_COL).getDisplayValue());')){
-      console.error('Protected GAS behavior changed or required enrollment guard is missing. No output written.');
+    const failedGates=[
+      ...(!oldTail?['original-protected-tail-missing']:[]),
+      ...(oldTail&&protectedTail(merged)!==oldTail?['protected-tail-changed']:[]),
+      ...(sheetIds.some(k=>getConfig(merged,k)!==getConfig(currentSource,k))?['sheet-settings-changed']:[]),
+      ...(!merged.includes('if(!validPrevious)return json_({ok:false')?['retry-row-integrity-guard-missing']:[]),
+      ...(!merged.includes('pendingReview:true,needsIdentityProof:true,autoApproved:false')?['unverified-name-auto-approval-guard-missing']:[]),
+      ...(!merged.includes('var existingLoginId=loginIdFormat_(web.getRange(foundRow,LOGIN_ID_COL).getDisplayValue());')?['existing-login-read-only-guard-missing']:[])
+    ];
+    if(failedGates.length){
+      // Print only a fixed gate name; never dump source, IDs, tokens or file content.
+      console.error('Protected GAS behavior changed or required enrollment guard is missing. No output written. Gate(s): '+failedGates.join(', '));
       process.exitCode=5;
     }else{
       writeFileSync(output,merged,'utf8');
