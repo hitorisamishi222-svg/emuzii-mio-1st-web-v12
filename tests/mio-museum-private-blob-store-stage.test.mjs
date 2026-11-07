@@ -53,7 +53,7 @@ function fakeStore(options={}){
    if(files.has(pathname))throw Error('already exists');
    files.set(pathname,Buffer.from(buf));
    if(ackLost)throw Error('connection dropped after upload');
-   return {pathname,url:url(pathname,options.publicWrite?'ignored':'private'==='private'?STORE:STORE,options.publicWrite?'public':'private')};
+   return {pathname,url:url(pathname,options.publicWrite?'anotherpublicstore001':STORE,options.publicWrite?'public':'private')};
   }
  };
  return {sdk,files,calls,setDenied:x=>{denied=x;},setAckLost:x=>{ackLost=x;},
@@ -148,7 +148,6 @@ test('wrong private store, public URL, MIME mismatch and untrusted pathname all 
   {invalidSize:true}
  ]){
   const s=fakeStore(options);
-  await doSave(s);
   await assert.rejects(doSave(s),/PRIVATE_STORE_METADATA_MISMATCH/);
   assert.equal(s.calls.puts.length,1);
  }
