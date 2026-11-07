@@ -141,7 +141,7 @@ async function refresh({automatic=false}={}){
   showGuide(false);
   updateBell(Number(state.totalPending)||0);
   if(editing)el('opsCount').textContent='要確認 '+state.totalPending+' 件';else render();
-  if(!automatic)notice(pending?'未確定の操作があります。再確認ボタンから同じIDで照合してください。':state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
+  if(!automatic)notice(pending?'未確定の操作があります。再確認ボタンから同じIDで照合してください。':state.schemaReady!==true?'管理台帳を読み込みました。監査タブまたはWeb操作ID列が未準備のため、承認・回数付与は停止しています。':state.writeEnabled?'最新の受付情報を読み込みました。':'受付情報の接続を確認しました。承認・回数付与はまだ停止中です。');
  }catch(e){
   state=null;
   gasCompatibilityBlocked=e.code==='GAS_UPDATE_REQUIRED';
@@ -178,7 +178,7 @@ function updateQuick(){
   '（残り '+(selected.gacha?.remaining??'要確認')+'回）':'\n参加者未選択';
  summary.textContent='登録承認待ち '+(Number(state.totalPending)||0)+'件 / 既存ガチャ残回数あり '+eligible.length+
   '名 / ガチャ管理行要確認 '+unchecked.length+'名\n'+gate+
-  ' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+' / 現場モード '+(state.writeMode==='onsite'?'個別承認':state.writeMode==='standard'?'既存運営モード':'停止中')+selectedLine+
+  ' / 監査台帳 '+(state.schemaReady===true?'準備済み':'未準備')+' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+' / 現場モード '+(state.writeMode==='onsite'?'個別承認':state.writeMode==='standard'?'既存運営モード':'停止中')+selectedLine+
   '\n※残回数あり＝抽選許可ではありません。本人の登録端末・メンシプ資格を別途確認。';
  remaining.textContent='既存ガチャ残回数あり '+eligible.length+'名。検索・絞り込みで対象を選択できます。';
 }
