@@ -24,6 +24,7 @@ const cwd=process.cwd(),allowed=new Map([
  ['/mio-gas-local-check.html',['mio-gas-local-check.html','text/html']],
  ['/mio-gas-local-check.js',['mio-gas-local-check.js','text/javascript']],
  ['/museum.css',['museum.css','text/css']],
+ ['/museum-kawaii.css',['museum-kawaii.css','text/css']],
  ['/museum-archive.css',['museum-archive.css','text/css']],
  ['/gallery-items.js',['gallery-items.js','text/javascript']],
  ['/assets/gallery-emuzii-mio-cover.svg',['assets/gallery-emuzii-mio-cover.svg','image/svg+xml']]
@@ -170,6 +171,14 @@ try{
  // Do not visit external video links or load live APIs.
  for(const width of [320,375,390,430]){
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:3,mobile:true});
+  // New shared theme must load in a real mobile browser without horizontal overflow.
+  // Only offline fixture resources are served; no live data writes.
+  await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
+  await poll(()=>evaluate("document.readyState==='complete'&&!!document.querySelector('.museum-approved-card')"));
+  const theme=await evaluate("(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,background:getComputedStyle(document.body).backgroundImage,card:getComputedStyle(document.querySelector('.museum-approved-card')).backgroundImage,loaded:[...document.styleSheets].some(x=>x.href?.endsWith('/museum-kawaii.css'))}))()");
+  assert.ok(theme.loaded,'kawaii CSS not loaded '+JSON.stringify(theme));
+  assert.ok(theme.scroll<=theme.width+2,'kawaii gallery overflow '+JSON.stringify(theme));
+  assert.ok(theme.background.includes('gradient')&&theme.card.includes('gradient'),'kawaii colors missing');
   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
   const gallery=await evaluate(`(()=>({
