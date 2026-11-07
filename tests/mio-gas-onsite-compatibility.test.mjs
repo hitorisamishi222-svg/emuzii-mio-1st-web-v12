@@ -20,8 +20,8 @@ test('standalone admin module is an exact copy, NEVER append to integrated candi
   const fullNames=new Set(defs(full));
   const partNames=defs(moduleOnly);
   const overlap=partNames.filter(x=>fullNames.has(x));
-  assert.equal(partNames.length,20,'audit function inventory before GAS changes');
-  assert.equal(overlap.length,20,'all 20 functions already included in integrated candidate');
+  assert.equal(partNames.length,21,'audit function inventory before GAS changes');
+  assert.equal(overlap.length,21,'all 21 functions already included in integrated candidate');
   const first='function mioAdminOps_(ss,d){';
   assert.equal(full.slice(full.indexOf(first)).trimEnd(),
     moduleOnly.slice(moduleOnly.indexOf(first)).trimEnd(),
