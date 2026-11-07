@@ -7,7 +7,7 @@ import {storeAndVerifyMuseumPrivateBlobStage as store} from '../museum-private-b
 const path=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const OWNER='11111111-2222-4333-8444-555555555555';
 const STORE='stagemuseumprivate001';
-const TOKEN='T'.repeat(64);
+const TOKEN='vercel_blob_rw_'+STORE+'_'+('S'.repeat(64));
 const OP='0123456789abcdef0123456789abcdef';
 const OP2='abcdef0123456789abcdef0123456789';
 const p=op=>'museum-private/'+OWNER+'/'+op+'.webp';
@@ -115,6 +115,40 @@ test('real SDK accepts store_<id> but CDN URL must use bare id and never a diffe
  await assert.rejects(doSave(wrong,{storeId:prefixed,verifyTrustedScope:evidence}),
   /PRIVATE_STORE_METADATA_MISMATCH/);
  assert.equal(wrong.calls.puts.length,1);
+});
+
+test('RW token has higher precedence than storeId: wrong token must fail before first SDK call',async()=>{
+ const payload=await source();
+ const good=fakeStore();
+ const badTokens=[
+  'vercel_blob_rw_othersafestore123_'+'S'.repeat(64),
+  'vercel_blob_rw_'+STORE.toUpperCase()+'_'+'S'.repeat(64),
+  'vercel_blob_rw_'+STORE+'_bad',
+  'other_blob_rw_'+STORE+'_'+'S'.repeat(64),
+  'vercel_blob_rw_'+STORE+'_'+'S'.repeat(16)+'\n'
+ ];
+ for(const dedicatedToken of badTokens){
+  await assert.rejects(store({
+   payload,operationId:OP,verifyTrustedScope:()=>permission(),
+   storeId:STORE,dedicatedToken,sdk:good.sdk
+  }),/DEDICATED_TOKEN_STORE_MISMATCH/);
+ }
+ assert.equal(good.calls.gets.length,0);
+ assert.equal(good.calls.puts.length,0);
+ assert.equal(good.files.size,0);
+});
+test('a prefixed storeId still requires the exact token-bound bare store identity',async()=>{
+ const x=fakeStore(),storeId='store_'+STORE;
+ const scope=()=>({...permission(),dedicatedStoreId:storeId});
+ await assert.rejects(store({payload:await source(),operationId:OP,
+  verifyTrustedScope:scope,storeId,
+  dedicatedToken:'vercel_blob_rw_differentstore12_'+'S'.repeat(64),
+  sdk:x.sdk}),/DEDICATED_TOKEN_STORE_MISMATCH/);
+ assert.equal(x.calls.gets.length+x.calls.puts.length,0);
+ const done=await store({payload:await source(),operationId:OP,
+  verifyTrustedScope:scope,storeId,dedicatedToken:TOKEN,sdk:x.sdk});
+ assert.equal(done.ok,true);
+ assert.equal(x.calls.puts.length,1);
 });
 
 test('same operation id never overwrites: identical retry is a read-only replay',async()=>{
