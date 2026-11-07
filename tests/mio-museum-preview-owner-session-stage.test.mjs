@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {verifyMuseumPreviewOwnerSessionStage as verify} from '../museum-preview-owner-session-stage.mjs';
+import {verifyGalleryAdmin} from '../gallery-auth-shared.js';
 
 const HOST='emuzii-mio-1st-web-v12-4yagt5o6p-gtgz8867jh-3139.vercel.app';
 const SHA='a'.repeat(40),PROJECT='prj_aBc123ZZ';
@@ -27,6 +28,11 @@ const client=(rows=[{user_id:USER,role:'owner',device_id:DEVICE}],throws=false)=
   return {rowCount:rows.length,rows};
  }});
 
+test('existing gallery auth alone returns owner role and approved device without Preview origin gate',async()=>{
+ const db=client(),found=await verifyGalleryAdmin(db,request());
+ assert.deepEqual(found,{user_id:USER,role:'owner',device_id:DEVICE});
+ assert.equal(db.calls.length,1);
+});
 test('same-origin exact Preview deployment can authenticate approved owner+device via existing session query',async()=>{
  const db=client(),res=await verify(db,request(),metadata());
  assert.equal(db.calls.length,1,'approved preview owner should reach exactly one legacy session query');
