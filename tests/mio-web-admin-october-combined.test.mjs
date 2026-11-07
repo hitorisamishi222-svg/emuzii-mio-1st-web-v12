@@ -70,7 +70,7 @@ test('read-only management call can fetch empty sheet snapshots without writing'
  const names=['emuzii_Web登録','emuzii_参加者','emuzii_ガチャ','emuzii_新規簡易登録','emuzii_ガチャ付与履歴'];
  const reads=[],writes=[];
  const sheet={getLastRow(){return 1;},getRange(){reads.push('range');throw Error('unexpected range');}};
- const ss={getSheetByName(name){reads.push(name);if(!names.includes(name))throw Error('unexpected sheet');return sheet},
+ const ss={getSheetByName(name){reads.push(name);if(name==='emuzii_Web管理操作履歴')return null;if(!names.includes(name))throw Error('unexpected sheet');return sheet},
   insertSheet(){writes.push('insertSheet');throw Error('cannot create sheet in read test')}};
  const sandbox={Date,Number,String,Math,SpreadsheetApp:{openById(){return ss},flush(){writes.push('flush')}},
   ContentService:{MimeType:{JSON:'JSON'},createTextOutput(value){return {setMimeType(){return {text:value}}}}},
