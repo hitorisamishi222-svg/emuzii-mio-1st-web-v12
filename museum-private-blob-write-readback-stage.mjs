@@ -12,8 +12,17 @@ const OP=/^[a-f0-9]{32}$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Vercel SDK accepts both prefixed store_<id> and bare <id>.
 // CDN host ALWAYS uses the bare form. Never alter case or drop arbitrary text.
-const STORE=/^(?:store_)?[a-z0-9-]{8,80}$/;
+const STORE=/^(?:store_)?[A-Za-z0-9-]{8,80}$/;
 const bareStoreId=id=>id.startsWith('store_')?id.slice(6):id;
+const RW_TOKEN=/^vercel_blob_rw_([A-Za-z0-9-]{8,80})_([A-Za-z0-9_-]{16,4096})$/;
+// SDK resolveBlobAuth gives an explicitly supplied RW token priority over
+// storeId and OIDC. It derives the destination from token.split('_')[3].
+// Bind that destination to the independently verified store *before* any get
+// or put; checking the URL only after put is too late to prevent writing.
+function assertTokenStore(token,storeId){
+ const found=RW_TOKEN.exec(token);
+ if(!found||found[1]!==bareStoreId(storeId))fail('DEDICATED_TOKEN_STORE_MISMATCH');
+}
 const REQUIRED=['ownerAuthenticated','approvedDeviceAuthenticated','previewBindingVerified',
  'dedicatedPrivateStoreVerified','isolatedDatabaseVerified',
  'backupRestorationVerified','ownerApproved'];
@@ -87,6 +96,7 @@ export async function storeAndVerifyMuseumPrivateBlobStage({
  if(typeof storeId!=='string'||!STORE.test(storeId))fail('STORE_ID_INVALID');
  if(typeof dedicatedToken!=='string'||dedicatedToken.length<32||
     dedicatedToken.length>4096)fail('DEDICATED_TOKEN_REQUIRED');
+ assertTokenStore(dedicatedToken,storeId);
  if(sdk!==undefined&&(!sdk||typeof sdk.put!=='function'||typeof sdk.get!=='function'))
   fail('SDK_INVALID');
  let evidence;
