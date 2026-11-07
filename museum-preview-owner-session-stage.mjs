@@ -38,9 +38,10 @@ export async function verifyMuseumPreviewOwnerSessionStage(client,request,{
  // Preview host, they cannot be reused. A separate, reviewed Preview login
  // will be required before this can authenticate real owners.
  let user;
- try{user=await verifyGalleryAdmin(client,request)}catch{return null}
- if(user?.role!=='owner'||!UUID.test(user.user_id||'')||
-    !UUID.test(user.device_id||''))return null;
+ try{user=await verifyGalleryAdmin(client,request)}catch(error){throw Error('DIAG_MUSEUM_QUERY_THROW_'+error?.name)}
+ if(!user)throw Error('DIAG_MUSEUM_NO_USER');
+ const allowed=[user.role==='owner',UUID.test(user.user_id||''),UUID.test(user.device_id||'')];
+ if(!allowed.every(Boolean))throw Error('DIAG_MUSEUM_OWNER_FIELDS_'+allowed.join('_'));
  return Object.freeze({ownerId:user.user_id.toLowerCase(),
   deviceId:user.device_id.toLowerCase(),role:'owner'});
 }
