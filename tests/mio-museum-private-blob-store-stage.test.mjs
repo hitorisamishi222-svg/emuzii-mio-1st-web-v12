@@ -250,6 +250,33 @@ test('preconditions must be independently verified before any image or Blob side
  assert.equal(s.calls.gets.length,0);
 });
 
+test('revoked owner, approved device, or store scope stops before read or put even after decoding',async()=>{
+ const payload=await source();
+ for(const stage of [2,3]){
+  for(const key of ['ownerAuthenticated','approvedDeviceAuthenticated',
+   'dedicatedPrivateStoreVerified','backupRestorationVerified']){
+   let calls=0;
+   const verify=()=>{calls++;return {...permission(),[key]:calls===stage?false:true}};
+   const db=fakeStore();
+   await assert.rejects(doSave(db,{payload,verifyTrustedScope:verify}),
+    /TRUSTED_SCOPE_UNVERIFIED/);
+   assert.equal(calls,stage);
+   assert.equal(db.calls.puts.length,0,'revocation must precede write');
+   assert.equal(db.calls.gets.length,stage===2?0:1,
+    'no private read when owner has been revoked during image decode');
+  }
+ }
+});
+test('a session switching to a different legitimate owner cannot re-use prior namespace',async()=>{
+ const db=fakeStore(),payload=await source();
+ let calls=0;
+ const verify=()=>{calls++;return {...permission(),
+  ownerId:calls===2?'99999999-2222-4333-8444-555555555555':OWNER}};
+ await assert.rejects(doSave(db,{payload,verifyTrustedScope:verify}),/TRUSTED_SCOPE_UNVERIFIED/);
+ assert.equal(db.calls.gets.length,0);
+ assert.equal(db.calls.puts.length,0);
+});
+
 test('missing, malformed operation id and absent dedicated store/token fail without network',async()=>{
  const src=await source();
  const blank=fakeStore();
