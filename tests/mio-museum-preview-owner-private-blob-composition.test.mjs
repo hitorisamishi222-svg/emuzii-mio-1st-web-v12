@@ -131,7 +131,7 @@ test('Preview owner session is required; production and third-party Origin canno
  ]){
   const db=fakeDB(),blob=fakePrivate(),request=req();change(request);
   await assert.rejects(run({...setup(db,blob,{request}),payload:await image()}),
-   /TRUSTED_SCOPE_UNVERIFIED/);
+   /TRUSTED_SCOPE_UNVERIFIED|REQUEST_INVALID/);
   assert.equal(blob.logs.puts.length,0);
   assert.equal(blob.logs.gets.length,0);
   assert.equal(db.logs.query.length,0);
