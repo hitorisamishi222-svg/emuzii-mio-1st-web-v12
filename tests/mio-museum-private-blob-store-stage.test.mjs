@@ -96,6 +96,27 @@ test('real JPEG/WebP-safe private pipeline writes transformed WebP, verifies rea
  }
 });
 
+test('real SDK accepts store_<id> but CDN URL must use bare id and never a different store',async()=>{
+ const prefixed='store_'+STORE;
+ const storage=fakeStore();
+ const evidence=()=>({...permission(),dedicatedStoreId:prefixed});
+ const result=await doSave(storage,{storeId:prefixed,verifyTrustedScope:evidence});
+ assert.equal(result.ok,true);
+ assert.equal(storage.calls.puts.length,1);
+ assert.equal(storage.calls.puts[0].opts.storeId,prefixed);
+ assert.equal(storage.calls.gets[0].opts.storeId,prefixed);
+ assert.ok(storage.files.has(p(OP)));
+ assert.equal((await doSave(storage,{storeId:prefixed,verifyTrustedScope:evidence})).replayed,true);
+ assert.equal(storage.calls.puts.length,1);
+ const denied=fakeStore();
+ await assert.rejects(doSave(denied,{storeId:prefixed}),/TRUSTED_SCOPE_UNVERIFIED/);
+ assert.equal(denied.calls.puts.length,0);
+ const wrong=fakeStore({getStoreId:'not-this-private-store'});
+ await assert.rejects(doSave(wrong,{storeId:prefixed,verifyTrustedScope:evidence}),
+  /PRIVATE_STORE_METADATA_MISMATCH/);
+ assert.equal(wrong.calls.puts.length,1);
+});
+
 test('same operation id never overwrites: identical retry is a read-only replay',async()=>{
  const s=fakeStore(),payload=await source();
  assert.equal((await doSave(s,{payload})).replayed,false);
