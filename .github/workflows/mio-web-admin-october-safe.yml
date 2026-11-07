@@ -13,7 +13,9 @@ on:
       - tests/mio-admin-livedata-shape-readonly.test.mjs
       - .github/workflows/mio-web-admin-october-safe.yml
       - tools/mio-gas-connection-target-audit.mjs
-      - tests/mio-gas-connection-target-audit.test.mjs
+      - tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs
+      - tools/mio-gas-deployed-version-audit.mjs
+      - tests/mio-gas-deployed-version-audit.test.mjs
 permissions:
   contents: read
 jobs:
@@ -36,5 +38,7 @@ jobs:
           node --check tests/mio-web-admin-schema-gate.test.mjs
           node --check tests/mio-gas-connection-target-audit.test.mjs
           node --check tools/mio-gas-connection-target-audit.mjs
+          node --check tests/mio-gas-deployed-version-audit.test.mjs
+          node --check tools/mio-gas-deployed-version-audit.mjs
       - name: Offline-only read and approved baseline preservation
         run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs
