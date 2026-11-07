@@ -37,19 +37,13 @@ function inspectContent(content,scriptId){
  return {digest,fileCount:mapped.length};
 }
 
-/** Returns only fixed diagnostic labels, counts, and digests. Never source or IDs. */
-export function auditDeployedVersion({appsScriptUrl,scriptId,deployment,published,publishedVersionNumber,head}={}){
- const target=auditGasTarget(appsScriptUrl);
- if(!target.ok)return stop('LIVE_WEB_APP_TARGET_MISMATCH');
- // Historical project ID is a clue, NOT proof of a currently deployed script.
- if(typeof scriptId!=='string'||!safeEqual(sha(scriptId),HISTORICAL_SCRIPT_ID_SHA256))
-   return stop('UNKNOWN_SCRIPT_PROJECT_ID');
+/** Strict schema inspection; synthetic IDs can exercise it without disclosing real IDs. */
+export function checkDeploymentEvidence({scriptId,deployment,published,publishedVersionNumber,head}={},deploymentId){
+ if(typeof deploymentId!=='string'||typeof scriptId!=='string')return stop('MISSING_IDENTIFIERS');
  if(!deployment)return {ok:false,status:'DEPLOYMENT_METADATA_PENDING',reason:'NOT_READ',publicationAllowed:false};
- const id=/^https:\/\/script\.google\.com\/macros\/s\/([^/]+)\/exec$/.exec(appsScriptUrl)?.[1];
  const config=deployment.deploymentConfig;
- if(!id||deployment.deploymentId!==id||!config||
-    config.scriptId!==scriptId||!Number.isSafeInteger(config.versionNumber)||
-    config.versionNumber<1||config.versionNumber>1000000)
+ if(deployment.deploymentId!==deploymentId||!config||config.scriptId!==scriptId||
+    !Number.isSafeInteger(config.versionNumber)||config.versionNumber<1||config.versionNumber>1000000)
    return stop('PROJECT_DEPLOYMENT_OR_VERSION_MISMATCH');
  const version=config.versionNumber;
  const evidence={deployedVersion:version,projectVerified:true,deploymentVerified:true,publicationAllowed:false};
@@ -68,6 +62,15 @@ export function auditDeployedVersion({appsScriptUrl,scriptId,deployment,publishe
   headMatchesPublished:headSnapshot.digest===publishedSnapshot.digest,...evidence};
 }
 
+/** Fixed fingerprints are mandatory for real Vercel-to-GAS linkage validation. */
+export function auditDeployedVersion({appsScriptUrl,scriptId,deployment,published,publishedVersionNumber,head}={}){
+ const target=auditGasTarget(appsScriptUrl);
+ if(!target.ok)return stop('LIVE_WEB_APP_TARGET_MISMATCH');
+ if(typeof scriptId!=='string'||!safeEqual(sha(scriptId),HISTORICAL_SCRIPT_ID_SHA256))
+   return stop('UNKNOWN_SCRIPT_PROJECT_ID');
+ const id=/^https:\/\/script\.google\.com\/macros\/s\/([^/]+)\/exec$/.exec(appsScriptUrl)?.[1];
+ return checkDeploymentEvidence({scriptId,deployment,published,publishedVersionNumber,head},id);
+}
 // Local operator may pipe a private JSON input; do not output it or its source.
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
  let result;
