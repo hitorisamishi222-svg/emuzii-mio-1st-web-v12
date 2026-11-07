@@ -31,8 +31,14 @@ export function auditLiveSheetRead({
  if(!displayed)return stop('DISPLAYED_READ_RANGE_OR_SHAPE_INVALID');
  const formulas=normalizeRead(formulaRead,rowCapacity,target);
  if(!formulas)return stop('FORMULA_READ_RANGE_OR_SHAPE_INVALID');
- // Never permit a formula in J that merely displays an empty string.
- if(displayed.some(v=>v!=='')||formulas.some(v=>v!==''))
+ // Existing J1 may be blank or the exact approved header. Reject a
+ // formula in J1 even if its displayed result is a harmless-looking header.
+ // No cells in J2:Jmax may contain values OR hidden formulas.
+ if(displayed[0]!==formulas[0])
+   return stop('J_HEADER_VALUE_FORMULA_MISMATCH');
+ if(displayed[0]!==''&&displayed[0]!=='Web操作ID')
+   return stop('J_HEADER_OCCUPIED');
+ if(displayed.slice(1).some(v=>v!=='')||formulas.slice(1).some(v=>v!==''))
    return stop('J_COLUMN_VALUE_OR_FORMULA_OCCUPIED');
  const plan=auditMigrationPlan({
   sheetNames,grantHeaders,jColumnValues:displayed,
