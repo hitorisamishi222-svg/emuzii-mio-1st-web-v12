@@ -402,10 +402,6 @@
       "use": "@vercel/static"
     },
     {
-      "src": "museum-kawaii.css",
-      "use": "@vercel/static"
-    },
-    {
       "src": "museum-archive.html",
       "use": "@vercel/static"
     },
@@ -471,6 +467,10 @@
     },
     {
       "src": "museum-curator-preview.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-kawaii.css",
       "use": "@vercel/static"
     }
   ],
@@ -629,13 +629,6 @@
       }
     },
     {
-      "src": "/museum-kawaii.css",
-      "dest": "/museum-kawaii.css",
-      "headers": {
-        "X-Content-Type-Options": "nosniff"
-      }
-    },
-    {
       "src": "/museum-archive.html",
       "dest": "/museum-archive.html",
       "headers": {
@@ -773,6 +766,13 @@
     {
       "src": "/(.*)",
       "dest": "/$1"
+    },
+    {
+      "src": "/museum-kawaii.css",
+      "dest": "/museum-kawaii.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
     }
   ],
   "headers": [
