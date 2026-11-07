@@ -29,6 +29,7 @@ const client=(rows=[{user_id:USER,role:'owner',device_id:DEVICE}],throws=false)=
 
 test('same-origin exact Preview deployment can authenticate approved owner+device via existing session query',async()=>{
  const db=client(),res=await verify(db,request(),metadata());
+ assert.equal(db.calls.length,1,'approved preview owner should reach exactly one legacy session query');
  assert.deepEqual(res,{ownerId:USER,deviceId:DEVICE,role:'owner'});
  assert.ok(Object.isFrozen(res));
  assert.equal(db.calls.length,1);
