@@ -99,6 +99,7 @@ test('an existing gacha grant ledger row cannot be replayed under a different re
  };
  const context={
   mioAdminOpsSheet_:()=>sheet,
+  mioAdminOpsSchema_:()=>({schemaReady:true}),
   mioAdminOpsStr_:x=>String(x??'').trim(),
  };
  vm.runInNewContext(code+'\n globalThis.__record=mioAdminOpsRecordGrant_;',context);
