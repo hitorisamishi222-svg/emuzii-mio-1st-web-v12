@@ -65,7 +65,7 @@ body.museum textarea:focus-visible{outline:3px solid #af3c78;outline-offset:3px}
 .museum-button{min-height:50px;border-radius:999px;padding:12px 23px;
  box-shadow:0 6px 20px #aa6c8c25;transition:transform .18s,box-shadow .18s;
  border:1px solid #dc9ebd;background:#fff8fc;color:#963968!important}
-.museum-button.primary{background:linear-gradient(130deg,#d65c92,#af3977);
+.museum-button.primary{background:linear-gradient(130deg,#b83f79,#972b65);
  color:#fff!important;border-color:#af3977;box-shadow:0 10px 22px #b3467c38}
 .museum-button.secondary{background:#fff8fce8;color:#943666!important;border-color:#d7a2bd}
 .museum-button:hover{transform:translateY(-2px);box-shadow:0 13px 27px #a9508235}
@@ -326,3 +326,6 @@ body.museum-device{color:#61415c}
   scroll-behavior:auto!important;animation-duration:0s!important;
   transition-duration:0s!important}
 }
+
+/* Keep recovery text readable after switching from the legacy dark palette. */
+.museum-curator #draftRecoveryStatus{background:#fff0f8;border-color:#e1b3cb;color:#70445f}
