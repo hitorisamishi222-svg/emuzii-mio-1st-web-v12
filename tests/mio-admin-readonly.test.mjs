@@ -4,19 +4,23 @@ import {readFileSync} from 'node:fs';
 const get=n=>readFileSync(new URL('../'+n,import.meta.url),'utf8');
 test('admin connection read is allowed before write release; mutations remain locked',()=>{
  const api=get('api-gacha-admin-ops.js');
- assert.match(api,/const writeEnabled=process\.env\.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE/);
+ assert.match(api,/const standardEnabled=process\.env\.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE/);
+ assert.match(api,/const onsiteEnabled=process\.env\.MIO_GACHA_ONSITE_RELEASE===ONSITE_RELEASE/);
+ assert.match(api,/const writeEnabled=standardEnabled\|\|onsiteEnabled/);
  assert.match(api,/d\.action!=='read'&&!writeEnabled/);
  assert.match(api,/authorizedCode\(d\.code/);
  assert.match(api,/sessionOK\(req\)/);
  assert.match(api,/if\(d\.action!=='read'&&!writeEnabled\)[\s\S]*?return reply\(res,503/);
- assert.match(api,/json\(\{ok:true,writeEnabled,pending/);
+ assert.match(api,/writeEnabled:writeEnabled&&result\.schemaReady===true/);
+ assert.match(api,/schemaReady:result\.schemaReady===true/);
 });
 test('all Web administrative mutation buttons stay disabled until release confirmed',()=>{
  const ui=get('gacha-admin-ops.js');
  assert.match(ui,/b\.disabled=processing\|\|!!pending\|\|\(!readOnly&&!state\?\.writeEnabled\)/);
- assert.match(ui,/!state\?\.writeEnabled\|\|!selected\?\.gacha\?\.checked/);
+ assert.match(ui,/function grantReady\(\)/);
+ assert.match(ui,/!state\?\.writeEnabled/);
  assert.match(ui,/const onlyRemaining=el\('opsOnlyRemaining'\)\.checked/);
- assert.match(ui,/opsGrant'\)\.disabled=v\|\|!!pending\|\|!state\?\.writeEnabled/);
+ assert.match(ui,/opsOnsiteGrantVerified/);
  assert.match(ui,/opsIntakeCreate'\)\.disabled=v\|\|!!pending\|\|!state\?\.writeEnabled/);
  assert.match(ui,/管理の書き込み|承認・回数付与はまだ停止中/);
 });

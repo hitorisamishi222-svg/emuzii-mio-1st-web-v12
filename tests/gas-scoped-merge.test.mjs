@@ -8,6 +8,10 @@ import {spawnSync} from 'node:child_process';
 const root=resolve(import.meta.dirname,'..');
 const legacy=readFileSync(join(root,'APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs'),'utf8');
 const expected=readFileSync(join(root,'APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs'),'utf8');
+const protectedBoundary='\nfunction checkinAction_(';
+const beforeProtected=s=>s.slice(0,s.indexOf(protectedBoundary));
+const protectedFrom=s=>s.slice(s.indexOf(protectedBoundary));
+const scopedExpected=beforeProtected(expected)+protectedFrom(legacy);
 const script=join(root,'tools/prepare-gas-scoped-merge.mjs');
 const launch=(source)=>{
   const dir=mkdtempSync(join(tmpdir(),'mio-gas-patch-test-'));
@@ -23,7 +27,11 @@ const launch=(source)=>{
 test('legacy baseline merges to precisely the reviewed repair and never overwrites the input',()=>{
   const result=launch(legacy);
   assert.equal(result.status,0,result.stderr);
-  assert.equal(result.out,expected);
+  // The repaired source may contain the separate October 31 archive change.
+  // This registration-only merge must never overwrite an operator's historic
+  // check-in/draw tail, even when the reference tail is newer.
+  assert.equal(result.out,scopedExpected);
+  assert.equal(protectedFrom(result.out),protectedFrom(legacy));
   assert.equal(result.original,legacy);
 });
 test('independent edits to a protected gacha handler remain byte-for-byte intact',()=>{
@@ -33,8 +41,7 @@ test('independent edits to a protected gacha handler remain byte-for-byte intact
   const result=launch(current);
   assert.equal(result.status,0,result.stderr);
   assert.ok(result.out.includes('// Independent operator note'));
-  const tail=s=>s.slice(s.indexOf('\nfunction checkinAction_('));
-  assert.equal(tail(result.out),tail(current));
+  assert.equal(protectedFrom(result.out),protectedFrom(current));
   assert.equal(result.original,current);
 });
 test('conflicting edits to the registration block require review, not an automatic overwrite',()=>{
