@@ -173,13 +173,27 @@ function updateQuick(){
  const roster=Array.isArray(state.roster)?state.roster:[];
  const eligible=roster.filter(p=>p.gacha?.checked===true&&Number.isFinite(Number(p.gacha.remaining))&&Number(p.gacha.remaining)>0);
  const unchecked=roster.filter(p=>p.gacha&&!p.gacha.checked);
+ // Server-verified browser links are triage, not proof of identity.
+ const links=new Map();
+ for(const browser of (Array.isArray(state.approvedBrowsers)?state.approvedBrowsers:[])){
+  if(browser?.verified!==true||!/^MIO-\d{4}$/.test(browser.mioId||''))continue;
+  links.set(browser.mioId,(links.get(browser.mioId)||0)+1);
+ }
+ const linkReview={single:0,missing:0,multiple:0};
+ for(const participant of eligible){
+  const count=links.get(participant.mioId)||0;
+  if(count===1)linkReview.single++;
+  else if(count===0)linkReview.missing++;
+  else linkReview.multiple++;
+ }
  const gate=typeof snapshot?.normalOpen==='boolean'?(snapshot.normalOpen?'通常受付 ON':'通常受付 OFF'):'通常受付 未確認';
  const selectedLine=selected?'\n選択中：'+selected.name+' / '+selected.mioId+
   '（残り '+(selected.gacha?.remaining??'要確認')+'回）':'\n参加者未選択';
  summary.textContent='登録承認待ち '+(Number(state.totalPending)||0)+'件 / 既存ガチャ残回数あり '+eligible.length+
-  '名 / ガチャ管理行要確認 '+unchecked.length+'名\n'+gate+
+  '名 / ガチャ管理行要確認 '+unchecked.length+'名\n'+
+  '端末照合候補：単独 '+linkReview.single+'名 / なし '+linkReview.missing+'名 / 複数 '+linkReview.multiple+'名\n'+gate+
   ' / 監査台帳 '+(state.schemaReady===true?'準備済み':'未準備')+' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+' / 現場モード '+(state.writeMode==='onsite'?'個別承認':state.writeMode==='standard'?'既存運営モード':'停止中')+selectedLine+
-  '\n※残回数あり＝抽選許可ではありません。本人の登録端末・メンシプ資格を別途確認。';
+  '\n※端末照合候補は登録台帳の予備チェックです。残回数・ブラウザ一致だけでは本人確認や抽選許可になりません。';
  remaining.textContent='既存ガチャ残回数あり '+eligible.length+'名。検索・絞り込みで対象を選択できます。';
 }
 for(const [id,target] of [['opsQuickIntake','opsIntakeSection'],['opsQuickApproval','opsPendingSection'],
