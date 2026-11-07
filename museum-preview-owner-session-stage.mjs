@@ -8,7 +8,7 @@
 import {verifyGalleryAdmin} from './gallery-auth-shared.js';
 
 const BRANCH='feature/mio-v2-integration-mainbaseline-20261102';
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SHA=/^[a-f0-9]{40}$/i;
 const HOST=/^emuzii-mio-1st-web-v12-[a-z0-9-]+\.vercel\.app$/;
 const PROJECT=/^prj_[A-Za-z0-9]+$/;
@@ -38,10 +38,9 @@ export async function verifyMuseumPreviewOwnerSessionStage(client,request,{
  // Preview host, they cannot be reused. A separate, reviewed Preview login
  // will be required before this can authenticate real owners.
  let user;
- try{user=await verifyGalleryAdmin(client,request)}catch(error){throw Error('DIAG_MUSEUM_QUERY_THROW_'+error?.name)}
- if(!user)throw Error('DIAG_MUSEUM_NO_USER');
- const allowed=[user.role==='owner',UUID.test(user.user_id||''),UUID.test(user.device_id||'')];
- if(!allowed.every(Boolean))throw Error('DIAG_MUSEUM_OWNER_FIELDS_'+allowed.join('_'));
+ try{user=await verifyGalleryAdmin(client,request)}catch{return null}
+ if(user?.role!=='owner'||!UUID.test(user.user_id||'')||
+    !UUID.test(user.device_id||''))return null;
  return Object.freeze({ownerId:user.user_id.toLowerCase(),
   deviceId:user.device_id.toLowerCase(),role:'owner'});
 }
