@@ -1,0 +1,38 @@
+name: MIO museum private media memory roundtrip rehearsal
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum-private-media-memory-rehearsal-stage.mjs
+      - museum-image-ingest-preflight-stage.mjs
+      - tests/mio-museum-private-media-roundtrip-stage.test.mjs
+      - .github/workflows/mio-museum-private-media-roundtrip.yml
+  pull_request:
+    paths:
+      - museum-private-media-memory-rehearsal-stage.mjs
+      - museum-image-ingest-preflight-stage.mjs
+      - tests/mio-museum-private-media-roundtrip-stage.test.mjs
+      - .github/workflows/mio-museum-private-media-roundtrip.yml
+permissions:
+  contents: read
+jobs:
+  private-memory-replay-and-integrity:
+    name: Offline private image save/readback with no release route
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax checks
+        run: |
+          node --check museum-private-media-memory-rehearsal-stage.mjs
+          node --check tests/mio-museum-private-media-roundtrip-stage.test.mjs
+      - name: Image copy, private receipt, uncertainty and hash verification
+        run: node --test tests/mio-museum-private-media-roundtrip-stage.test.mjs
+      - name: No changed source files
+        run: git diff --exit-code

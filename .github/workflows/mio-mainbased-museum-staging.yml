@@ -1,0 +1,189 @@
+name: MIO v2 main-based museum staging safety (no production release)
+
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum*
+      - 'tests/mio-museum-*.test.mjs'
+      - 'db/museum*.sql'
+      - gallery-items.js
+      - gallery-auth-shared.js
+      - 'api-gallery*.js'
+      - tests/mio-staging-mobile-chromium.mjs
+      - mio-profile.html
+      - vercel.json
+      - tests/mio-mainbased-museum-integration.test.mjs
+      - tests/mio-gas-safe-onboarding.test.mjs
+      - tests/mio-live-sheet-schema-preflight.test.mjs
+      - tests/mio-gas-source-preflight.test.mjs
+      - tests/mio-staged-incident-core.test.mjs
+      - mio-incident-core.js
+      - db/mio-admin-incidents-20261031.sql
+      - scripts/mio-gas-source-preflight.mjs
+      - tests/fixtures/mio-live-sheet-schema-readonly-20261102.json
+      - docs/MIO_GAS_FULL_REPLACE_SETUP.md
+      - tests/mio-gas-full-install.test.mjs
+      - tests/mio-gas-connect-guidance.test.mjs
+      - docs/MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102.md
+      - gacha-web-gate.html
+      - tests/browser-registration-status.test.mjs
+      - tests/gacha-legacy-recovery.test.mjs
+      - tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - tests/gacha-release-visual-scope.test.mjs
+      - .github/workflows/mio-mainbased-museum-staging.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - museum*
+      - 'tests/mio-museum-*.test.mjs'
+      - 'db/museum*.sql'
+      - gallery-items.js
+      - gallery-auth-shared.js
+      - 'api-gallery*.js'
+      - tests/mio-staging-mobile-chromium.mjs
+      - mio-profile.html
+      - vercel.json
+      - tests/mio-mainbased-museum-integration.test.mjs
+      - tests/mio-gas-safe-onboarding.test.mjs
+      - tests/mio-live-sheet-schema-preflight.test.mjs
+      - tests/mio-gas-source-preflight.test.mjs
+      - tests/mio-staged-incident-core.test.mjs
+      - mio-incident-core.js
+      - db/mio-admin-incidents-20261031.sql
+      - scripts/mio-gas-source-preflight.mjs
+      - tests/fixtures/mio-live-sheet-schema-readonly-20261102.json
+      - docs/MIO_GAS_FULL_REPLACE_SETUP.md
+      - tests/mio-gas-full-install.test.mjs
+      - tests/mio-gas-connect-guidance.test.mjs
+      - docs/MIO_GAS_SAFE_EXISTING_DEPLOYMENT_20261102.md
+      - gacha-web-gate.html
+      - tests/browser-registration-status.test.mjs
+      - tests/gacha-legacy-recovery.test.mjs
+      - tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - tests/gacha-release-visual-scope.test.mjs
+      - .github/workflows/mio-mainbased-museum-staging.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  museum-staging-only:
+    name: Main baseline parity + museum and media safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out current staging branch, no credentials retained
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read current production source tree without altering it
+        run: git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+      - name: Syntax check only new museum presentation code
+        run: |
+          node --check museum-archive.js
+          node --check museum-news.js
+          node --check museum-approved-gallery.js
+          node --check museum-curator-preview.js
+          node --check museum-migration-plan-stage.mjs
+          node --check museum-exhibit-owner-list-stage.mjs
+          node --check museum-exhibit-owner-list-entry-stage.mjs
+          node --check museum-exhibit-editor-handoff-stage.mjs
+          node --check museum-exhibit-owner-roundtrip-stage.mjs
+          node --check tests/mio-museum-exhibit-owner-roundtrip-stage.test.mjs
+          node --check tests/mio-museum-exhibit-editor-handoff-stage.test.mjs
+          node --check museum-media-fallback.js
+          node --check tests/mio-mainbased-museum-integration.test.mjs
+          node --check scripts/mio-gas-source-preflight.mjs
+          node --check mio-incident-core.js
+      - name: Verify all original login, check-in, gacha and gallery files remain identical to main
+        run: node --test tests/mio-mainbased-museum-integration.test.mjs
+      - name: Previously failing registration status mock only (no live requests)
+        run: node --test tests/browser-registration-status.test.mjs
+      - name: Previously failing same-drawId recovery mock only (no draw requests)
+        run: node --test tests/gacha-legacy-recovery.test.mjs
+      - name: Install existing test imports without executing package scripts
+        run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund
+      - name: Offline museum gallery lifecycle, moderation, history and release-gate regression
+        run: node --test tests/mio-museum-*.test.mjs
+      - name: Unapproved browser must stay blocked (failed-only case)
+        run: node --test --test-name-pattern='other unapproved browsers' tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - name: Existing cache-busted gacha asset is still loaded (failed-only case)
+        run: node --test --test-name-pattern='luxury v2.1 is loaded' tests/gacha-release-visual-scope.test.mjs
+      - name: Existing GAS safe onboarding and disabled management controls
+        run: node --test tests/mio-gas-safe-onboarding.test.mjs
+      - name: Verify migrated legacy GAS tests still enforce authentication and safe deployment
+        run: node --test tests/mio-gas-connect-guidance.test.mjs tests/mio-gas-full-install.test.mjs
+      - name: Check previously failing visual-only SHA in both immutable release baselines
+        run: node --test --test-name-pattern='visual-only and main-based candidates each' tests/gacha-release-visual-scope.test.mjs
+      - name: "Read-only observed Sheet schema vs candidate GAS: keep mutation gate closed"
+        run: node --test tests/mio-live-sheet-schema-preflight.test.mjs
+      - name: Compare archived GAS candidates safely to confirm duplicate module and unknown live source
+        run: node --test tests/mio-gas-source-preflight.test.mjs
+      - name: Classify incidents and verify same operationID without a DB or gacha call
+        run: node --test tests/mio-staged-incident-core.test.mjs
+      - name: Confirm this test did not modify tracked files
+        run: git diff --exit-code
+      # No GAS, DB, Blob, real lottery, Vercel production promotion or PR merge.
+
+  offline-mobile-chrome:
+    name: Offline museum mobile Chromium (local fixture, no accounts)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax before running a real browser
+        run: |
+          node --check tests/mio-staging-mobile-chromium.mjs
+          node --check museum-device-check.js
+          node --check museum-image-client.js
+      - name: Exercise 320/375/390/430px; synthetic photo only; zero API writes
+        timeout-minutes: 3
+        run: |
+          command -v google-chrome || command -v chromium
+          node tests/mio-staging-mobile-chromium.mjs
+      - name: Save evidence of offline local browser state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mio-offline-mobile-browser-evidence
+          path: artifacts/mio-offline-mobile-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+  restore-readonly-offline:
+    name: Offline museum restore comparison (no Neon connection)
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check out code without persisting credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check standalone read-only restore inspection
+        run: |
+          node --check museum-neon-restore-compare-stage.mjs
+          node --check tests/mio-museum-neon-restore-compare-stage.test.mjs
+      - name: Independently test two-client restore comparisons and fail-closed branch gates
+        run: |
+          node --test tests/mio-museum-neon-restore-compare-stage.test.mjs
+          node --test tests/mio-museum-neon-recovery-route-stage.test.mjs
+      - name: Verify no tracked files were changed by local checks
+        run: git diff --exit-code
+      # Independent of mutable main baseline parity. Zero providers, secrets,
+      # data copies, branch creation, database queries or production release.

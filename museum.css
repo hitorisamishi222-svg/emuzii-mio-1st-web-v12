@@ -1,0 +1,272 @@
+/* MIO MEMORIAL MUSEUM — first-stage public-only experience.
+   Scoped to the two museum pages. No gacha / registration overrides. */
+:root{color-scheme:dark;--museum-night:#07192f;--museum-blue:#123d67;--museum-ink:#f4f8ff;--museum-soft:#cddff1;--museum-gold:#f4d7a2;--museum-border:#91c9e28c}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body.museum{margin:0;min-width:280px;min-height:100dvh;background:radial-gradient(ellipse at 85% -8%,#24548a8c,transparent 42%),linear-gradient(170deg,#06142b,#0b2a4b 54%,#08142b);font:16px/1.75 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;color:var(--museum-ink)}
+body.museum a{color:inherit}
+body.museum a:focus-visible,body.museum button:focus-visible{outline:3px solid var(--museum-gold);outline-offset:4px}
+body.museum img{max-width:100%;height:auto}
+body.museum [hidden]{display:none!important}
+.museum-skip{position:absolute;left:-10000px;top:10px;z-index:20;background:white;color:#07192f!important;padding:10px 15px;border-radius:9px}
+.museum-skip:focus{left:12px}
+.museum-shell{max-width:1130px;margin:0 auto;padding:0 22px}
+.museum-header{border-bottom:1px solid #a9d5ea40;background:#081b35e9;position:relative;z-index:5}
+.museum-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;min-height:76px;padding-block:9px}
+.museum-brand{text-decoration:none;display:inline-flex;gap:11px;align-items:center;font-size:20px;font-weight:900;letter-spacing:.06em}
+.museum-brand .mark{font-size:28px}
+.museum-brand small{display:block;font:600 10px/1.4 Georgia,serif;letter-spacing:.22em;color:var(--museum-gold)}
+.museum-nav{display:flex;flex-wrap:wrap;gap:5px 15px}
+.museum-nav a{font-size:14px;font-weight:750;text-decoration:none;padding:8px 5px;border-bottom:2px solid transparent}
+.museum-nav a:hover,.museum-nav a[aria-current="page"]{border-color:var(--museum-gold)}
+.museum-hero{position:relative;isolation:isolate;overflow:hidden;background:#0a2e54 url('/assets/mio-bg-princess.jpg') 70% 22%/cover no-repeat;border-bottom:1px solid #9cc8e58c}
+.museum-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#04152bed 0%,#071a37c9 53%,#071a374e 100%),linear-gradient(0deg,#061a35f7,transparent 52%)}
+.museum-hero-inner{display:grid;grid-template-columns:1.5fr .6fr;align-items:center;gap:10px;min-height:510px;padding-block:82px 86px}
+.museum-kicker{color:var(--museum-gold);font-weight:800;font-size:12px;letter-spacing:.22em}
+.museum-hero h1,.museum-page-heading h1{font-size:clamp(36px,6.8vw,69px);line-height:1.3;letter-spacing:.05em;margin:15px 0 18px;text-shadow:0 7px 30px #001428}
+.museum-hero .hero-lead{font-size:clamp(17px,2.2vw,21px);line-height:2.0;max-width:660px;color:#f1f7ff;margin:0}
+.museum-hero .hero-sub{color:#dfebf7;max-width:620px;margin:20px 0 25px}
+.museum-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.museum-button{min-height:50px;padding:12px 20px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;font-weight:850;border:1px solid #d2e6fa91;background:#133f6d}
+.museum-button.primary{background:linear-gradient(120deg,#fff0c9,#e1c48d);border-color:#fff1c7;color:#172439}
+.museum-button.secondary{background:#092445dc}
+.museum-mascot{align-self:center;text-align:center}
+.museum-mascot img{width:min(100%,230px);filter:drop-shadow(0 15px 30px #021124c9)}
+.museum-mascot span{display:block;color:var(--museum-gold);font-size:12px;letter-spacing:.18em;margin-top:5px}
+.museum-section{padding-block:52px 10px}
+.museum-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:22px}
+.museum-eyebrow{color:var(--museum-gold);font:600 12px/1.3 Georgia,serif;letter-spacing:.2em}
+.museum-heading h2{font-size:clamp(25px,4vw,36px);line-height:1.4;margin:7px 0}
+.museum-heading p{color:var(--museum-soft);margin:8px 0 0}
+.museum-view-all{color:#f0dfbe!important;font-weight:750;text-underline-offset:4px}
+.museum-feature{background:linear-gradient(135deg,#163e69e8,#0b2448f5);border:1px solid var(--museum-border);padding:24px;border-radius:18px;box-shadow:0 16px 40px #020d20aa}
+.museum-feature h3{font-size:23px;margin:8px 0 11px}
+.museum-feature p{color:#d6e8f6}
+.museum-news-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.museum-news-item{min-width:0;padding:20px;border:1px solid #9acced6e;border-radius:16px;background:#0b2d52;box-shadow:0 8px 26px #0004}
+.museum-news-item time{display:block;color:var(--museum-gold);font-size:13px}
+.museum-news-item h3{font-size:17px;line-height:1.6;overflow-wrap:anywhere;margin:7px 0}
+.museum-news-item p{font-size:14px;color:var(--museum-soft);overflow-wrap:anywhere;white-space:pre-line}
+.museum-news-item a{font-size:14px;font-weight:800;text-underline-offset:4px}
+.museum-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.museum-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;border-radius:18px;border:1px solid #96cae88f;background:linear-gradient(145deg,#113a68,#0b2446);text-decoration:none;transition:transform .16s,border-color .16s}
+.museum-card[href]:hover{transform:translateY(-3px);border-color:#e7d6a6}
+.museum-card .card-art{display:flex;align-items:center;justify-content:center;min-height:155px;font-size:64px;background:radial-gradient(ellipse at 50% 40%,#3472ae94,transparent 62%),linear-gradient(125deg,#0f325a,#092245)}
+.museum-card .card-body{padding:19px 20px 22px;flex:1}
+.museum-card .card-label{font:600 11px Georgia,serif;letter-spacing:.16em;color:var(--museum-gold)}
+.museum-card h3{font-size:20px;line-height:1.5;margin:7px 0 7px}
+.museum-card p{color:var(--museum-soft);font-size:14px;margin:0}
+.museum-card .card-cta{color:#ffe5ae;font-weight:800;font-size:14px;margin-top:18px;display:block}
+.museum-card.future{border-style:dashed}
+.museum-card.future .card-body{padding-bottom:18px}
+.museum-status{display:inline-block;background:#193d60;padding:3px 10px;border-radius:999px;font-size:12px;color:#efdfc3;margin-top:15px}
+.museum-feature.split{display:grid;grid-template-columns:1.35fr .65fr;gap:20px;align-items:center}
+.museum-points{list-style:none;padding:0;margin:14px 0;color:var(--museum-soft)}
+.museum-points li{margin:11px 0}
+.museum-points li::before{content:"✦";color:var(--museum-gold);margin-right:10px}
+.museum-footer{border-top:1px solid #92c5e455;margin-top:60px;padding:26px 0 72px;color:#c4dcec;font-size:14px}
+.museum-footer-inner{display:flex;justify-content:space-between;align-items:start;gap:18px;flex-wrap:wrap}
+.museum-footer a{color:#f3d9ae!important;text-underline-offset:4px}
+.museum-page-heading{padding:62px 0 27px;text-align:center}
+.museum-page-heading h1{font-size:clamp(34px,6.5vw,57px)}
+.museum-profile-portrait{max-height:420px;background:linear-gradient(180deg,#091c39aa,#06152ef5),url('/assets/mio-bg-princess.jpg') center 20%/cover no-repeat;min-height:300px;border-radius:16px;border:1px solid var(--museum-border)}
+.museum-profile-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start}
+.museum-list{display:grid;gap:14px}
+.museum-info-block{border-bottom:1px solid #91c9e24f;padding-bottom:14px}
+.museum-info-block strong{display:block;font-size:16px;color:#f4dba8}
+.museum-info-block p{margin:4px 0;color:var(--museum-soft)}
+.museum-soft{color:var(--museum-soft)}
+@media(max-width:850px){
+ .museum-news-list,.museum-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .museum-hero-inner{grid-template-columns:1fr .38fr;min-height:440px}
+ .museum-mascot img{width:130px}
+ .museum-feature.split{grid-template-columns:1fr}
+}
+@media(max-width:630px){
+ body.museum{line-height:1.7}
+ .museum-shell{padding-inline:16px}
+ .museum-bar{align-items:flex-start}
+ .museum-nav{width:100%;gap:3px 13px}
+ .museum-nav a{font-size:13px;padding:6px 2px}
+ .museum-hero{background-position:58% 18%}
+ .museum-hero::before{background:linear-gradient(0deg,#06172bf7 4%,#071a39bf 60%,#081e39a1 100%)}
+ .museum-hero-inner{display:block;min-height:0;padding-block:67px 62px}
+ .museum-hero h1{font-size:clamp(35px,10vw,50px)}
+ .museum-mascot{display:none}
+ .museum-section{padding-top:40px}
+ .museum-news-list,.museum-grid,.museum-profile-grid{grid-template-columns:1fr}
+ .museum-card .card-art{min-height:128px;font-size:49px}
+ .museum-heading h2{font-size:27px}
+ .museum-feature{padding:20px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.museum-card{transition:none}}
+
+
+/* Previously published "翠の覚醒 -MIO-" artwork and audio, preserved in the museum. */
+.museum-awakening-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.museum-awakening-card{display:grid;grid-template-columns:minmax(106px,34%) minmax(0,1fr);gap:18px;align-items:center;padding:18px;background:linear-gradient(145deg,#102d57,#091d3a);border:1px solid #86caff77;border-radius:20px;min-width:0;box-shadow:0 14px 35px #0004}
+.museum-awakening-cover{width:100%;max-height:240px;aspect-ratio:2/3;object-fit:cover;border-radius:12px;box-shadow:0 8px 22px #0006}
+.museum-awakening-info{min-width:0}
+.museum-awakening-label{display:block;font-size:11px;letter-spacing:.13em;color:#ffe0a3;font-weight:800}
+.museum-awakening-info h3{margin:9px 0;font-size:clamp(17px,2vw,22px);line-height:1.5;overflow-wrap:anywhere;color:#f6fbff}
+.museum-awakening-info p{font-size:13px;color:#c8e1f3;line-height:1.8;margin:8px 0 14px}
+.museum-awakening-info audio{display:block;width:100%;max-width:100%;min-height:46px}
+.museum-awakening-action{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:11px 16px;background:#f8db9f;color:#061c37!important;border-radius:14px;font-weight:800;text-decoration:none;text-align:center}
+.museum-awakening-action:focus-visible{outline:3px solid #9af5ff;outline-offset:3px}
+@media(max-width:900px){.museum-awakening-grid{grid-template-columns:1fr}}
+@media(max-width:390px){.museum-awakening-card{grid-template-columns:1fr}.museum-awakening-cover{max-width:170px;max-height:210px;margin-inline:auto}}
+
+/* One-release museum direction: gallery-first, jewel-lit but legible on mobile.
+   Visual styles are scoped to the draft museum only; old attendance/gacha CSS is untouched. */
+body.museum{background:
+ radial-gradient(circle at 15% 14%,#375f8d66 0,transparent 31%),
+ radial-gradient(circle at 83% 41%,#8a6a5540 0,transparent 34%),
+ radial-gradient(ellipse at 50% 120%,#153f6988 0,transparent 50%),
+ linear-gradient(170deg,#050f25,#102f52 48%,#07162e)}
+.museum-gallery-first{position:relative;isolation:isolate;padding-block:49px 25px}
+.museum-gallery-first::before{content:"";position:absolute;z-index:-1;inset:12px max(10px,calc((100vw - 1180px)/2)) 0;
+ border:1px solid #dec79472;border-radius:30px;
+ background:linear-gradient(142deg,#224a7299,#0c2447ed 55%,#152d54d9),
+ radial-gradient(circle at 90% 12%,#f2d38c38,transparent 35%);
+ box-shadow:inset 0 0 0 1px #c1e6fb1d,0 18px 70px #0006}
+.museum-gallery-first .museum-heading{padding:3px 16px 0}
+.museum-gallery-first .museum-heading h2{color:#fff1d4;text-shadow:0 0 24px #f8d99148}
+.museum-gallery-first .museum-grid{padding:0 12px 18px}
+.museum-gallery-first .museum-card{position:relative;border:1px solid #e1c789a6;
+ box-shadow:inset 0 0 0 1px #9fe9f521,0 14px 37px #0007;
+ background:linear-gradient(150deg,#1e466c,#0a1f3d 80%)}
+.museum-gallery-first .museum-card::before{content:"✦";position:absolute;right:13px;top:9px;
+ font-size:18px;color:#ffe7a8c9;text-shadow:0 0 19px #ffe7a8;pointer-events:none}
+.museum-gallery-first .museum-card .card-art{background:
+ radial-gradient(circle at 50% 35%,#bfdfefa6 0,transparent 40%),
+ radial-gradient(circle at 22% 75%,#e0bd7f54 0,transparent 50%),
+ linear-gradient(142deg,#214a72,#0a2447);border-bottom:1px solid #ddc68c70}
+.museum-gallery-first .museum-featured-gallery{grid-column:span 2;
+ display:grid;grid-template-columns:minmax(190px,.85fr) minmax(0,1.15fr);align-items:stretch}
+.museum-gallery-first .museum-featured-gallery .card-art{min-height:260px;border:0;
+ border-right:1px solid #ddc68c70}
+.museum-gallery-first .museum-featured-gallery .card-art img{display:block;
+ width:min(78%,270px);height:230px;object-fit:contain;filter:drop-shadow(0 12px 25px #0009)}
+.museum-gallery-first .museum-featured-gallery .card-body{align-self:center;padding:27px}
+.museum-gallery-first .museum-featured-gallery h3{font-size:clamp(21px,2.4vw,29px)}
+.museum-gallery-first .museum-card .card-cta{color:#fff0be;text-decoration:underline;text-underline-offset:4px}
+@media(max-width:850px){.museum-gallery-first .museum-featured-gallery{grid-column:span 2}}
+@media(max-width:630px){
+ .museum-gallery-first{padding-top:30px}
+ .museum-gallery-first::before{inset:6px 7px 0;border-radius:22px}
+ .museum-gallery-first .museum-heading{padding-inline:11px}
+ .museum-gallery-first .museum-grid{padding-inline:9px}
+ .museum-gallery-first .museum-featured-gallery{grid-column:auto;grid-template-columns:1fr}
+ .museum-gallery-first .museum-featured-gallery .card-art{min-height:180px;border-right:0;
+ border-bottom:1px solid #ddc68c70}
+ .museum-gallery-first .museum-featured-gallery .card-art img{height:172px}
+ .museum-gallery-first .museum-featured-gallery .card-body{padding:19px}
+}
+
+
+/* One-release gallery-first showcase of ONLY the two existing approved works.
+   Jewel-lit exhibition, legible labels and large touch targets at phone width. */
+.museum-showcase{position:relative;isolation:isolate;overflow:hidden;margin:0 12px 28px;
+ padding:24px;border:1px solid #e7cc918f;border-radius:24px;
+ background:radial-gradient(circle at 88% 11%,#e7c98930 0,transparent 38%),
+ radial-gradient(circle at 6% 90%,#56b2dc29 0,transparent 40%),
+ linear-gradient(130deg,#081c38,#12345b 58%,#112440);
+ box-shadow:inset 0 0 0 1px #e7cc9129,0 16px 40px #0008}
+.museum-showcase::before{content:"";pointer-events:none;position:absolute;inset:7px;
+ border:1px solid #dfd0992d;border-radius:19px;z-index:-1}
+.museum-showcase-heading{display:flex;justify-content:space-between;align-items:end;
+ flex-wrap:wrap;gap:15px;margin-bottom:21px}
+.museum-showcase-heading h3{font-size:clamp(20px,2.8vw,29px);margin:9px 0 7px;
+ line-height:1.4;color:#fff3d4;text-shadow:0 0 22px #f5d89a3f}
+.museum-showcase-heading p{font-size:14px;color:#d7e8f8;margin:0;max-width:660px}
+.museum-showcase-all{display:inline-flex;align-items:center;min-height:48px;
+ color:#ffe7ae!important;text-underline-offset:4px;font-weight:800}
+.museum-showcase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.museum-showcase-item{display:grid;grid-template-columns:minmax(108px,38%) minmax(0,1fr);
+ align-items:stretch;min-width:0;overflow:hidden;position:relative;border-radius:18px;
+ text-decoration:none;border:1px solid #e8cc97a1;
+ background:linear-gradient(145deg,#1d476b,#0b2444);
+ box-shadow:0 10px 28px #0007,inset 0 0 0 1px #ffffff10;
+ transition:transform .17s,border-color .17s}
+.museum-showcase-item:hover{transform:translateY(-3px);border-color:#fff0c3}
+.museum-showcase-art{position:relative;display:grid;place-items:center;padding:18px;min-height:200px;
+ border-right:1px solid #e2cb9763;
+ background:radial-gradient(ellipse at 50% 28%,#a2d7e45c 0,transparent 57%),
+ linear-gradient(160deg,#234f76,#0c2344)}
+.museum-showcase-video{background:radial-gradient(circle at 68% 20%,#ead08b61,transparent 46%),
+ linear-gradient(160deg,#224669,#0b1f3e)}
+.museum-showcase-art::before{content:"";position:absolute;inset:10px;pointer-events:none;
+ border:1px solid #e7d2a45c;border-radius:12px}
+.museum-showcase-art img{width:min(100%,180px);height:150px;object-fit:contain;
+ filter:drop-shadow(0 8px 22px #0007)}
+.museum-showcase-seal{position:absolute;bottom:9px;left:0;right:0;text-align:center;
+ font:700 9px/1.5 Georgia,serif;letter-spacing:.13em;color:#ffe4ad}
+.museum-showcase-body{display:flex;flex-direction:column;min-width:0;gap:8px;padding:18px 17px}
+.museum-showcase-label{font:750 11px/1.4 system-ui,sans-serif;
+ letter-spacing:.06em;color:#ffe4b4}
+.museum-showcase-body strong{font-size:clamp(16px,1.75vw,20px);line-height:1.5;
+ color:#fff9ea;overflow-wrap:anywhere}
+.museum-showcase-body>span:not(.museum-showcase-label):not(.museum-showcase-cta){
+ font-size:13px;line-height:1.7;color:#d6e8f5}
+.museum-showcase-cta{margin-top:auto;padding-top:8px;color:#ffe3a4;
+ font-size:14px;font-weight:800;text-decoration:underline;text-underline-offset:4px}
+.museum-showcase-item:focus-visible{outline:3px solid #ffdf91;outline-offset:4px}
+@media(max-width:860px){
+ .museum-showcase-grid{grid-template-columns:1fr}
+ .museum-showcase-item{grid-template-columns:minmax(110px,31%) minmax(0,1fr)}
+}
+@media(max-width:560px){
+ .museum-showcase{padding:17px 14px;margin:0 9px 22px;border-radius:19px}
+ .museum-showcase-heading{gap:5px;margin-bottom:15px}
+ .museum-showcase-heading h3{font-size:21px}
+ .museum-showcase-item{grid-template-columns:minmax(0,1fr);gap:0}
+ .museum-showcase-art{min-height:152px;border-right:0;border-bottom:1px solid #e2cb9763;padding:14px}
+ .museum-showcase-art img{height:122px}
+ .museum-showcase-seal{font-size:9px;bottom:5px}
+ .museum-showcase-body{padding:14px 16px 17px;gap:6px}
+ .museum-showcase-body strong{font-size:18px}
+}
+@media(prefers-reduced-motion:reduce){.museum-showcase-item{transition:none}}
+
+
+/* Gallery entrance: 2026-11-06 museum-only portal.
+   Real approved catalog only; non-published rooms remain clearly marked.
+   No image tiles / network calls / repeating textures / moving animations. */
+.museum-foyer{margin-top:25px;max-width:800px;padding:17px 18px 18px;
+ border:1px solid #e7d39e9c;border-radius:20px;
+ background:radial-gradient(ellipse at 2% 8%,#c7e6f322,transparent 55%),
+ linear-gradient(137deg,#0b2949e8,#071a34eb);
+ box-shadow:inset 0 0 0 1px #e6f6fd1a,0 18px 38px #00112699}
+.museum-foyer-eyebrow{display:block;font:750 11px/1.5 Georgia,serif;
+ letter-spacing:.18em;color:#ffe8b5;margin-bottom:12px}
+.museum-foyer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.museum-foyer-link{display:flex;align-items:center;gap:10px;min-height:64px;
+ padding:10px 11px;min-width:0;border-radius:13px;text-decoration:none;
+ background:radial-gradient(circle at 80% 0%,#aacbe920,transparent 60%),#153a5b;
+ border:1px solid #a9c6dd9e;
+ box-shadow:inset 0 1px 0 #f4f9ff15;transition:border-color .18s,background .18s}
+.museum-foyer-open{border-color:#efd59fa8;
+ background:radial-gradient(circle at 80% 0%,#f9e0a130,transparent 60%),#25496a}
+.museum-foyer-link:hover{border-color:#fff4d5;background-color:#274d70}
+.museum-foyer-icon{flex:none;display:grid;place-items:center;width:39px;height:39px;
+ border-radius:12px;font-size:20px;background:#082444;border:1px solid #b9d6ed76}
+.museum-foyer-copy{display:block;min-width:0}
+.museum-foyer-copy strong{display:block;font-size:13px;line-height:1.4;color:#fff6e4;overflow-wrap:anywhere}
+.museum-foyer-copy small{display:block;font-size:11px;line-height:1.5;color:#c6dfef;margin-top:2px}
+.museum-foyer-open .museum-foyer-copy small{color:#ffe0a0}
+.museum-gallery-first .museum-showcase-item:hover .museum-showcase-art img{
+ filter:drop-shadow(0 10px 26px #fae1a555)}
+@media(max-width:630px){
+ .museum-hero-inner{padding-block:34px 36px}
+ .museum-foyer{margin-top:19px;padding:13px 12px 14px;border-radius:16px}
+ .museum-foyer-grid{gap:7px}
+ .museum-foyer-link{min-height:60px;padding:8px;gap:8px}
+ .museum-foyer-icon{width:32px;height:36px;font-size:17px}
+ .museum-foyer-copy strong{font-size:12px}
+ .museum-foyer-copy small{font-size:10px}
+}
+@media(max-width:350px){
+ .museum-foyer-grid{grid-template-columns:1fr}
+ .museum-foyer-link{min-height:50px}
+}
+@media(prefers-reduced-motion:reduce){.museum-foyer-link{transition:none}}

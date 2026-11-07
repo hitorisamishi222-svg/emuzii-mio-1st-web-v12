@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 const source=readFileSync(new URL('../GAS_WebAdminOps_20261030.gs',import.meta.url),'utf8');
-function sandbox(){
+function sandbox({schemaReady=true}={}){
  const rows={
   'emuzii_Web登録':[['Web参加ID'],['MIO-W-1234567890abcdef12345678','token','新しい人','',new Date(),'承認待ち','未確認','MIO-0001','','','','確認待ち',...Array(9).fill('')]],
   'emuzii_参加者':[['参加者ID'],['MIO-0001','新しい人']],
@@ -12,6 +12,13 @@ function sandbox(){
   'emuzii_当選履歴':[['抽選ID']],
   'emuzii_新規簡易登録':[['登録日時'],['','初訪問者','MIO-W-222222222222222222222222','登録','未確認','']]
  };
+ if(schemaReady){
+  rows['emuzii_Web管理操作履歴']=[[
+   '日時','操作ID','操作種別','Web参加ID','MIO-ID',
+   '変更前','変更後','処理状態','備考','対象名'
+  ]];
+  rows['emuzii_ガチャ付与履歴'][0][9]='Web操作ID';
+ }
  const write=[];
  const ss={
   getSheetByName(n){return rows[n]?sheet(n):null},
@@ -23,7 +30,12 @@ function sandbox(){
    getMaxRows(){return 1000},
    getRange(row,col,rs=1,cs=1){
     return {
-     getValues(){return Array.from({length:rs},(_,ri)=>Array.from({length:cs},(_,ci)=>rows[name][row+ri-1]?.[col+ci-1]??''))},
+     getValues(){return Array.from({length:rs},(_,ri)=>Array.from({length:cs},(_,ci)=>{
+      // Model the existing participant A-column formula consistently for
+      // single-cell reads and rectangular readbacks.
+      if(name==='emuzii_参加者'&&row+ri===3&&col+ci===1&&rows[name][2]?.[1])return 'MIO-0002';
+      return rows[name][row+ri-1]?.[col+ci-1]??'';
+     }))},
      getValue(){if(name==='emuzii_参加者'&&col===1&&row===3&&rows[name][2]?.[1])return 'MIO-0002';return rows[name][row-1]?.[col-1]??''},
      getFormula(){return name==='emuzii_参加者'&&col===1&&row===3?'=IF(B3="","","MIO-"&TEXT(ROW()-1,"0000"))':''},
      setValue(v){if(!rows[name][row-1])rows[name][row-1]=[];rows[name][row-1][col-1]=v;write.push({name,row,col,v});return this},
@@ -51,6 +63,180 @@ test('safe read hides tokens and returns pending, roster and simple intake',()=>
  assert.equal(out.simple[0].name,'初訪問者');
  assert.equal(JSON.stringify(out).includes('token'),false);
 });
+test('read-only operator snapshot never writes, creates audit tabs, or adds the missing operation ID column',()=>{
+ const x=sandbox({schemaReady:false});
+ const before=JSON.stringify(x.rows);
+ assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
+ for(let i=0;i<2;i++){
+  const view=x.exec({action:'webAdminOpsRead'});
+  assert.equal(view.ok,true);
+  assert.equal(view.totalPending,1);
+  assert.equal(x.write.length,0,'read-only API must never write cells or headers');
+  assert.equal(JSON.stringify(x.rows),before,'read must not change the stored ledger or schema');
+  assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+  assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
+ }
+});
+test('read-only operator snapshot fails closed on absent required ledger without creating it',()=>{
+ const x=sandbox({schemaReady:false});
+ const before=JSON.stringify(x.rows);
+ delete x.rows['emuzii_ガチャ付与履歴'];
+ const afterDelete=JSON.stringify(x.rows);
+ assert.notEqual(afterDelete,before);
+ assert.throws(()=>x.exec({action:'webAdminOpsRead'}),/必要な管理シートがありません/);
+ assert.equal(JSON.stringify(x.rows),afterDelete);
+ assert.equal(x.write.length,0);
+ assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+});
+test('current production schema fails closed for every admin write without creating tables or cells',()=>{
+ const cases=[
+  {label:'grant',action:{action:'webAdminOpsGrant',operationId:'1'.repeat(32),
+   mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'模擬追加付与'}},
+  {label:'approve',action:{action:'webAdminOpsApprove',operationId:'2'.repeat(32),
+   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+   memberConfirmed:false,expectedStatus:'承認待ち'}},
+  {label:'review',action:{action:'webAdminOpsReview',operationId:'3'.repeat(32),
+   row:2,expectedStatus:'未確認'}},
+  {label:'intake',action:{action:'webAdminOpsIntake',operationId:'4'.repeat(32),
+   name:'架空の新規申請',note:'本人確認待ち'}},
+  {label:'create',action:{action:'webAdminOpsCreate',operationId:'5'.repeat(32),
+   webId:'MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa',expectedStatus:'承認待ち'}}
+ ];
+ for(const item of cases){
+  const x=sandbox({schemaReady:false});
+  if(item.label==='create'){
+   x.rows['emuzii_参加者'].push(Array(10).fill(''));
+   x.rows['emuzii_Web登録'].push([item.action.webId,'test-token','初訪問者','',new Date(),
+    '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+  }
+  const before=JSON.stringify(x.rows);
+  assert.throws(()=>x.exec(item.action),/未整備/,'missing schema must block '+item.label);
+  assert.equal(JSON.stringify(x.rows),before,'no tab, column, credits or identity may change: '+item.label);
+  assert.equal(x.write.length,0,'never write to a production-like schema: '+item.label);
+  assert.equal(Object.hasOwn(x.rows,'emuzii_Web管理操作履歴'),false);
+  assert.equal(x.rows['emuzii_ガチャ付与履歴'][0][9],undefined);
+ }
+});
+test('grant refuses a missing or renamed operation-id header before any credit is changed',()=>{
+ for(const header of ['',null,'旧Web操作ID','操作ID']){
+  const x=sandbox();
+  x.rows['emuzii_ガチャ付与履歴'][0][9]=header;
+  const before=JSON.stringify(x.rows);
+  assert.throws(()=>x.exec({action:'webAdminOpsGrant',operationId:'6'.repeat(32),
+   mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'ガチャ付与検査'}),
+   /Web操作ID列が未整備/);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,0);
+  assert.equal(x.rows['emuzii_ガチャ'][1][14],2);
+ }
+});
+test('corrupted audit headers prevent every mutation without rewriting existing headers',()=>{
+ for(const action of [
+  {action:'webAdminOpsGrant',operationId:'7'.repeat(32),
+   mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'付与動作確認'},
+  {action:'webAdminOpsApprove',operationId:'8'.repeat(32),
+   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+   memberConfirmed:false,expectedStatus:'承認待ち'},
+  {action:'webAdminOpsIntake',operationId:'9'.repeat(32),
+   name:'架空の受付',note:'申請'}
+ ]){
+  const x=sandbox();
+  x.rows['emuzii_Web管理操作履歴'][0][1]='旧形式操作ID';
+  const before=JSON.stringify(x.rows);
+  assert.throws(()=>x.exec(action),/列見出しが不一致/);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,0);
+ }
+});
+test('GAS candidate code never auto-creates admin audit tabs or operation-ID column',()=>{
+ const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ for(const c of [source,full]){
+  assert.doesNotMatch(c,/insertSheet\('emuzii_Web管理操作履歴'\)/);
+  assert.doesNotMatch(c,/setValue\('Web操作ID'\)/);
+  assert.match(c,/Web管理操作履歴タブが未整備/);
+  assert.match(c,/ガチャ付与履歴のWeb操作ID列が未整備/);
+ }
+});
+test('confirmed grant replay is read-only and requires the original grant history row',()=>{
+ const request={action:'webAdminOpsGrant',operationId:'4'.repeat(32),
+  mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'初回の模擬付与'};
+ for(const scenario of ['missing','changedReason','changedRecipient','duplicate']){
+  const x=sandbox();x.exec(request);
+  const history=x.rows['emuzii_ガチャ付与履歴'];
+  if(scenario==='missing')history.pop();
+  if(scenario==='changedReason')history[1][4]='別の理由';
+  if(scenario==='changedRecipient')history[1][1]='MIO-9999';
+  if(scenario==='duplicate')history.push([...history[1]]);
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),
+   scenario==='missing'?/確定済み付与の履歴が存在しません/:
+    scenario==='duplicate'?/付与履歴の操作IDが重複しています/:
+     /既存の付与履歴と操作内容が一致しません/,
+   'confirmed audit is not enough to claim a successful replay: '+scenario);
+  assert.equal(JSON.stringify(x.rows),before,'never repair an already confirmed ledger: '+scenario);
+  assert.equal(x.write.length,writes,'verified-only operation cannot write: '+scenario);
+  assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
+ }
+ const x=sandbox();x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
+test('confirmed approval replay requires unchanged live identity and performs no writes',()=>{
+ const request={action:'webAdminOpsApprove',operationId:'a'.repeat(32),
+  webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+  memberConfirmed:true,expectedStatus:'承認待ち'};
+ for(const state of ['approvalRemoved','identityCorrupt','memberReverted','otherDevice','renamedPerson','renamedWeb']){
+  const x=sandbox();x.exec(request);
+  if(state==='approvalRemoved')x.rows['emuzii_Web登録'][1][5]='承認待ち';
+  if(state==='identityCorrupt')x.rows['emuzii_Web登録'][1][11]='未確認';
+  if(state==='memberReverted')x.rows['emuzii_Web登録'][1][6]='未確認';
+  if(state==='otherDevice')x.rows['emuzii_Web登録'][1][16]='旧端末';
+  if(state==='renamedPerson')x.rows['emuzii_参加者'][1][1]='別の人';
+  if(state==='renamedWeb')x.rows['emuzii_Web登録'][1][2]='別の人';
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),/前の処理を管理者が確認中です/,state);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes);
+ }
+ const x=sandbox();x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
+test('confirmed new MIO-ID replay verifies original participant still exists with the same name',()=>{
+ const webId='MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa';
+ const request={action:'webAdminOpsCreate',operationId:'b'.repeat(32),
+  webId,expectedStatus:'承認待ち'};
+ for(const mode of ['renamedParticipant','missingParticipant','renamedWeb']){
+  const x=sandbox();
+  x.rows['emuzii_参加者'].push(Array(10).fill(''));
+  x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),
+   '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+  assert.equal(x.exec(request).mioId,'MIO-0002');
+  if(mode==='renamedParticipant')x.rows['emuzii_参加者'][2][1]='別の人';
+  if(mode==='missingParticipant')x.rows['emuzii_参加者'][2][1]='';
+  if(mode==='renamedWeb')x.rows['emuzii_Web登録'][2][2]='別の人';
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),
+   mode==='renamedWeb'?/操作IDの再利用は禁止です/:
+     /確定済み参加者IDの本人整合を確認できません/,mode);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes);
+ }
+ const x=sandbox();
+ x.rows['emuzii_参加者'].push(Array(10).fill(''));
+ x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),
+  '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+ x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
 test('grant updates only special count and writes idempotent audit',()=>{
  const x=sandbox(),op='e'.repeat(32),grant={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
  const first=x.exec(grant);
@@ -65,6 +251,141 @@ test('grant updates only special count and writes idempotent audit',()=>{
  assert.throws(()=>x.exec({...grant,operationId:'f'.repeat(32),expectedSpecial:2}),/変更されています/);
  assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
  assert.equal(x.write.some(x=>x.name==='emuzii_当選履歴'),false);
+});
+test('confirmed grant rejects same operation ID with changed count or expected balance, even when sum is identical',()=>{
+ const x=sandbox(),operationId='a'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(grant);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec({...grant,count:1,expectedSpecial:3}),/操作IDの再利用は禁止/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes,'changed intent must not touch either ledger');
+ assert.equal(x.exec(grant).replayed,true,'unchanged operation must still be idempotent');
+});
+test('confirmed grant rejects reuse of same operation ID with another reason',()=>{
+ const x=sandbox(),operationId='b'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(grant);
+ const writes=x.write.length;
+ assert.throws(()=>x.exec({...grant,reason:'別の理由による追加付与'}),/操作IDの再利用は禁止/);
+ assert.equal(x.write.length,writes);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
+});
+test('interrupted grant never resumes a changed payload or a modified audit identity',()=>{
+ const x=sandbox(),operationId='d'.repeat(32);
+ const grant={action:'webAdminOpsGrant',operationId,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(grant);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec({...grant,count:1,expectedSpecial:3}),/操作IDの再利用は禁止/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+ // Audit identity was externally tampered with; never certify its replay.
+ x.rows['emuzii_Web管理操作履歴'][1][9]='別人の記録';
+ assert.throws(()=>x.exec(grant),/操作IDの再利用は禁止/);
+ assert.equal(x.write.length,writes);
+});
+test('interrupted grant rejects tampered history reason without completing audit',()=>{
+ const x=sandbox(),op='f'.repeat(32);
+ const request={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(request);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ x.rows['emuzii_ガチャ付与履歴'][1][4]='異なる付与理由';
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec(request),/既存の付与履歴と操作内容が一致しません/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
+test('interrupted grant rejects tampered grantee name in history without extra credits',()=>{
+ const x=sandbox(),op='0'.repeat(32);
+ const request={action:'webAdminOpsGrant',operationId:op,mioId:'MIO-0001',
+  count:2,expectedSpecial:2,reason:'イベント特別付与'};
+ x.exec(request);
+ x.rows['emuzii_Web管理操作履歴'][1][7]='処理中';
+ x.rows['emuzii_ガチャ付与履歴'][1][2]='別人';
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.throws(()=>x.exec(request),/既存の付与履歴と操作内容が一致しません/);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],4);
+});
+test('both archived GAS candidate variants enforce identical grant replay identity checks',()=>{
+ const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ for(const code of [source,full]){
+  assert.match(code,/Number\(prev\.c\[5\]\)!==expected/);
+  assert.match(code,/mioAdminOpsStr_\(prev\.c\[8\]\)!==reason/);
+  assert.ok(code.includes('mioAdminOpsStr_(h[4])!==reason'));
+  assert.ok(code.includes('mioAdminOpsName_(h[2])!==mioAdminOpsName_(name)'));
+  assert.match(code,/mioAdminOpsName_\(prev\.c\[9\]\)!==mioAdminOpsName_\(name\)/);
+ }
+ assert.doesNotThrow(()=>new vm.Script(full));
+});
+test('all 19 archived Web admin helpers stay byte-identical across standalone and integrated GAS candidates',()=>{
+ const full=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ const helperNames=[
+  'mioAdminOps_','mioAdminOpsStr_','mioAdminOpsName_','mioAdminOpsSheet_',
+  'mioAdminOpsValues_','mioAdminOpsOne_','mioAdminOpsPeople_',
+  'mioAdminOpsSummary_','mioAdminOpsRead_','mioAdminOpsRequest_',
+  'mioAdminOpsLog_','mioAdminOpsExisting_','mioAdminOpsWriteLog_',
+  'mioAdminOpsCreate_','mioAdminOpsApprove_','mioAdminOpsRecordGrant_',
+  'mioAdminOpsGrant_','mioAdminOpsReview_','mioAdminOpsIntake_'
+ ];
+ const extract=(code,name)=>{
+  const start=code.indexOf('function '+name+'(');
+  assert.notEqual(start,-1,'Missing '+name);
+  const end=code.indexOf(String.fromCharCode(10)+'function ',start+1);
+  return code.slice(start,end<0?code.length:end).trim();
+ };
+ assert.equal(helperNames.length,19);
+ for(const name of helperNames){
+  assert.equal(extract(source,name),extract(full,name),'Candidate source drift: '+name);
+ }
+});
+test('grant recovery refuses a non-pending, non-final audit state without touching credits',()=>{
+ for(const corrupted of ['要調査','失敗','']){
+  const x=sandbox(),d={action:'webAdminOpsGrant',operationId:'1'.repeat(32),
+   mioId:'MIO-0001',count:2,expectedSpecial:2,reason:'イベント特別付与'};
+  x.exec(d);
+  x.rows['emuzii_Web管理操作履歴'][1][7]=corrupted;
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(d),/付与操作の監査状態を手動確認してください/);
+  assert.equal(JSON.stringify(x.rows),before,'unknown state must never mutate ledger');
+  assert.equal(x.write.length,writes,'unknown state must never write new credits');
+ }
+});
+test('approval recovery refuses a corrupted audit state without re-approving a device',()=>{
+ for(const corrupted of ['要調査','失敗','']){
+  const x=sandbox(),d={action:'webAdminOpsApprove',operationId:'2'.repeat(32),
+   webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',
+   memberConfirmed:true,expectedStatus:'承認待ち'};
+  x.exec(d);
+  x.rows['emuzii_Web管理操作履歴'][1][7]=corrupted;
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(d),/承認操作の監査状態を手動確認してください/);
+  assert.equal(JSON.stringify(x.rows),before,'unknown approval status must remain unchanged');
+  assert.equal(x.write.length,writes);
+ }
+});
+test('new member-ID recovery refuses a corrupted audit state and never claims success',()=>{
+ for(const corrupted of ['要調査','失敗','']){
+  const x=sandbox(),webId='MIO-W-aaaaaaaaaaaaaaaaaaaaaaaa';
+  x.rows['emuzii_参加者'].push(Array(10).fill(''));
+  x.rows['emuzii_Web登録'].push([webId,'token2','初訪問者','',new Date(),
+   '承認待ち','未確認','','','','','確認待ち',...Array(9).fill('')]);
+  const d={action:'webAdminOpsCreate',operationId:'3'.repeat(32),webId,
+   expectedStatus:'承認待ち'};
+  const created=x.exec(d);
+  assert.equal(created.mioId,'MIO-0002');
+  x.rows['emuzii_Web管理操作履歴'][1][7]=corrupted;
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(d),/新規ID操作の監査状態を手動確認してください/);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes);
+ }
 });
 test('approval requires exact name and linked MIO ID, preserves token',()=>{
  const x=sandbox(),key='a'.repeat(32),d={action:'webAdminOpsApprove',operationId:key,webId:'MIO-W-1234567890abcdef12345678',mioId:'MIO-0001',memberConfirmed:true,expectedStatus:'承認待ち'};
@@ -92,7 +413,17 @@ test('preview assets add independent API, keep current draw route',()=>{
  const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
  assert.match(api,/MIO_GACHA_ADMIN_OPS_RELEASE/);
  const html=readFileSync(new URL('../gacha-web-gate.html',import.meta.url),'utf8');
- for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','normal','fest'])assert.ok(html.includes('id="'+id+'"'));
+ for(const id of ['opsPending','opsRoster','opsGrant','opsSimple','normal','fest',
+  'opsBell','opsQuickSummary','opsRemainingSummary','opsOnlyRemaining','museumOpsPreviewLock'])
+  assert.ok(html.includes('id="'+id+'"'),'required new main admin element missing: '+id);
+ // Current main has no fake zero-queue counters. The disconnected Preview
+ // cannot infer queue size from an empty local mock.
+ assert.match(html,/管理者認証待ち/);
+ assert.match(html,/<strong id="opsCount">未接続<\/strong>/);
+ assert.match(html,/<fieldset id="museumOpsPreviewLock" disabled/);
+ assert.match(html,/content="connect-src 'none'; form-action 'none'"/);
+ assert.doesNotMatch(html,/<script src="\/gacha-admin-ops\.js" defer><\/script>/);
+ assert.match(html,/id="opsReload"[^>]*disabled/);
 });
 
 test('new visitor MIO-ID is created only after exact unlinked registration check',()=>{
@@ -201,6 +532,27 @@ test('interrupted approval does not finalize an inconsistent Web registration',(
  assert.equal(log[7],'処理中');
 });
 
+test('confirmed first-visit replay requires exactly one matching receipt and makes no changes',()=>{
+ const request={action:'webAdminOpsIntake',operationId:'c'.repeat(32),
+  name:'到着者D',note:'本人確認は未実施'};
+ for(const scenario of ['missing','changedNote','duplicate','rejected']){
+  const x=sandbox();x.exec(request);
+  const receipts=x.rows['emuzii_新規簡易登録'];
+  if(scenario==='missing')receipts.pop();
+  if(scenario==='changedNote')receipts.at(-1)[5]='別件のメモ';
+  if(scenario==='duplicate')receipts.push([...receipts.at(-1)]);
+  if(scenario==='rejected')receipts.at(-1)[4]='却下';
+  const before=JSON.stringify(x.rows),writes=x.write.length;
+  assert.throws(()=>x.exec(request),/同じ操作の受付状態を確認してください/,scenario);
+  assert.equal(JSON.stringify(x.rows),before);
+  assert.equal(x.write.length,writes,'no confirmed replay can recreate the receipt: '+scenario);
+ }
+ const x=sandbox();x.exec(request);
+ const before=JSON.stringify(x.rows),writes=x.write.length;
+ assert.equal(x.exec(request).replayed,true);
+ assert.equal(JSON.stringify(x.rows),before);
+ assert.equal(x.write.length,writes);
+});
 test('first-visit receipt survives lost response and same-ID retry without duplicate row',()=>{
  const x=sandbox(),d={action:'webAdminOpsIntake',operationId:'1'.repeat(32),name:'到着者A',note:'ガチャのみ'};
  const result=x.exec(d);
@@ -272,6 +624,169 @@ test('review cannot finalize when registered status changed externally',()=>{
  assert.equal(log[7],'処理中');
 });
 
+test('read-only queue counts distinguish new signups, identity followups and simple intake',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ web[1][5]='承認待ち';web[1][11]='確認待ち';
+ const clone=(suffix,status,integrity)=>{
+  const row=[...web[1]];
+  row[0]='MIO-W-'+suffix.toString(16).padStart(24,'0');
+  row[5]=status;row[11]=integrity;web.push(row);
+ };
+ clone(1,'承認済み','確認済み');
+ clone(2,'承認済み','確認待ち');
+ clone(3,'却下','確認待ち');
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple.push(['','架空申請A','','フォーム・ギャラリー利用可','管理確認待ち','']);
+ simple.push(['','架空申請B','','フォーム・ギャラリー利用可','未確認','']);
+ simple.push(['','テスト行','','フォーム・ギャラリー利用可','動作確認用','']);
+ simple.push(['','承認完了','','フォーム・ギャラリー利用可','登録承認済み','']);
+ const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.totalPending,2);
+ assert.equal(out.pendingRegistrationCount,1);
+ assert.equal(out.pendingIdentityCount,1);
+ assert.equal(out.pendingSimpleCount,3,'existing unconfirmed simple row plus two fresh requests');
+ assert.equal(out.rejectedCount,1);
+ assert.equal(out.unknownWebStatusCount,0);
+ assert.equal(out.unknownSimpleStatusCount,0);
+ assert.equal(out.simplePending.length,3);
+ assert.deepEqual(Array.from(out.simplePending.map(x=>x.status)),['未確認','管理確認待ち','未確認']);
+ assert.equal(out.pendingListTruncated,false);
+ assert.equal(out.simplePendingListTruncated,false);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before,'operator queue read must never change cells');
+});
+test('pending lists may truncate while authoritative total counters still show all requests',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ for(let i=0;i<103;i++){
+  const row=[...web[1]];
+  row[0]='MIO-W-'+i.toString(16).padStart(24,'0');
+  row[2]='架空WEB'+i;
+  row[5]='承認待ち';
+  row[11]='確認待ち';
+  web.push(row);
+ }
+ const simple=x.rows['emuzii_新規簡易登録'];
+ for(let i=0;i<75;i++)simple.push(['','架空簡易'+i,'','登録','管理確認待ち','']);
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.totalPending,104);
+ assert.equal(out.pendingRegistrationCount,104);
+ assert.equal(out.pendingIdentityCount,0);
+ assert.equal(out.pending.length,80);
+ assert.equal(out.pendingListTruncated,true);
+ assert.equal(out.pendingSimpleCount,76);
+ assert.equal(out.simplePending.length,60);
+ assert.equal(out.simplePendingListTruncated,true);
+ assert.equal(x.write.length,0);
+});
+test('malformed Web IDs and nameless simple rows are surfaced as explicit data-quality warnings',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ web.push(['bad-web-id','secret-should-not-leak','架空の来訪者','','2026-11-02',
+  '承認待ち','未確認','','','','','確認待ち']);
+ web.push(['','secret-blank-id','不完全登録','','2026-11-02',
+  '承認待ち','未確認','','','','','確認待ち']);
+ // Truly blank rows must not count as registration errors.
+ web.push(Array(21).fill(''));
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple.push(['2026-11-02','','','フォーム受付','管理確認待ち','メモがある']);
+ simple.push(['','','','','','']);
+ const before=JSON.stringify(x.rows);
+ const view=x.exec({action:'webAdminOpsRead'});
+ assert.equal(view.invalidWebIdCount,2);
+ assert.equal(view.incompleteSimpleRowCount,1);
+ assert.equal(view.pendingRegistrationCount,1,'normal existing applicant is still counted');
+ assert.equal(view.pendingSimpleCount,1,'valid pending intake remains separate');
+ assert.equal(view.totalPending,1);
+ assert.equal(view.pending.some(r=>r.name==='不完全登録'),false);
+ assert.equal(JSON.stringify(view).includes('secret-should-not-leak'),false);
+ assert.equal(JSON.stringify(view).includes('secret-blank-id'),false);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before);
+});
+test('duplicated valid Web IDs and participant MIO IDs become separate read-only anomaly counts',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ const people=x.rows['emuzii_参加者'];
+ const first=[...web[1]];
+ web.push([...first]);
+ web.push([...first]);
+ // A different, valid Web ID must not count as a duplicate.
+ const distinct=[...first];distinct[0]='MIO-W-ffffffffffffffffffffffff';
+ web.push(distinct);
+ // Mock A3 is an existing formula-generated MIO-0002, not a literal MIO-0001.
+ people.push(['MIO-0001','自動式の行（表示IDはMIO-0002）']);
+ people.push(['MIO-0001','同一IDの重複その1']);
+ people.push(['MIO-0001','同一IDの重複その2']);
+ people.push(['MIO-0007','独立した参加者']);
+ const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.duplicateWebIdCount,2,'count duplicate rows beyond first occurrence');
+ assert.equal(out.duplicateMioIdCount,2);
+ assert.equal(out.invalidWebIdCount,0);
+ assert.equal(out.pendingRegistrationCount,4,'do not silently discard duplicate signups');
+ assert.equal(out.totalPending,4);
+ assert.equal(out.pending.length,4);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before,'read-only anomaly checks must not rewrite live-like data');
+});
+test('unknown sheet states are warnings, never silently counted as zero or processed as approval',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ web[1][5]='要調査';
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple[1][4]='不明な状態';
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.pendingRegistrationCount,0);
+ assert.equal(out.pendingIdentityCount,0);
+ assert.equal(out.pendingSimpleCount,0);
+ assert.equal(out.unknownWebStatusCount,1);
+ assert.equal(out.unknownSimpleStatusCount,1);
+ assert.equal(out.pending.length,0);
+ assert.equal(out.simplePending.length,0);
+ assert.equal(x.write.length,0);
+});
+test('malformed Web IDs and nameless simple intake cannot silently disappear from pending attention',()=>{
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ const base=[...web[1]];
+ base[0]='INVALID-WEB-REFERENCE';
+ base[2]='架空の未完了登録';
+ base[5]='承認待ち';
+ web.push(base);
+ const missing=[...web[1]];
+ missing[0]='';
+ missing[2]='架空のID欠損';
+ missing[5]='承認待ち';
+ web.push(missing);
+ web.push(Array(21).fill('')); // A genuinely blank spreadsheet row must not count.
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple.push(['2026-11-02T00:00:00Z','','','フォーム・ギャラリー利用可','未確認','']);
+ simple.push(['','','','','','']); // Empty row, not a pending person.
+ const before=JSON.stringify(x.rows),out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(out.invalidWebIdCount,2);
+ assert.equal(out.incompleteSimpleRowCount,1);
+ assert.equal(out.totalPending,1,'do not silently promote malformed-ID rows to approved registrations');
+ assert.equal(out.pendingRegistrationCount,1);
+ assert.equal(out.pendingSimpleCount,1);
+ assert.equal(out.unknownWebStatusCount,0);
+ assert.equal(out.unknownSimpleStatusCount,0);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before);
+});
+test('staging-only queue contract rejects missing counts without touching existing admin API',()=>{
+ const contract=readFileSync(new URL('../scripts/mio-admin-queue-contract.mjs',import.meta.url),'utf8');
+ const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+ for(const key of ['pendingRegistrationCount','pendingIdentityCount','pendingSimpleCount',
+  'unknownWebStatusCount','unknownSimpleStatusCount','invalidWebIdCount',
+  'incompleteSimpleRowCount','pendingListTruncated','simplePendingListTruncated']){
+  assert.ok(contract.includes(key),'missing queue metric '+key);
+ }
+ assert.match(contract,/Number\.isSafeInteger\(value\[field\]\)/);
+ assert.match(contract,/value\.totalPending!==value\.pendingRegistrationCount\+value\.pendingIdentityCount/);
+ assert.ok(!config.routes.some(r=>/admin-queue-contract|queue-api-candidate/.test(r.src||'')),
+  'the experimental queue contract must not become an accessible production route');
+});
 test('actual 38 approved, 1 pending, 2 rejected never inflates approval queue to three',()=>{
  const x=sandbox();
  const web=x.rows['emuzii_Web登録'];
@@ -291,6 +806,44 @@ test('actual 38 approved, 1 pending, 2 rejected never inflates approval queue to
  assert.equal(view.rejectedCount,2);
  assert.equal(view.pending.length,1);
  assert.equal(view.pending[0].status,'承認待ち');
+});
+test('50-registration snapshot: rejected unverified row must not create a false pending alert',()=>{
+ // Only aggregate shape follows the read-only 2026-11-02 sheet check.
+ // All names, IDs, tokens and dates below are invented for isolated tests.
+ const x=sandbox({schemaReady:false});
+ const web=x.rows['emuzii_Web登録'];
+ const template=[...web[1]];
+ web.splice(1);
+ for(let i=0;i<50;i++){
+  const row=[...template];
+  row[0]='MIO-W-'+(3000+i).toString(16).padStart(24,'0');
+  row[2]='架空の登録者'+i;
+  row[5]=i<48?'承認済み':'却下';
+  row[11]=i===48?'確認待ち':'確認済み';
+  web.push(row);
+ }
+ const simple=x.rows['emuzii_新規簡易登録'];
+ simple[1][4]='本人確認・登録承認済み';
+ simple.push(['','架空の簡易承認者','','フォーム・ギャラリー利用可','登録承認済み','']);
+ for(let i=0;i<4;i++){
+  simple.push(['','架空の動作確認'+i,'','フォーム・ギャラリー利用可','動作確認用','']);
+ }
+ const before=JSON.stringify(x.rows);
+ const out=x.exec({action:'webAdminOpsRead'});
+ assert.equal(web.length-1,50);
+ assert.equal(web.slice(1).filter(r=>r[5]==='承認済み').length,48);
+ assert.equal(out.rejectedCount,2);
+ assert.equal(out.totalPending,0,'rejected but unverified row cannot be a live approval queue item');
+ assert.equal(out.pendingRegistrationCount,0);
+ assert.equal(out.pendingIdentityCount,0);
+ assert.equal(out.pending.length,0);
+ assert.equal(out.pendingSimpleCount,0,'completed registrations and smoke rows are not applicants');
+ assert.equal(out.simplePending.length,0);
+ assert.equal(out.simple.length,6);
+ assert.equal(out.unknownWebStatusCount,0);
+ assert.equal(out.unknownSimpleStatusCount,0);
+ assert.equal(x.write.length,0);
+ assert.equal(JSON.stringify(x.rows),before);
 });
 test('approved accounts with incomplete identity verification are still shown for review',()=>{
  const x=sandbox();

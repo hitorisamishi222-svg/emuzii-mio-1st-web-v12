@@ -1,0 +1,65 @@
+{
+  "schema": "mio-museum-provider-inventory-observation-v1",
+  "observedOn": "2026-11-06",
+  "source": "read-only Vercel project env metadata + Neon branch/snapshot metadata + information_schema.tables names",
+  "privateDataRowsRead": false,
+  "secretValuesRead": false,
+  "databaseWrites": false,
+  "providerMutations": false,
+  "vercel": {
+    "project": "emuzii-mio-1st-web-v12",
+    "museumDedicatedEnvMatches": 0,
+    "legacyGalleryEnvScopes": [
+      {
+        "target": [
+          "preview"
+        ],
+        "gitBranch": "fix/announcements-passkey-auth-review"
+      },
+      {
+        "target": [
+          "production"
+        ]
+      },
+      {
+        "target": [
+          "preview"
+        ]
+      }
+    ]
+  },
+  "neon": {
+    "database": "neondb",
+    "isolatedBranch": "gallery-admin-isolated",
+    "primaryBranch": "main",
+    "totalBranches": 6,
+    "activeBranches": 2,
+    "archivedBranches": 4,
+    "snapshotCount": 0,
+    "historyRetentionSeconds": 21600,
+    "existingTables": [
+      "anniversary_announcements",
+      "gallery_admin_audit",
+      "gallery_admin_challenges",
+      "gallery_admin_device_requests",
+      "gallery_admin_devices",
+      "gallery_admin_owner_invites",
+      "gallery_admin_passkeys",
+      "gallery_admin_sessions",
+      "gallery_admin_users",
+      "gallery_live_overrides",
+      "gallery_published_items",
+      "mio_gacha_admin_challenges",
+      "mio_gacha_admin_credentials",
+      "mio_gacha_admin_sessions"
+    ]
+  },
+  "expectedMissingMuseumTables": [
+    "museum_public_exhibits",
+    "museum_gallery_layout_stage",
+    "museum_gallery_layout_history_stage",
+    "museum_gallery_layout_audit_stage",
+    "museum_exhibit_draft_operations_stage"
+  ],
+  "notes": "Snapshot of metadata on this date; not a live readiness certificate. PITR history alone is not a verified restore path for this child branch."
+}

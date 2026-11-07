@@ -1,0 +1,15 @@
+{
+  "observedMainCommit": "d9c09ed87cb6c6963e43db807a9bd87c6ed0b4e2",
+  "previousObservedMainCommit": "84c623de9961a801f30b978bda8b8bea7a0daf4e",
+  "previousMuseumBaseline": "bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b",
+  "status": "observed-by-GitHub read only",
+  "description": "Pinned exact six paths in the one-commit main change after Oct 2026 attendance repair. Not a migration, launch or merge permit.",
+  "changedFileBlobs": {
+    "index.html": "3addc35df15179f08392a22bea6b94b13a8823cc",
+    "app.js": "79880d6d77d272490f7203181b99f08caa96d94e",
+    "APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs": "d6c17c6410f0c31c934781fb076e526eea03be7b",
+    ".github/workflows/mio-attendance-october-recovery.yml": "0d29415adf14950b43f8e3cc706ef047feacb7cd",
+    "tests/mio-attendance-october-gas-window.test.mjs": "96376ed59578073707fe21d536db2f0e30b25011",
+    "tests/mio-attendance-october-recovery.test.mjs": "f5b6e16dce800ab6e24df8fdb9231e2d5647dff4"
+  }
+}

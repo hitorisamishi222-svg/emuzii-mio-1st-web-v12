@@ -8,8 +8,11 @@ const html = read('gacha-web-gate.html');
 const source = read('gacha-admin-ops.js');
 const passkey = read('gacha-passkey-ui.js');
 
-test('admin gate mounts the existing operator module with every required UI control', () => {
-  assert.match(html, /<script src="\/gacha-admin-ops\.js" defer><\/script>/);
+test('museum Preview retains latest operator UI, but keeps the operator module disconnected', () => {
+  assert.doesNotMatch(html, /<script src="\/gacha-admin-ops\.js" defer><\/script>/,
+    'the real operator module must not be mounted in the museum Preview');
+  assert.match(html, /<fieldset id="museumOpsPreviewLock" disabled\b/);
+  assert.match(html, /connect-src 'none'; form-action 'none'/);
   const names = ['opsStatus','opsInstallGuide','opsSetupToggle','opsReload','opsGrant',
     'opsIntakeCreate','opsPending','opsSimple','opsGrants','opsCount','opsSearch',
     'opsRoster','opsPerson','opsQuantity','opsReason','opsNewName','opsNewNote',

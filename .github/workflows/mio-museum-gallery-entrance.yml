@@ -1,0 +1,33 @@
+name: MIO museum gallery entrance safety
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum.html
+      - museum.css
+      - tests/mio-museum-gallery-entrance-20261106.test.mjs
+      - .github/workflows/mio-museum-gallery-entrance.yml
+  pull_request:
+    paths:
+      - museum.html
+      - museum.css
+      - tests/mio-museum-gallery-entrance-20261106.test.mjs
+      - .github/workflows/mio-museum-gallery-entrance.yml
+permissions:
+  contents: read
+jobs:
+  gallery-only-safe:
+    name: Gallery first entrances and existing media protection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Public-gallery read-only and mobile entrance contract
+        run: node --test tests/mio-museum-gallery-entrance-20261106.test.mjs
+      - name: No generated edits to source
+        run: git diff --exit-code

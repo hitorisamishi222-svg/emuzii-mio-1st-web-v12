@@ -1,0 +1,48 @@
+name: MIO museum Preview owner and private media composition
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum-preview-owner-session-stage.mjs
+      - museum-owner-private-media-composition-stage.mjs
+      - museum-private-blob-write-readback-stage.mjs
+      - tests/mio-museum-preview-owner-session-stage.test.mjs
+      - tests/mio-museum-preview-owner-private-blob-composition.test.mjs
+      - .github/workflows/mio-museum-preview-owner-media.yml
+  pull_request:
+    paths:
+      - museum-preview-owner-session-stage.mjs
+      - museum-owner-private-media-composition-stage.mjs
+      - museum-private-blob-write-readback-stage.mjs
+      - tests/mio-museum-preview-owner-session-stage.test.mjs
+      - tests/mio-museum-preview-owner-private-blob-composition.test.mjs
+      - .github/workflows/mio-museum-preview-owner-media.yml
+permissions:
+  contents: read
+jobs:
+  secure-owner-preview-privatemedia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    name: Real pixel → approved gallery owner/device → gated private Blob (mock I/O only)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install local test dependencies without Vercel/Neon secrets
+        run: npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+      - name: Check composition syntax
+        run: |
+          node --check museum-preview-owner-session-stage.mjs
+          node --check museum-owner-private-media-composition-stage.mjs
+          node --check tests/mio-museum-preview-owner-session-stage.test.mjs
+          node --check tests/mio-museum-preview-owner-private-blob-composition.test.mjs
+      - name: Strict Preview same-origin owner session contract
+        run: node --test tests/mio-museum-preview-owner-session-stage.test.mjs
+      - name: Revalidated owner/device session and verified blob stage composition
+        run: node --test tests/mio-museum-preview-owner-private-blob-composition.test.mjs
+      - name: No generated modification of source
+        run: git diff --exit-code -- . ':!package-lock.json'
