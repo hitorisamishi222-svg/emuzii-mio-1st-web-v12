@@ -130,7 +130,11 @@ export async function storeAndVerifyMuseumPrivateBlobStage({
  }
  let readback;
  try{readback=await retrieve(client,storeId,dedicatedToken,pathname)}
- catch{fail(writeUncertain?'WRITE_UNCONFIRMED_RETRY_SAME_ID':'READ_UNCONFIRMED_RETRY_SAME_ID')}
+ catch(error){
+  if(writeUncertain)fail('WRITE_UNCONFIRMED_RETRY_SAME_ID');
+  if(error?.message?.startsWith('MUSEUM_PRIVATE_BLOB_STAGE_'))throw error;
+  fail('READ_UNCONFIRMED_RETRY_SAME_ID');
+ }
  if(readback===null)fail('WRITE_UNCONFIRMED_RETRY_SAME_ID');
  verifyBytes(readback,image);
  return Object.freeze({ok:true,privateOnly:true,replayed:writeUncertain,
