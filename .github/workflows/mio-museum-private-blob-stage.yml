@@ -1,0 +1,40 @@
+name: MIO museum private Blob stage verification
+on:
+  push:
+    branches:
+      - feature/mio-v2-integration-mainbaseline-20261102
+    paths:
+      - museum-private-blob-write-readback-stage.mjs
+      - museum-media-decode-reencode-stage.mjs
+      - tests/mio-museum-private-blob-store-stage.test.mjs
+      - .github/workflows/mio-museum-private-blob-stage.yml
+  pull_request:
+    paths:
+      - museum-private-blob-write-readback-stage.mjs
+      - museum-media-decode-reencode-stage.mjs
+      - tests/mio-museum-private-blob-store-stage.test.mjs
+      - .github/workflows/mio-museum-private-blob-stage.yml
+permissions:
+  contents: read
+jobs:
+  assert-private-blob-contract:
+    runs-on: ubuntu-latest
+    name: Real image reencode + mocked private Blob upload/readback; no secrets
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install offline test dependencies (no Vercel credentials)
+        run: npm install --ignore-scripts --no-audit --no-fund --no-package-lock
+      - name: Static module syntax
+        run: |
+          node --check museum-private-blob-write-readback-stage.mjs
+          node --check tests/mio-museum-private-blob-store-stage.test.mjs
+      - name: Check private-only and rollback-safe image contract
+        run: node --test tests/mio-museum-private-blob-store-stage.test.mjs
+      - name: Verify no source changes from tests
+        run: git diff --exit-code -- . ':!package-lock.json'
