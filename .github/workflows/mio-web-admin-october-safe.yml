@@ -31,5 +31,6 @@ jobs:
           node --check --input-type=commonjs < GAS_WebAdminOps_20261030.gs
           node --check tests/mio-web-admin-october-combined.test.mjs
           node --check tests/mio-admin-livedata-shape-readonly.test.mjs
+          node --check tests/mio-web-admin-schema-gate.test.mjs
       - name: Offline-only read and approved baseline preservation
-        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs
+        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs
