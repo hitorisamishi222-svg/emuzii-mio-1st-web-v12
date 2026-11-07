@@ -8,6 +8,10 @@
 function mioAdminOps_(ss,d){
  var action=String(d.action||'');
  if(action==='webAdminOpsRead')return mioAdminOpsRead_(ss,d);
+ // Never mutate a live customer, membership or entitlement before the
+ // existing workbook has verified audit columns and a stable operation log.
+ if(!mioAdminOpsSchema_(ss).schemaReady)
+   throw new Error('監査シートとWeb操作ID列の管理準備が完了していません');
  if(action==='webAdminOpsApprove')return mioAdminOpsApprove_(ss,d);
  if(action==='webAdminOpsMember')return mioAdminOpsMember_(ss,d);
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
@@ -19,6 +23,24 @@ function mioAdminOps_(ss,d){
 function mioAdminOpsStr_(x){return String(x===null||x===undefined?'':x).trim()}
 function mioAdminOpsName_(s){return mioAdminOpsStr_(s).normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase()}
 function mioAdminOpsSheet_(ss,name){var sh=ss.getSheetByName(name);if(!sh)throw new Error('必要な管理シートがありません');return sh}
+/** Read-only release preflight; never creates a sheet or edits any cell. */
+function mioAdminOpsSchema_(ss){
+ var names=['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名'];
+ var audit=ss.getSheetByName('emuzii_Web管理操作履歴');
+ var auditReady=false;
+ if(audit){
+   var actual=audit.getRange(1,1,1,10).getValues();
+   auditReady=actual.length===1&&actual[0].length===10&&
+     names.every(function(x,i){return mioAdminOpsStr_(actual[0][i])===x});
+ }
+ var grants=ss.getSheetByName('emuzii_ガチャ付与履歴');
+ var grantReady=false;
+ if(grants){
+   var header=grants.getRange(1,10,1,1).getValues();
+   grantReady=header.length===1&&mioAdminOpsStr_(header[0][0])==='Web操作ID';
+ }
+ return {schemaReady:auditReady&&grantReady,auditReady:auditReady,grantLogReady:grantReady};
+}
 function mioAdminOpsValues_(sh,lastCol){
  var n=sh.getLastRow()-1;
  if(n<1)return [];
@@ -54,6 +76,10 @@ function mioAdminOpsSummary_(ss,webRows){
 function mioAdminOpsRead_(ss,d){
  var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
  var result=mioAdminOpsSummary_(ss,all);
+ var audit=mioAdminOpsSchema_(ss);
+ result.schemaReady=audit.schemaReady;
+ result.auditReady=audit.auditReady;
+ result.grantLogReady=audit.grantLogReady;
  var grantSheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
  var end=grantSheet.getLastRow();
  var start=Math.max(2,end-99),n=Math.max(0,end-start+1);
@@ -68,13 +94,9 @@ function mioAdminOpsRequest_(d){
  return req;
 }
 function mioAdminOpsLog_(ss){
- var log=ss.getSheetByName('emuzii_Web管理操作履歴');
- if(!log){
-   log=ss.insertSheet('emuzii_Web管理操作履歴');
-   log.getRange(1,1,1,10).setValues([['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名']]);
-   log.setFrozenRows(1);
- }
- return log;
+ if(!mioAdminOpsSchema_(ss).schemaReady)
+   throw new Error('監査台帳の見出しが未確認です。管理操作を停止します');
+ return mioAdminOpsSheet_(ss,'emuzii_Web管理操作履歴');
 }
 function mioAdminOpsExisting_(log,requestId){
  var n=log.getLastRow()-1;if(n<1)return null;
@@ -242,7 +264,8 @@ function mioAdminOpsApprove_(ss,d){
 }
 function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
- if(!mioAdminOpsStr_(sh.getRange(1,10).getValue()))sh.getRange(1,10).setValue('Web操作ID');
+ if(!mioAdminOpsSchema_(ss).schemaReady)
+   throw new Error('Web操作ID列の見出しが未確認です。付与履歴の自動変更は禁止です');
  // Scan the *entire* operation-id column, not only the first 499 records.
  var historyCount=Math.max(0,sh.getLastRow()-1),matches=[];
  if(historyCount>50000)throw new Error('付与履歴が照合上限です。管理者に確認してください');
