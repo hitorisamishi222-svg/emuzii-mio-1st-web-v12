@@ -100,3 +100,17 @@ test('never output real GAS source or credentials',()=>{
  assert.equal(JSON.stringify(report).includes('SpreadsheetApp'),false);
  assert.equal(report.writeAllowed,false);
 });
+
+
+// MIO_PRODUCTION_READ_WIRING_REGRESSION_20261109
+test('Vercel management read wires the correct action without participant identity',()=>{
+ const api=readFileSync(new URL('../api-gacha-admin-ops.js',import.meta.url),'utf8');
+ const bridge=readFileSync(new URL('../bridge.js',import.meta.url),'utf8');
+ assert.match(api,/read\s*:\s*'webAdminOpsRead'/);
+ assert.match(api,/const\s+data\s*=\s*\{\s*\}/);
+ assert.match(api,/bridge\s*\(\s*operations\s*\[\s*d\.action\s*\]\s*,\s*data\s*\)/);
+ assert.match(bridge,/JSON\.stringify\s*\(\s*\{\s*action\s*,\s*secret\s*,\s*\.\.\.payload\s*\}\s*\)/);
+ assert.match(bridge,/method\s*:\s*'POST'/);
+ assert.match(api,/d\.action\s*===\s*'read'\s*&&\s*\/invalid identity/);
+ assert.doesNotMatch(api,/read\s*:\s*'(?:status|register|webGateRead)'/);
+});
