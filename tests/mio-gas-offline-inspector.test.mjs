@@ -82,3 +82,45 @@ test('UI only copies the diagnostic object, not the input source',()=>{
  assert.match(html,/navigator\.clipboard\?\.writeText\(safeReport\)/);
  assert.doesNotMatch(html,/writeText\(\$\('published'\)/);
 });
+
+test('mobile doPost-only input checks routing without claiming helper completeness',()=>{
+ const inspect=inspectSource();
+ const first=candidate.indexOf('function doPost('),next=candidate.indexOf('\nfunction ',first+15);
+ assert.ok(first>=0&&next>first);
+ const isolated=candidate.slice(first,next);
+ const r=inspect(isolated,'doPost');
+ assert.equal(r.sourceCoverage,'DOPOST_ONLY');
+ assert.equal(r.hasDoPost,true);
+ assert.equal(r.adminDispatcherPresent,true);
+ assert.equal(r.dispatchStaticallyCompatible,true);
+ assert.equal(r.staticallyCompatible,false);
+ assert.equal(r.adminHelpersChecked,false);
+ assert.equal(r.missing.length,0);
+ const all=inspect(isolated,'all');
+ assert.equal(all.staticallyCompatible,false);
+ assert.ok(all.missing.length>0);
+});
+
+test('missing route in mobile doPost-only snippet cannot be treated as ready',()=>{
+ const inspect=inspectSource();
+ const first=candidate.indexOf('function doPost('),next=candidate.indexOf('\nfunction ',first+15);
+ const isolated=candidate.slice(first,next).replace(action,'');
+ const r=inspect(isolated,'doPost');
+ assert.equal(r.dispatchStaticallyCompatible,false);
+ assert.equal(r.staticallyCompatible,false);
+});
+
+test('quoted fake declarations and commented routes never count',()=>{
+ const inspect=inspectSource();
+ const fake=String.raw`
+function mioAdminOpsRead_(){}
+`;
+ const without=candidate.replace('function mioAdminOpsRead_(', 'function renamedMioReader_(')+
+  '\nconst mockGASSource='+JSON.stringify(fake)+';';
+ const r=inspect(without,'all');
+ assert.equal(r.staticallyCompatible,false);
+ assert.ok(Array.from(r.missing).includes('mioAdminOpsRead_'));
+ const withoutRoute=candidate.replace(action,'')+
+   '\nconst fakeRoute='+JSON.stringify(action)+';';
+ assert.equal(inspect(withoutRoute,'all').adminDispatcherPresent,false);
+});
