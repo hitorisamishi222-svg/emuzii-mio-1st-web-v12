@@ -144,6 +144,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install Japanese fonts for readable visual evidence
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk
+          fc-match ':lang=ja'
       - name: Check syntax before running a real browser
         run: |
           node --check tests/mio-staging-mobile-chromium.mjs
