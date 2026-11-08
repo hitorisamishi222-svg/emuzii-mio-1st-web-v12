@@ -34,10 +34,12 @@ export function reconcileGachaBrowserLinks({webRows,gachaRows}={}){
   if(seen.has(id))return failure('DUPLICATE_GACHA_ID');
   seen.add(id);counts.gachaRows++;
   const remaining=safeInt(row[7]);
-  if(remaining===0){counts.zeroBalance++;continue;}
   const total=safeInt(row[5]),special=safeInt(row[14]);
+  // A zero balance is not evidence of a healthy record. Validate the
+  // entitlement fields and integrity flags before classifying it as empty.
   if(remaining===null||total===null||remaining>total||special===null||
     row[12]!=='OK'||row[13]!=='OK'){counts.creditsNeedReview++;continue;}
+  if(remaining===0){counts.zeroBalance++;continue;}
   counts.positiveChecked++;
   const candidates=linked.get(id)||0;
   if(candidates===1)counts.singleCandidate++;
