@@ -68,9 +68,9 @@ test('route placed before bridge authentication fails closed',()=>{
  assert.equal(r.reason,'DISPATCHER_BEFORE_SECRET_GUARD');
 });
 test('route placed after participant identity guard fails closed',()=>{
- const moved=combined.replace(dispatch,'').replace(
-  "    if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')",
-  dispatch+"\n    if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')");
+ const marker="    if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')||! /^[a-f0-9]{64}$/.test(d.tokenHash||''))return json_({ok:false,error:'invalid identity'});";
+ assert.ok(combined.includes(marker));
+ const moved=combined.replace(dispatch,'').replace(marker,marker+'\\n'+dispatch);
  const r=check(moved);
  assert.equal(r.ok,false);
  assert.equal(r.reason,'DISPATCHER_AFTER_PARTICIPANT_GUARD');
