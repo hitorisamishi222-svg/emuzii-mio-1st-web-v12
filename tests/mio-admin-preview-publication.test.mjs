@@ -38,7 +38,7 @@ test('preview remains synthetic, read-only, noindex and no outgoing connections'
  assert.match(html,/default-src 'none'/);
  assert.match(html,/form-action 'none'/);
  assert.match(html,/架空データ/);
- assert.match(html,/外部通信なし/);
+ assert.match(html,/外部通信・認証・データ保存/);
  assert.doesNotMatch(html,/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket\s*\(|EventSource\s*\(/);
  assert.doesNotMatch(html,/<script\b[^>]*\bsrc=/);
  const actionButtons=[...html.matchAll(/<button\b([^>]*)>([^<]*)<\/button>/g)]
