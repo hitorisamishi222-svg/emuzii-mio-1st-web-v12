@@ -448,3 +448,17 @@ body.museum[data-museum-room="events"]{background-image:linear-gradient(#eef8ff6
  .museum-archive .archive-room-scene img{transition:none}
  .museum-archive .archive-room-card:hover .archive-room-scene img{transform:none}
 }
+
+/* Readability polish after reviewing actual 390px browser evidence. */
+#approvedMain .museum-approved-intro{background:linear-gradient(145deg,#ffffffed,#f2faffed);
+ border:1px solid #bfd9ec;border-radius:25px;padding:25px 25px 21px;
+ box-shadow:0 11px 34px #245f8d18;backdrop-filter:blur(12px)}
+#approvedMain .museum-approved-intro .museum-eyebrow{color:#467d9e}
+#approvedMain .museum-approved-intro h1{margin:11px 0 12px;color:#33658c;
+ text-shadow:none;line-height:1.35;font-size:clamp(27px,4vw,39px)}
+#approvedMain .museum-approved-intro p{margin:0;color:#46677f;
+ font-size:15px;line-height:1.85;font-weight:540}
+@media(max-width:630px){
+ #approvedMain .museum-approved-intro{padding:19px 16px;border-radius:19px}
+ #approvedMain .museum-approved-intro p{font-size:14px}
+}
