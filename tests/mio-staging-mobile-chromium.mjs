@@ -8,6 +8,8 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 
 const cwd=process.cwd(),allowed=new Map([
+ ['/mio-profile.html',['mio-profile.html','text/html']],
+ ['/assets/mio-bg-princess.jpg',['assets/mio-bg-princess.jpg','image/jpeg']],
  ['/museum-device-check.html',['museum-device-check.html','text/html']],
  ['/museum-device-check.js',['museum-device-check.js','text/javascript']],
  ['/museum-image-client.js',['museum-image-client.js','text/javascript']],
@@ -981,14 +983,15 @@ try{
  const heroStart=museumHtml.indexOf('<section class="museum-hero"');
  assert.ok(heroStart>=0&&galleryStart>heroStart,'missing hero section');
  const whaleData='data:image/svg+xml;base64,'+(await readFile(resolve(cwd,'gacha-v191-whale-blue.svg'))).toString('base64');
- const heroMarkup=museumHtml.slice(heroStart,galleryStart).replace('/gacha-v191-whale-blue.svg',whaleData);
+ const portraitData='data:image/jpeg;base64,'+(await readFile(resolve(cwd,'assets/mio-bg-princess.jpg'))).toString('base64');
+ const heroMarkup=museumHtml.slice(heroStart,galleryStart).replace('/gacha-v191-whale-blue.svg',whaleData).replace('/assets/mio-bg-princess.jpg',portraitData);
  const heroFixture='<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width,initial-scale=1">'+
   '<style>'+museumCss+kawaiiCss+'</style></head><body class="museum">'+heroMarkup+'</body></html>';
  for(const width of [320,375,390,430,1280]){
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<630});
   await cdp('Page.navigate',{url:'data:text/html;charset=utf-8,'+encodeURIComponent(heroFixture)});
-  await poll(()=>evaluate("document.readyState==='complete'&&document.querySelector('.museum-mascot img')?.naturalWidth>0"));
+  await poll(()=>evaluate("document.readyState==='complete'&&document.querySelector('.museum-mascot img')?.naturalWidth>0&&document.querySelector('.museum-hero-portrait')?.naturalWidth>0"));
   const hero=await evaluate(`(()=>{
    const mascot=document.querySelector('.museum-mascot'),title=document.querySelector('#museumTitle');
    const m=mascot.getBoundingClientRect(),t=title.getBoundingClientRect();
@@ -1006,6 +1009,18 @@ try{
    const picture=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-offline-mobile-hero-'+width+'.png',Buffer.from(picture.data,'base64'));
   }
+ }
+ // Collect each room in the shared blue theme using only the local static allowlist.
+ for(const path of ['mio-profile.html','museum-approved-gallery.html','museum-archive.html','museum-curator-preview.html']){
+  await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await cdp('Page.navigate',{url:root+'/'+path});
+  await poll(()=>evaluate("document.readyState==='complete'&&!!document.querySelector('main')"));
+  const room=await evaluate("({width:innerWidth,scroll:document.documentElement.scrollWidth,theme:[...document.styleSheets].some(x=>x.href?.endsWith('/museum-kawaii.css'))})");
+  assert.ok(room.theme&&room.scroll<=room.width+2,'room theme or overflow '+path+' '+JSON.stringify(room));
+  const layout=await cdp('Page.getLayoutMetrics');
+  const height=Math.min(2300,layout.cssContentSize.height);
+  const picture=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,width:390,height,scale:1}});
+  await writeFile('artifacts/mio-offline-mobile-room-'+path.replace('.html','')+'.png',Buffer.from(picture.data,'base64'));
  }
  // Browser-only examination of intentionally synthetic GAS files: never upload secrets.
  for(const width of [320,375,390,430]){
