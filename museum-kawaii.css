@@ -1,242 +1,242 @@
 /* MIO MUSEUM — jewel-box kawaii art direction / 2026-11-07.
    Preview only. Site-local visual theme, no API, auth, gacha, DB or scripts.
-   Soft ivory, milky rose, lavender and pearl; accessible ink contrast.
+   Sapphire, sky blue, aqua and pearl white; accessible ink contrast.
    No repeating textures, no motion required and no external font/image URL. */
 :root{color-scheme:light;
-  --mio-paper:#fffafc;--mio-petal:#ffeaf3;--mio-rose:#b63f78;
-  --mio-rose-deep:#812e58;--mio-plum:#57344d;--mio-muted:#725d70;
-  --mio-lavender:#ebe3ff;--mio-pearl:#ffffff;--mio-line:#eac5d9;
-  --mio-gold:#cf9b60;--mio-shadow:0 17px 48px #a957801e}
+  --mio-paper:#fafdff;--mio-petal:#ecf5fd;--mio-rose:#3f80b6;
+  --mio-rose-deep:#2e5c81;--mio-plum:#344757;--mio-muted:#4e6a81;
+  --mio-lavender:#e5f2fd;--mio-pearl:#ffffff;--mio-line:#c5d9ea;
+  --mio-gold:#cf9b60;--mio-shadow:0 17px 48px #5784a91e}
 body.museum{
-  --museum-ink:#57344d;--museum-soft:#725b6e;--museum-gold:#a44271;
-  --museum-border:#e7bfd4;--museum-night:#fff8fb;
-  background:radial-gradient(ellipse at 12% 0%,#ffe1eedc,transparent 34%),
-             radial-gradient(ellipse at 96% 14%,#e7dcffb8,transparent 29%),
+  --museum-ink:#344757;--museum-soft:#4d6980;--museum-gold:#4278a4;
+  --museum-border:#bfd5e7;--museum-night:#f9fcfe;
+  background:radial-gradient(ellipse at 12% 0%,#e3f1fddc,transparent 34%),
+             radial-gradient(ellipse at 96% 14%,#dfeffcb8,transparent 29%),
              radial-gradient(ellipse at 75% 84%,#fff0d9ba,transparent 31%),
-             linear-gradient(170deg,#fffafc 0%,#fff3f9 53%,#fffbf7 100%);
+             linear-gradient(170deg,#fafdff 0%,#f4fafe 53%,#fffbf7 100%);
   color:var(--mio-plum);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
   -webkit-font-smoothing:antialiased
 }
 body.museum a:focus-visible,body.museum button:focus-visible,
 body.museum input:focus-visible,body.museum select:focus-visible,
-body.museum textarea:focus-visible{outline:3px solid #af3c78;outline-offset:3px}
+body.museum textarea:focus-visible{outline:3px solid #3c7baf;outline-offset:3px}
 .museum-demo-notice{position:relative;z-index:7;padding:9px 18px;text-align:center;
-  font-size:12px;line-height:1.6;color:#704561;
-  background:linear-gradient(90deg,#fff5e9,#ffe4f1 48%,#f3eaff);
-  border-bottom:1px solid #edc5d6}
-.museum-header{position:relative;z-index:5;border-bottom:1px solid #efcade;
- background:#fff9fcee;box-shadow:0 5px 19px #9b608110;backdrop-filter:blur(12px)}
-.museum-brand{color:#81395f!important;font-weight:900;letter-spacing:.035em}
+  font-size:12px;line-height:1.6;color:#445d71;
+  background:linear-gradient(90deg,#fff5e9,#e6f3fd 48%,#ecf5fd);
+  border-bottom:1px solid #c5dbed}
+.museum-header{position:relative;z-index:5;border-bottom:1px solid #cadeef;
+ background:#f9fcffee;box-shadow:0 5px 19px #5e819d10;backdrop-filter:blur(12px)}
+.museum-brand{color:#396181!important;font-weight:900;letter-spacing:.035em}
 .museum-brand .mark{display:inline-grid;place-items:center;width:42px;height:42px;
- border-radius:16px;background:linear-gradient(145deg,#fff7fb,#efdff8);
- box-shadow:inset 0 0 0 1px #edc7da,0 5px 14px #a9719522;font-size:24px}
-.museum-brand small{color:#a15b83;font:800 10px/1.45 Georgia,serif;letter-spacing:.14em}
-.museum-nav a{color:#6f4965!important;border-bottom:0;border-radius:999px;padding:9px 12px}
+ border-radius:16px;background:linear-gradient(145deg,#f8fbfe,#dfedf8);
+ box-shadow:inset 0 0 0 1px #c7dced,0 5px 14px #7190aa22;font-size:24px}
+.museum-brand small{color:#5b82a1;font:800 10px/1.45 Georgia,serif;letter-spacing:.14em}
+.museum-nav a{color:#455e73!important;border-bottom:0;border-radius:999px;padding:9px 12px}
 .museum-nav a:hover,.museum-nav a[aria-current="page"]{
- color:#8b2e60!important;background:#ffe2ef;border-color:transparent;box-shadow:inset 0 0 0 1px #efc5d8}
+ color:#2e618b!important;background:#e4f2fd;border-color:transparent;box-shadow:inset 0 0 0 1px #c5dcef}
 .museum-shell{max-width:1160px}
-.museum-hero{isolation:isolate;border-bottom:1px solid #edc9da;
- background:linear-gradient(98deg,#fff9fce8 0%,#fff6fbe5 42%,#fff1f7b9 78%,#f7e9ffab 100%),
+.museum-hero{isolation:isolate;border-bottom:1px solid #c9dded;
+ background:linear-gradient(98deg,#f9fcffe8 0%,#f7fbfee5 42%,#f2f9feb9 78%,#ebf5fdab 100%),
  url('/assets/mio-bg-princess.jpg') center 24%/cover no-repeat}
 .museum-hero::before{content:"";position:absolute;z-index:-1;inset:0;
  background:radial-gradient(ellipse at 6% 20%,#fffefde8,transparent 47%),
-            radial-gradient(ellipse at 85% 4%,#ffcce0a0,transparent 40%),
-            linear-gradient(0deg,#fff4f9dd,transparent 58%)}
+            radial-gradient(ellipse at 85% 4%,#d0e8fba0,transparent 40%),
+            linear-gradient(0deg,#f5fafedd,transparent 58%)}
 .museum-hero::after{content:"✦    ♡     ✧";position:absolute;pointer-events:none;
  right:5%;top:4%;font-size:clamp(17px,3.8vw,33px);letter-spacing:1.2em;
- transform:rotate(-7deg);color:#bf7ba7ac;z-index:0}
+ transform:rotate(-7deg);color:#7ba0bfac;z-index:0}
 .museum-hero-inner{position:relative;z-index:1;grid-template-columns:minmax(0,1.45fr) minmax(205px,.62fr);
  gap:22px;padding-block:64px 69px;min-height:550px}
 .museum-kicker{display:inline-flex;align-items:center;padding:8px 15px;max-width:100%;
- border:1px solid #e7bbce;border-radius:999px;background:#ffffffd9;
- box-shadow:0 6px 24px #db9aba26;color:#a54473;font-size:11px;line-height:1.6;
+ border:1px solid #bbd3e7;border-radius:999px;background:#ffffffd9;
+ box-shadow:0 6px 24px #9abedb26;color:#4479a5;font-size:11px;line-height:1.6;
  letter-spacing:.1em;font-weight:850}
 .museum-hero h1{margin:15px 0 12px;font-size:clamp(39px,6.8vw,69px);line-height:1.27;
- letter-spacing:.03em;color:#9e356a;text-shadow:0 2px 1px #fff,0 14px 27px #c479a929}
-.museum-hero h1 span{display:inline-block;filter:drop-shadow(0 5px 7px #a264942b)}
+ letter-spacing:.03em;color:#356f9e;text-shadow:0 2px 1px #fff,0 14px 27px #79a2c429}
+.museum-hero h1 span{display:inline-block;filter:drop-shadow(0 5px 7px #6486a22b)}
 .museum-hero .hero-lead{font-size:clamp(19px,2.45vw,26px);font-weight:850;
- line-height:1.7;color:#82415e;max-width:680px;margin:0}
-.museum-hero .hero-sub{font-size:15px;line-height:1.85;color:#665369;
+ line-height:1.7;color:#416582;max-width:680px;margin:0}
+.museum-hero .hero-sub{font-size:15px;line-height:1.85;color:#476076;
  max-width:570px;margin:14px 0 17px}
 .museum-hero-trinket{display:inline-flex;align-items:center;gap:9px;min-height:32px;
- margin:0 0 15px;color:#995478;font-size:13px;font-weight:800;letter-spacing:.04em}
-.museum-hero-trinket::before,.museum-hero-trinket::after{content:"✧";color:#cf96b0;font-size:19px}
+ margin:0 0 15px;color:#547a99;font-size:13px;font-weight:800;letter-spacing:.04em}
+.museum-hero-trinket::before,.museum-hero-trinket::after{content:"✧";color:#96b5cf;font-size:19px}
 .museum-actions{gap:11px;margin-top:18px}
 .museum-button{min-height:50px;border-radius:999px;padding:12px 23px;
- box-shadow:0 6px 20px #aa6c8c25;transition:transform .18s,box-shadow .18s;
- border:1px solid #dc9ebd;background:#fff8fc;color:#963968!important}
-.museum-button.primary{background:linear-gradient(130deg,#b83f79,#972b65);
- color:#fff!important;border-color:#af3977;box-shadow:0 10px 22px #b3467c38}
-.museum-button.secondary{background:#fff8fce8;color:#943666!important;border-color:#d7a2bd}
-.museum-button:hover{transform:translateY(-2px);box-shadow:0 13px 27px #a9508235}
+ box-shadow:0 6px 20px #6c8eaa25;transition:transform .18s,box-shadow .18s;
+ border:1px solid #9ec0dc;background:#f9fcfe;color:#396c96!important}
+.museum-button.primary{background:linear-gradient(130deg,#3f82b8,#2b6697);
+ color:#fff!important;border-color:#397aaf;box-shadow:0 10px 22px #4682b338}
+.museum-button.secondary{background:#f9fcfee8;color:#366a94!important;border-color:#a2bfd7}
+.museum-button:hover{transform:translateY(-2px);box-shadow:0 13px 27px #5081a935}
 .museum-mascot{position:relative;width:min(100%,290px);margin:auto;align-self:center;
  padding:29px 18px 19px;border-radius:45% 45% 40% 40%/44% 44% 35% 35%;
  background:radial-gradient(circle at 38% 19%,#ffffffec,transparent 39%),
- linear-gradient(155deg,#fffdfbdd,#f5def1cc 70%,#e9dcffab);
- border:2px solid #fff;box-shadow:0 0 0 9px #fff8fc66,0 19px 49px #b47c9d42}
+ linear-gradient(155deg,#fffdfbdd,#deebf5cc 70%,#dfeffcab);
+ border:2px solid #fff;box-shadow:0 0 0 9px #f9fcfe66,0 19px 49px #7c9bb442}
 .museum-mascot::before{content:"♡";position:absolute;top:-24px;right:-15px;
- color:#d26b98;font-size:50px;transform:rotate(17deg);text-shadow:1px 2px 0 #fff}
+ color:#6ba4d2;font-size:50px;transform:rotate(17deg);text-shadow:1px 2px 0 #fff}
 .museum-mascot::after{content:"✦";position:absolute;left:-19px;bottom:54px;
  color:#c99e73;font-size:40px;text-shadow:1px 2px 0 #fff}
 .museum-mascot img{position:relative;z-index:1;width:min(100%,225px);
- filter:drop-shadow(0 10px 13px #ab6d9933)}
-.museum-mascot span{position:relative;z-index:1;color:#995879;font-size:11px;letter-spacing:.11em}
+ filter:drop-shadow(0 10px 13px #6d8fab33)}
+.museum-mascot span{position:relative;z-index:1;color:#587c99;font-size:11px;letter-spacing:.11em}
 .museum-foyer{max-width:770px;margin-top:26px;padding:19px;
- border:1px solid #eac4d6;border-radius:25px;
- background:linear-gradient(125deg,#ffffffea,#fff2f9f1 72%,#f4edffed);
- box-shadow:0 16px 36px #b45d8830,inset 0 1px 0 #fff}
-.museum-foyer-eyebrow{font:850 12px/1.5 Georgia,serif;letter-spacing:.16em;color:#9b4a75}
+ border:1px solid #c4d9ea;border-radius:25px;
+ background:linear-gradient(125deg,#ffffffea,#f3f9fef1 72%,#eef7feed);
+ box-shadow:0 16px 36px #5d8db430,inset 0 1px 0 #fff}
+.museum-foyer-eyebrow{font:850 12px/1.5 Georgia,serif;letter-spacing:.16em;color:#4a779b}
 .museum-foyer-grid{gap:10px}
-.museum-foyer-link{border:1px solid #ebc8dc;border-radius:17px;
- background:linear-gradient(135deg,#fff,#fff5fa)!important;
- box-shadow:0 6px 13px #b87ba019;transition:transform .18s,box-shadow .18s,border-color .18s}
-.museum-foyer-link:hover{transform:translateY(-2px);border-color:#bf6b9d;
- box-shadow:0 9px 21px #b46c962d}
-.museum-foyer-open{border-color:#df9ebb!important;background:linear-gradient(125deg,#fff0f8,#fffdfd)!important}
-.museum-foyer-icon{background:linear-gradient(155deg,#fff6fc,#f1dff5);border:1px solid #edcfdf}
-.museum-foyer-copy strong{color:#763a60;font-size:13px}
-.museum-foyer-copy small,.museum-foyer-open .museum-foyer-copy small{color:#82657b;font-size:11px}
+.museum-foyer-link{border:1px solid #c8dbeb;border-radius:17px;
+ background:linear-gradient(135deg,#fff,#f6fafe)!important;
+ box-shadow:0 6px 13px #7b9db819;transition:transform .18s,box-shadow .18s,border-color .18s}
+.museum-foyer-link:hover{transform:translateY(-2px);border-color:#6b99bf;
+ box-shadow:0 9px 21px #6c94b42d}
+.museum-foyer-open{border-color:#9ec2df!important;background:linear-gradient(125deg,#f1f8fe,#fffdfd)!important}
+.museum-foyer-icon{background:linear-gradient(155deg,#f7fbfe,#dfebf5);border:1px solid #cfe0ed}
+.museum-foyer-copy strong{color:#3a5b76;font-size:13px}
+.museum-foyer-copy small,.museum-foyer-open .museum-foyer-copy small{color:#577690;font-size:11px}
 .museum-section{padding-block:57px 13px}
-.museum-eyebrow{font-family:Georgia,serif;font-weight:850;letter-spacing:.14em;color:#a24e7e}
-.museum-heading h2,.museum-page-heading h1{color:#843d63;text-shadow:none}
-.museum-heading p,.museum-page-heading p,.museum-soft{color:#6b5970}
-.museum-heading h2::after{content:"  ✧";color:#d2a4c0;font-size:.7em}
+.museum-eyebrow{font-family:Georgia,serif;font-weight:850;letter-spacing:.14em;color:#4e7ca2}
+.museum-heading h2,.museum-page-heading h1{color:#3d6484;text-shadow:none}
+.museum-heading p,.museum-page-heading p,.museum-soft{color:#4b677e}
+.museum-heading h2::after{content:"  ✧";color:#a4bdd2;font-size:.7em}
 .museum-gallery-first{padding-block:58px 27px}
-.museum-gallery-first::before{background:linear-gradient(153deg,#ffecf5d9,#fffefaed 50%,#f0e9ffb8);
- border:1px solid #f0d3e2;border-radius:33px;box-shadow:inset 0 0 0 1px #fff}
-.museum-gallery-first .museum-heading h2{color:#8f386b;text-shadow:none}
+.museum-gallery-first::before{background:linear-gradient(153deg,#edf6fed9,#fffefaed 50%,#ebf5fdb8);
+ border:1px solid #d3e3f0;border-radius:33px;box-shadow:inset 0 0 0 1px #fff}
+.museum-gallery-first .museum-heading h2{color:#38688f;text-shadow:none}
 .museum-gallery-first .museum-heading{padding:3px 16px 0}
-.museum-showcase{background:linear-gradient(142deg,#fffdfc,#fff3f9 54%,#f8f1ff);
- border:1px solid #e7bbd5;border-radius:26px;box-shadow:var(--mio-shadow);
+.museum-showcase{background:linear-gradient(142deg,#fffdfc,#f4fafe 54%,#f2f9fe);
+ border:1px solid #bbd3e7;border-radius:26px;box-shadow:var(--mio-shadow);
  padding:24px}
-.museum-showcase::before{inset:7px;border:1px dashed #edc8da77;border-radius:21px}
-.museum-showcase-heading h3{color:#803d66;font-size:clamp(21px,3vw,29px)}
-.museum-showcase-heading p{color:#725b6f}
-.museum-showcase-all{border:1px solid #e4adc7;border-radius:999px;
- background:#fff9fd;color:#963d73!important;box-shadow:0 4px 13px #b2719522;
+.museum-showcase::before{inset:7px;border:1px dashed #c8dced77;border-radius:21px}
+.museum-showcase-heading h3{color:#3d6280;font-size:clamp(21px,3vw,29px)}
+.museum-showcase-heading p{color:#4d6980}
+.museum-showcase-all{border:1px solid #adcbe4;border-radius:999px;
+ background:#f9fcff;color:#3d6e96!important;box-shadow:0 4px 13px #7195b222;
  text-decoration:none;padding:10px 15px}
-.museum-showcase-item{border:1px solid #e9c6da;background:#fffefe;border-radius:19px;
- box-shadow:0 6px 17px #bf78981d;overflow:hidden}
-.museum-showcase-item:hover{border-color:#ce83af;box-shadow:0 11px 24px #b569972e}
-.museum-showcase-art{background:linear-gradient(140deg,#fbe9f4,#e9e2f8)!important}
-.museum-showcase-video{background:linear-gradient(140deg,#f4eaff,#fff0e4)!important}
-.museum-showcase-art::before{border-color:#f4e9f5}
-.museum-showcase-seal{color:#925c7c;background:#fff9fdde}
-.museum-showcase-body strong{color:#6e3d62}
-.museum-showcase-label{color:#a34e7d}
-.museum-showcase-body>span:not(.museum-showcase-label):not(.museum-showcase-cta){color:#735c72}
-.museum-showcase-cta{color:#a74678}
+.museum-showcase-item{border:1px solid #c6d9e9;background:#fffefe;border-radius:19px;
+ box-shadow:0 6px 17px #789fbf1d;overflow:hidden}
+.museum-showcase-item:hover{border-color:#83acce;box-shadow:0 11px 24px #6993b52e}
+.museum-showcase-art{background:linear-gradient(140deg,#e9f3fb,#e2eef8)!important}
+.museum-showcase-video{background:linear-gradient(140deg,#ecf5fd,#fff0e4)!important}
+.museum-showcase-art::before{border-color:#e9f0f5}
+.museum-showcase-seal{color:#597a95;background:#f9fcffde}
+.museum-showcase-body strong{color:#3d586e}
+.museum-showcase-label{color:#4e7da3}
+.museum-showcase-body>span:not(.museum-showcase-label):not(.museum-showcase-cta){color:#4e6a81}
+.museum-showcase-cta{color:#467ba7}
 .museum-gallery-first .museum-grid{padding:0 12px 18px}
 .museum-gallery-first .museum-card,.museum-card{
- background:linear-gradient(151deg,#fffefd,#fff4f8);border:1px solid #e8bfd4;
- border-radius:23px;box-shadow:0 8px 22px #b9759a1c}
+ background:linear-gradient(151deg,#fffefd,#f5fafe);border:1px solid #bfd6e8;
+ border-radius:23px;box-shadow:0 8px 22px #759ab91c}
 .museum-gallery-first .museum-card:hover,.museum-card[href]:hover{
- border-color:#cb82aa;box-shadow:0 14px 32px #bd799d2c}
+ border-color:#82aacb;box-shadow:0 14px 32px #799ebd2c}
 .museum-gallery-first .museum-card .card-art,.museum-card .card-art{
- background:radial-gradient(ellipse at 51% 40%,#fffafcee,transparent 59%),
- linear-gradient(143deg,#fce4f0,#ece5ff);border-bottom:1px solid #f1d2e1}
+ background:radial-gradient(ellipse at 51% 40%,#fafdffee,transparent 59%),
+ linear-gradient(143deg,#e4f1fc,#e7f3fd);border-bottom:1px solid #d2e3f1}
 .museum-gallery-first .museum-featured-gallery .card-art{
- background:radial-gradient(ellipse at 40% 27%,#fff,transparent 51%),linear-gradient(145deg,#f9dfed,#ebe7fd)}
-.museum-card h3{color:#783c61}
-.museum-card p{color:#745d70}
-.museum-card .card-label{color:#a04a79}
-.museum-card .card-cta,.museum-gallery-first .museum-card .card-cta{color:#a44375;text-decoration:none}
-.museum-gallery-first .museum-card::before{color:#cc8eb2}
-.museum-feature{background:linear-gradient(145deg,#fffdfd,#fff1f8 74%,#f6efff);
- border:1px solid #e9c6d9;border-radius:25px;box-shadow:var(--mio-shadow)}
-.museum-feature h2,.museum-feature h3{color:#834166}
-.museum-feature p,.museum-points{color:#6f5a70}
+ background:radial-gradient(ellipse at 40% 27%,#fff,transparent 51%),linear-gradient(145deg,#dfedf9,#ebe7fd)}
+.museum-card h3{color:#3c5d78}
+.museum-card p{color:#4e6b83}
+.museum-card .card-label{color:#4a79a0}
+.museum-card .card-cta,.museum-gallery-first .museum-card .card-cta{color:#4378a4;text-decoration:none}
+.museum-gallery-first .museum-card::before{color:#8eb0cc}
+.museum-feature{background:linear-gradient(145deg,#fffdfd,#f2f9fe 74%,#f0f8fe);
+ border:1px solid #c6d9e9;border-radius:25px;box-shadow:var(--mio-shadow)}
+.museum-feature h2,.museum-feature h3{color:#416583}
+.museum-feature p,.museum-points{color:#4c687e}
 .museum-news-list{gap:16px}
-.museum-news-item{background:#fffefd;border:1px solid #edccde;
- border-radius:22px;box-shadow:0 8px 25px #b268901e;color:#74455e}
-.museum-news-item time{color:#a04478}
-.museum-news-item h3{color:#7a3b61}
-.museum-news-item p{color:#745e72}
-.museum-news-item a,.museum-view-all{color:#9a3870!important}
-.museum-awakening-card{background:linear-gradient(133deg,#fffdfd,#fff0f8);
- border:1px solid #ecd0e0;border-radius:22px;box-shadow:var(--mio-shadow)}
-.museum-awakening-cover{box-shadow:0 7px 22px #b477952a;background:#fff;
- border:1px solid #f0d7e2}
-.museum-awakening-label{color:#a74b7b}
-.museum-awakening-info h3{color:#804065}
-.museum-awakening-info p{color:#745c70}
-.museum-awakening-action{border-radius:999px;background:#b3437e;color:#fff!important;
- box-shadow:0 7px 17px #b6618b2f}
+.museum-news-item{background:#fffefd;border:1px solid #ccdeed;
+ border-radius:22px;box-shadow:0 8px 25px #6891b21e;color:#455f74}
+.museum-news-item time{color:#4477a0}
+.museum-news-item h3{color:#3b5e7a}
+.museum-news-item p{color:#4f6c83}
+.museum-news-item a,.museum-view-all{color:#386e9a!important}
+.museum-awakening-card{background:linear-gradient(133deg,#fffdfd,#f1f8fe);
+ border:1px solid #d0dfec;border-radius:22px;box-shadow:var(--mio-shadow)}
+.museum-awakening-cover{box-shadow:0 7px 22px #7799b42a;background:#fff;
+ border:1px solid #d7e5f0}
+.museum-awakening-label{color:#4b7ea7}
+.museum-awakening-info h3{color:#406380}
+.museum-awakening-info p{color:#4e6b82}
+.museum-awakening-action{border-radius:999px;background:#4381b3;color:#fff!important;
+ box-shadow:0 7px 17px #6190b62f}
 .museum-profile-portrait{border-radius:29px;border:7px solid #fff;
- box-shadow:0 12px 41px #b4799939;overflow:hidden}
-.museum-info-block{border-color:#ebc9db}
-.museum-info-block strong{color:#9a4473}
-.museum-footer{margin-top:67px;border-top:1px solid #ebc8db;
- background:linear-gradient(120deg,#fff9fc,#f5edff);color:#74576c}
-.museum-footer strong{color:#894064}
-.museum-footer a{color:#a44a79!important}
+ box-shadow:0 12px 41px #7999b439;overflow:hidden}
+.museum-info-block{border-color:#c9dceb}
+.museum-info-block strong{color:#44739a}
+.museum-footer{margin-top:67px;border-top:1px solid #c8dbeb;
+ background:linear-gradient(120deg,#f9fcff,#eef7fe);color:#4c687f}
+.museum-footer strong{color:#406889}
+.museum-footer a{color:#4a7ba4!important}
 .museum-page-heading{padding-block:54px 33px}
 .museum-page-heading h1{margin:12px 0}
 body.museum .museum-archive .archive-room-guide{color:inherit}
 /* Room-specific classes live in museum-archive.css; this final stylesheet
    comes AFTER it to keep every visitor space in one gentle palette. */
-.museum-archive .archive-intro,.museum-archive .archive-room-heading p{color:#725b6f}
-.museum-archive .archive-room-heading h2{color:#823f67}
+.museum-archive .archive-intro,.museum-archive .archive-room-heading p{color:#4d6980}
+.museum-archive .archive-room-heading h2{color:#3f6482}
 .museum-archive .archive-room-card,.museum-archive .archive-entry{
- background:linear-gradient(145deg,#fffdfd,#fff2f9 75%,#f4effe);
- border:1px solid #e9c3d9;border-radius:23px;box-shadow:var(--mio-shadow)}
-.museum-archive .archive-room-card:hover{border-color:#c87ba8}
+ background:linear-gradient(145deg,#fffdfd,#f3f9fe 75%,#eff7fe);
+ border:1px solid #c3d8e9;border-radius:23px;box-shadow:var(--mio-shadow)}
+.museum-archive .archive-room-card:hover{border-color:#7ba5c8}
 .museum-archive .archive-room-icon,.museum-archive .archive-image{
- background:linear-gradient(145deg,#ffe6f2,#ece4ff);border-color:#edcade}
-.museum-archive .archive-room-copy strong,.museum-archive .archive-entry h3{color:#824267}
-.museum-archive .archive-room-copy span,.museum-archive .archive-entry p{color:#705e70}
-.museum-archive .archive-room-copy em,.museum-archive .archive-tag,.museum-archive .archive-link{color:#a34779}
-.museum-archive .archive-credit,.museum-archive .archive-privacy{color:#765e72}
+ background:linear-gradient(145deg,#e8f4fd,#e6f3fd);border-color:#cadded}
+.museum-archive .archive-room-copy strong,.museum-archive .archive-entry h3{color:#426582}
+.museum-archive .archive-room-copy span,.museum-archive .archive-entry p{color:#4d6a81}
+.museum-archive .archive-room-copy em,.museum-archive .archive-tag,.museum-archive .archive-link{color:#477aa3}
+.museum-archive .archive-credit,.museum-archive .archive-privacy{color:#506d85}
 .museum-archive .archive-filter,.museum-archive .archive-status{
- background:#fffafd;border:1px solid #e5bbd2;color:#804365;border-radius:999px}
-.museum-archive .archive-filter[aria-pressed="true"]{color:#fff;background:#b5437d;border-color:#a83872}
+ background:#fafdff;border:1px solid #bbd2e5;color:#436580;border-radius:999px}
+.museum-archive .archive-filter[aria-pressed="true"]{color:#fff;background:#4382b5;border-color:#3876a8}
 .museum-archive .archive-status{border-radius:16px}
-.museum-archive .archive-privacy{background:#fff9fd;border-color:#eecbdd}
+.museum-archive .archive-privacy{background:#f9fcff;border-color:#cbdeee}
 /* Already published gallery has inline legacy CSS; the final link to this
    stylesheet follows that inline block on its page, so it can be restyled. */
-.museum-approved-card{background:linear-gradient(145deg,#fffefd,#fff1f7);
- border:1px solid #e7c0d6;border-radius:24px;box-shadow:var(--mio-shadow)}
-.museum-approved-card img{background:#fff4fa;border-color:#ead1df;box-shadow:0 7px 23px #a7698a27}
-.museum-approved-card::before{color:#c27b9e}
-.museum-approved-card h2{color:#713b60}
-.museum-approved-card p{color:#765a6b}
-.museum-approved-label{color:#a44378}
-.museum-approved-card a{background:#b7477f;color:#fff;border-radius:999px}
-.museum-approved-card .museum-approved-permalink{background:#fff7fc;color:#9a4672;border-color:#e3bcd1}
-#approvedMain>h1{color:#8a3d68;text-shadow:none}
-.museum-approved-tools input{background:#fff;color:#53364f;border-color:#d7a1bd;border-radius:16px}
-.museum-approved-filters button{background:#fff9fd;color:#85416b;border-color:#e0b3cb;border-radius:999px}
-.museum-approved-filters button[aria-pressed="true"]{background:#b13f7a;color:#fff}
-.museum-approved-focus{background:#fff8fc;border-color:#e6b9cf;border-radius:18px}
-.museum-approved-focus p{color:#81516e}
-.museum-approved-focus button{background:#b3437b;color:#fff;border-radius:999px}
+.museum-approved-card{background:linear-gradient(145deg,#fffefd,#f2f9fe);
+ border:1px solid #c0d5e7;border-radius:24px;box-shadow:var(--mio-shadow)}
+.museum-approved-card img{background:#f5fafe;border-color:#d1dfea;box-shadow:0 7px 23px #698ba727}
+.museum-approved-card::before{color:#7ba2c2}
+.museum-approved-card h2{color:#3b5971}
+.museum-approved-card p{color:#4e6b82}
+.museum-approved-label{color:#4378a4}
+.museum-approved-card a{background:#4785b7;color:#fff;border-radius:999px}
+.museum-approved-card .museum-approved-permalink{background:#f8fbfe;color:#46749a;border-color:#bcd1e3}
+#approvedMain>h1{color:#3d678a;text-shadow:none}
+.museum-approved-tools input{background:#fff;color:#334656;border-color:#a1bfd7;border-radius:16px}
+.museum-approved-filters button{background:#f9fcff;color:#416685;border-color:#b3cce0;border-radius:999px}
+.museum-approved-filters button[aria-pressed="true"]{background:#3f7eb1;color:#fff}
+.museum-approved-focus{background:#f9fcfe;border-color:#b9d2e6;border-radius:18px}
+.museum-approved-focus p{color:#4f6c83}
+.museum-approved-focus button{background:#4381b3;color:#fff;border-radius:999px}
 /* Curator and rehearsal pages retain operational semantics and high contrast. */
-.museum-curator .curator-hero h1,.museum-curator .curator-panel h2{color:#833d65}
-.museum-curator .curator-hero p,.museum-curator .curator-small{color:#695568}
+.museum-curator .curator-hero h1,.museum-curator .curator-panel h2{color:#3d6383}
+.museum-curator .curator-hero p,.museum-curator .curator-small{color:#476177}
 .museum-curator .curator-panel,.museum-curator .curator-overview{
- background:linear-gradient(145deg,#fffefe,#fff1f9 75%,#f5efff);
- border:1px solid #e7bfd6;box-shadow:var(--mio-shadow);border-radius:24px}
-.museum-curator .curator-panel h3,.museum-curator .curator-overview h2{color:#9a4676}
+ background:linear-gradient(145deg,#fffefe,#f2f9fe 75%,#f0f8fe);
+ border:1px solid #bfd5e7;box-shadow:var(--mio-shadow);border-radius:24px}
+.museum-curator .curator-panel h3,.museum-curator .curator-overview h2{color:#46749a}
 .museum-curator .curator-overview-card{
- background:#fff9fd;border:1px solid #e8c6d9;color:#673e5f}
-.museum-curator .curator-overview-card span{color:#725b72}
-.museum-curator .curator-overview-card strong{color:#a3487a}
+ background:#f9fcff;border:1px solid #c6d9e8;color:#3e5567}
+.museum-curator .curator-overview-card span{color:#4d6980}
+.museum-curator .curator-overview-card strong{color:#487aa3}
 .museum-curator .curator-caution{background:#fff5e7;border-color:#e8bd8c;color:#73543b}
 .museum-curator .curator-viewer-count,.museum-curator .curator-empty-room,
 .museum-curator .curator-draft-recovery,.museum-curator .curator-switch-guard,
 .museum-curator .curator-local-image-status{
- background:#fff9fd;border:1px solid #e8c6d9;color:#704c63}
+ background:#f9fcff;border:1px solid #c6d9e8;color:#476076}
 .museum-curator .curator-draft-recovery h3,
-.museum-curator .curator-switch-guard strong{color:#844264}
+.museum-curator .curator-switch-guard strong{color:#426684}
 .museum-curator .curator-viewer-room,.museum-curator .curator-viewer-category{
- background:#fff0f8;color:#85466b;border:1px solid #e6bbd0}
-.museum-curator .curator-feature{background:#fce1ed;color:#8b3c6d;border-color:#e7aaca}
-.museum-curator label{color:#734a65}
+ background:#f1f8fe;color:#466985;border:1px solid #bbd3e6}
+.museum-curator .curator-feature{background:#e1f0fc;color:#3c678b;border-color:#aacce7}
+.museum-curator label{color:#476176}
 .museum-curator input:not([type=checkbox]),.museum-curator select,
-.museum-curator textarea{background:#fff!important;color:#523650!important;
- border:1px solid #d8a8c4!important;border-radius:13px}
+.museum-curator textarea{background:#fff!important;color:#334655!important;
+ border:1px solid #a8c2d8!important;border-radius:13px}
 .museum-curator button{border-radius:13px}
-.museum-curator .curator-panel button:not(:disabled){box-shadow:0 5px 13px #b77c9a14}
+.museum-curator .curator-panel button:not(:disabled){box-shadow:0 5px 13px #7c9cb714}
 @media(max-width:850px){
  .museum-hero-inner{grid-template-columns:minmax(0,1fr) 175px;gap:13px;padding-block:48px 58px}
  .museum-mascot{width:175px;padding:20px 12px}
@@ -256,7 +256,7 @@ body.museum .museum-archive .archive-room-guide{color:inherit}
  .museum-hero .hero-sub{font-size:14px;line-height:1.8}
  .museum-mascot{display:block;position:relative;order:-1;top:auto;right:auto;
   flex:none;align-self:center;width:112px;height:112px;margin:8px auto 0;
-  padding:12px;border-width:2px;box-shadow:0 0 0 6px #fff9fc99,0 9px 25px #b6719727;
+  padding:12px;border-width:2px;box-shadow:0 0 0 6px #f9fcff99,0 9px 25px #7197b627;
   border-radius:43%;opacity:1;pointer-events:none}
  .museum-mascot::before{top:-8px;right:-5px;font-size:19px}
  .museum-mascot::after{left:-8px;bottom:6px;font-size:15px}
@@ -291,38 +291,38 @@ body.museum .museum-archive .archive-room-guide{color:inherit}
 /* Curator operational surfaces — cheerful but unmistakable states. */
 .museum-curator .curator-review,.museum-curator .curator-status,.museum-curator .curator-entry,
 .museum-curator .curator-public-card,.museum-curator .curator-restore .curator-public-card{
- background:#fff9fd;border:1px solid #ebc8dc;color:#684360;border-radius:18px}
-.museum-curator .curator-entry.is-selected{border:2px solid #b94781;background:#fff2f9}
+ background:#f9fcff;border:1px solid #c8dbeb;color:#40586b;border-radius:18px}
+.museum-curator .curator-entry.is-selected{border:2px solid #4786b9;background:#f3f9fe}
 .museum-curator .curator-entry p,.museum-curator .curator-public-card p,
-.museum-curator .curator-switch-guard p,.museum-curator #draftRecoveryStatus{color:#765b70}
-.museum-curator .curator-thumb{background:#f7e5f3;border:1px solid #e7bcd4}
-.museum-curator .curator-review input[type=checkbox]{accent-color:#b33e79}
-.museum-curator .curator-public-card strong,.museum-curator .curator-entry strong{color:#743e61}
-.museum-curator button{background:#b5417b;border:1px solid #a53871;color:#fff;box-shadow:0 6px 17px #b66c962c}
-.museum-curator button.curator-secondary{background:#fff8fd;border:1px solid #d89ebc;color:#8a3d67}
+.museum-curator .curator-switch-guard p,.museum-curator #draftRecoveryStatus{color:#4e6b83}
+.museum-curator .curator-thumb{background:#e5eff7;border:1px solid #bcd4e7}
+.museum-curator .curator-review input[type=checkbox]{accent-color:#3e7eb3}
+.museum-curator .curator-public-card strong,.museum-curator .curator-entry strong{color:#3e5c74}
+.museum-curator button{background:#4181b5;border:1px solid #3874a5;color:#fff;box-shadow:0 6px 17px #6c95b62c}
+.museum-curator button.curator-secondary{background:#f9fcfe;border:1px solid #9ebed8;color:#3d678a}
 .museum-curator .curator-local-image-status{border-radius:16px}
-.museum-curator .curator-draft-recovery{background:#fff7fc}
+.museum-curator .curator-draft-recovery{background:#f8fbfe}
 .museum-curator .curator-switch-guard{background:#fff6e9;border-color:#eec59e;color:#76533f}
 .museum-curator .curator-switch-guard p{color:#76533f}
 .museum-curator .curator-empty-room{border-style:dashed}
 .museum-curator .curator-visitor-controls{gap:13px}
-.museum-curator .curator-viewer-count{color:#8d426a}
+.museum-curator .curator-viewer-count{color:#426b8d}
 /* The optional device diagnostic is a helper, not a second design universe. */
-body.museum-device{color:#61415c}
+body.museum-device{color:#3d5365}
 .museum-device main{max-width:780px;margin:0 auto;padding:20px 16px 70px}
-.museum-device a{color:#a04475}
-.museum-device h1,.museum-device h2{color:#843e68}
-.museum-device .panel,.museum-device .status{background:#fff9fd;
- border:1px solid #e8bfd5;border-radius:20px;color:#714c67;
- box-shadow:0 8px 24px #a66a8e14}
-.museum-device .note{color:#715e73}
-.museum-device button{background:#b4427b;color:#fff;border:1px solid #a63870;
+.museum-device a{color:#4477a0}
+.museum-device h1,.museum-device h2{color:#3e6584}
+.museum-device .panel,.museum-device .status{background:#f9fcff;
+ border:1px solid #bfd6e8;border-radius:20px;color:#476176;
+ box-shadow:0 8px 24px #6a8ba614}
+.museum-device .note{color:#4e6b83}
+.museum-device button{background:#4281b4;color:#fff;border:1px solid #3874a6;
  border-radius:999px}
-.museum-device button.secondary{background:#fff7fc;color:#8c416b;border-color:#ddaec6}
-.museum-device input[type=file]{background:#fff;color:#5b3855;border-color:#d7a4c1}
+.museum-device button.secondary{background:#f8fbfe;color:#416a8c;border-color:#aec8dd}
+.museum-device input[type=file]{background:#fff;color:#374b5c;border-color:#a4c0d7}
 .museum-device .ok{color:#276e54}
 .museum-device .warn{color:#8d501a}
-.museum-device dd,.museum-device dt{border-bottom-color:#edc9dc}
+.museum-device dd,.museum-device dt{border-bottom-color:#c9dded}
 @media(prefers-reduced-motion:reduce){
  body.museum *,body.museum *::before,body.museum *::after{
   scroll-behavior:auto!important;animation-duration:0s!important;
@@ -330,4 +330,37 @@ body.museum-device{color:#61415c}
 }
 
 /* Keep recovery text readable after switching from the legacy dark palette. */
-.museum-curator #draftRecoveryStatus{background:#fff0f8;border-color:#e1b3cb;color:#70445f}
+.museum-curator #draftRecoveryStatus{background:#f1f8fe;border-color:#b3cce1;color:#435c71}
+
+/* Mio's established portrait is the hero; the whale guides visitors beside her. */
+.museum-hero{background:radial-gradient(ellipse at 92% 18%,#bceaffaa,transparent 52%),linear-gradient(135deg,#fcfeff,#e9f6ff 60%,#f7fcff)}
+.museum-hero::before{background:radial-gradient(ellipse at 6% 20%,#ffffffdf,transparent 55%)}
+.museum-hero-inner{grid-template-columns:minmax(0,1.2fr) minmax(300px,.85fr);gap:40px}
+.museum-hero-visual{position:relative;align-self:center;min-width:0;padding:10px;background:#ffffffb8;border:1px solid #b7d9ed;border-radius:180px 180px 35px 35px;box-shadow:0 20px 55px #19629925,inset 0 0 0 5px #ffffffb0}
+.museum-hero-portrait{display:block;width:100%;height:610px;object-fit:cover;object-position:50% 34%;border-radius:170px 170px 28px 28px}
+.museum-hero-visual .museum-mascot{display:block;position:absolute;right:-13px;bottom:22px;top:auto;width:115px;height:115px;padding:12px;margin:0;border-radius:50%;background:#f6fcfff0;box-shadow:0 8px 26px #1e639b35}
+.museum-hero-visual .museum-mascot img{display:block;width:85px;margin:auto}
+.museum-hero-visual .museum-mascot span{display:none}
+.museum-hero-visual .museum-mascot::before{font-size:27px;top:-10px;right:0;color:#4c9bc7}
+.museum-hero-visual .museum-mascot::after{font-size:22px;bottom:5px;left:-6px;color:#be9c5b}
+.museum-hero h1{font-size:clamp(35px,5.1vw,61px)}
+.museum-profile-portrait{background-position:50% 34%;border-color:#fff;outline:1px solid #b9d9ed}
+.museum-page-heading{position:relative;border-bottom:1px solid #c5e2f2;margin-bottom:24px}
+.museum-page-heading::after{content:"✧  💎  ✧";display:block;margin-top:14px;color:#4e93bd;font-size:19px;letter-spacing:.3em}
+.museum-approved-card,.museum-archive .archive-entry,.museum-card{box-shadow:0 10px 30px #20689c12,inset 0 1px 0 #fff}
+@media(max-width:850px) and (min-width:631px){
+ .museum-hero-inner{grid-template-columns:minmax(0,1fr) minmax(240px,.75fr);gap:22px}
+ .museum-hero-portrait{height:550px}
+}
+@media(max-width:630px){
+ .museum-hero-inner{gap:25px;padding-top:24px}
+ .museum-hero-visual{order:-1;align-self:stretch;margin:0 6px;padding:7px;border-radius:120px 120px 26px 26px}
+ .museum-hero-portrait{height:340px;object-position:50% 34%;border-radius:113px 113px 20px 20px}
+ .museum-hero-visual .museum-mascot{right:-9px;bottom:15px;width:80px;height:80px;padding:8px;border-width:2px}
+ .museum-hero-visual .museum-mascot img{width:60px}
+ .museum-hero h1{font-size:clamp(33px,8.8vw,46px)}
+ .museum-foyer-grid{grid-template-columns:1fr}
+ .museum-foyer-link{min-height:64px}
+ .museum-foyer-copy strong{font-size:13px}
+ .museum-foyer-copy small{font-size:11px}
+}
