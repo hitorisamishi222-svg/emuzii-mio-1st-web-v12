@@ -116,3 +116,24 @@ test('comment with a fake dispatcher cannot repair missing live route',()=>{
  assert.equal(r.ok,false);
  assert.equal(r.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
 });
+
+test('missing October shared dependencies must stop before management read',()=>{
+ const shared=['json_','equal_','safeText_','webIntegrityOk_','ensureWebDerivedRow_'];
+ for(const fn of shared){
+  const original='function '+fn+'(';
+  assert.ok(combined.includes(original),fn+' exists in candidate');
+  const r=check(combined.replace(original,'function renamedSharedForTest_('));
+  assert.equal(r.ok,false,fn);
+  assert.equal(r.reason,'SHARED_HELPERS_MISSING_NO_AUTOPATCH',fn);
+  assert.ok(r.missingSharedFunctions.includes(fn),fn);
+  assert.equal(r.publicationAllowed,false);
+  assert.equal(r.patchAllowed,false);
+ }
+});
+test('a commented shared function cannot hide a missing real definition',()=>{
+ const source=combined.replace('function safeText_(', 'function renamedSharedForTest_(')+
+  '\n/*\nfunction safeText_(){}\n*/';
+ const r=check(source);
+ assert.equal(r.reason,'SHARED_HELPERS_MISSING_NO_AUTOPATCH');
+ assert.ok(r.missingSharedFunctions.includes('safeText_'));
+});
