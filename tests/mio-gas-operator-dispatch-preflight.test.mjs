@@ -88,7 +88,7 @@ test('missing shared helper blocks read even when every action handler exists',(
  assert.ok(r.missingFunctions.includes('mioAdminOpsSchema_'));
 });
 test('duplicate shared helper blocks release',()=>{
- const r=check(combined+'\\nfunction mioAdminOpsRecordGrant_(){}');
+ const r=check(combined+'\nfunction mioAdminOpsRecordGrant_(){}');
  assert.equal(r.ok,false);
  assert.equal(r.reason,'DUPLICATE_CRITICAL_FUNCTIONS');
 });
