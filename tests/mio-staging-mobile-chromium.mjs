@@ -1025,6 +1025,15 @@ try{
   const height=Math.min(2300,layout.cssContentSize.height);
   const picture=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,clip:{x:0,y:0,width:390,height,scale:1}});
   await writeFile('artifacts/mio-offline-mobile-room-'+path.replace('.html','')+'.png',Buffer.from(picture.data,'base64'));
+  if(path==='museum-archive.html'){
+   for(const [kind,asset] of [['icons','icons'],['moments','album'],['events','events']]){
+    await evaluate("document.querySelector('.archive-filter[data-kind=\""+kind+"\"]').click()");
+    const bg=await evaluate("getComputedStyle(document.body).backgroundImage");
+    assert.ok(bg.includes('mio-palace-'+asset+'.webp'),'room background must follow selected filter '+kind);
+    const shot=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+    await writeFile('artifacts/mio-offline-mobile-room-'+kind+'.png',Buffer.from(shot.data,'base64'));
+   }
+  }
  }
  // Browser-only examination of intentionally synthetic GAS files: never upload secrets.
  for(const width of [320,375,390,430]){
