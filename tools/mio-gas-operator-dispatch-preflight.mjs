@@ -10,6 +10,9 @@ const REQUIRED_HELPERS=['Str','Name','Sheet','Schema','Values','One','People','S
  'Request','Log','Existing','WriteLog','RecordGrant'];
 const REQUIRED_FUNCTIONS=['mioAdminOps_',...REQUIRED_ACTIONS.map(x=>'mioAdminOps'+x+'_'),
  ...REQUIRED_HELPERS.map(x=>'mioAdminOps'+x+'_')];
+// Helpers shared with the existing October GAS. Missing definitions cause
+// runtime failure even when all admin handlers themselves are present.
+const REQUIRED_SHARED=['json_','equal_','safeText_','webIntegrityOk_','ensureWebDerivedRow_'];
 const stop=(reason,details={})=>({ok:false,status:'STOP',reason,readOnly:true,
  publicationAllowed:false,patchAllowed:false,...details});
 // Ignore commented declarations: a removed handler must not be 'restored' by
@@ -34,12 +37,13 @@ export function preflightOperatorDispatch(files){
  const all=stripComments(scripts.map(f=>f.source).join('\n'));
  const functions=sourceNames(all),counts=new Map();
  for(const name of functions)counts.set(name,(counts.get(name)||0)+1);
- const critical=['doPost',...REQUIRED_FUNCTIONS];
+ const critical=['doPost',...REQUIRED_FUNCTIONS,...REQUIRED_SHARED];
  const duplicate=critical.filter(n=>(counts.get(n)||0)>1);
  if(duplicate.length)return stop('DUPLICATE_CRITICAL_FUNCTIONS',{duplicateCount:duplicate.length});
  if((counts.get('doPost')||0)!==1)return stop('DOPOST_MISSING_OR_MULTIPLE');
  const required=REQUIRED_FUNCTIONS;
  const missing=required.filter(n=>!counts.has(n));
+ const missingShared=REQUIRED_SHARED.filter(n=>!counts.has(n));
  const start=all.search(/^[ \t]*function[ \t]+doPost[ \t]*\(/m);
  // Scope to doPost only, not the next named function. This is a conservative
  // static check, not a parser or security proof.
@@ -58,10 +62,13 @@ export function preflightOperatorDispatch(files){
  const routePresent=dispatchAt>=0;
  const beforeParticipant=dispatchAt>=0&&participantAt>=0&&dispatchAt<participantAt;
  const evidence={requiredFunctionCount:required.length,missingFunctionCount:missing.length,
-  missingFunctions:missing,dispatcherDetected:routePresent,secretGuardDetected:secret>=0,
+  missingFunctions:missing,requiredSharedCount:REQUIRED_SHARED.length,
+  missingSharedCount:missingShared.length,missingSharedFunctions:missingShared,
+  dispatcherDetected:routePresent,secretGuardDetected:secret>=0,
   participantGuardDetected:participant>=0,dispatcherBeforeParticipant:beforeParticipant};
  if(secret<0||participant<0||authAt<0||participantAt<0)return stop('UNRECOGNIZED_AUTH_OR_PARTICIPANT_GUARD',evidence);
  if(missing.length)return stop('ADMIN_HANDLERS_INCOMPLETE_NO_AUTOPATCH',evidence);
+ if(missingShared.length)return stop('SHARED_HELPERS_MISSING_NO_AUTOPATCH',evidence);
  if(!routePresent)return stop('DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW',evidence);
  if(!beforeParticipant)return stop('DISPATCHER_AFTER_PARTICIPANT_GUARD',evidence);
  if(dispatchAt<authAt)return stop('DISPATCHER_BEFORE_SECRET_GUARD',evidence);
