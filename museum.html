@@ -34,47 +34,18 @@
   </div>
 </header>
 <main id="museumMain">
-  <section class="museum-hero" aria-labelledby="museumTitle">
-    <div class="museum-shell museum-hero-inner">
-      <div>
-        <div class="museum-kicker">WELCOME TO THE MEMORIAL MUSEUM ✦</div>
-        <h1 id="museumTitle">翠央記念館 <span aria-hidden="true">💎</span></h1>
-        <p class="hero-lead">これまでの思い出も、<br>これからの輝きも。</p>
-        <p class="museum-hero-trinket">みんなの宝物が、きらめく小さな世界。</p>
-        <p class="hero-sub">ギャラリーを中心に、歌や作品、1周年の記録をたどりながら翠央の世界を楽しめる場所です。初めての方も、登録せずにご覧いただけます。</p>
-        <div class="museum-actions">
-          <a class="museum-button primary" href="#exhibits">ギャラリーを巡る ✦</a>
-          <a class="museum-button secondary" href="/mio-profile.html">はじめての方へ</a>
-        </div>
-        <nav class="museum-foyer" aria-label="ギャラリー展示室への近道">
-          <span class="museum-foyer-eyebrow">✧ GALLERY ENTRANCE · 展示室へ</span>
-          <div class="museum-foyer-grid">
-            <a class="museum-foyer-link museum-foyer-open" href="/museum-approved-gallery.html">
-              <span class="museum-foyer-icon" aria-hidden="true">💎</span>
-              <span class="museum-foyer-copy"><strong>公開作品ギャラリー</strong><small>公開済みの音楽・映像</small></span>
-            </a>
-            <a class="museum-foyer-link" href="/museum-archive.html?kind=icons">
-              <span class="museum-foyer-icon" aria-hidden="true">👑</span>
-              <span class="museum-foyer-copy"><strong>歴代アイコン館</strong><small>展示準備中</small></span>
-            </a>
-            <a class="museum-foyer-link" href="/museum-archive.html?kind=moments">
-              <span class="museum-foyer-icon" aria-hidden="true">📸</span>
-              <span class="museum-foyer-copy"><strong>思い出アルバム</strong><small>展示準備中</small></span>
-            </a>
-            <a class="museum-foyer-link" href="/museum-archive.html?kind=events">
-              <span class="museum-foyer-icon" aria-hidden="true">🏆</span>
-              <span class="museum-foyer-copy"><strong>イベント記録</strong><small>展示準備中</small></span>
-            </a>
-          </div>
-        </nav>
-      </div>
-      <div class="museum-hero-visual">
-        <img class="museum-hero-portrait" src="/assets/mio-bg-princess.jpg" width="941" height="1672" alt="青い髪と王冠の翠央。青く輝くお城を背景にした既存イラスト" decoding="async" fetchpriority="high">
-        <div class="museum-mascot" aria-hidden="true">
-        <img src="/gacha-v191-whale-blue.svg" width="230" height="230" alt="" decoding="async">
-        <span>WHALE × DIAMOND ✦</span>
-        </div>
-      </div>
+  <section class="museum-hero museum-adopted-hero" aria-labelledby="museumTitle">
+    <h1 id="museumTitle" class="museum-sr-only">翠央記念館 💎</h1>
+    <div class="museum-adopted-stage">
+      <img class="museum-adopted-image" src="/assets/mio-adopted-top.jpg" width="864" height="1536" alt="翠央記念館。青い宮殿とパールのリボン、宝石をまとったクジラ、翠央の採用確定トップイラスト。これまでの思い出も、これからの輝きも。" fetchpriority="high" decoding="async">
+      <nav class="museum-art-links" aria-label="トップ画像から各展示室へ">
+        <a class="museum-art-link art-exhibits" href="#exhibits"><span>ギャラリーを巡る</span></a>
+        <a class="museum-art-link art-profile" href="/mio-profile.html"><span>はじめての方へ</span></a>
+        <a class="museum-art-link art-public" href="/museum-approved-gallery.html"><span>公開作品ギャラリー</span></a>
+        <a class="museum-art-link art-icons" href="/museum-archive.html?kind=icons"><span>歴代アイコン館</span></a>
+        <a class="museum-art-link art-album" href="/museum-archive.html?kind=moments"><span>思い出アルバム</span></a>
+        <a class="museum-art-link art-events" href="/museum-archive.html?kind=events"><span>イベント記録</span></a>
+      </nav>
     </div>
   </section>
   <section class="museum-section museum-gallery-first" id="exhibits" aria-labelledby="exhibitsTitle">

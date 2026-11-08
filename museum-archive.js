@@ -45,6 +45,7 @@ function card(item){
  article.append(image,body);return article;
 }
 function render(){
+ document.body.dataset.museumRoom=selected;
  if(!root||!status)return;
  filters.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.kind===selected)));
  const shown=items.filter(x=>selected==='all'||x.kind===selected);

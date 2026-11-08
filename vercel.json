@@ -472,6 +472,26 @@
     {
       "src": "museum-kawaii.css",
       "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-adopted-top.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-album.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-music.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-events.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-icons.webp",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -761,6 +781,46 @@
       "headers": {
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/assets/mio-adopted-top.jpg",
+      "dest": "/assets/mio-adopted-top.jpg",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-album.webp",
+      "dest": "/assets/mio-palace-album.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-music.webp",
+      "dest": "/assets/mio-palace-music.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-events.webp",
+      "dest": "/assets/mio-palace-events.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-icons.webp",
+      "dest": "/assets/mio-palace-icons.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
       }
     },
     {

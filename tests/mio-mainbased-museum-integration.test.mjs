@@ -28,7 +28,7 @@ const museumPages=['museum.html','mio-profile.html','museum-archive.html','museu
 const museumFiles=[...museumPages,'museum.css','museum-kawaii.css','museum-archive.css','museum-archive.js','museum-news.js','museum-approved-gallery.js','museum-media-fallback.js','museum-image-client.js','museum-device-check.js','museum-curator-preview.html','museum-curator-preview.css','museum-curator-preview.js'];
 const rehearsalFiles=['mio-admin-rehearsal.html','mio-admin-rehearsal.js'];
 const gasLocalFiles=['mio-gas-local-check.html','mio-gas-local-check.js'];
-const stagedAssets=[...museumFiles,...rehearsalFiles,...gasLocalFiles];
+const stagedAssets=['assets/mio-adopted-top.jpg','assets/mio-palace-album.webp','assets/mio-palace-music.webp','assets/mio-palace-events.webp','assets/mio-palace-icons.webp',...museumFiles,...rehearsalFiles,...gasLocalFiles];
 const unchanged=[
  'index.html','app.js','style.css','bridge.js',
  'api-register.js','api-status.js','api-checkin.js',
