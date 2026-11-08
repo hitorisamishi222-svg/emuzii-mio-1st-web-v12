@@ -155,3 +155,35 @@ test('ScriptLock must guard operator dispatch and always release',()=>{
   assert.equal(r.patchAllowed,false);
  }
 });
+
+
+// MIO_INLINE_COMMENT_AND_QUOTED_ROUTE_GUARD_20261109
+test('quoted fake admin dispatcher cannot replace executable route',()=>{
+ const decoy=combined.replace(dispatch,'    var unusedRoute='+JSON.stringify(dispatch.trim())+';');
+ assert.notEqual(decoy,combined);
+ const report=check(decoy);
+ assert.equal(report.ok,false);
+ assert.equal(report.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
+ assert.equal(report.publicationAllowed,false);
+ assert.equal(report.patchAllowed,false);
+});
+
+test('inline comment with a fake dispatcher cannot repair a missing route',()=>{
+ const decoy=combined.replace(dispatch,'    var untouched=0; // '+dispatch.trim());
+ assert.notEqual(decoy,combined);
+ const report=check(decoy);
+ assert.equal(report.ok,false);
+ assert.equal(report.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
+ assert.equal(report.publicationAllowed,false);
+ assert.equal(report.patchAllowed,false);
+});
+
+test('real dispatcher remains valid alongside ordinary strings and comments',()=>{
+ const expanded=combined.replace(dispatch,
+  "    var sampleLabel='https://example.invalid/'; // unrelated inline comment\\n"+dispatch);
+ assert.notEqual(expanded,combined);
+ const report=check(expanded);
+ assert.equal(report.ok,true,JSON.stringify(report));
+ assert.equal(report.publicationAllowed,false);
+ assert.equal(report.patchAllowed,false);
+});
