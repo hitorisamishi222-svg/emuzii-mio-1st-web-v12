@@ -4,7 +4,12 @@ import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 
 const REQUIRED_ACTIONS=['Read','Member','Approve','Grant','Review','Create','Intake'];
-const HANDLER='mioAdminOps_';
+// Full 21-function operator module from the reviewed candidate. A partial
+// implementation must never pass just because its 7 action handlers exist.
+const REQUIRED_HELPERS=['Str','Name','Sheet','Schema','Values','One','People','Summary',
+ 'Request','Log','Existing','WriteLog','RecordGrant'];
+const REQUIRED_FUNCTIONS=['mioAdminOps_',...REQUIRED_ACTIONS.map(x=>'mioAdminOps'+x+'_'),
+ ...REQUIRED_HELPERS.map(x=>'mioAdminOps'+x+'_')];
 const stop=(reason,details={})=>({ok:false,status:'STOP',reason,readOnly:true,
  publicationAllowed:false,patchAllowed:false,...details});
 const sourceNames=(text)=>[...text.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]);
@@ -23,11 +28,11 @@ export function preflightOperatorDispatch(files){
  const all=scripts.map(f=>f.source).join('\n');
  const functions=sourceNames(all),counts=new Map();
  for(const name of functions)counts.set(name,(counts.get(name)||0)+1);
- const critical=['doPost',HANDLER,...REQUIRED_ACTIONS.map(a=>'mioAdminOps'+a+'_')];
+ const critical=['doPost',...REQUIRED_FUNCTIONS];
  const duplicate=critical.filter(n=>(counts.get(n)||0)>1);
  if(duplicate.length)return stop('DUPLICATE_CRITICAL_FUNCTIONS',{duplicateCount:duplicate.length});
  if((counts.get('doPost')||0)!==1)return stop('DOPOST_MISSING_OR_MULTIPLE');
- const required=critical.filter(n=>n!=='doPost');
+ const required=REQUIRED_FUNCTIONS;
  const missing=required.filter(n=>!counts.has(n));
  const start=all.search(/\bfunction\s+doPost\s*\(/);
  // Scope to doPost only, not the next named function. This is a conservative
