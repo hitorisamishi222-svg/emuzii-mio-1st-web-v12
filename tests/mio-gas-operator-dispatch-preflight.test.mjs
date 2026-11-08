@@ -137,3 +137,21 @@ test('a commented shared function cannot hide a missing real definition',()=>{
  assert.equal(r.reason,'SHARED_HELPERS_MISSING_NO_AUTOPATCH');
  assert.ok(r.missingSharedFunctions.includes('safeText_'));
 });
+
+test('ScriptLock must guard operator dispatch and always release',()=>{
+ const good=check(combined);
+ assert.equal(good.scriptLockGuardDetected,true);
+ const cases=[
+  ['missing lock',combined.replace('LockService.getScriptLock()', 'LockService.getUserLock()')],
+  ['missing lock acquisition',combined.replace('lock.tryLock(10000)', 'lock.fakeTryLock(10000)')],
+  ['missing release in finally',combined.replace('lock.releaseLock();', 'lock.fakeReleaseLock();')],
+ ];
+ for(const [label,source] of cases){
+  assert.notEqual(source,combined,label+' fixture changes source');
+  const r=check(source);
+  assert.equal(r.ok,false,label);
+  assert.equal(r.reason,'SCRIPT_LOCK_GUARD_MISSING_OR_MISPLACED',label);
+  assert.equal(r.publicationAllowed,false);
+  assert.equal(r.patchAllowed,false);
+ }
+});
