@@ -23,6 +23,37 @@ const stripComments=text=>text.replace(/\/\*[\s\S]*?\*\//g,'\n')
 const declaration=/^[ \t]*(?:async[ \t]+)?function[ \t]+([A-Za-z_$][\w$]*)[ \t]*\(/gm;
 const sourceNames=text=>[...stripComments(text).matchAll(declaration)].map(m=>m[1]);
 
+// A route appearing only inside a quoted string or inline // comment is not
+// an executable dispatcher. Keep regex literals intact for the real route.
+// This is deliberately conservative: syntax we cannot prove may STOP.
+const maskNonExecutable = source => {
+ let out='', quote='', lineComment=false;
+ for(let i=0;i<source.length;i++){
+  const ch=source[i],next=source[i+1];
+  if(lineComment){
+   if(ch==='\n'||ch==='\r'){lineComment=false;out+=ch}
+   else out+=' ';
+   continue;
+  }
+  if(quote){
+   if(ch==='\\'){
+    out+=' ';
+    if(i+1<source.length){
+     i++;
+     const escaped=source[i];
+     out+=(escaped==='\n'||escaped==='\r')?escaped:' ';
+    }
+   }else if(ch===quote){quote='';out+=' '}
+   else out+=(ch==='\n'||ch==='\r')?ch:' ';
+   continue;
+  }
+  if(ch==='/'&&next==='/'){lineComment=true;out+='  ';i++;continue;}
+  if(ch==='\''||ch==='"'||ch==='\x60'){quote=ch;out+=' ';continue;}
+  out+=ch;
+ }
+ return out;
+};
+
 /**
  * Source strings must be taken from the actual Apps Script project, not a
  * guessed GitHub backup. This never emits source or personal data.
@@ -54,7 +85,7 @@ export function preflightOperatorDispatch(files){
  const participant=body.search(/invalid identity/);
  // Do not count names in comments as executable routes. A regex dispatcher
  // must call the operator handler, not merely mention action strings.
- const executable=body;
+ const executable=maskNonExecutable(body);
  const routeMatch=executable.match(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
  const dispatchAt=routeMatch?executable.indexOf(routeMatch[0]):-1;
  const authAt=executable.search(/if\s*\(\s*!secret\s*\|\|\s*!equal_\(d\.secret,secret\)\s*\)/);
