@@ -52,3 +52,26 @@ test('does not expose source in returned results',()=>{
  assert.equal(JSON.stringify(r).includes('SHEET_ID'),false);
  assert.equal(JSON.stringify(r).includes('SpreadsheetApp'),false);
 });
+
+test('route mentioned only in a comment never counts as an executable dispatch',()=>{
+ const comment='// '+dispatch.trim();
+ const r=check(combined.replace(dispatch,comment));
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
+});
+test('route placed before bridge authentication fails closed',()=>{
+ const moved=combined.replace(dispatch,'').replace(
+  '    if(!secret||!equal_(d.secret,secret))',
+  dispatch+'\n    if(!secret||!equal_(d.secret,secret))');
+ const r=check(moved);
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'DISPATCHER_BEFORE_SECRET_GUARD');
+});
+test('route placed after participant identity guard fails closed',()=>{
+ const moved=combined.replace(dispatch,'').replace(
+  "    if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')",
+  dispatch+"\n    if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')");
+ const r=check(moved);
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'DISPATCHER_AFTER_PARTICIPANT_GUARD');
+});
