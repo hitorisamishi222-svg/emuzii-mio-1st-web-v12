@@ -30,7 +30,7 @@ export function auditGas(sourceFiles,expectedModule){
  report.missingOps=expected.filter(n=>!counts.has(n));
  // All of these helpers are required by the admin module or its doPost wrapper.
  // A superficially correct dispatcher with missing helpers cannot be released.
- const requiredHelpers=['json_','safeText_','webIntegrityOk_','ensureWebDerivedRow_'];
+ const requiredHelpers=['json_','equal_','safeText_','webIntegrityOk_','ensureWebDerivedRow_'];
  report.missingHelpers=requiredHelpers.filter(n=>!counts.has(n));
  if(report.missingHelpers.length)report.issues.push('管理機能が依存する既存ヘルパーがありません');
  if(report.doPostCount!==1)report.issues.push('doPostが1つではない');
@@ -54,7 +54,9 @@ export function auditGas(sourceFiles,expectedModule){
  }
  if(dispatch<0&&report.presentOpsCount===0){
   report.status='MINIMAL_PATCH_CAN_BE_REVIEWED';
-  report.canSafelyPatch=true;
+  // No authenticated deployed-version evidence exists in this legacy audit.
+  // It may suggest review, but must never assert patch safety or permission.
+  report.canSafelyPatch=false;
   report.issues.push('公開前に現行全ソースのバックアップと、実デプロイのバージョン照合が必須');
   return report;
  }
