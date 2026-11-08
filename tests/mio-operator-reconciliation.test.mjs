@@ -79,3 +79,36 @@ test('module has no provider API, mutation verbs or browser access',()=>{
  for(const token of ['fetch(','.setValues(','.setValue(','.appendRow(','.insertSheet(','.deleteSheet(','SpreadsheetApp.','DriveApp.','document.','window.'])
   assert.equal(src.includes(token),false);
 });
+
+
+// MIO_ZERO_BALANCE_INTEGRITY_GUARD_20261109
+test('zero balance does not conceal unchecked entitlement flags or missing fields',()=>{
+ const unchecked=gacha(1,0,false);
+ const noSpecial=gacha(2,0);noSpecial[14]='';
+ const noTotal=gacha(3,0);noTotal[5]='';
+ const healthy=gacha(4,0);
+ const out=reconcileGachaBrowserLinks({
+  webRows:[web(1),web(2),web(3),web(4)],
+  gachaRows:[unchecked,noSpecial,noTotal,healthy]
+ });
+ assert.equal(out.ok,true);
+ assert.equal(out.counts.creditsNeedReview,3);
+ assert.equal(out.counts.zeroBalance,1);
+ assert.equal(out.counts.positiveChecked,0);
+ assert.equal(out.writeAllowed,false);
+ assert.equal(out.drawAuthorization,false);
+});
+
+test('prefilled formula rows without MIO IDs are never counted as participants',()=>{
+ const empty=Array(15).fill('');
+ empty[5]=0;empty[7]=0;empty[12]='OK';empty[13]='OK';empty[14]=0;
+ const out=reconcileGachaBrowserLinks({
+  webRows:[web(1)],
+  gachaRows:[gacha(1,0),...Array.from({length:40},()=>empty.slice())]
+ });
+ assert.equal(out.ok,true);
+ assert.equal(out.counts.gachaRows,1);
+ assert.equal(out.counts.zeroBalance,1);
+ assert.equal(out.counts.creditsNeedReview,0);
+ assert.equal(out.writeAllowed,false);
+});
