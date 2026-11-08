@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; font-src 'none'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'">
+<title>翠央｜GAS公開版の照合・端末内診断</title>
+<style>
+:root{color-scheme:dark;--bg:#081a33;--card:#133457;--ink:#f3f8ff;--sub:#c5dcef;--border:#6392be}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#1c5081,#071a33 55%,#041224);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+main{max-width:800px;margin:auto;padding:22px 14px 72px}header{padding:12px 8px 20px}h1{font-size:clamp(23px,5vw,34px);margin:6px 0}
+h2{font-size:19px;margin:0 0 12px}.sub{color:var(--sub);font-size:14px}
+.box{background:var(--card);border:1px solid var(--border);border-radius:17px;padding:19px;margin:15px 0}
+.notice{border-color:#b8a575;background:#494329}.safe{border-color:#7ebed9;background:#15466c}
+label{display:block;margin:14px 0 6px;font-weight:750}input,textarea{font:inherit;width:100%;background:#fff;color:#1b324c;border-radius:9px;border:2px solid #b0d9fa;padding:12px}
+textarea{min-height:165px;resize:vertical;white-space:pre;font:12px/1.5 ui-monospace,Consolas,monospace}
+button{font:inherit;font-weight:800;border:1px solid #bddbff;background:#bfdfff;color:#153757;padding:11px 14px;border-radius:10px;min-height:48px;cursor:pointer}
+button.secondary{background:#193d62;color:#eef8ff}
+.buttons{display:flex;flex-wrap:wrap;gap:9px;padding-top:12px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.65 ui-monospace,Consolas,monospace;padding:12px;background:#071b35;border:1px solid #7197be;border-radius:9px}
+ol{padding-left:22px}li{margin:8px 0}[hidden]{display:none!important}.footer{font-size:12px;color:var(--sub)}
+</style></head>
+<body><main>
+<header><div class="sub">🐳 翠央1周年｜運営専用・開発診断</div><h1>🔍 GAS公開版の照合</h1>
+<p class="sub">既存GASの接続障害 <code>read invalid identity</code> を調査するための、端末内だけの検査です。</p></header>
+<section class="box safe"><strong>🔒 送信しない・保存しない</strong>
+<p>入力したコードはこの画面内でのみ解析します。通信・外部API・ブラウザ保存・GAS変更は一切行いません。診断結果をコピーしても、元コードや秘密鍵は含みません。</p>
+<p class="sub">この検査で問題が見つからなくても、実際のデプロイの同一性や管理Read成功は証明されません。本番の公開・書込は禁止のままです。</p></section>
+<section class="box"><h2>既存GASの確認順序</h2>
+<ol>
+<li>以前から使っている同じApps Scriptプロジェクトで、<strong>デプロイ → デプロイを管理</strong>を開き、稼働中の既存Webアプリとそのバージョン番号を確認。新規作成や編集はしない。</li>
+<li>同じプロジェクトの<strong>プロジェクトの履歴</strong>でその番号を選択。HEAD（編集画面）ではなく、選択した公開版のコードを読む。</li>
+<li>その公開版の<strong>すべての .gs ソース</strong>を下に貼り付けて「端末内で診断」。複数ファイルなら改行を挟んで続けて貼り付ける。ソースはGitHubやチャットに送らない。</li>
+</ol>
+<p class="sub">注意：同一プロジェクト・同一デプロイと確定できない場合は入力せず停止。「プロジェクトの履歴」を見るだけなら保存や再デプロイは不要です。</p></section>
+<section class="box">
+<h2>公開版コードのローカル診断</h2>
+<label for="version">稼働中と確認できた公開バージョン番号</label>
+<input id="version" type="number" min="1" max="1000000" inputmode="numeric" autocomplete="off" placeholder="管理画面に表示された番号">
+<label for="published">選択した公開版の .gs ソース（必須）</label>
+<textarea id="published" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="公開版の .gs ソースだけをここに貼り付け"></textarea>
+<label for="editor">編集HEADの .gs ソース（任意）</label>
+<textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="公開版との違いを調べる場合だけ入力"></textarea>
+<div class="buttons"><button type="button" id="run">🔍 端末内で診断</button><button class="secondary" id="erase" type="button">入力をすべて消去</button></div>
+</section>
+<section class="box" id="output" hidden aria-live="polite"><h2>診断結果</h2>
+<p id="explanation"></p><pre id="report"></pre>
+<div class="buttons"><button type="button" id="copy">秘密情報なしの結果だけコピー</button></div>
+<p class="sub">公開版の真正性・全ファイルの網羅性は、バージョン画面とApps Script APIで別途確認が必要。診断OKでも修正・公開はしません。</p></section>
+<p class="footer">🔐 Vercel開発プレビュー専用。既存の本番URL・GASデプロイ・参加者ID・10月皆勤・ガチャ権利・履歴は変更しません。</p>
+</main><script>
+'use strict';
+const $=id=>document.getElementById(id);
+const actions=['Read','Member','Approve','Grant','Review','Create','Intake'];
+const helperNames=['Str','Name','Sheet','Schema','Values','One','People','Summary','Request','Log','Existing','WriteLog','RecordGrant'];
+const adminFunctions=['mioAdminOps_',...actions.map(x=>'mioAdminOps'+x+'_'),...helperNames.map(x=>'mioAdminOps'+x+'_')];
+const sharedFunctions=['json_','equal_','safeText_','webIntegrityOk_','ensureWebDerivedRow_'];
+let safeReport='';
+function stripComments(s){
+ return s.replace(/\/\*[\s\S]*?\*\//g,'\n').replace(/^[ \t]*\/\/[^\r\n]*/gm,'');
+}
+function inspect(raw){
+ const clean=stripComments(raw);
+ const matches=[...clean.matchAll(/^[ \t]*(?:async[ \t]+)?function[ \t]+([A-Za-z_$][\w$]*)[ \t]*\(/gm)];
+ const counts=new Map();
+ for(const m of matches)counts.set(m[1],(counts.get(m[1])||0)+1);
+ const required=['doPost',...adminFunctions,...sharedFunctions];
+ const missing=required.filter(x=>!counts.has(x));
+ const duplicate=required.filter(x=>(counts.get(x)||0)>1);
+ const start=matches.findIndex(x=>x[1]==='doPost');
+ let section='';
+ if(start!==-1){
+  const beginning=matches[start].index;
+  const end=start+1<matches.length?matches[start+1].index:clean.length;
+  section=clean.slice(beginning,end);
+ }
+ const where=p=>section.search(p);
+ const auth=where(/if\s*\(\s*!secret\s*\|\|\s*!equal_\(d\.secret,secret\)\s*\)/);
+ const route=where(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
+ const identity=where(/if\s*\(\s*!\/\^MIO-W-/);
+ const lock=where(/LockService\.getScriptLock\s*\(\s*\)/);
+ const acquire=where(/lock\.tryLock\s*\(\s*\d+\s*\)/);
+ const release=where(/finally\s*\{\s*lock\.releaseLock\s*\(\s*\)/);
+ const orderOK=lock>=0&&acquire>lock&&auth>acquire&&route>auth&&identity>route&&release>identity;
+ return {hasDoPost:(counts.get('doPost')||0)===1,missing,duplicate,
+  adminDispatcherPresent:route>=0,bridgeSecretGuardPresent:auth>=0,
+  participantGuardPresent:identity>=0,scriptLockGuardOrderOK:orderOK,
+  staticallyCompatible:missing.length===0&&duplicate.length===0&&orderOK};
+}
+function run(){
+ const code=$('published').value,head=$('editor').value,version=Number($('version').value);
+ let summary;
+ if(!Number.isSafeInteger(version)||version<1||version>1000000)summary={status:'STOP',reason:'公開版番号が未確認です'};
+ else if(!code.trim()||code.length>1500000||head.length>1500000)summary={status:'STOP',reason:'公開版コードの未入力または入力サイズ超過'};
+ else{
+  const r=inspect(code);
+  summary={status:r.staticallyCompatible?'STATIC_COMPATIBLE_NOT_LIVE_VERIFIED':'STOP_REQUIRES_MANUAL_REVIEW',
+   ownerReportedVersion:version,verifiedDeployedVersion:false,
+   ...r,headCompared:!!head.trim(),
+   editorHeadDiffersFromPastedSource:head.trim()?head!==code:null,
+   nextStep:r.staticallyCompatible?'実デプロイ証拠の照合後に管理Readを確認':'公開版の管理分岐・必要関数を手動確認'};
+ }
+ // Deliberately never include source, tokens, IDs, or hardcoded values.
+ summary={...summary,readOnly:true,liveReadConfirmed:false,writeAllowed:false,
+  publicationAllowed:false,patchAllowed:false};
+ safeReport=JSON.stringify(summary,null,2);
+ $('report').textContent=safeReport;
+ $('explanation').textContent=summary.status==='STATIC_COMPATIBLE_NOT_LIVE_VERIFIED'?
+  '静的検査は通過。ただし本番デプロイ照合と管理Readの実確認が必要です。':
+  '不足または順序不一致が疑われます。自動修正や公開は行いません。';
+ $('output').hidden=false;
+}
+$('run').addEventListener('click',run);
+$('erase').addEventListener('click',()=>{
+ $('version').value='';$('published').value='';$('editor').value='';
+ $('report').textContent='';$('explanation').textContent='';
+ safeReport='';$('output').hidden=true;
+});
+$('copy').addEventListener('click',()=>{
+ if(!safeReport)return;
+ navigator.clipboard?.writeText(safeReport).then(()=>{$('explanation').textContent='診断結果だけをコピーしました。ソースは含まれません。'})
+ .catch(()=>{$('explanation').textContent='コピーを許可できませんでした。下の診断結果のみ選択してコピーしてください。'});
+});
+</script></body></html>
