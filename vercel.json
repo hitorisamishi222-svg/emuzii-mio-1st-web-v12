@@ -388,6 +388,110 @@
     {
       "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-profile.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-archive.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-news.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-approved-gallery.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-approved-gallery.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-media-fallback.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-device-check.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-image-client.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-device-check.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-admin-rehearsal.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-admin-rehearsal.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-gas-local-check.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-gas-local-check.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-curator-preview.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-curator-preview.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-curator-preview.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "museum-kawaii.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-adopted-top.jpg",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-album.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-music.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-events.webp",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "assets/mio-palace-icons.webp",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -520,8 +624,215 @@
       }
     },
     {
+      "src": "/museum.html",
+      "dest": "/museum.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-profile.html",
+      "dest": "/mio-profile.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum.css",
+      "dest": "/museum.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.html",
+      "dest": "/museum-archive.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.css",
+      "dest": "/museum-archive.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-archive.js",
+      "dest": "/museum-archive.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-news.js",
+      "dest": "/museum-news.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-approved-gallery.html",
+      "dest": "/museum-approved-gallery.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-approved-gallery.js",
+      "dest": "/museum-approved-gallery.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-media-fallback.js",
+      "dest": "/museum-media-fallback.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-device-check.html",
+      "dest": "/museum-device-check.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-image-client.js",
+      "dest": "/museum-image-client.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-device-check.js",
+      "dest": "/museum-device-check.js",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-admin-rehearsal.html",
+      "dest": "/mio-admin-rehearsal.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-admin-rehearsal.js",
+      "dest": "/mio-admin-rehearsal.js",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-gas-local-check.html",
+      "dest": "/mio-gas-local-check.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/mio-gas-local-check.js",
+      "dest": "/mio-gas-local-check.js",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-curator-preview.html",
+      "dest": "/museum-curator-preview.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-curator-preview.css",
+      "dest": "/museum-curator-preview.css",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/museum-curator-preview.js",
+      "dest": "/museum-curator-preview.js",
+      "headers": {
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    },
+    {
+      "src": "/assets/mio-adopted-top.jpg",
+      "dest": "/assets/mio-adopted-top.jpg",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-album.webp",
+      "dest": "/assets/mio-palace-album.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-music.webp",
+      "dest": "/assets/mio-palace-music.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-events.webp",
+      "dest": "/assets/mio-palace-events.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
+      "src": "/assets/mio-palace-icons.webp",
+      "dest": "/assets/mio-palace-icons.webp",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "public, max-age=86400"
+      }
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
+    },
+    {
+      "src": "/museum-kawaii.css",
+      "dest": "/museum-kawaii.css",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      }
     }
   ],
   "headers": [

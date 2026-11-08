@@ -1,0 +1,16 @@
+{
+  "observedMainCommit": "84c623de9961a801f30b978bda8b8bea7a0daf4e",
+  "previousMuseumBaseline": "bb4a39a29e6c5c3ae70b6c35cf290feb8cb67a6b",
+  "description": "Exact observed main-only gacha operator update. Records ref and blob identity; does not authorize merging, deployment or DB writes.",
+  "changedFileBlobs": {
+    ".github/workflows/mio-admin-ops.yml": "1b7220bbd5b00d11490ef1e5f81008605fb00ee4",
+    "docs/MIO_GAS_FULL_REPLACE_SETUP.md": "8a02c143cccfae7f1e6eb7d9301127ca504b659b",
+    "gacha-admin-ops.js": "b2b6839086f3667ff42cb510a2bf0ba68afb1202",
+    "gacha-web-gate.html": "55f7532e4e31b4ac829758181a59abececb62362",
+    "tests/mio-admin-center-stage1.test.mjs": "40bd96d36ca541e13b3d4c81b7bec6af0f6fc1c8",
+    "tests/mio-admin-readonly.test.mjs": "4cd8f91df27b422e2ddfaca285dbf64b53a10d54",
+    "tests/mio-admin-same-id-retry.test.mjs": "1eb48442337086495dfd0d68eaa6eb9e8c3b0c9d",
+    "tests/mio-gas-connect-guidance.test.mjs": "b098ca24c25805ff319f5a371b337f5248784e5e",
+    "tests/mio-gas-full-install.test.mjs": "54afe0c1b6de94ff4a0f2fc383fd3dcda1dd61d0"
+  }
+}

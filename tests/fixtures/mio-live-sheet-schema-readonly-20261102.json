@@ -1,0 +1,77 @@
+{
+  "snapshotDate": "2026-11-02",
+  "kind": "READ_ONLY_LIVE_HEADER_SNAPSHOT",
+  "notice": "Headers/tab names only; no participant or authentication values. A snapshot is not evidence of deployed Apps Script or write permissions.",
+  "tabPresence": {
+    "emuzii_Web登録": true,
+    "emuzii_参加者": true,
+    "emuzii_ガチャ": true,
+    "emuzii_ガチャ付与履歴": true,
+    "emuzii_当選履歴": true,
+    "emuzii_皆勤31日": true,
+    "emuzii_FA": true,
+    "emuzii_新規簡易登録": true,
+    "emuzii_バックアップ履歴": true,
+    "emuzii_Web管理操作履歴": false
+  },
+  "verifiedHeaders": {
+    "emuzii_Web登録": {
+      "columns": 21,
+      "at1": "Web参加ID",
+      "at2": "認証ハッシュ（変更不可）",
+      "at6": "登録承認",
+      "at8": "照合参加者ID",
+      "at21": "ログインID"
+    },
+    "emuzii_参加者": {
+      "columns": 10,
+      "at1": "参加者ID",
+      "at2": "ColorSing名"
+    },
+    "emuzii_ガチャ": {
+      "columns": 17,
+      "at1": "参加者ID",
+      "at6": "総ガチャ権利",
+      "at8": "総残り回数",
+      "at15": "特別付与",
+      "at16": "Web確定抽選数"
+    },
+    "emuzii_ガチャ付与履歴": {
+      "columns": 9,
+      "at1": "日時",
+      "at2": "参加者ID",
+      "at4": "付与回数",
+      "at9": "変更後残り",
+      "at10": null
+    },
+    "emuzii_新規簡易登録": {
+      "columns": 6,
+      "at1": "登録日時（UTC）",
+      "at2": "ColorSing名",
+      "at5": "管理確認",
+      "at6": "備考"
+    },
+    "emuzii_当選履歴": {
+      "columns": 15,
+      "at1": "抽選ID（変更不可）",
+      "at15": "抽選経緯（確認済み）"
+    }
+  },
+  "requiredForWebAdminWrites": {
+    "auditTab": {
+      "name": "emuzii_Web管理操作履歴",
+      "observed": false
+    },
+    "grantOperationColumn": {
+      "sheet": "emuzii_ガチャ付与履歴",
+      "column": "J",
+      "expectedHeader": "Web操作ID",
+      "observedHeader": null
+    },
+    "liveAppsScriptSourceVerified": false,
+    "liveDeploymentVersionVerified": false,
+    "verifiedBackupBeforeMutation": false,
+    "ownerApprovalForSchemaChanges": false
+  },
+  "adminWriteRelease": "BLOCKED"
+}
