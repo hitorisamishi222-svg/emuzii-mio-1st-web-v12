@@ -996,12 +996,14 @@ try{
    const mascot=document.querySelector('.museum-mascot'),title=document.querySelector('#museumTitle');
    const m=mascot.getBoundingClientRect(),t=title.getBoundingClientRect();
    return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,
+    portraitHeight:document.querySelector('.museum-hero-portrait').getBoundingClientRect().height,
     visible:getComputedStyle(mascot).display!=='none'&&m.width>0&&m.height>0,
     overlap:m.left<t.right&&m.right>t.left&&m.top<t.bottom&&m.bottom>t.top,
     buttonHeight:document.querySelector('.museum-button.primary').getBoundingClientRect().height};
   })()`);
   assert.ok(hero.scroll<=hero.viewport+2,'hero horizontal overflow '+JSON.stringify(hero));
   assert.equal(hero.visible,true,'whale must remain visible '+width);
+  assert.equal(hero.portraitHeight,width<630?340:610,'portrait crop must override base image auto height '+width);
   assert.equal(hero.overlap,false,'whale overlaps hero title '+width);
   assert.ok(hero.buttonHeight>=48,'hero action too small '+width);
   if(width===390||width===1280){
