@@ -32,3 +32,9 @@
 - 候補の管理モジュールには `mioAdminOps_` を含めて **21関数**ある（以前の資料にある「19関数」は古い候補の数字）。ただしこの静的検査は重要なハンドラ8個の存在を最低条件とするもので、残りの補助関数を含めた完全な実装確認は別途必要。
 - 既存GASに同名の `doPost`・管理ハンドラが重複している場合、管理分岐が見つからない場合、既存の認証順序が異なる場合は **STOP**。自動挿入・全文置換はしない。
 - `tests/mio-gas-operator-dispatch-preflight.test.mjs` で既存候補・分岐欠落・重複・認証欠落・ソース漏えいをテスト。合格しても**公開の許可は出さない**。
+
+## 2026-11-08 追補：コメント誤認・共通ヘルパー欠落の防止
+- 開発ブランチの読取専用 `mio-gas-operator-dispatch-preflight.mjs` を強化。コメント中の `function doPost` や管理関数名を実装として誤集計しない。コメントに残った旧ディスパッチを現行ルートと誤認しない。
+- 管理モジュールの21関数とは別に、既存10月GASの共通依存 `json_`、`equal_`、`safeText_`、`webIntegrityOk_`、`ensureWebDerivedRow_` も定義と重複を検査する。欠落時は `SHARED_HELPERS_MISSING_NO_AUTOPATCH` でSTOPし、自動修復しない。
+- 正常な候補、欠落した依存、コメント内の偽関数、実際の重複関数の回帰試験を追加。本番GASの実ソース照合や管理Readが成功したことを意味しない。
+- 監査結果は常に `publicationAllowed:false`、`patchAllowed:false`。既存のGAS・Vercel本番・台帳を変更しない。
