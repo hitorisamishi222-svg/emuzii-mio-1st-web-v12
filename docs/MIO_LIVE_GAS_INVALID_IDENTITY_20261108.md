@@ -50,3 +50,10 @@
 - `getContent`等の認証付き読取結果がない時は必ず `DEPLOYED_GAS_VERSION_OR_SOURCE_UNVERIFIED` としてSTOP。エディタHEADだけ存在しても公開版の代わりにしない。
 - 公開版の管理ルートが欠落していれば、HEADに管理ルートがあってもSTOP。検査で静的互換を確認しても本番管理Read成功にはならず `liveReadConfirmed:false`、`publicationAllowed:false`、`patchAllowed:false`、`writeAllowed:false` を固定。
 - 合成データのテストは公開版/未公開HEADの差、重複関数、共通ヘルパー不足、証拠欠落、秘密の非出力を検査。本番GASの公開版の真正な応答が手に入るまで公開操作はしない。
+
+## 2026-11-09：Vercel送信命令を本番コードで再確認（原因の切り分け）
+- 既存本番 `main` の `api-gacha-admin-ops.js` を直接確認。認証済み `read` は `operations.read === 'webAdminOpsRead'` を使い、`bridge(operations[d.action],data)` へ渡す。`read` の `data` は空オブジェクトで、参加者用IDを要求しない。
+- `bridge.js` は `{action,secret,...payload}` をPOSTで稼働GASへ送る。Vercel側で `read` を `register` や `status` に変換している事実はなく、参加者IDの再発行や管理画面URL変更を解決策にしない。
+- 本番ログ `2026-11-08T05:23:18/24/41Z` の `read invalid identity` はGASが参加者用認証に到達した場合と整合。**公開版GASの実コードをまだ取得できず、根本原因の断定はしない**。Vercel APIは変更しない。
+- `tests/mio-gas-live-connection-readiness.test.mjs` に read配線/空ペイロードの固定回帰を追加。API公開やGASへのリクエストを新規実行しない。
+- 過去の実機操作に関する版番号の報告には v15/v16 の差異がある。実行中の版はGoogle Apps Script APIで既存Deployment IDとの一致を取って確認し、過去報告・GitHub候補・編集HEADで確定しない。
