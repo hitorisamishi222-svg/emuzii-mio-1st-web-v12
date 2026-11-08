@@ -116,7 +116,7 @@ test('quoted fake declarations and commented routes never count',()=>{
 function mioAdminOpsRead_(){}
 `;
  const without=candidate.replace('function mioAdminOpsRead_(', 'function renamedMioReader_(')+
-  '\nconst mockGASSource='+JSON.stringify(fake)+';';
+  '\nconst mockGASSource=`'+fake+'`;';
  const r=inspect(without,'all');
  assert.equal(r.staticallyCompatible,false);
  assert.ok(Array.from(r.missing).includes('mioAdminOpsRead_'));
