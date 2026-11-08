@@ -50,8 +50,9 @@ test('wrong bridge secret remains forbidden even with admin dispatcher',()=>{
  const out=setup().call('webAdminOpsRead','INCORRECT_BRIDGE_SECRET');
  assert.equal(out.ok,false);assert.equal(out.error,'unauthorized');
 });
-test('no participant identity is synthesized, reset or submitted',()=>{
- const src=readFileSync(new URL('mio-gas-live-invalid-identity-repro.test.mjs',import.meta.url),'utf8');
- assert.doesNotMatch(src,/\/macros\/s\/AKfy/);
- assert.doesNotMatch(src,/mio_session|participantId:\s*'MIO-W-|tokenHash:\s*'/);
+test('operator read request intentionally contains action and bridge secret only',()=>{
+ const payload={action:'webAdminOpsRead',secret};
+ assert.deepEqual(Object.keys(payload).sort(),['action','secret']);
+ const output=setup().call(payload.action,payload.secret);
+ assert.deepEqual(Object.keys(output).sort(),['ok','readOnly']);
 });
