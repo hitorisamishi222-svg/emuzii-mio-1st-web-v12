@@ -44,3 +44,9 @@
 - GASの管理分岐が既存の `LockService.getScriptLock()` → `tryLock(...)` による取得成功後、`BRIDGE_SECRET` 検証後、参加者ID判定前にあることを読取専用で検査。
 - `try { ... } finally { lock.releaseLock(); }` が不足・順序異常なら `SCRIPT_LOCK_GUARD_MISSING_OR_MISPLACED` でSTOP。複数現場操作時の競合を見落として本番反映しない。
 - ロック取得なし・成功判定なし・解放なしの合成故障ケースを自動テストへ追加。実GASへの書込・公開操作なし。公開版ソースを取得できていない点は未解決。
+
+## 2026-11-08 夜：公開GAS版証拠と管理分岐を一括診断（開発ブランチ）
+- `tools/mio-gas-live-connection-readiness.mjs` を追加。Vercel本番の接続先指紋→Apps Script `deployments.get` と `getContent?versionNumber=...` の応答照合→**公開版**の`doPost`・管理21関数・共通5関数・LockService/共有鍵順序の確認を一括して**読み取り専用**で行う。
+- `getContent`等の認証付き読取結果がない時は必ず `DEPLOYED_GAS_VERSION_OR_SOURCE_UNVERIFIED` としてSTOP。エディタHEADだけ存在しても公開版の代わりにしない。
+- 公開版の管理ルートが欠落していれば、HEADに管理ルートがあってもSTOP。検査で静的互換を確認しても本番管理Read成功にはならず `liveReadConfirmed:false`、`publicationAllowed:false`、`patchAllowed:false`、`writeAllowed:false` を固定。
+- 合成データのテストは公開版/未公開HEADの差、重複関数、共通ヘルパー不足、証拠欠落、秘密の非出力を検査。本番GASの公開版の真正な応答が手に入るまで公開操作はしない。
