@@ -942,12 +942,13 @@ try{
  // This is a layout smoke, NOT a full production browser/URL test.
  const museumHtml=await readFile(resolve(cwd,'museum.html'),'utf8');
  const museumCss=await readFile(resolve(cwd,'museum.css'),'utf8');
+ const kawaiiCss=await readFile(resolve(cwd,'museum-kawaii.css'),'utf8');
  const galleryStart=museumHtml.indexOf('<section class="museum-section museum-gallery-first"');
  const galleryEnd=museumHtml.indexOf('<section class="museum-section" id="mioAwakening"',galleryStart);
  assert.ok(galleryStart>=0&&galleryEnd>galleryStart,'missing museum gallery section for responsive check');
  const galleryFixture='<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
   '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-  '<style>'+museumCss+'</style></head><body class="museum"><main>'+
+  '<style>'+museumCss+kawaiiCss+'</style></head><body class="museum"><main>'+
   museumHtml.slice(galleryStart,galleryEnd)+'</main></body></html>';
  const fixtureUrl='data:text/html;charset=utf-8,'+encodeURIComponent(galleryFixture);
  for(const width of [320,375,390,430]){
@@ -974,6 +975,36 @@ try{
    await mkdir('artifacts',{recursive:true});
    const picture=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
    await writeFile('artifacts/mio-museum-showcase-390.png',Buffer.from(picture.data,'base64'));
+  }
+ }
+ // Verify the actual hero with the existing whale embedded locally; no remote media.
+ const heroStart=museumHtml.indexOf('<section class="museum-hero"');
+ assert.ok(heroStart>=0&&galleryStart>heroStart,'missing hero section');
+ const whaleData='data:image/svg+xml;base64,'+(await readFile(resolve(cwd,'gacha-v191-whale-blue.svg'))).toString('base64');
+ const heroMarkup=museumHtml.slice(heroStart,galleryStart).replace('/gacha-v191-whale-blue.svg',whaleData);
+ const heroFixture='<!doctype html><html lang="ja"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+  '<style>'+museumCss+kawaiiCss+'</style></head><body class="museum">'+heroMarkup+'</body></html>';
+ for(const width of [320,375,390,430,1280]){
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<630});
+  await cdp('Page.navigate',{url:'data:text/html;charset=utf-8,'+encodeURIComponent(heroFixture)});
+  await poll(()=>evaluate("document.readyState==='complete'&&document.querySelector('.museum-mascot img')?.naturalWidth>0"));
+  const hero=await evaluate(`(()=>{
+   const mascot=document.querySelector('.museum-mascot'),title=document.querySelector('#museumTitle');
+   const m=mascot.getBoundingClientRect(),t=title.getBoundingClientRect();
+   return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,
+    visible:getComputedStyle(mascot).display!=='none'&&m.width>0&&m.height>0,
+    overlap:m.left<t.right&&m.right>t.left&&m.top<t.bottom&&m.bottom>t.top,
+    buttonHeight:document.querySelector('.museum-button.primary').getBoundingClientRect().height};
+  })()`);
+  assert.ok(hero.scroll<=hero.viewport+2,'hero horizontal overflow '+JSON.stringify(hero));
+  assert.equal(hero.visible,true,'whale must remain visible '+width);
+  assert.equal(hero.overlap,false,'whale overlaps hero title '+width);
+  assert.ok(hero.buttonHeight>=48,'hero action too small '+width);
+  if(width===390||width===1280){
+   await mkdir('artifacts',{recursive:true});
+   const picture=await cdp('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+   await writeFile('artifacts/mio-offline-mobile-hero-'+width+'.png',Buffer.from(picture.data,'base64'));
   }
  }
  // Browser-only examination of intentionally synthetic GAS files: never upload secrets.
