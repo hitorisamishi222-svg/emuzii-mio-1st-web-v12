@@ -44,7 +44,7 @@ test('candidate cannot pass without participant identity guard',()=>{
  assert.equal(r.reason,'UNRECOGNIZED_AUTH_OR_PARTICIPANT_GUARD');
 });
 test('candidate cannot pass without BRIDGE_SECRET guard',()=>{
- const r=check(combined.replace("'BRIDGE_SECRET'","'OTHER_PROPERTY'"));
+ const r=check(combined.replaceAll('BRIDGE_SECRET','OTHER_PROPERTY'));
  assert.equal(r.reason,'UNRECOGNIZED_AUTH_OR_PARTICIPANT_GUARD');
 });
 test('does not expose source in returned results',()=>{
