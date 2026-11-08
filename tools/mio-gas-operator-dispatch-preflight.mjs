@@ -38,18 +38,23 @@ export function preflightOperatorDispatch(files){
  const secret=body.search(/\bBRIDGE_SECRET\b/);
  const participant=body.search(/invalid identity/);
  const route=body.search(/webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)/);
- const routeAlternate=body.search(/webAdminOps(?:Read|Member|Approve|Grant|Review|Create|Intake)/);
- const actionNames=REQUIRED_ACTIONS.filter(a=>body.includes('webAdminOps'+a));
- const routePresent=route>=0||actionNames.length===REQUIRED_ACTIONS.length;
- const beforeParticipant=route>=0?route<participant:routeAlternate>=0&&routeAlternate<participant;
+ // Do not count names in comments as executable routes. A regex dispatcher
+ // must call the operator handler, not merely mention action strings.
+ const executable=body.replace(/\\/\\*[\\s\\S]*?\\*\\//g,'').replace(/^\\s*\\/\\/.*$/gm,'');
+ const routeMatch=executable.match(/if\\s*\\(\\s*\\/\\^webAdminOps\\(\\?:Read\\|Member\\|Approve\\|Grant\\|Review\\|Create\\|Intake\\)\\$\\/\\.test\\(d\\.action\\)\\s*\\)\\s*return\\s+json_\\(mioAdminOps_\\(/);
+ const dispatchAt=routeMatch?executable.indexOf(routeMatch[0]):-1;
+ const authAt=executable.search(/if\\s*\\(\\s*!secret\\s*\\|\\|\\s*!equal_\\(d\\.secret,secret\\)\\s*\\)/);
+ const participantAt=executable.search(/if\\s*\\(\\s*!\\/\\^MIO-W-/);
+ const routePresent=dispatchAt>=0;
+ const beforeParticipant=dispatchAt>=0&&participantAt>=0&&dispatchAt<participantAt;
  const evidence={requiredFunctionCount:required.length,missingFunctionCount:missing.length,
   missingFunctions:missing,dispatcherDetected:routePresent,secretGuardDetected:secret>=0,
   participantGuardDetected:participant>=0,dispatcherBeforeParticipant:beforeParticipant};
- if(secret<0||participant<0)return stop('UNRECOGNIZED_AUTH_OR_PARTICIPANT_GUARD',evidence);
+ if(secret<0||participant<0||authAt<0||participantAt<0)return stop('UNRECOGNIZED_AUTH_OR_PARTICIPANT_GUARD',evidence);
  if(missing.length)return stop('ADMIN_HANDLERS_INCOMPLETE_NO_AUTOPATCH',evidence);
  if(!routePresent)return stop('DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW',evidence);
  if(!beforeParticipant)return stop('DISPATCHER_AFTER_PARTICIPANT_GUARD',evidence);
- if(route>=0&&route<secret)return stop('DISPATCHER_BEFORE_SECRET_GUARD',evidence);
+ if(dispatchAt<authAt)return stop('DISPATCHER_BEFORE_SECRET_GUARD',evidence);
  return {ok:true,status:'STATIC_DISPATCH_PRESENT_REQUIRES_PUBLISHED_VERSION_PROOF',
   readOnly:true,publicationAllowed:false,patchAllowed:false,...evidence};
 }
