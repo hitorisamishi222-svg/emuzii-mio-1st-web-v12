@@ -34,17 +34,19 @@
   </div>
 </header>
 <main id="museumMain">
-  <section class="museum-hero museum-adopted-hero" aria-labelledby="museumTitle">
+  <section class="museum-hero" data-adopted-art="true" aria-labelledby="museumTitle">
     <h1 id="museumTitle" class="museum-sr-only">翠央記念館 💎</h1>
     <div class="museum-adopted-stage">
       <img class="museum-adopted-image" src="/assets/mio-adopted-top.jpg" width="864" height="1536" alt="翠央記念館。青い宮殿とパールのリボン、宝石をまとったクジラ、翠央の採用確定トップイラスト。これまでの思い出も、これからの輝きも。" fetchpriority="high" decoding="async">
       <nav class="museum-art-links" aria-label="トップ画像から各展示室へ">
         <a class="museum-art-link art-exhibits" href="#exhibits"><span>ギャラリーを巡る</span></a>
         <a class="museum-art-link art-profile" href="/mio-profile.html"><span>はじめての方へ</span></a>
-        <a class="museum-art-link art-public" href="/museum-approved-gallery.html"><span>公開作品ギャラリー</span></a>
-        <a class="museum-art-link art-icons" href="/museum-archive.html?kind=icons"><span>歴代アイコン館</span></a>
-        <a class="museum-art-link art-album" href="/museum-archive.html?kind=moments"><span>思い出アルバム</span></a>
-        <a class="museum-art-link art-events" href="/museum-archive.html?kind=events"><span>イベント記録</span></a>
+      </nav>
+      <nav class="museum-foyer" aria-label="ギャラリー展示室への近道">
+        <a class="museum-foyer-link museum-foyer-open" href="/museum-approved-gallery.html"><span>公開作品ギャラリー・公開済みの音楽・映像</span></a>
+        <a class="museum-foyer-link" href="/museum-archive.html?kind=icons"><span>歴代アイコン館・展示準備中</span></a>
+        <a class="museum-foyer-link" href="/museum-archive.html?kind=moments"><span>思い出アルバム・展示準備中</span></a>
+        <a class="museum-foyer-link" href="/museum-archive.html?kind=events"><span>イベント記録・展示準備中</span></a>
       </nav>
     </div>
   </section>
