@@ -26,6 +26,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "gacha-admin-preview.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "api-register.js",
       "use": "@vercel/node"
     },
@@ -414,6 +418,10 @@
     {
       "src": "/gacha-web-gate.html",
       "dest": "/gacha-web-gate.html"
+    },
+    {
+      "src": "/gacha-admin-preview.html",
+      "dest": "/gacha-admin-preview.html"
     },
     {
       "src": "/join.html",
