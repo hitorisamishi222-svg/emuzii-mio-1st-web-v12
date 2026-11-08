@@ -38,3 +38,9 @@
 - 管理モジュールの21関数とは別に、既存10月GASの共通依存 `json_`、`equal_`、`safeText_`、`webIntegrityOk_`、`ensureWebDerivedRow_` も定義と重複を検査する。欠落時は `SHARED_HELPERS_MISSING_NO_AUTOPATCH` でSTOPし、自動修復しない。
 - 正常な候補、欠落した依存、コメント内の偽関数、実際の重複関数の回帰試験を追加。本番GASの実ソース照合や管理Readが成功したことを意味しない。
 - 監査結果は常に `publicationAllowed:false`、`patchAllowed:false`。既存のGAS・Vercel本番・台帳を変更しない。
+
+
+## 2026-11-08 夜：ScriptLock 実行順序も公開前の停止条件に追加
+- GASの管理分岐が既存の `LockService.getScriptLock()` → `tryLock(...)` による取得成功後、`BRIDGE_SECRET` 検証後、参加者ID判定前にあることを読取専用で検査。
+- `try { ... } finally { lock.releaseLock(); }` が不足・順序異常なら `SCRIPT_LOCK_GUARD_MISSING_OR_MISPLACED` でSTOP。複数現場操作時の競合を見落として本番反映しない。
+- ロック取得なし・成功判定なし・解放なしの合成故障ケースを自動テストへ追加。実GASへの書込・公開操作なし。公開版ソースを取得できていない点は未解決。
