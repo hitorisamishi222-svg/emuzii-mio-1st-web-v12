@@ -16,11 +16,11 @@ test('read-only source audit recognizes matched integrated candidate as a connec
  assert.equal(out.canSafelyPatch,false);
  assert.deepEqual(out.duplicates,[]);
 });
-test('source audit allows human review of minimal patch only for a clean legacy dispatcher',()=>{
+test('legacy source can be reviewed but cannot authorize patch without published proof',()=>{
  const out=auditGas([oldCandidate],moduleOnly);
  assert.equal(out.status,'MINIMAL_PATCH_CAN_BE_REVIEWED');
  assert.equal(out.presentOpsCount,0);
- assert.equal(out.canSafelyPatch,true);
+ assert.equal(out.canSafelyPatch,false);
  assert.match(out.issues.join('\n'),/実デプロイのバージョン照合/);
 });
 test('source audit stops partial migration, duplicate module and missing secrets',()=>{
@@ -42,12 +42,30 @@ test('source audit permits distinct production GAS files only when global functi
 });
 
 test('source audit blocks deployment when required existing integrity helpers are absent',()=>{
- for(const helper of ['json_','safeText_','webIntegrityOk_','ensureWebDerivedRow_']){
+ for(const helper of ['json_','equal_','safeText_','webIntegrityOk_','ensureWebDerivedRow_']){
   const original='function '+helper+'(';
   assert.ok(full.includes(original),helper+' appears in candidate');
   const code=full.replace(original,'function TEST_REMOVED_'+helper+'(');
   const out=auditGas([code],moduleOnly);
   assert.equal(out.status,'STOP',helper+' is required for safe admin operation');
   assert.ok(out.missingHelpers.includes(helper),helper+' must appear in missing helper report');
+ }
+});
+
+
+test('source with missing equal_ authentication helper cannot pass even if secret comparison call remains',()=>{
+ const assertDefinition='function equal_(';
+ assert.ok(full.includes(assertDefinition));
+ const broken=full.replace(assertDefinition,'function equal_Fake_(');
+ const out=auditGas([broken],moduleOnly);
+ assert.equal(out.status,'STOP');
+ assert.ok(out.missingHelpers.includes('equal_'));
+ assert.equal(out.canSafelyPatch,false);
+});
+
+test('source-only audit never allows a patch when running published version is unknown',()=>{
+ for(const source of [oldCandidate, full, full.slice(0,full.indexOf(marker))]){
+  const out=auditGas([source],moduleOnly);
+  assert.equal(out.canSafelyPatch,false);
  }
 });
