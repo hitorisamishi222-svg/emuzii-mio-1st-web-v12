@@ -92,3 +92,27 @@ test('duplicate shared helper blocks release',()=>{
  assert.equal(r.ok,false);
  assert.equal(r.reason,'DUPLICATE_CRITICAL_FUNCTIONS');
 });
+
+test('commented-out missing helper cannot be counted as an implemented function',()=>{
+ const removed=combined.replace('function mioAdminOpsSchema_(', 'function renamedSchemaForTest_(');
+ const lineComment=check(removed+'\n// function mioAdminOpsSchema_(){}');
+ const blockComment=check(removed+'\n/*\nfunction mioAdminOpsSchema_(){}\n*/');
+ for(const result of [lineComment,blockComment]){
+  assert.equal(result.ok,false);
+  assert.equal(result.reason,'ADMIN_HANDLERS_INCOMPLETE_NO_AUTOPATCH');
+  assert.ok(result.missingFunctions.includes('mioAdminOpsSchema_'));
+  assert.equal(result.publicationAllowed,false);
+ }
+});
+test('commented duplicate helpers are not mistaken for real duplicate definitions',()=>{
+ const result=check(combined+'\n/*\nfunction mioAdminOps_(){}\n*/\n// function doPost(){}');
+ assert.equal(result.ok,true,JSON.stringify(result));
+ assert.equal(result.patchAllowed,false);
+ assert.equal(result.publicationAllowed,false);
+});
+test('comment with a fake dispatcher cannot repair missing live route',()=>{
+ const missing=combined.replace(dispatch,'');
+ const r=check(missing+'\n/* '+dispatch+' */');
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
+});
