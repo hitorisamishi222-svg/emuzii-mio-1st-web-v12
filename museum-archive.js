@@ -19,6 +19,13 @@ const safeLink=value=>{
  catch{return null;}
 };
 const label=kind=>kinds[kind]||'思い出';
+// Decorative, bundled palace scenes only. No exhibit data or private images.
+const palaceRooms=Object.freeze({
+ all:{image:'album',name:'思い出の宮殿へ',alt:'思い出アルバムの宮殿',copy:'翠央とみんなの思い出を大切に飾る、青い宮殿のお部屋です。'},
+ icons:{image:'icons',name:'歴代アイコン館',alt:'歴代アイコン館の宮殿',copy:'時とともに変わった翠央の表情をたどるお部屋。展示作品は公開確認後にご案内します。'},
+ moments:{image:'album',name:'思い出アルバム',alt:'思い出アルバムの宮殿',copy:'心に残る一瞬を集めるお部屋。公開許可が確認できた思い出だけを飾ります。'},
+ events:{image:'events',name:'イベントの記録',alt:'イベント記録の宮殿',copy:'一緒に過ごした企画や記念日の足あとをたどるお部屋です。'}
+});
 const text=(tag,value)=>{const el=document.createElement(tag);el.textContent=value||'';return el;};
 function card(item){
  const kind=Object.hasOwn(emoji,item.kind)?item.kind:'moments';
@@ -46,6 +53,13 @@ function card(item){
 }
 function render(){
  document.body.dataset.museumRoom=selected;
+ const room=palaceRooms[selected];
+ const picture=document.getElementById('archiveRoomSpotlightImage');
+ const title=document.getElementById('archiveRoomSpotlightTitle');
+ const copy=document.getElementById('archiveRoomSpotlightCopy');
+ if(picture){picture.src='/assets/mio-palace-'+room.image+'.webp';picture.alt=room.alt;}
+ if(title)title.textContent=room.name;
+ if(copy)copy.textContent=room.copy;
  if(!root||!status)return;
  filters.forEach(btn=>btn.setAttribute('aria-pressed',String(btn.dataset.kind===selected)));
  const shown=items.filter(x=>selected==='all'||x.kind===selected);
