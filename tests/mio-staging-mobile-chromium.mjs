@@ -186,6 +186,10 @@ try{
   assert.ok(theme.loaded,'kawaii CSS not loaded '+JSON.stringify(theme));
   assert.ok(theme.scroll<=theme.width+2,'kawaii gallery overflow '+JSON.stringify(theme));
   assert.ok(theme.background.includes('gradient')&&theme.card.includes('gradient'),'kawaii colors missing');
+  // Interior palace scene must be an actual readable artwork, not merely a page background.
+  const musicRoom=await evaluate("(()=>{const img=document.querySelector('.museum-music-spotlight img');const banner=img.closest('.museum-room-spotlight');return {loaded:img.naturalWidth>0,src:img.getAttribute('src'),height:Math.round(banner.getBoundingClientRect().height),caption:!!banner.querySelector('figcaption')?.textContent.includes('蒼い宮殿')}})()");
+  assert.ok(musicRoom.loaded&&musicRoom.height>=250&&musicRoom.caption,'music palace banner failed '+JSON.stringify(musicRoom));
+  assert.equal(musicRoom.src,'/assets/mio-palace-music.webp');
   await cdp('Page.navigate',{url:root+'/museum-approved-gallery.html'});
   await poll(()=>evaluate("document.querySelector('#approvedGalleryStatus')?.textContent.includes('件の承認済み作品')"),18000);
   const gallery=await evaluate(`(()=>({
@@ -288,6 +292,8 @@ try{
   }))()`);
   assert.ok(archive.doc<=archive.width+2,'archive horizontal overflow '+JSON.stringify(archive));
   assert.deepEqual(archive.selected,['icons']);
+  const roomIllustration=await evaluate("(()=>({src:document.querySelector('#archiveRoomSpotlightImage').getAttribute('src'),loaded:document.querySelector('#archiveRoomSpotlightImage').naturalWidth>0,heading:document.querySelector('#archiveRoomSpotlightTitle').textContent,cardImages:document.querySelectorAll('.archive-room-scene img').length}))()");
+  assert.deepEqual(roomIllustration,{src:'/assets/mio-palace-icons.webp',loaded:true,heading:'歴代アイコン館',cardImages:3});
   assert.equal(archive.items,0,'unverified or private exhibit appeared in staging');
   assert.ok(archive.status.includes('準備中'),'offline exhibit must say that content is not connected');
   if(width===390){
@@ -298,8 +304,11 @@ try{
   await evaluate("document.querySelector('.archive-filter[data-kind=events]').click()");
   assert.equal(await evaluate("new URLSearchParams(location.search).get('kind')"),'events');
   assert.equal(await evaluate("document.querySelector('.archive-filter[aria-pressed=true]').dataset.kind"),'events');
+  const eventScene=await evaluate("(()=>({src:document.querySelector('#archiveRoomSpotlightImage').getAttribute('src'),heading:document.querySelector('#archiveRoomSpotlightTitle').textContent}))()");
+  assert.deepEqual(eventScene,{src:'/assets/mio-palace-events.webp',heading:'イベントの記録'});
   await evaluate("history.back()");
   await poll(()=>evaluate("document.querySelector('.archive-filter[aria-pressed=true]')?.dataset.kind==='icons'"));
+  assert.equal(await evaluate("document.querySelector('#archiveRoomSpotlightImage').getAttribute('src')"),'/assets/mio-palace-icons.webp');
  }
  // Entire operator workflow is a fictional, disconnected rehearsal: real Chrome clicks.
  for(const width of [320,375,390,430]){
