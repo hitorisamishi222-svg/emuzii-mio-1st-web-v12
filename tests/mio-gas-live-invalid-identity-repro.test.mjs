@@ -128,7 +128,11 @@ test('actual GAS management read works before audit migration and never writes s
 
 test('actual GAS management grant is blocked without schema, even with correct secret',()=>{
  const t=realOpsFixture();
- assert.throws(()=>t.call('webAdminOpsGrant'),/監査シートとWeb操作ID列/);
+ // doPost intentionally converts internal errors into a generic, private JSON
+ // response; it does not rethrow details of the failed write to the client.
+ const response=t.call('webAdminOpsGrant');
+ assert.equal(response.ok,false);
+ assert.equal(response.error,'連携処理を完了できませんでした');
  assert.deepEqual(t.stats(),{writes:0,lockReleases:1});
 });
 
