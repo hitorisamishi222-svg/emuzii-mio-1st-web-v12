@@ -45,14 +45,34 @@ try{
   let binary=process.env.CHROME_BIN||null;
   if(!binary)for(const path of browsers){try{await access(path);binary=path;break}catch{}}
   assert.ok(binary,'Chromium/Chrome is required for browser smoke test');
-  chrome=spawn(binary,['--headless=new','--no-sandbox','--disable-dev-shm-usage',
-    '--disable-background-networking','--no-first-run','--no-default-browser-check',
-    '--remote-allow-origins=*','--remote-debugging-port=0',
-    '--user-data-dir='+join(tmp,'profile'),'about:blank'],{stdio:'ignore'});
-  const activePort=join(tmp,'profile','DevToolsActivePort');
-  const cdpPort=await poll(async()=>{
-    const bytes=await readFile(activePort,'utf8');return Number(bytes.split('\n')[0])||null
-  },20000,'Chrome debugging port');
+  // Retry a failed Chrome startup once with a clean isolated profile.
+  // Browser assertions and the prohibition on live API requests stay intact.
+  let cdpPort=null,launchDiagnostics=[];
+  for(let attempt=1;attempt<=2&&!cdpPort;attempt++){
+    const profile=join(tmp,'profile-'+attempt);
+    let stderr='';
+    chrome=spawn(binary,['--headless=new','--no-sandbox','--disable-dev-shm-usage',
+      '--disable-background-networking','--no-first-run','--no-default-browser-check',
+      '--remote-allow-origins=*','--remote-debugging-port=0',
+      '--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe']});
+    chrome.stderr?.on('data',chunk=>{stderr=(stderr+chunk.toString()).slice(-4096)});
+    const activePort=join(profile,'DevToolsActivePort');
+    try{
+      cdpPort=await poll(async()=>{
+        if(chrome.exitCode!==null)throw Error('Chrome exited');
+        const bytes=await readFile(activePort,'utf8');
+        return Number(bytes.split('\n')[0])||null;
+      },30000,'Chrome debugging port');
+    }catch{
+      launchDiagnostics.push({attempt,exitCode:chrome.exitCode,
+        signalCode:chrome.signalCode,
+        stderr:stderr.replace(/https?:\/\/\S+/g,'[url]').slice(-1000)});
+      chrome.kill('SIGKILL');
+      await pause(450);
+      chrome=null;
+    }
+  }
+  if(!cdpPort)throw Error('Chrome failed to start after 2 attempts: '+JSON.stringify(launchDiagnostics));
   const target=await poll(async()=>{
     const tabs=await getJson('http://127.0.0.1:'+cdpPort+'/json/list');
     return tabs.find(x=>x.type==='page'&&x.webSocketDebuggerUrl)
