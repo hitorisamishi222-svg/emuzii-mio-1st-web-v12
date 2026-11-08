@@ -378,8 +378,8 @@ body.museum .museum-approved-card a:not(.museum-approved-permalink),
 /* Adopted artwork is shown in full, unaltered. The six links are real controls. */
 .museum-sr-only,.museum-art-link span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 body.museum{background:linear-gradient(#eef8ff70,#f3faff85),url('/assets/mio-palace-album.webp') center top/cover fixed no-repeat}
-.museum-adopted-hero{background:linear-gradient(90deg,#d9eeff,#f7fcff,#d9eeff);padding:22px 16px 34px}
-.museum-adopted-hero::before,.museum-adopted-hero::after{display:none}
+.museum-hero[data-adopted-art="true"]{background:linear-gradient(90deg,#d9eeff,#f7fcff,#d9eeff);padding:22px 16px 34px}
+.museum-hero[data-adopted-art="true"]::before,.museum-hero[data-adopted-art="true"]::after{display:none}
 .museum-adopted-stage{position:relative;width:min(100%,720px);margin:auto;border-radius:26px;overflow:hidden;box-shadow:0 20px 65px #1863a138;isolation:isolate}
 body.museum .museum-adopted-image{display:block;width:100%;height:auto}
 .museum-art-link{display:block;position:absolute;border-radius:24px;transition:box-shadow .2s,background .2s}
@@ -398,4 +398,13 @@ body.museum[data-museum-room="icons"]{background-image:linear-gradient(#eef8ff60
 body.museum[data-museum-room="events"]{background-image:linear-gradient(#eef8ff60,#f3faff85),url('/assets/mio-palace-events.webp')}
 .museum-approved-card,.museum-archive .archive-room-card,.museum-archive .archive-entry,.museum-feature,.museum-curator .curator-panel{backdrop-filter:blur(8px);background:linear-gradient(145deg,#ffffffef,#f1f9ffec)}
 .museum-page-heading{background:#f5fbffe0;border:1px solid #c5dff0;border-radius:24px;padding:28px 20px;margin-top:28px}
-@media(max-width:630px){.museum-adopted-hero{padding:12px 8px 24px}.museum-adopted-stage{border-radius:19px}body.museum{background-attachment:scroll;background-size:auto 100vh}.museum-art-link{border-radius:16px}}
+@media(max-width:630px){.museum-hero[data-adopted-art="true"]{padding:12px 8px 24px}.museum-adopted-stage{border-radius:19px}body.museum{background-attachment:scroll;background-size:auto 100vh}.museum-art-link{border-radius:16px}}
+
+.museum-adopted-stage .museum-foyer{position:absolute;inset:0;max-width:none;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;pointer-events:none}
+.museum-adopted-stage .museum-foyer-link{position:absolute;display:block;min-height:0;margin:0;padding:0;border:0;box-shadow:none;background:transparent!important;pointer-events:auto;border-radius:20px}
+.museum-adopted-stage .museum-foyer-link span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.museum-adopted-stage .museum-foyer-link:hover{transform:none;box-shadow:inset 0 0 0 3px #fffc,0 0 20px #fffc}
+.museum-adopted-stage .museum-foyer-link:nth-child(1){left:6.5%;top:68.8%;width:42.5%;height:9.5%}
+.museum-adopted-stage .museum-foyer-link:nth-child(2){left:51%;top:68.8%;width:42.5%;height:9.5%}
+.museum-adopted-stage .museum-foyer-link:nth-child(3){left:6.5%;top:79%;width:42.5%;height:9.5%}
+.museum-adopted-stage .museum-foyer-link:nth-child(4){left:51%;top:79%;width:42.5%;height:9.5%}
