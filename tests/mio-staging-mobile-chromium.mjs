@@ -999,7 +999,7 @@ try{
   const hero=await evaluate(`(()=>{
    const img=document.querySelector('.museum-adopted-image'),r=img.getBoundingClientRect();
    return {viewport:innerWidth,scroll:document.documentElement.scrollWidth,ratio:r.width/r.height,
-    natural:img.naturalWidth/img.naturalHeight,links:[...document.querySelectorAll('.museum-art-link')].map(a=>{
+    natural:img.naturalWidth/img.naturalHeight,links:[...document.querySelectorAll('.museum-art-link,.museum-adopted-stage .museum-foyer-link')].map(a=>{
      const b=a.getBoundingClientRect();return {href:a.getAttribute('href'),height:b.height,inside:b.left>=r.left&&b.right<=r.right&&b.top>=r.top&&b.bottom<=r.bottom};})};
   })()`);
   assert.ok(hero.scroll<=hero.viewport+2,'adopted hero overflow '+width);
