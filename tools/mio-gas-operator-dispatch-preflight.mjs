@@ -59,19 +59,30 @@ export function preflightOperatorDispatch(files){
  const dispatchAt=routeMatch?executable.indexOf(routeMatch[0]):-1;
  const authAt=executable.search(/if\s*\(\s*!secret\s*\|\|\s*!equal_\(d\.secret,secret\)\s*\)/);
  const participantAt=executable.search(/if\s*\(\s*!\/\^MIO-W-/);
+ // A valid admin route still needs serialization: the production October
+ // script protects GAS writes with ScriptLock before secret/dispatch and
+ // releases it in finally. No runtime test and no deployment permission here.
+ const lockAt=executable.search(/\b(?:var|let|const)\s+lock\s*=\s*LockService\.getScriptLock\s*\(\s*\)/);
+ const acquiredAt=executable.search(/if\s*\(\s*!\s*lock\.tryLock\s*\(\s*\d+\s*\)\s*\)\s*return\b/);
+ const tryAt=executable.search(/\btry\s*\{/);
+ const finallyAt=executable.search(/\bfinally\s*\{\s*lock\.releaseLock\s*\(\s*\)\s*;/);
+ const lockGuardValid=lockAt>=0&&acquiredAt>lockAt&&tryAt>acquiredAt&&
+   authAt>tryAt&&dispatchAt>authAt&&finallyAt>participantAt&&finallyAt>dispatchAt;
  const routePresent=dispatchAt>=0;
  const beforeParticipant=dispatchAt>=0&&participantAt>=0&&dispatchAt<participantAt;
  const evidence={requiredFunctionCount:required.length,missingFunctionCount:missing.length,
   missingFunctions:missing,requiredSharedCount:REQUIRED_SHARED.length,
   missingSharedCount:missingShared.length,missingSharedFunctions:missingShared,
   dispatcherDetected:routePresent,secretGuardDetected:secret>=0,
-  participantGuardDetected:participant>=0,dispatcherBeforeParticipant:beforeParticipant};
+  participantGuardDetected:participant>=0,dispatcherBeforeParticipant:beforeParticipant,
+  scriptLockGuardDetected:lockGuardValid};
  if(secret<0||participant<0||authAt<0||participantAt<0)return stop('UNRECOGNIZED_AUTH_OR_PARTICIPANT_GUARD',evidence);
  if(missing.length)return stop('ADMIN_HANDLERS_INCOMPLETE_NO_AUTOPATCH',evidence);
  if(missingShared.length)return stop('SHARED_HELPERS_MISSING_NO_AUTOPATCH',evidence);
  if(!routePresent)return stop('DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW',evidence);
  if(!beforeParticipant)return stop('DISPATCHER_AFTER_PARTICIPANT_GUARD',evidence);
  if(dispatchAt<authAt)return stop('DISPATCHER_BEFORE_SECRET_GUARD',evidence);
+ if(!lockGuardValid)return stop('SCRIPT_LOCK_GUARD_MISSING_OR_MISPLACED',evidence);
  return {ok:true,status:'STATIC_DISPATCH_PRESENT_REQUIRES_PUBLISHED_VERSION_PROOF',
   readOnly:true,publicationAllowed:false,patchAllowed:false,...evidence};
 }
