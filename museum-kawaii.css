@@ -248,19 +248,21 @@ body.museum .museum-archive .archive-room-guide{color:inherit}
  .museum-header .museum-bar{gap:7px;min-height:68px}
  .museum-nav{gap:3px 6px}
  .museum-nav a{font-size:12px;padding:7px 10px}
- .museum-hero-inner{display:block;min-height:0;padding-block:36px 42px}
+ .museum-hero-inner{display:flex;flex-direction:column;align-items:stretch;gap:20px;min-height:0;padding-block:28px 42px}
+ .museum-hero-inner>div:first-child{min-width:0;width:100%}
  .museum-hero::after{font-size:15px;right:3%;top:10px;letter-spacing:.35em}
  .museum-hero h1{font-size:clamp(34px,9vw,46px);margin-block:17px 10px}
  .museum-hero .hero-lead{font-size:clamp(19px,5vw,23px)}
  .museum-hero .hero-sub{font-size:14px;line-height:1.8}
- .museum-mascot{position:absolute;top:22px;right:12px;width:82px;height:82px;
-  padding:7px;border-width:1px;box-shadow:0 5px 15px #b6719727;
-  border-radius:50%;opacity:.78;pointer-events:none}
+ .museum-mascot{display:block;position:relative;order:-1;top:auto;right:auto;
+  flex:none;align-self:center;width:112px;height:112px;margin:8px auto 0;
+  padding:12px;border-width:2px;box-shadow:0 0 0 6px #fff9fc99,0 9px 25px #b6719727;
+  border-radius:43%;opacity:1;pointer-events:none}
  .museum-mascot::before{top:-8px;right:-5px;font-size:19px}
  .museum-mascot::after{left:-8px;bottom:6px;font-size:15px}
- .museum-mascot img{width:70px}
+ .museum-mascot img{display:block;width:84px;margin:auto}
  .museum-mascot span{display:none}
- .museum-kicker{font-size:9px;letter-spacing:.06em;padding:7px 9px;max-width:calc(100% - 76px)}
+ .museum-kicker{font-size:9px;letter-spacing:.06em;padding:7px 9px;max-width:100%}
  .museum-foyer{margin-top:23px;padding:14px;border-radius:20px}
  .museum-foyer-grid{gap:8px}
  .museum-foyer-link{min-height:70px;padding:8px;gap:7px;border-radius:13px}
