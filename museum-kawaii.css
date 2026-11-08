@@ -364,3 +364,13 @@ body.museum-device{color:#3d5365}
  .museum-foyer-copy strong{font-size:13px}
  .museum-foyer-copy small{font-size:11px}
 }
+
+/* Match the portrait crop on actual pages, overriding the base responsive image rule. */
+body.museum .museum-hero-portrait{height:610px}
+.museum-profile-portrait{background-image:url('/assets/mio-bg-princess.jpg');background-size:cover;background-position:50% 34%}
+body.museum .museum-approved-card a:not(.museum-approved-permalink),
+.museum-curator button:not(.curator-secondary),.museum-device button:not(.secondary),
+.museum-archive .archive-filter[aria-pressed="true"],
+.museum-approved-filters button[aria-pressed="true"]{background:#23679d;color:#fff}
+@media(max-width:850px) and (min-width:631px){body.museum .museum-hero-portrait{height:550px}}
+@media(max-width:630px){body.museum .museum-hero-portrait{height:340px}}
