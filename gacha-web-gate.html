@@ -59,6 +59,10 @@ main{max-width:760px}
 <section id="normalSection" class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
 <section id="festSection" class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
 <p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
+<p id="opsPreviewNotice" hidden role="status" style="padding:13px;border:1px solid #94c8f1;border-radius:12px;background:#225477">
+ 👀 このURLは開発プレビューです。管理APIは本番以外で停止するため、管理者コードを入力しても接続できません。
+ <a href="/gacha-admin-preview.html" style="display:block;color:#fff0b9;font-weight:800">承認・メンシプ・回数付与の表示サンプルを見る</a>
+</p>
 <p><small>受付ON/OFFは従来の管理操作です。登録承認・ガチャ回数付与は稼働GAS照合が完了するまで利用できません。</small></p>
 <section id="opsAdminPanel" aria-labelledby="opsAdminTitle">
  <div class="ops-summary"><h2 id="opsAdminTitle">🔔 運営管理センター</h2><span id="opsBell" class="ops-pill" aria-live="polite">通知：管理者認証待ち</span></div>
@@ -120,6 +124,13 @@ main{max-width:760px}
 
 
 </main><script>
+'use strict';
+// This visual hint does not relax bridge.prepare() or any API origin guards.
+if(location.hostname!=='emuzii-mio-1st-web-v12.vercel.app'){
+ const note=document.getElementById('opsPreviewNotice');
+ if(note)note.hidden=false;
+}
+</script><script>
 'use strict';
 const $=id=>document.getElementById(id);
 let snapshot=null,busy=false,code='';
