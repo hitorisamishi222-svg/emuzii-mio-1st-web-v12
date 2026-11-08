@@ -274,7 +274,7 @@ body.museum .museum-archive .archive-room-guide{color:inherit}
  .museum-gallery-first::before{inset:6px 7px 0;border-radius:24px}
  .museum-showcase{padding:16px;margin:0 3px 23px;border-radius:21px}
  .museum-gallery-first .museum-grid{padding-inline:3px}
- .museum-actions .museum-button{flex:1 1 148px}
+ .museum-actions .museum-button{flex:1 1 148px;padding-inline:14px;font-size:14px;white-space:nowrap}
  .museum-page-heading{padding-block:32px 26px}
 }
 @media(max-width:360px){
