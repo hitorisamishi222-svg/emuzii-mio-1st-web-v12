@@ -180,7 +180,7 @@ test('inline comment with a fake dispatcher cannot repair a missing route',()=>{
 
 test('real dispatcher remains valid alongside ordinary strings and comments',()=>{
  const expanded=combined.replace(dispatch,
-  "    var sampleLabel='https://example.invalid/'; // unrelated inline comment\\n"+dispatch);
+  "    var sampleLabel='https://example.invalid/'; // unrelated inline comment\n"+dispatch);
  assert.notEqual(expanded,combined);
  const report=check(expanded);
  assert.equal(report.ok,true,JSON.stringify(report));
