@@ -75,3 +75,20 @@ test('route placed after participant identity guard fails closed',()=>{
  assert.equal(r.ok,false);
  assert.equal(r.reason,'DISPATCHER_AFTER_PARTICIPANT_GUARD');
 });
+
+test('all 21 operator module functions must exist, not only 7 actions',()=>{
+ const r=check(combined);
+ assert.equal(r.ok,true,JSON.stringify(r));
+ assert.equal(r.requiredFunctionCount,21);
+});
+test('missing shared helper blocks read even when every action handler exists',()=>{
+ const r=check(combined.replace('function mioAdminOpsSchema_(', 'function removedSchemaForTest_('));
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'ADMIN_HANDLERS_INCOMPLETE_NO_AUTOPATCH');
+ assert.ok(r.missingFunctions.includes('mioAdminOpsSchema_'));
+});
+test('duplicate shared helper blocks release',()=>{
+ const r=check(combined+'\\nfunction mioAdminOpsRecordGrant_(){}');
+ assert.equal(r.ok,false);
+ assert.equal(r.reason,'DUPLICATE_CRITICAL_FUNCTIONS');
+});
