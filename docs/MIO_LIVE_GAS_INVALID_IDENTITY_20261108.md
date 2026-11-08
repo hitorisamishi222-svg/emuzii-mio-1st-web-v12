@@ -1,0 +1,28 @@
+# みおWeb管理 接続不具合・本番ログから原因を絞り込む（2026-11-08）
+
+## 検証済みの現象
+- Vercel **既存本番** `main` の `/api/gacha-admin-ops` に対する `read` が、2026-11-08 05:23:18.556 / 05:23:24.971 / 05:23:41.100 UTC の3件で失敗（JST 14:23頃）。
+- サーバーログは3件とも `gacha web admin ops failure read invalid identity`。**ID・氏名・トークン・管理者コード・秘密鍵は転記しない**。
+- Vercelの `APPS_SCRIPT_URL` に含まれるデプロイIDは、既存の安全な指紋検査 `tools/mio-gas-connection-target-audit.mjs` で照合済み。これはデプロイの同一性のみで、コード版が正しい証明ではない。
+- 本番で `BRIDGE_SECRET` が不一致なら候補ソースでは `unauthorized` を返す。今回の `invalid identity` は、既存のWeb参加者用 `participantId/tokenHash` 検証へ `webAdminOpsRead` が誤って進んだ場合に再現する。
+- 既存本番GASの公開版 `versionNumber` と実行中ソースは**未取得**。上記の挙動は管理用分岐が公開コードにない・不足している可能性が高いが、公開版コードを確認するまで断定しない。
+
+## 再現テスト（開発データのみ、外部操作なし）
+- `tests/mio-gas-live-invalid-identity-repro.test.mjs` は合成 `BRIDGE_SECRET` とインメモリの `doPost` 環境だけを使う。
+- 開発候補 `GAS_Code_OCTOBER_WITH_ADMIN_OPS_20261106.gs` は、(1)既存 `BRIDGE_SECRET` 検査 → (2)`webAdminOps(?:Read|...)` の分岐 → (3)参加者の `participantId/tokenHash` ガードの順である。
+- 分岐だけを**テスト内で取り除くと** `webAdminOpsRead` が `invalid identity` を返すこと、分岐を持つ候補なら `mioAdminOps_` に届くことを検証する。
+- これによって **登録IDを再発行して直す問題ではない**ことが明確になる。既存IDと端末・過去履歴を保持する。
+
+## 実際の修正作業の停止条件
+1. **既存**Apps Scriptの稼働デプロイID・公開版番号・公開ソース・編集HEAD・全ファイルを読み取りで取得。新規プロジェクトやデプロイは作らない。
+2. 公開版の `doPost` に対し、`BRIDGE_SECRET` 判定後、参加者の `invalid identity` ガードより**前**に `webAdminOpsRead` が安全に分岐しているか確認する。
+3. 対応する `mioAdminOps_` 以下の必要関数が**一式存在するか**も数え、既存定義があるものは**二重に追加しない**。旧コード全体の置換は禁止。
+4. 稼働版ソースと復元手段が確保でき、かつ明示承認された場合だけ、既存Scriptの必要差分を審査して同じデプロイの更新を検討する。
+5. 公開更新が許可・適用された後、**最初は `webAdminOpsRead` だけ**本番の認証済み管理画面から確認。監査タブ `emuzii_Web管理操作履歴` と付与履歴J1は明示許可までは変更しない。
+6. `schemaReady` と台帳・操作IDの整合が確実になるまで承認/付与などの**本番書込フラグはOFF**。
+7. まーくん/サスケを含む既存の確認済みID・端末・皆勤・抽選・付与履歴は移行の対象外。
+
+## 画面確認
+- 開発版の `gacha-web-gate.html` では、非本番の `VERCEL_ENV` によって管理APIが503になるため、接続できないことを明示する。
+- `gacha-admin-preview.html` を開けば **架空データのみ**で4画面を表示・切替・検索可能。管理者コード入力や外部API/保存は一切行わない。これは**本番接続完了を意味しない**。
+- 具体的な本番修正待ち作業は Issue #66 / Draft PR #87 に集約する。
