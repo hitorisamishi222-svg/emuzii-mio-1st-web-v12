@@ -57,3 +57,10 @@
 - 本番ログ `2026-11-08T05:23:18/24/41Z` の `read invalid identity` はGASが参加者用認証に到達した場合と整合。**公開版GASの実コードをまだ取得できず、根本原因の断定はしない**。Vercel APIは変更しない。
 - `tests/mio-gas-live-connection-readiness.test.mjs` に read配線/空ペイロードの固定回帰を追加。API公開やGASへのリクエストを新規実行しない。
 - 過去の実機操作に関する版番号の報告には v15/v16 の差異がある。実行中の版はGoogle Apps Script APIで既存Deployment IDとの一致を取って確認し、過去報告・GitHub候補・編集HEADで確定しない。
+
+
+## 2026-11-09 深夜：旧ソース検査の修正許可を閉鎖
+- `tools/mio-gas-live-source-audit.mjs` の従来の `canSafelyPatch:true` は、現物GASを入力しただけでも修正可と読めるため **常にfalse** に変更。未証明の現行ソースから「修正許可」を推論しない。候補は `MINIMAL_PATCH_CAN_BE_REVIEWED` として差分審査のみ。
+- 管理認証に必要な共通ヘルパー `equal_` の存在検査を追加し、呼び出しだけが残って定義が消えている場合は `STOP`。
+- `tests/mio-live-source-preflight.test.mjs` に未認証ソースの修正禁止・`equal_` 欠落の回帰検査を追加した。変更はDraft PR #87の開発ブランチのみ。
+- 既存の本番GAS公開版とApps Script APIの認証付きソース取得は依然未完了。従来の本番URL、Google Sheetsのデータ、Vercel本番設定および書込フラグに変更なし。**作業完了や本番接続復旧とは扱わない**。
