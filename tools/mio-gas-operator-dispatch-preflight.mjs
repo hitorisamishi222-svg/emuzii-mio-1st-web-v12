@@ -12,7 +12,13 @@ const REQUIRED_FUNCTIONS=['mioAdminOps_',...REQUIRED_ACTIONS.map(x=>'mioAdminOps
  ...REQUIRED_HELPERS.map(x=>'mioAdminOps'+x+'_')];
 const stop=(reason,details={})=>({ok:false,status:'STOP',reason,readOnly:true,
  publicationAllowed:false,patchAllowed:false,...details});
-const sourceNames=(text)=>[...text.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].map(m=>m[1]);
+// Ignore commented declarations: a removed handler must not be 'restored' by
+// a line or block comment. This remains a conservative static preflight, not
+// a JavaScript parser or proof of deployed code.
+const stripComments=text=>text.replace(/\/\*[\s\S]*?\*\//g,'\n')
+ .replace(/^[ \t]*\/\/[^\r\n]*/gm,'');
+const declaration=/^[ \t]*(?:async[ \t]+)?function[ \t]+([A-Za-z_$][\w$]*)[ \t]*\(/gm;
+const sourceNames=text=>[...stripComments(text).matchAll(declaration)].map(m=>m[1]);
 
 /**
  * Source strings must be taken from the actual Apps Script project, not a
@@ -25,7 +31,7 @@ export function preflightOperatorDispatch(files){
  if(!scripts.length)return stop('NO_SERVER_JS');
  if(scripts.some(f=>typeof f.name!=='string'||typeof f.source!=='string'||
      f.source.length>1500000))return stop('INVALID_SERVER_SOURCE');
- const all=scripts.map(f=>f.source).join('\n');
+ const all=stripComments(scripts.map(f=>f.source).join('\n'));
  const functions=sourceNames(all),counts=new Map();
  for(const name of functions)counts.set(name,(counts.get(name)||0)+1);
  const critical=['doPost',...REQUIRED_FUNCTIONS];
@@ -34,18 +40,17 @@ export function preflightOperatorDispatch(files){
  if((counts.get('doPost')||0)!==1)return stop('DOPOST_MISSING_OR_MULTIPLE');
  const required=REQUIRED_FUNCTIONS;
  const missing=required.filter(n=>!counts.has(n));
- const start=all.search(/\bfunction\s+doPost\s*\(/);
+ const start=all.search(/^[ \t]*function[ \t]+doPost[ \t]*\(/m);
  // Scope to doPost only, not the next named function. This is a conservative
  // static check, not a parser or security proof.
  const tail=all.slice(start);
- const next=tail.slice(1).search(/\bfunction\s+[A-Za-z_$][\w$]*\s*\(/);
+ const next=tail.slice(1).search(/^[ \t]*(?:async[ \t]+)?function[ \t]+[A-Za-z_$][\w$]*[ \t]*\(/m);
  const body=next<0?tail:tail.slice(0,next+1);
  const secret=body.search(/\bBRIDGE_SECRET\b/);
  const participant=body.search(/invalid identity/);
- const route=body.search(/webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)/);
  // Do not count names in comments as executable routes. A regex dispatcher
  // must call the operator handler, not merely mention action strings.
- const executable=body.replace(/\/\*[\s\S]*?\*\//g,'').replace(/^\s*\/\/.*$/gm,'');
+ const executable=body;
  const routeMatch=executable.match(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
  const dispatchAt=routeMatch?executable.indexOf(routeMatch[0]):-1;
  const authAt=executable.search(/if\s*\(\s*!secret\s*\|\|\s*!equal_\(d\.secret,secret\)\s*\)/);
