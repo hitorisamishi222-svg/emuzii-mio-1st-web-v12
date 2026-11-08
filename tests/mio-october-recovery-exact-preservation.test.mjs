@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 const combined=readFileSync(
   new URL('../GAS_Code_OCTOBER_WITH_ADMIN_OPS_20261106.gs',import.meta.url),'utf8');
 const ORIGINAL_SHA256='d57f00969aad45099176d35f10e38dd5201c34918165f102d0f291e3f35bd2df';
-const ORIGINAL_BYTES=38180;
+const ORIGINAL_BYTES=43342;
 const MODULE_START='// 2026-11-06: Web admin operations;';
 const DISPATCH="    if(/^webAdminOps(?:Read|Member|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));\n";
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
