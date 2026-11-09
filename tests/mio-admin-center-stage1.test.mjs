@@ -587,3 +587,48 @@ test('member API requires the operator confirmation and a valid browser identity
  assert.equal(good.statusCode,200);
  assert.equal(calls,1);
 });
+
+
+test('approved GAS browser records resolve by exact Web ID only and remain read-only',async()=>{
+ const b=fakeBrowser(),webId='MIO-W-'+'a'.repeat(24),unverifiedId='MIO-W-'+'b'.repeat(24),pendingId='MIO-W-'+'c'.repeat(24);
+ assert.equal(b.window.mioResolveIncidentIdentity(webId),null,'no identities before operator authentication');
+ b.setSnapshot({ok:true,writeEnabled:false,totalPending:1,rejectedCount:0,
+  roster:[{mioId:'MIO-0001',name:'合成参加者A',gacha:null}],
+  approvedBrowsers:[
+   {webId,mioId:'MIO-0001',name:'合成参加者A',verified:true},
+   {webId:unverifiedId,mioId:'MIO-0002',name:'合成参加者B',verified:false}
+  ],
+  pending:[{webId:pendingId,mioId:'MIO-0003',name:'合成参加者C',status:'承認待ち'}],
+  simple:[],grants:[]});
+ b.connect();await b.settled();
+ const verified=b.window.mioResolveIncidentIdentity(webId);
+ assert.equal(verified.status,'found');
+ assert.equal(verified.name,'合成参加者A');
+ assert.equal(verified.mioId,'MIO-0001');
+ assert.equal(verified.verified,true);
+ const unverified=b.window.mioResolveIncidentIdentity(unverifiedId);
+ assert.equal(unverified.status,'found');
+ assert.equal(unverified.mioId,'');
+ assert.equal(unverified.verified,false);
+ const pending=b.window.mioResolveIncidentIdentity(pendingId);
+ assert.equal(pending.status,'found');
+ assert.equal(pending.mioId,'');
+ assert.equal(pending.verified,false);
+ assert.equal(b.window.mioResolveIncidentIdentity('other-id'),null);
+ assert.equal(b.requests.length,1,'identity lookup must never write or start recovery');
+});
+
+test('duplicate approved Web ID stays conflicted rather than selecting a person',async()=>{
+ const b=fakeBrowser(),webId='MIO-W-'+'d'.repeat(24);
+ b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+  roster:[],simple:[],grants:[],pending:[],
+  approvedBrowsers:[
+   {webId,mioId:'MIO-0001',name:'合成参加者A',verified:true},
+   {webId,mioId:'MIO-0002',name:'合成参加者B',verified:true}
+  ]});
+ b.connect();await b.settled();
+ const out=b.window.mioResolveIncidentIdentity(webId);
+ assert.equal(out.status,'conflict');
+ assert.equal(out.mioId,undefined);
+ assert.equal(b.requests.length,1);
+});
