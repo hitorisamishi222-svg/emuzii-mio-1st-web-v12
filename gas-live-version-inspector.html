@@ -151,7 +151,16 @@ $('erase').addEventListener('click',()=>{
 });
 $('copy').addEventListener('click',()=>{
  if(!safeReport)return;
- navigator.clipboard?.writeText(safeReport).then(()=>{$('explanation').textContent='診断結果だけをコピーしました。ソースは含まれません。'})
- .catch(()=>{$('explanation').textContent='コピーを許可できませんでした。下の診断結果のみ選択してコピーしてください。'});
+ // iPhone/Safari or a restricted browser may hide the Clipboard API.
+ // Never copy the pasted GAS source; retain the sanitized report for selection.
+ let copyPromise=null;
+ try{copyPromise=navigator.clipboard?.writeText(safeReport);}
+ catch{}
+ if(!copyPromise||typeof copyPromise.then!=='function'){
+  $('explanation').textContent='コピー機能を使えません。下の診断結果だけを長押ししてコピーしてください。元コードはコピーしないでください。';
+  return;
+ }
+ copyPromise.then(()=>{$('explanation').textContent='診断結果だけをコピーしました。ソースは含まれません。'})
+ .catch(()=>{$('explanation').textContent='コピーを許可できませんでした。下の診断結果だけを長押ししてコピーしてください。';});
 });
 </script></body></html>
