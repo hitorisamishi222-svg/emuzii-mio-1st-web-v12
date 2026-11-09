@@ -467,3 +467,65 @@ test('membership browser list excludes retired and unverified devices',()=>{
  assert.equal(view.approvedBrowsers[0].verified,false,'different integrated MIO-ID never verifies a browser');
  assert.equal(x.rows['emuzii_Web登録'][1][6],'未確認');
 });
+
+
+test('grant refuses an approved verified browser with mismatched master display name',()=>{
+ const x=sandbox(),browser=x.rows['emuzii_Web登録'][1];
+ browser[5]='承認済み';browser[7]='MIO-0001';browser[10]='MIO-0001';
+ browser[11]='確認済み';browser[16]='使用中';browser[2]='別の表示名';
+ const grant={action:'webAdminOpsGrant',operationId:'e'.repeat(32),
+  mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'現場確認済み特典'};
+ assert.throws(()=>x.exec(grant),/端末の表示名と参加者名が異なります/);
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],2,'existing credits must not change');
+ assert.equal(x.rows['emuzii_Web管理操作履歴'].length,1,'no audit intent written');
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,1,'no history appended');
+ assert.equal(x.write.length,0,'mismatched name must fail before any write');
+});
+
+test('grant accepts a current approved browser only when its master name matches',()=>{
+ const x=sandbox(),browser=x.rows['emuzii_Web登録'][1];
+ browser[5]='承認済み';browser[7]='MIO-0001';browser[10]='MIO-0001';
+ browser[11]='確認済み';browser[16]='使用中';browser[2]='新しい人';
+ const request={action:'webAdminOpsGrant',operationId:'e'.repeat(32),
+  mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'現場確認済み特典'};
+ assert.equal(x.exec(request).special,3);
+ assert.equal(x.exec(request).replayed,true,'same operation never double-grants');
+ assert.equal(x.rows['emuzii_ガチャ'][1][14],3);
+ assert.equal(x.rows['emuzii_ガチャ付与履歴'].length,2);
+});
+
+test('an old-device historical display name never revokes the browser or blocks a new verified name',()=>{
+ const x=sandbox(),browser=x.rows['emuzii_Web登録'][1];
+ browser[5]='承認済み';browser[7]='MIO-0001';browser[10]='MIO-0001';
+ browser[11]='確認済み';browser[16]='旧端末';browser[2]='昔の表示名';
+ const before=JSON.stringify(browser);
+ const request={action:'webAdminOpsGrant',operationId:'f'.repeat(32),
+  mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'現場確認済み特典'};
+ assert.equal(x.exec(request).special,3);
+ assert.equal(JSON.stringify(browser),before,'old browser stays exactly unchanged');
+});
+
+test('an approved browser with identity not verified is triage-only, never silently re-approved',()=>{
+ const x=sandbox(),browser=x.rows['emuzii_Web登録'][1];
+ browser[5]='承認済み';browser[7]='MIO-0001';browser[10]='MIO-0001';
+ browser[11]='確認待ち';browser[16]='使用中';browser[2]='要照合の名前';
+ const before=JSON.stringify(browser);
+ const request={action:'webAdminOpsGrant',operationId:'f'.repeat(32),
+  mioId:'MIO-0001',count:1,expectedSpecial:2,reason:'現場確認済み特典'};
+ assert.equal(x.exec(request).special,3);
+ assert.equal(JSON.stringify(browser),before,'grant must not mutate identity status');
+});
+
+test('standalone and October integrated GAS retain identical pre-grant browser review guard',()=>{
+ const integrated=readFileSync(new URL('../GAS_Code_OCTOBER_WITH_ADMIN_OPS_20261106.gs',import.meta.url),'utf8');
+ const start=' // A future release cannot rely on UI-only name triage: check the';
+ const end=" if([5,7,14].some(function(i){return mioAdminOpsStr_(g.c[i])==='';})||";
+ const extract=src=>{
+  const a=src.indexOf(start,src.indexOf('function mioAdminOpsGrant_('));
+  const b=src.indexOf(end,a);
+  assert.ok(a>=0&&b>a,'GAS includes reviewed pre-write guard');
+  return src.slice(a,b);
+ };
+ assert.equal(extract(source),extract(integrated));
+ assert.match(extract(source),/webIntegrityOk_\(browser\)/);
+});
