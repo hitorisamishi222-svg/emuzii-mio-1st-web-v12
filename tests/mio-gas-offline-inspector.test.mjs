@@ -133,3 +133,58 @@ test('admin gate links to same-origin device-only GAS source inspector',()=>{
  assert.match(gate,/コードをチャットやGitHubへ貼らないでください/);
  assert.doesNotMatch(gate,/href="https:\/\/[^"]*gas-live-version-inspector\.html"/);
 });
+
+
+// MIO_SAFARI_CLIPBOARD_FALLBACK_20261109: directly exercise the actual browser handler without any network.
+function inspectorUI(clipboard){
+ const elements=new Map();
+ const element=id=>{
+  if(!elements.has(id))elements.set(id,{
+   value:'',textContent:'',hidden:false,events:new Map(),
+   addEventListener(type,fn){this.events.set(type,fn)},
+   click(){return this.events.get('click')?.()}
+  });
+  return elements.get(id);
+ };
+ const sandbox={document:{getElementById:element},navigator:clipboard?{clipboard}:{}};
+ vm.runInNewContext(scripts[0][1],sandbox,{timeout:1500});
+ element('version').value='18';
+ element('scope').value='doPost';
+ // A synthetic candidate is used only inside the test runtime.
+ element('published').value=candidate;
+ element('run').click();
+ return {element};
+}
+
+test('Safari without navigator.clipboard can copy diagnostic by selecting output instead',()=>{
+ const ui=inspectorUI(null);
+ assert.doesNotThrow(()=>ui.element('copy').click());
+ assert.match(ui.element('explanation').textContent,/診断結果だけを長押し/);
+ assert.doesNotMatch(ui.element('report').textContent,/function doPost/);
+ assert.doesNotMatch(ui.element('report').textContent,/BRIDGE_SECRET/);
+});
+
+test('clipboard rejection and synchronous permission error keep sanitized result visible',async()=>{
+ for(const clipboard of [
+  {writeText(){throw Error('permission denied')}},
+  {writeText(){return Promise.reject(Error('permission denied'))}}
+ ]){
+  const ui=inspectorUI(clipboard);
+  assert.doesNotThrow(()=>ui.element('copy').click());
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(ui.element('explanation').textContent,/診断結果だけを長押し/);
+  assert.match(ui.element('report').textContent,/"writeAllowed": false/);
+ }
+});
+
+test('available iOS clipboard receives only sanitized summary, never GAS code',async()=>{
+ let pasted=null;
+ const ui=inspectorUI({writeText:value=>{pasted=value;return Promise.resolve()}});
+ ui.element('copy').click();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(pasted,ui.element('report').textContent);
+ assert.equal(JSON.parse(pasted).writeAllowed,false);
+ assert.equal(JSON.parse(pasted).publicationAllowed,false);
+ assert.doesNotMatch(pasted,/function doPost|mioAdminOps_|BRIDGE_SECRET/);
+ assert.match(ui.element('explanation').textContent,/診断結果だけをコピーしました/);
+});
