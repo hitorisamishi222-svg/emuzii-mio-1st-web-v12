@@ -68,3 +68,6 @@ jobs:
           node --check tests/mio-gas-operator-dispatch-preflight.test.mjs
       - name: Offline-only read and approved baseline preservation
         run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs tests/mio-audit-schema-migration-plan.test.mjs tests/mio-audit-schema-sheets-preflight.test.mjs tests/mio-operator-reconciliation.test.mjs tests/mio-operator-reconciliation-ui.test.mjs tests/mio-admin-preview-no-network.test.mjs tests/mio-gas-live-invalid-identity-repro.test.mjs tests/mio-gas-operator-dispatch-preflight.test.mjs
+
+      - name: Production API gate availability (unauthenticated read-only probe)
+        run: node tools/mio-production-admin-readiness-probe.mjs
