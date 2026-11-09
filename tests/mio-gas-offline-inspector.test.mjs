@@ -188,3 +188,34 @@ test('available iOS clipboard receives only sanitized summary, never GAS code',a
  assert.doesNotMatch(pasted,/function doPost|mioAdminOps_|BRIDGE_SECRET/);
  assert.match(ui.element('explanation').textContent,/診断結果だけをコピーしました/);
 });
+
+
+// MIO_TRUNCATED_DOP_POST_PASTE_GUARD_20261109: mobile copy omissions cannot become a positive static finding.
+test('truncated pasted doPost is blocked even when expected action and guards appear',()=>{
+ const inspect=inspectSource();
+ const first=candidate.indexOf('function doPost('),next=candidate.indexOf('\nfunction ',first+15);
+ const intact=candidate.slice(first,next);
+ assert.equal(inspect(intact,'doPost').doPostBodyClosed,true);
+ const truncated=intact.replace(/\}\s*$/,'');
+ assert.notEqual(truncated,intact,'fixture must really omit the last brace');
+ const report=inspect(truncated,'doPost');
+ assert.equal(report.hasDoPost,true);
+ assert.equal(report.doPostBodyClosed,false);
+ assert.equal(report.dispatchStaticallyCompatible,false);
+ assert.equal(report.staticallyCompatible,false);
+});
+test('comment-only or quoted closing braces cannot complete a truncated doPost',()=>{
+ const inspect=inspectSource();
+ const first=candidate.indexOf('function doPost('),next=candidate.indexOf('\nfunction ',first+15);
+ const truncated=candidate.slice(first,next).replace(/\}\s*$/,'');
+ const variants=[
+  truncated+'\n// } doPost completed',
+  truncated+'\n/* } */',
+  truncated+'\nconst misleading="}";'
+ ];
+ for(const example of variants){
+  const r=inspect(example,'doPost');
+  assert.equal(r.doPostBodyClosed,false);
+  assert.equal(r.dispatchStaticallyCompatible,false);
+ }
+});
