@@ -114,3 +114,28 @@ test('read with bad shared secret is rejected without touching any sheet',()=>{
  assert.deepEqual(runtime.reads,[]);
  assert.deepEqual(runtime.writes,[]);
 });
+
+
+// Observed existing workbook: 51 distinct gacha ID rows coexist with hundreds
+// of prefilled/empty rows. This fixture holds NO actual customer data.
+test('production-shaped 498 gacha rows with 51 valid IDs ignore empty prefilled rows',()=>{
+ const rows=makeRows();
+ const gacha=rows['emuzii_ガチャ'];
+ assert.equal(gacha.length,51);
+ while(gacha.length<498){
+  const padded=Array(17).fill('');
+  if(gacha.length%3===0){padded[5]=0;padded[7]=0;padded[14]=0;}
+  gacha.push(padded);
+ }
+ const runtime=createRuntime(rows),r=runtime.read();
+ assert.equal(r.ok,true);
+ assert.equal(r.roster.length,51);
+ assert.equal(r.roster.filter(x=>x.gacha!==null).length,51);
+ assert.equal(r.roster.filter(x=>x.needsReview).length,0);
+ assert.equal(r.approvedBrowsers.length,48);
+ assert.equal(r.rejectedCount,2);
+ assert.equal(r.grants.length,7);
+ assert.equal(r.pending.length,0);
+ assert.deepEqual(runtime.writes,[]);
+ assert.ok(runtime.reads.some(x=>x.name==='emuzii_ガチャ'&&x.n===498&&x.width===17));
+});
