@@ -59,6 +59,10 @@ main{max-width:760px}
 <section id="normalSection" class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
 <section id="festSection" class="switch"><div><h2>✨ ラキフェス</h2><small id="festStatus">未確認</small></div><button id="fest" disabled>確認中</button></section>
 <p id="status" role="status" aria-live="polite">管理者コードで接続してください。</p>
+<p id="opsPreviewNotice" hidden role="status" style="padding:13px;border:1px solid #94c8f1;border-radius:12px;background:#225477">
+ 👀 このURLは開発プレビューです。管理APIは本番以外で停止するため、管理者コードを入力しても接続できません。
+ <a href="/gacha-admin-preview.html" style="display:block;color:#fff0b9;font-weight:800">承認・メンシプ・回数付与の表示サンプルを見る</a>
+</p>
 <p><small>受付ON/OFFは従来の管理操作です。登録承認・ガチャ回数付与は稼働GAS照合が完了するまで利用できません。</small></p>
 <section id="opsAdminPanel" aria-labelledby="opsAdminTitle">
  <div class="ops-summary"><h2 id="opsAdminTitle">🔔 運営管理センター</h2><span id="opsBell" class="ops-pill" aria-live="polite">通知：管理者認証待ち</span></div>
@@ -67,8 +71,8 @@ main{max-width:760px}
  <p id="opsStatus" class="ops-message" role="status" aria-live="polite">管理者コードまたはFace IDで接続してください。</p>
  <p id="opsRetryInfo" class="ops-error" hidden></p><button type="button" id="opsRetry" hidden disabled>前回と同じ操作IDで再確認</button>
  <div id="opsQuickPanel" class="ops-card" aria-labelledby="opsQuickTitle">
-  <h3 id="opsQuickTitle" class="ops-section-title">⚡ 残りのガチャ・即日対応</h3>
-  <p class="ops-caption">先に本人の登録ブラウザとメンシプ資格を確認。権利を作成・追加するときは各操作を個別に承認します。本人のガチャ画面の認証は省略しません。</p>
+  <h3 id="opsQuickTitle" class="ops-section-title">⚡ 現場個別承認・残りガチャ即対応</h3>
+  <p class="ops-caption">来場したお客様ごとに、本人・MIO-ID・登録済みブラウザ・メンシプ資格を管理者が現場確認し、その人だけ承認します。全員一斉解放はしません。本人のガチャ画面の認証は省略しません。</p>
   <p id="opsQuickSummary" class="ops-message" role="status" aria-live="polite">管理者の接続待ちです。</p>
   <div class="ops-grid">
    <button type="button" id="opsQuickIntake" class="ops-secondary ops-shortcut">① 新規受付へ</button>
@@ -84,17 +88,24 @@ main{max-width:760px}
   <label class="ops-filter" for="opsOnlyRemaining"><input id="opsOnlyRemaining" type="checkbox">残回数がある参加者だけ表示</label>
   <p id="opsRemainingSummary" class="ops-caption">残回数を照合中</p>
   <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <div id="opsMemberSection" class="ops-card"><h3 class="ops-section-title">承認済み参加者のメンシプ購入確認</h3>
+   <p class="ops-caption">上で参加者を選択すると、その人の承認済みブラウザを表示します。既存登録や当選履歴、ガチャ券には変更しません。</p>
+   <label class="ops-filter" for="opsMemberVerified"><input type="checkbox" id="opsMemberVerified">本人・既存ブラウザ・メンシプ購入内容を管理者が確認した</label>
+   <div id="opsMemberBrowsers" class="ops-list"><p>対象の参加者を選択してください。</p></div>
+  </div>
   <div class="ops-grid">
    <div class="ops-field"><label for="opsQuantity">追加付与回数（1〜50）</label><input class="ops-number" id="opsQuantity" type="number" min="1" max="50" step="1" value="1"></div>
    <div class="ops-field"><label for="opsReason">付与理由（必須）</label><input id="opsReason" type="text" maxlength="120" placeholder="例：イベント運営補正"></div>
   </div>
-  <button type="button" id="opsGrant" disabled>選択した参加者に回数を付与</button>
+  <label class="ops-filter" for="opsOnsiteGrantVerified"><input id="opsOnsiteGrantVerified" type="checkbox">現場で本人・メンシプ・既存残回数・追加理由を確認した</label>
+  <button type="button" id="opsGrant" disabled>現場確認して回数を付与</button>
   <p class="ops-caption">抽選結果不明時は、既存の確定履歴を先に照合してください。未確認の回数を自動付与しません。</p>
  </div>
  <div id="opsIntakeSection" class="ops-card"><h3 class="ops-section-title">ガチャのみの初訪問・簡易受付</h3>
   <div class="ops-field"><label for="opsNewName">来場者名</label><input id="opsNewName" maxlength="40" placeholder="ColorSing名"></div>
   <div class="ops-field"><label for="opsNewNote">受付メモ</label><input id="opsNewNote" maxlength="120" placeholder="例：ガチャだけ参加"></div>
-  <button type="button" id="opsIntakeCreate" disabled>初訪問を受付記録に追加</button>
+  <label class="ops-filter" for="opsOnsiteIntakeVerified"><input id="opsOnsiteIntakeVerified" type="checkbox">現場で来場者名と既存登録を確認した</label>
+  <button type="button" id="opsIntakeCreate" disabled>現場確認した来場者を受付記録に追加</button>
   <p class="ops-caption">初訪問の記録はガチャ承認・回数付与とは別の操作です。</p>
   <div id="opsSimple" class="ops-list"></div>
  </div>
@@ -105,6 +116,7 @@ main{max-width:760px}
    <p>既存GAS本番の稼働版が未確認の場合、管理操作は停止されたままになります。既存のApps Scriptを新規作成せず、稼働コードを照合してください。</p>
    <p><strong>現行のCode.gsを全文置換しないでください。</strong>既存GAS全ファイルとデプロイ版をバックアップし、doPostと管理関数の重複・不足を照合します。必要な差分だけ別途審査するまで追加・更新は禁止です。</p>
    <p>作業前に <a href="https://github.com/hitorisamishi222-svg/emuzii-mio-1st-web-v12/issues/66" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff">稼働GAS照合・停止条件（Issue #66）</a> を確認してください。過去の統合版ソースをそのまま本番に貼り付けることは禁止です。</p>
+   <p><a href="/gas-live-version-inspector.html" target="_blank" rel="noopener noreferrer" style="color:#bfe8ff;font-weight:700">🔍 公開GASバージョン・端末内診断を開く</a>（開発Preview専用）。既存Webアプリの公開バージョンを確認してから、公開版のdoPostだけを端末内で検査できます。コードをチャットやGitHubへ貼らないでください。</p>
    <p>必要な変更が検証・承認された場合にのみ、既存Apps Scriptと同じデプロイの新バージョンを検討します。本番URL・データ・当選履歴を保持し、未確認の間は一切変更しません。</p>
   </div>
  </div>
@@ -113,6 +125,13 @@ main{max-width:760px}
 
 
 </main><script>
+'use strict';
+// This visual hint does not relax bridge.prepare() or any API origin guards.
+if(location.hostname!=='emuzii-mio-1st-web-v12.vercel.app'){
+ const note=document.getElementById('opsPreviewNotice');
+ if(note)note.hidden=false;
+}
+</script><script>
 'use strict';
 const $=id=>document.getElementById(id);
 let snapshot=null,busy=false,code='';

@@ -84,28 +84,52 @@ const protectedTail=(source)=>{
   const start=source.indexOf('\nfunction checkinAction_(');
   return start<0?null:source.slice(start);
 };
+const mergeableHead=(source)=>{
+  const start=source.indexOf('\nfunction checkinAction_(');
+  return start<0?null:source.slice(0,start+1);
+};
+// A reviewed fix may separately contain an October campaign correction.
+// This registration-only merge NEVER imports such protected-tail changes;
+// it preserves the operator's original check-in/gacha tail byte-for-byte.
+// Reject missing or ambiguous boundaries, rather than falling back to a
+// dangerous full-file merge.
+if(!protectedTail(oldSource) || !protectedTail(newSource) || !protectedTail(currentSource) ||
+   !mergeableHead(currentSource) || !mergeableHead(oldSource) || !mergeableHead(newSource)){
+  console.error('Protected check-in/gacha boundary is missing. No output written.');
+  process.exit(3);
+}
 const temporary=mkdtempSync(join(tmpdir(),'mio-gas-merge-'));
 try{
   const oldPath=join(temporary,'Code.legacy.gs');
   const currentPath=join(temporary,'Code.current.gs');
   const improvedPath=join(temporary,'Code.repaired.gs');
-  writeFileSync(oldPath,oldSource,'utf8');
-  writeFileSync(currentPath,currentSource,'utf8');
-  writeFileSync(improvedPath,newSource,'utf8');
+  writeFileSync(oldPath,mergeableHead(oldSource),'utf8');
+  writeFileSync(currentPath,mergeableHead(currentSource),'utf8');
+  writeFileSync(improvedPath,mergeableHead(newSource),'utf8');
   const merge=spawnSync('git',['merge-file','-p','--diff3',currentPath,oldPath,improvedPath],
     {encoding:'utf8',maxBuffer:16*1024*1024});
   if(merge.error||merge.status!==0 || /^(?:<{7}|={7}|>{7})/m.test(merge.stdout||'')){
     console.error('Current GAS differs in a conflicting area. No output written.');
     process.exitCode=4;
   }else{
-    const merged=merge.stdout;
     const oldTail=protectedTail(currentSource);
-    if(!oldTail||protectedTail(merged)!==oldTail ||
-       sheetIds.some(k=>getConfig(merged,k)!==getConfig(currentSource,k)) ||
-       !merged.includes('if(!validPrevious)return json_({ok:false') ||
-       !merged.includes('pendingReview:true,needsIdentityProof:true,autoApproved:false') ||
-       !merged.includes('var existingLoginId=loginIdFormat_(web.getRange(foundRow,LOGIN_ID_COL).getDisplayValue());')){
-      console.error('Protected GAS behavior changed or required enrollment guard is missing. No output written.');
+    // The reviewed patch may only affect the head. The current operator's
+    // protected tail is copied unchanged, not processed by git merge-file.
+    const mergedHead=merge.stdout;
+    const merged=oldTail&&mergedHead.endsWith('\n')
+      ?mergedHead+oldTail.slice(1):'';
+    const failedGates=[
+      ...(!oldTail?['original-protected-tail-missing']:[]),
+      ...(!merged?['merged-head-boundary-invalid']:[]),
+      ...(oldTail&&protectedTail(merged)!==oldTail?['protected-tail-changed']:[]),
+      ...(sheetIds.some(k=>getConfig(merged,k)!==getConfig(currentSource,k))?['sheet-settings-changed']:[]),
+      ...(!merged.includes('if(!validPrevious)return json_({ok:false')?['retry-row-integrity-guard-missing']:[]),
+      ...(!merged.includes('pendingReview:true,needsIdentityProof:true,autoApproved:false')?['unverified-name-auto-approval-guard-missing']:[]),
+      ...(!merged.includes('var existingLoginId=loginIdFormat_(web.getRange(foundRow,LOGIN_ID_COL).getDisplayValue());')?['existing-login-read-only-guard-missing']:[])
+    ];
+    if(failedGates.length){
+      // Print only a fixed gate name; never dump source, IDs, tokens or file content.
+      console.error('Protected GAS behavior changed or required enrollment guard is missing. No output written. Gate(s): '+failedGates.join(', '));
       process.exitCode=5;
     }else{
       writeFileSync(output,merged,'utf8');

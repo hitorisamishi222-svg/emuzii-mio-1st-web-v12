@@ -207,7 +207,7 @@ function doPost(e) {
     var secret=PropertiesService.getScriptProperties().getProperty('BRIDGE_SECRET');
     if(!secret||!equal_(d.secret,secret))return json_({ok:false,error:'unauthorized'});
     if(d.action==='webGateRead'||d.action==='webGateSet')return json_(gachaWebGateActionInline1030_(SpreadsheetApp.openById(SHEET_ID),d));
-    if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
+    if(/^webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)$/.test(d.action))return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
     if(!/^MIO-W-[a-f0-9]{24}$/.test(d.participantId||'')||! /^[a-f0-9]{64}$/.test(d.tokenHash||''))return json_({ok:false,error:'invalid identity'});
 
     var ss=SpreadsheetApp.openById(SHEET_ID),web=ss.getSheetByName(WEB_TAB);
@@ -348,7 +348,7 @@ function doPost(e) {
   } catch(err) {
     // Administrator-only, shared-secret-authenticated gate route: useful error diagnostics.
     // Participant operations remain opaque, with original error message unchanged.
-    if(typeof d==='object' && d && (d.action==='webGateRead'||d.action==='webGateSet'||/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))) {
+    if(typeof d==='object' && d && (d.action==='webGateRead'||d.action==='webGateSet'||/^webAdminOps(?:Read|Approve|Member|Grant|Review|Create|Intake)$/.test(d.action))) {
       try { console.error('MIO_WEB_GATE_FAILED',err); } catch(ignore) {}
       var reason=String(err&&err.message||err||'unknown').slice(0,120).replace(/[A-Za-z0-9_-]{24,}/g,'[redacted]');
       return json_({ok:false,error:'ガチャ受付の接続エラー: '+reason});
@@ -750,14 +750,19 @@ function gachaWebGateActionInline1030_(ss,d){
 /**
  * MIO Web operator service. Add to EXISTING Apps Script; DO NOT run setup.
  * Dispatcher in existing doPost AFTER BRIDGE_SECRET comparison, inside ScriptLock:
- *   if(/^webAdminOps(?:Read|Approve|Grant|Review|Create|Intake)$/.test(d.action))
+ *   if(/^webAdminOps(?:Read|Member|Approve|Grant|Review|Create|Intake)$/.test(d.action))
  *     return json_(mioAdminOps_(SpreadsheetApp.openById(SHEET_ID),d));
  * This file never changes check-in or draw logic.
  */
 function mioAdminOps_(ss,d){
  var action=String(d.action||'');
  if(action==='webAdminOpsRead')return mioAdminOpsRead_(ss,d);
+ // Never mutate a live customer, membership or entitlement before the
+ // existing workbook has verified audit columns and a stable operation log.
+ if(!mioAdminOpsSchema_(ss).schemaReady)
+   throw new Error('監査シートとWeb操作ID列の管理準備が完了していません');
  if(action==='webAdminOpsApprove')return mioAdminOpsApprove_(ss,d);
+ if(action==='webAdminOpsMember')return mioAdminOpsMember_(ss,d);
  if(action==='webAdminOpsGrant')return mioAdminOpsGrant_(ss,d);
  if(action==='webAdminOpsCreate')return mioAdminOpsCreate_(ss,d);
  if(action==='webAdminOpsReview')return mioAdminOpsReview_(ss,d);
@@ -767,6 +772,24 @@ function mioAdminOps_(ss,d){
 function mioAdminOpsStr_(x){return String(x===null||x===undefined?'':x).trim()}
 function mioAdminOpsName_(s){return mioAdminOpsStr_(s).normalize('NFKC').replace(/[\s\u3000]/g,'').toLowerCase()}
 function mioAdminOpsSheet_(ss,name){var sh=ss.getSheetByName(name);if(!sh)throw new Error('必要な管理シートがありません');return sh}
+/** Read-only release preflight; never creates a sheet or edits any cell. */
+function mioAdminOpsSchema_(ss){
+ var names=['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名'];
+ var audit=ss.getSheetByName('emuzii_Web管理操作履歴');
+ var auditReady=false;
+ if(audit){
+   var actual=audit.getRange(1,1,1,10).getValues();
+   auditReady=actual.length===1&&actual[0].length===10&&
+     names.every(function(x,i){return mioAdminOpsStr_(actual[0][i])===x});
+ }
+ var grants=ss.getSheetByName('emuzii_ガチャ付与履歴');
+ var grantReady=false;
+ if(grants){
+   var header=grants.getRange(1,10,1,1).getValues();
+   grantReady=header.length===1&&mioAdminOpsStr_(header[0][0])==='Web操作ID';
+ }
+ return {schemaReady:auditReady&&grantReady,auditReady:auditReady,grantLogReady:grantReady};
+}
 function mioAdminOpsValues_(sh,lastCol){
  var n=sh.getLastRow()-1;
  if(n<1)return [];
@@ -783,17 +806,29 @@ function mioAdminOpsOne_(items,idx,value){
 function mioAdminOpsPeople_(ss){return mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_参加者'),10)}
 function mioAdminOpsSummary_(ss,webRows){
  var people=mioAdminOpsPeople_(ss),gacha=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_ガチャ'),17),fresh=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_新規簡易登録'),6);
- var byId={};for(var i=0;i<people.length;i++){var id=mioAdminOpsStr_(people[i][0]);if(/^MIO-\d{4}$/.test(id))byId[id]={id:id,name:mioAdminOpsStr_(people[i][1])};}
+ var byId={},duplicatePeople={};for(var i=0;i<people.length;i++){var id=mioAdminOpsStr_(people[i][0]);if(!/^MIO-\d{4}$/.test(id))continue;if(byId[id])duplicatePeople[id]=true;else byId[id]={id:id,name:mioAdminOpsStr_(people[i][1])};}
  var grants={};for(var j=0;j<gacha.length;j++){var g=gacha[j],gid=mioAdminOpsStr_(g[0]);if(!/^MIO-\d{4}$/.test(gid))continue;if(!grants[gid])grants[gid]=[];grants[gid].push({mioId:gid,name:mioAdminOpsStr_(g[1]),total:Number(g[5]),remaining:Number(g[7]),special:Number(g[14]),checked:g[12]==='OK'&&g[13]==='OK'});}
- var web=[];for(var k=0;k<webRows.length;k++){var row=webRows[k],wid=mioAdminOpsStr_(row[0]);if(!/^MIO-W-[a-f0-9]{24}$/.test(wid))continue;var mioId=mioAdminOpsStr_(row[7]);web.push({webId:wid,name:mioAdminOpsStr_(row[2]),status:mioAdminOpsStr_(row[5]),member:mioAdminOpsStr_(row[6]),mioId:mioId,integrity:mioAdminOpsStr_(row[11]),linkedName:byId[mioId]?byId[mioId].name:'',gacha:(grants[mioId]||[]).length===1?grants[mioId][0]:null});}
+ var web=[];for(var k=0;k<webRows.length;k++){var row=webRows[k],wid=mioAdminOpsStr_(row[0]);if(!/^MIO-W-[a-f0-9]{24}$/.test(wid))continue;var mioId=mioAdminOpsStr_(row[7]);web.push({webId:wid,name:mioAdminOpsStr_(row[2]),status:mioAdminOpsStr_(row[5]),member:mioAdminOpsStr_(row[6]),mioId:mioId,integrity:mioAdminOpsStr_(row[11]),verified:row[11]==='確認済み'&&row[16]!=='旧端末'&&mioAdminOpsStr_(row[10])===mioId&&(!row[15]||mioAdminOpsStr_(row[15])===mioId)&&webIntegrityOk_(row),linkedName:byId[mioId]?byId[mioId].name:'',gacha:(grants[mioId]||[]).length===1?grants[mioId][0]:null});}
  var pending=web.filter(function(r){return r.status==='承認待ち'||(r.status==='承認済み'&&r.integrity!=='確認済み');}).slice(-80).reverse();
- var simple=[];for(var l=0;l<fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
- var roster=[];Object.keys(byId).forEach(function(id){var x=byId[id],gg=(grants[id]||[]);roster.push({mioId:id,name:x.name,gacha:gg.length===1?gg[0]:null,needsReview:gg.length!==1});});
- return {ok:true,pending:pending,roster:roster,simple:simple.slice(-60).reverse(),totalPending:web.filter(function(x){return x.status==='承認待ち'||(x.status==='承認済み'&&x.integrity!=='確認済み');}).length,rejectedCount:web.filter(function(x){return x.status==='却下'}).length};
+ var simple=[];for(var l=0;l<fresh.length;l++){var fr=fresh[l];if(!mioAdminOpsStr_(fr[1]))continue;simple.push({row:l+2,createdAt:mioAdminOpsStr_(fr[0] instanceof Date?fr[0].toISOString():fr[0]),name:mioAdminOpsStr_(fr[1]),browserId:mioAdminOpsStr_(fr[2]),status:mioAdminOpsStr_(fr[4])||'未確認',note:mioAdminOpsStr_(fr[5]).slice(0,120)});}
+ var roster=[];Object.keys(byId).forEach(function(id){var x=byId[id],gg=(grants[id]||[]),entry=gg[0];
+  var rawGacha=gacha.find(function(r){return mioAdminOpsStr_(r[0])===id});
+  var healthy=!duplicatePeople[id]&&gg.length===1&&entry.checked===true&&
+   mioAdminOpsName_(entry.name)===mioAdminOpsName_(x.name)&&
+   rawGacha&&[5,7,14].every(function(i){return mioAdminOpsStr_(rawGacha[i])!=='';})&&
+   Number.isSafeInteger(entry.total)&&entry.total>=0&&Number.isSafeInteger(entry.remaining)&&entry.remaining>=0&&
+   Number.isSafeInteger(entry.special)&&entry.special>=0&&entry.remaining<=entry.total;
+  roster.push({mioId:id,name:x.name,gacha:healthy?entry:null,needsReview:!healthy});
+ });
+ return {ok:true,pending:pending,approvedBrowsers:web.filter(function(r){return r.status==='承認済み'&&/^MIO-\d{4}$/.test(r.mioId);}).map(function(r){return {webId:r.webId,mioId:r.mioId,name:r.name,member:r.member,verified:r.verified===true};}),roster:roster,simple:simple.slice(-60).reverse(),totalPending:web.filter(function(x){return x.status==='承認待ち'||(x.status==='承認済み'&&x.integrity!=='確認済み');}).length,rejectedCount:web.filter(function(x){return x.status==='却下'}).length};
 }
 function mioAdminOpsRead_(ss,d){
  var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
  var result=mioAdminOpsSummary_(ss,all);
+ var audit=mioAdminOpsSchema_(ss);
+ result.schemaReady=audit.schemaReady;
+ result.auditReady=audit.auditReady;
+ result.grantLogReady=audit.grantLogReady;
  var grantSheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
  var end=grantSheet.getLastRow();
  var start=Math.max(2,end-99),n=Math.max(0,end-start+1);
@@ -808,13 +843,9 @@ function mioAdminOpsRequest_(d){
  return req;
 }
 function mioAdminOpsLog_(ss){
- var log=ss.getSheetByName('emuzii_Web管理操作履歴');
- if(!log){
-   log=ss.insertSheet('emuzii_Web管理操作履歴');
-   log.getRange(1,1,1,10).setValues([['日時','操作ID','操作種別','Web参加ID','MIO-ID','変更前','変更後','処理状態','備考','対象名']]);
-   log.setFrozenRows(1);
- }
- return log;
+ if(!mioAdminOpsSchema_(ss).schemaReady)
+   throw new Error('監査台帳の見出しが未確認です。管理操作を停止します');
+ return mioAdminOpsSheet_(ss,'emuzii_Web管理操作履歴');
 }
 function mioAdminOpsExisting_(log,requestId){
  var n=log.getLastRow()-1;if(n<1)return null;
@@ -825,7 +856,8 @@ function mioAdminOpsExisting_(log,requestId){
 }
 function mioAdminOpsWriteLog_(log,requestId,kind,webId,mioId,oldV,newV,note,name){
  var row=log.getLastRow()+1;
- log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',note,name]]);
+ // Always escape free-text audit cells; formulas are never trusted instructions.
+ log.getRange(row,1,1,10).setValues([[new Date(),requestId,kind,webId,mioId,oldV,newV,'処理中',safeText_(note),safeText_(name)]]);
  SpreadsheetApp.flush();return row;
 }
 
@@ -880,6 +912,52 @@ function mioAdminOpsCreate_(ss,d){
  return {ok:true,mioId:id,name:name};
 }
 
+/** Confirm membership on precisely one approved browser. Never change gacha credits. */
+function mioAdminOpsMember_(ss,d){
+ var op=mioAdminOpsRequest_(d),wid=mioAdminOpsStr_(d.webId),id=mioAdminOpsStr_(d.mioId);
+ if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||!/^MIO-\d{4}$/.test(id)||
+    d.expectedMember!=='未確認'||d.memberConfirmed!==true)
+   throw new Error('メンシプ確認の指定が不正です');
+ var web=mioAdminOpsSheet_(ss,'emuzii_Web登録'),all=mioAdminOpsValues_(web,21);
+ var w=mioAdminOpsOne_(all,0,wid),person=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id);
+ var name=mioAdminOpsStr_(person.c[1]);
+ // Exact existing browser, master ID and identity confirmation; no nickname-only approval.
+ if(!name||mioAdminOpsName_(w.c[2])!==mioAdminOpsName_(name)||
+    w.c[5]!=='承認済み'||mioAdminOpsStr_(w.c[7])!==id||
+    mioAdminOpsStr_(w.c[10])!==id||w.c[11]!=='確認済み'||
+    w.c[16]==='旧端末'||!webIntegrityOk_(w.c)||
+    (w.c[15]&&mioAdminOpsStr_(w.c[15])!==id))
+   throw new Error('承認済み本人・既存ブラウザIDの照合が必要です');
+ var note='本人・メンシプ購入確認済み',log=mioAdminOpsLog_(ss),previous=mioAdminOpsExisting_(log,op);
+ if(previous){
+   if(previous.c[2]!=='メンシプ確認'||previous.c[3]!==wid||previous.c[4]!==id||
+      mioAdminOpsStr_(previous.c[5])!=='未確認'||mioAdminOpsStr_(previous.c[6])!=='確認済み'||
+      mioAdminOpsStr_(previous.c[8])!==note||
+      mioAdminOpsName_(previous.c[9])!==mioAdminOpsName_(name))
+     throw new Error('メンシプ操作IDの再利用は禁止です');
+   if(previous.c[7]==='確定'){
+     if(w.c[6]!=='確認済み')throw new Error('確認済みのメンシプ状態が変わっています');
+     return {ok:true,replayed:true,mioId:id,member:'確認済み'};
+   }
+   if(previous.c[7]!=='処理中')throw new Error('メンシプ操作履歴を管理者が確認中です');
+   if(w.c[6]!=='未確認'&&w.c[6]!=='確認済み')throw new Error('メンシプ状態が変更されています');
+ }else if(w.c[6]!=='未確認'){
+   throw new Error('メンシプ状態が変更されています。再読み込みしてください');
+ }
+ var row=previous?previous.row:mioAdminOpsWriteLog_(log,op,'メンシプ確認',wid,id,'未確認','確認済み',note,name);
+ if(w.c[6]!=='確認済み'){
+   web.getRange(w.row,7).setValue('確認済み'); // Only G; no participant IDs or credits.
+   SpreadsheetApp.flush();
+ }
+ var current=web.getRange(w.row,1,1,21).getValues()[0];
+ if(current[6]!=='確認済み'||current[5]!=='承認済み'||
+    mioAdminOpsStr_(current[7])!==id||mioAdminOpsStr_(current[10])!==id||
+    current[11]!=='確認済み'||!webIntegrityOk_(current))
+   throw new Error('メンシプ確認結果の整合を確認できません');
+ log.getRange(row,8).setValue('確定');
+ return {ok:true,mioId:id,member:'確認済み',replayed:!!previous};
+}
+
 function mioAdminOpsApprove_(ss,d){
  var op=mioAdminOpsRequest_(d),wid=mioAdminOpsStr_(d.webId),id=mioAdminOpsStr_(d.mioId);
  if(!/^MIO-W-[a-f0-9]{24}$/.test(wid)||!/^MIO-\d{4}$/.test(id)||typeof d.memberConfirmed!=='boolean'||d.expectedStatus!=='承認待ち')
@@ -910,6 +988,8 @@ function mioAdminOpsApprove_(ss,d){
  if(w.c[5]!=='承認待ち')throw new Error('承認状態が変更されています');
  if(mioAdminOpsName_(w.c[2])!==mioAdminOpsName_(person.c[1]))throw new Error('参加者名が一致しません。別人を承認できません');
  if(w.c[7]&&mioAdminOpsStr_(w.c[7])!==id)throw new Error('別の参加者IDに紐付いています');
+ if(w.c[10]&&mioAdminOpsStr_(w.c[10])!==id&&mioAdminOpsStr_(w.c[10])!==wid)
+   throw new Error('統合参加者IDが異なります。管理者による本人照合が必要です');
  if(w.c[15]&&mioAdminOpsStr_(w.c[15])!==id)throw new Error('端末復旧先IDと一致しません');
  if(String(w.c[16]||'')==='旧端末')throw new Error('旧端末の再承認は禁止です');
  if(mioAdminOpsValues_(web,21).some(function(r){return r[0]!==wid&&r[7]===id&&r[5]==='承認済み';}))
@@ -933,7 +1013,8 @@ function mioAdminOpsApprove_(ss,d){
 }
 function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var sh=mioAdminOpsSheet_(ss,'emuzii_ガチャ付与履歴');
- if(!mioAdminOpsStr_(sh.getRange(1,10).getValue()))sh.getRange(1,10).setValue('Web操作ID');
+ if(!mioAdminOpsSchema_(ss).schemaReady)
+   throw new Error('Web操作ID列の見出しが未確認です。付与履歴の自動変更は禁止です');
  // Scan the *entire* operation-id column, not only the first 499 records.
  var historyCount=Math.max(0,sh.getLastRow()-1),matches=[];
  if(historyCount>50000)throw new Error('付与履歴が照合上限です。管理者に確認してください');
@@ -946,7 +1027,7 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  if(matches.length===1){
   var h=matches[0];
   if(mioAdminOpsStr_(h[1])!==id||Number(h[3])!==count||
-     Number(h[5])!==before||Number(h[6])!==after)
+     mioAdminOpsStr_(h[4])!==reason||Number(h[5])!==before||Number(h[6])!==after)
     throw new Error('既存の付与履歴と操作内容が一致しません');
   return true;
  }
@@ -956,7 +1037,7 @@ function mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,before,after){
  var gacha=mioAdminOpsSheet_(ss,'emuzii_ガチャ');
  var g=mioAdminOpsOne_(mioAdminOpsValues_(gacha,17),0,id);
  var values=gacha.getRange(g.row,6,1,3).getValues()[0];
- sh.getRange(row,1,1,10).setValues([[new Date(),id,name,count,reason,before,after,
+ sh.getRange(row,1,1,10).setValues([[new Date(),id,safeText_(name),count,safeText_(reason),before,after,
    Number(values[0]),Number(values[2]),op]]);
  SpreadsheetApp.flush();
  var check=sh.getRange(row,2,1,9).getValues()[0];
@@ -969,13 +1050,38 @@ function mioAdminOpsGrant_(ss,d){
  var op=mioAdminOpsRequest_(d),id=mioAdminOpsStr_(d.mioId),count=d.count,expected=d.expectedSpecial;
  var reason=mioAdminOpsStr_(d.reason);
  if(!/^MIO-\d{4}$/.test(id)||!Number.isInteger(count)||count<1||count>50||
- !Number.isSafeInteger(expected)||expected<0||reason.length<2||reason.length>120)throw new Error('付与条件を確認してください');
+ !Number.isSafeInteger(expected)||expected<0||!Number.isSafeInteger(expected+count)||
+ reason.length<2||reason.length>120||/^[=+\-@]/.test(reason)||/[\x00-\x1f]/.test(reason))
+   throw new Error('付与条件を確認してください');
  var people=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id),name=mioAdminOpsStr_(people.c[1]);
  var sheet=mioAdminOpsSheet_(ss,'emuzii_ガチャ'),g=mioAdminOpsOne_(mioAdminOpsValues_(sheet,17),0,id);
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!=='OK'||g.c[13]!=='OK')throw new Error('ガチャ管理行に要確認の項目があります');
+ // A future release cannot rely on UI-only name triage: check the
+ // authoritative approved/verified browser records under the same ScriptLock.
+ // Display-name differences may be legitimate; stop only the *new grant*,
+ // never edit or de-authorize existing browsers, entitlements or history.
+ var grantBrowsers=mioAdminOpsValues_(mioAdminOpsSheet_(ss,'emuzii_Web登録'),21);
+ for(var bi=0;bi<grantBrowsers.length;bi++){
+   var browser=grantBrowsers[bi],linkedId=mioAdminOpsStr_(browser[7]);
+   if(linkedId!==id||mioAdminOpsStr_(browser[5])!=='承認済み')continue;
+   var currentVerified=mioAdminOpsStr_(browser[11])==='確認済み'&&
+     mioAdminOpsStr_(browser[16])!=='旧端末'&&
+     mioAdminOpsStr_(browser[10])===id&&
+     (!browser[15]||mioAdminOpsStr_(browser[15])===id)&&webIntegrityOk_(browser);
+   if(currentVerified&&mioAdminOpsName_(browser[2])!==mioAdminOpsName_(name))
+     throw new Error('承認済み端末の表示名と参加者名が異なります。本人照合してから付与してください');
+ }
+ if([5,7,14].some(function(i){return mioAdminOpsStr_(g.c[i])==='';})||
+    !Number.isSafeInteger(Number(g.c[5]))||Number(g.c[5])<0||
+    !Number.isSafeInteger(Number(g.c[7]))||Number(g.c[7])<0||
+    !Number.isSafeInteger(Number(g.c[14]))||Number(g.c[14])<0||
+    Number(g.c[7])>Number(g.c[5]))
+    throw new Error('ガチャ台帳の権利数が不整合です。確認してから付与してください');
  var log=mioAdminOpsLog_(ss),prev=mioAdminOpsExisting_(log,op);
  if(prev){
-   if(prev.c[2]!=='付与'||prev.c[4]!==id||Number(prev.c[6])!==expected+count)throw new Error('操作IDの再利用は禁止です');
+   if(prev.c[2]!=='付与'||prev.c[4]!==id||Number(prev.c[5])!==expected||
+       Number(prev.c[6])!==expected+count||mioAdminOpsStr_(prev.c[8])!==reason)
+      throw new Error('操作IDの再利用は禁止です');
    if(prev.c[7]==='確定')return {ok:true,replayed:true,mioId:id};
    var current=Number(sheet.getRange(g.row,15).getValue());
    if(current===expected+count){mioAdminOpsRecordGrant_(ss,op,id,name,count,reason,expected,expected+count);log.getRange(prev.row,8).setValue('確定');return {ok:true,replayed:true,mioId:id};}
@@ -1000,11 +1106,22 @@ function mioAdminOpsGrant_(ss,d){
 }
 function mioAdminOpsReview_(ss,d){
  var op=mioAdminOpsRequest_(d),row=d.row,status=mioAdminOpsStr_(d.expectedStatus);
- if(!Number.isInteger(row)||row<2||row>1000||status.length>60)throw new Error('簡易登録確認の指定が不正です');
+ // Historical statuses (including already-approved and test-only rows) are read-only.
+ // Never silently replace a legacy registration/approval label with generic '確認済み'.
+ if(!Number.isInteger(row)||row<2||row>1000||
+    ['未確認','管理確認待ち'].indexOf(status)<0)
+   throw new Error('既存の受付状態は操作対象外です。過去の承認記録を変更しません');
  var sheet=mioAdminOpsSheet_(ss,'emuzii_新規簡易登録');
  var data=sheet.getRange(row,1,1,6).getValues()[0];
  var name=mioAdminOpsStr_(data[1]),actual=mioAdminOpsStr_(data[4])||'未確認';
- if(!name)throw new Error('簡易登録の対象名がありません');
+ var createdAt=mioAdminOpsStr_(data[0] instanceof Date?data[0].toISOString():data[0]);
+ var browserId=mioAdminOpsStr_(data[2]);
+ if(!name||!createdAt||mioAdminOpsName_(name)!==mioAdminOpsName_(d.expectedName)||
+    createdAt!==mioAdminOpsStr_(d.expectedCreatedAt)||browserId!==mioAdminOpsStr_(d.expectedBrowserId))
+   throw new Error('簡易受付の対象者が変更されました。台帳を再確認してください');
+ // Bind the operation ID to this exact reception identity, not only its row/name.
+ // Audit details remain in the private administrator sheet, never returned publicly.
+ var receiptIdentity='受付本人照合:'+JSON.stringify([createdAt,mioAdminOpsName_(name),browserId]);
  var log=mioAdminOpsLog_(ss),old=mioAdminOpsExisting_(log,op);
  if(old){
    // Store the exact intake row in audit column D so that an interrupted
@@ -1012,7 +1129,8 @@ function mioAdminOpsReview_(ss,d){
    var target='簡易受付:'+row;
    if(old.c[2]!=='簡易確認'||mioAdminOpsStr_(old.c[3])!==target||
       mioAdminOpsStr_(old.c[5])!==status||mioAdminOpsStr_(old.c[6])!=='確認済み'||
-      mioAdminOpsName_(old.c[9])!==mioAdminOpsName_(name))
+      mioAdminOpsName_(old.c[9])!==mioAdminOpsName_(name)||
+      mioAdminOpsStr_(old.c[8])!==receiptIdentity)
      throw new Error('操作IDの再利用は禁止です');
    if(actual!=='確認済み')throw new Error('簡易登録の変更状態を確認してください');
    if(old.c[7]!=='確定'){
@@ -1023,7 +1141,7 @@ function mioAdminOpsReview_(ss,d){
  }
  if(actual!==status)throw new Error('簡易登録状態が変更されています');
  if(actual==='確認済み')return {ok:true,replayed:true};
- var lrow=mioAdminOpsWriteLog_(log,op,'簡易確認','簡易受付:'+row,'',actual,'確認済み','Web受付状況確認',name);
+ var lrow=mioAdminOpsWriteLog_(log,op,'簡易確認','簡易受付:'+row,'',actual,'確認済み',receiptIdentity,name);
  sheet.getRange(row,5).setValue('確認済み');
  SpreadsheetApp.flush();
  if(sheet.getRange(row,5).getValue()!=='確認済み')throw new Error('確認結果が一致しません');
@@ -1033,7 +1151,8 @@ function mioAdminOpsReview_(ss,d){
 
 function mioAdminOpsIntake_(ss,d){
  var id=mioAdminOpsRequest_(d),name=mioAdminOpsStr_(d.name),note=mioAdminOpsStr_(d.note);
- if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name))
+ if(!name||name.length>40||note.length>120||/[\x00-\x1f]/.test(name)||
+    /^[=+\-@]/.test(note)||/[\x00-\x1f]/.test(note))
    throw new Error('受付名・メモを確認してください');
  var history=mioAdminOpsLog_(ss),past=mioAdminOpsExisting_(history,id);
  if(past){

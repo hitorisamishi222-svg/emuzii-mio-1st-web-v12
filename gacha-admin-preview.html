@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>みお｜運営管理センター・接続前プレビュー</title>
+<style>
+:root{color-scheme:dark;--bg:#061a33;--card:#102b4d;--line:#4f7eb1;--ink:#f2f8ff;--sub:#c1d8ec}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--ink);
+background:radial-gradient(ellipse at 6% 0,#255792 0,transparent 48%),linear-gradient(165deg,#0c315b,var(--bg) 76%);
+font:15px/1.6 system-ui,-apple-system,"Noto Sans JP",sans-serif}
+main{max-width:990px;margin:auto;padding:21px 15px 65px}header{padding:16px 7px 20px}
+h1{font-size:clamp(24px,4vw,35px);margin:5px 0}h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:8px 0}
+p{margin:8px 0}small,.sub{color:var(--sub)}a{color:#c3e6ff}
+.banner{border:1px solid #a7d7ff;background:#174573;border-radius:15px;padding:14px 16px;font-weight:700}
+.notice{border:1px solid #d4bd78;background:#594a2c;color:#fff5d5;padding:13px 15px;border-radius:13px;margin:14px 0}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px}
+.stat b{font-size:29px;display:block;line-height:1.2;margin-top:3px}.stat span{color:var(--sub);font-size:13px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:20px 0}
+button{font:inherit;border:1px solid #77add5;cursor:pointer;min-height:46px;border-radius:11px;font-weight:700;color:#f1f8ff;background:#1c507e;padding:10px}
+button[aria-selected=true]{background:#a5d5fa;border-color:white;color:#062f54}
+button:disabled{cursor:not-allowed;opacity:.58}
+section.panel{background:var(--card);border:1px solid var(--line);padding:18px;border-radius:17px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.item{padding:14px;border-radius:12px;border:1px solid #567fa6;background:#16395d;min-width:0}
+.item strong{display:block}.item p{font-size:13px;color:var(--sub)}
+.pill{display:inline-block;font-size:12px;border:1px solid #85b5ce;border-radius:20px;padding:2px 9px;margin:5px 0}
+.flag{color:#fff1ca;border-color:#e3bd79;background:#5b4825}
+label{font-size:14px;font-weight:650;display:block;margin:10px 0 5px}
+input,select{border:1px solid #91c2e2;border-radius:10px;padding:12px;font:inherit;background:white;color:#092748;max-width:100%;width:100%}
+input:disabled{opacity:.7}.muted{font-size:13px;color:var(--sub)}
+.action{background:#edcf9a;color:#12283b;width:100%;margin-top:12px}
+.footer{padding:18px 0;color:var(--sub);font-size:12px}
+[hidden]{display:none!important}
+@media(max-width:620px){.summary{grid-template-columns:repeat(2,1fr)}.tabs{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}main{padding:14px 12px 50px}}
+</style></head><body><main>
+<header><div class="sub">🐳 翠央 1st Anniversary</div><h1>運営管理センター <span aria-hidden="true">✨</span></h1>
+<p>承認・メンシプ確認・ガチャ回数付与の操作イメージ</p></header>
+<div class="banner" role="status">👀 接続前プレビュー｜架空データのみ・本番データは読み取りません</div>
+<div class="notice">このページは見た目と画面の切り替えを試すためのサンプルです。管理者コード・Face IDの入力は不要です。承認や回数付与は一切実行できません。</div>
+<div class="summary">
+ <div class="stat"><span>承認待ち（サンプル）</span><b>2</b></div>
+ <div class="stat"><span>メンシプ確認（サンプル）</span><b>1</b></div>
+ <div class="stat"><span>ガチャ残回数あり（サンプル）</span><b>2</b></div>
+ <div class="stat"><span>管理書込</span><b style="font-size:19px;padding-top:7px">停止中 🔒</b></div>
+</div>
+<nav class="tabs" role="tablist" aria-label="サンプル画面の切り替え">
+ <button type="button" role="tab" aria-selected="true" data-tab="approve">① 登録承認</button>
+ <button type="button" role="tab" aria-selected="false" data-tab="member">② メンシプ確認</button>
+ <button type="button" role="tab" aria-selected="false" data-tab="grant">③ ガチャ回数</button>
+ <button type="button" role="tab" aria-selected="false" data-tab="status">④ 接続状況</button>
+</nav>
+<section class="panel" id="approve" role="tabpanel">
+ <h2>🔔 登録承認・本人確認</h2><p class="sub">承認待ちの申請を確認し、本人・MIO-ID・登録ブラウザを照合します。</p>
+ <div class="cards">
+  <article class="item"><strong>サンプル：あお</strong><span class="pill flag">承認待ち</span>
+   <p>本人確認・登録ブラウザの照合が必要</p>
+   <label>メンシプ確認</label><select disabled><option>確認結果を選択（接続後に利用可）</option></select>
+   <button class="action" disabled>本人照合して承認（未接続）</button>
+  </article>
+  <article class="item"><strong>サンプル：ひかり</strong><span class="pill flag">同名候補：要確認</span>
+   <p>同名候補が複数の場合は自動統合せず、MIO-IDと端末を確認</p>
+   <button class="action" disabled>本人照合して承認（未接続）</button>
+  </article>
+ </div>
+</section>
+<section class="panel" id="member" role="tabpanel" hidden>
+ <h2>💎 メンシプ購入確認</h2><p class="sub">既存の承認済み参加者を検索し、資格と登録ブラウザを照合します。</p>
+ <div class="item"><strong>サンプル：みなと</strong><span class="pill flag">購入確認待ち</span>
+  <p>ブラウザ候補 1件（本人確認を省略できる意味ではありません）</p>
+  <label><input type="checkbox" disabled style="width:auto"> 本人・既存ブラウザ・購入内容を確認した</label>
+  <button class="action" disabled>メンシプ確認を確定（未接続）</button>
+ </div>
+</section>
+<section class="panel" id="grant" role="tabpanel" hidden>
+ <h2>🎁 ガチャ残回数・付与</h2><p class="sub">この表示は架空データ。実際の残回数・当選履歴とは無関係です。</p>
+ <label for="search">サンプル参加者の検索</label><input type="search" id="search" placeholder="サンプル名を入力" autocomplete="off">
+ <div class="cards" id="roster" style="margin-top:12px">
+  <div class="item" data-name="みなと"><strong>サンプル：みなと</strong><span class="pill">残り 3回（架空）</span><p>端末候補 1件・追加付与前に本人とメンシプを確認</p></div>
+  <div class="item" data-name="あお"><strong>サンプル：あお</strong><span class="pill flag">残り 1回（架空）</span><p>端末候補なし：照合待ち</p></div>
+  <div class="item" data-name="ひかり"><strong>サンプル：ひかり</strong><span class="pill">残り 0回（架空）</span><p>同名候補が複数：自動統合禁止</p></div>
+ </div>
+ <div class="cards" style="margin-top:14px">
+  <div><label>追加付与回数</label><input type="number" min="1" max="50" value="1" disabled></div>
+  <div><label>付与理由</label><input value="サンプルのため入力できません" disabled></div>
+ </div>
+ <button class="action" disabled>回数付与を確定（未接続）</button>
+ <p class="muted">残回数あり＝抽選許可ではありません。</p>
+</section>
+<section class="panel" id="status" role="tabpanel" hidden>
+ <h2>🔌 実際の管理画面の接続状況</h2>
+ <div class="item"><strong>表示・操作手順</strong><span class="pill">プレビュー可能</span>
+ <p>本ページだけで、承認・メンシプ・回数付与の画面構成を確認できます。</p></div>
+ <div class="item" style="margin-top:10px"><strong>本番の承認・回数付与</strong><span class="pill flag">未解放</span>
+ <p>既存GASの稼働版照合と監査台帳の準備・接続確認が完了するまで、操作は停止します。</p></div>
+ <p class="muted">このページに本番用の管理者コードや個人情報を入力しないでください。</p>
+</section>
+<p class="footer">🔒 完全ローカル表示サンプル。外部通信・認証・データ保存・本番操作は行いません。</p>
+</main>
+<script>
+'use strict';
+const tabs=[...document.querySelectorAll('[data-tab]')];
+for(const tab of tabs)tab.addEventListener('click',()=>{
+ for(const b of tabs){const active=b===tab;b.setAttribute('aria-selected',String(active));
+  document.getElementById(b.dataset.tab).hidden=!active;}
+});
+document.getElementById('search').addEventListener('input',event=>{
+ const q=event.target.value.normalize('NFKC').toLowerCase().trim();
+ for(const card of document.querySelectorAll('#roster [data-name]'))
+  card.hidden=!card.dataset.name.normalize('NFKC').toLowerCase().includes(q);
+});
+</script></body></html>
