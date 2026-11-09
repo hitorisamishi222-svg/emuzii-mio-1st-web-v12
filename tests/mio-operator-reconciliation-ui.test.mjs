@@ -15,7 +15,7 @@ assert.ok(helperStart>=0&&helperEnd>helperStart,'actual operator UI contains saf
 const helpers=ui.slice(helperStart,helperEnd);
 const id=n=>'MIO-'+String(n).padStart(4,'0');
 const participant=n=>({mioId:id(n),name:'local-secret-name',gacha:{remaining:1,checked:true,total:2,special:0}});
-const browser=(n,verified=true)=>({mioId:id(n),verified,webId:'synthetic-browser'});
+const browser=(n,verified=true)=>({mioId:id(n),verified,webId:'synthetic-browser',name:'local-secret-name'});
 const run=state=>{
  const summary={textContent:''},remaining={textContent:''};
  const ctx={
