@@ -190,13 +190,19 @@ function updateQuick(){
   .filter(b=>b?.verified===true&&/^MIO-\d{4}$/.test(b.mioId||'')&&
    (!masterNames.has(b.mioId)||masterNames.get(b.mioId)!==nameKey(b.name))).length;
  // Server-verified browser links are triage, not proof of identity.
- const links=new Map();
+ // Display-name differences must not inflate the "single candidate" group.
+ const links=new Map(),nameConflicts=new Set();
  for(const browser of (Array.isArray(state.approvedBrowsers)?state.approvedBrowsers:[])){
   if(browser?.verified!==true||!/^MIO-\d{4}$/.test(browser.mioId||''))continue;
+  if(!masterNames.has(browser.mioId)||masterNames.get(browser.mioId)!==nameKey(browser.name)){
+   nameConflicts.add(browser.mioId);
+   continue;
+  }
   links.set(browser.mioId,(links.get(browser.mioId)||0)+1);
  }
- const linkReview={single:0,missing:0,multiple:0};
+ const linkReview={single:0,missing:0,multiple:0,nameReview:0};
  for(const participant of eligible){
+  if(nameConflicts.has(participant.mioId)){linkReview.nameReview++;continue;}
   const count=links.get(participant.mioId)||0;
   if(count===1)linkReview.single++;
   else if(count===0)linkReview.missing++;
@@ -207,7 +213,8 @@ function updateQuick(){
   '（残り '+(selected.gacha?.remaining??'要確認')+'回）':'\n参加者未選択';
  summary.textContent='登録承認待ち '+(Number(state.totalPending)||0)+'件 / 既存ガチャ残回数あり '+eligible.length+
   '名 / ガチャ管理行要確認 '+unchecked.length+'名\n'+
-  '端末照合候補：単独 '+linkReview.single+'名 / なし '+linkReview.missing+'名 / 複数 '+linkReview.multiple+'名\n'+
+  '端末照合候補：単独 '+linkReview.single+'名 / なし '+linkReview.missing+'名 / 複数 '+linkReview.multiple+'名'+
+  (linkReview.nameReview?' / 表示名要照合 '+linkReview.nameReview+'名':'')+'\n'+
   (nameReviewCount?'⚠️ 承認済み表示名の差異 '+nameReviewCount+'件（既存承認・IDは変更せず要照合）\n':'')+gate+
   ' / 監査台帳 '+(state.schemaReady===true?'準備済み':'未準備')+' / 管理書込 '+(state.writeEnabled?'有効':'停止中')+' / 現場モード '+(state.writeMode==='onsite'?'個別承認':state.writeMode==='standard'?'既存運営モード':'停止中')+selectedLine+
   '\n※残回数あり＝抽選許可ではありません。端末照合候補は台帳の予備チェックです。残回数・ブラウザ一致だけでは本人確認や抽選許可になりません。';
