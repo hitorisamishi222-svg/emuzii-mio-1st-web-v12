@@ -632,3 +632,49 @@ test('duplicate approved Web ID stays conflicted rather than selecting a person'
  assert.equal(out.mioId,undefined);
  assert.equal(b.requests.length,1);
 });
+
+
+test('read-only approved display-name mismatch is flagged without unapproving anyone',async()=>{
+ const b=fakeBrowser(),widA='MIO-W-'+'a'.repeat(24),widB='MIO-W-'+'b'.repeat(24);
+ assert.equal(b.window.mioResolveIncidentIdentity(widA),null,'unconnected browser exposes no account');
+ b.setSnapshot({ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+  roster:[
+   {mioId:'MIO-0001',name:'架空参加者A',gacha:{checked:true,total:2,remaining:1,special:0}},
+   {mioId:'MIO-0002',name:'架空参加者B',gacha:{checked:true,total:2,remaining:1,special:0}}
+  ],
+  approvedBrowsers:[
+   {webId:widA,mioId:'MIO-0001',name:'架空参加者A',verified:true},
+   {webId:widB,mioId:'MIO-0002',name:'旧表示名',verified:true}
+  ],pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ const a=b.window.mioResolveIncidentIdentity(widA);
+ assert.equal(a.status,'found');
+ assert.equal(a.mioId,'MIO-0001');
+ assert.equal(a.verified,true);
+ assert.equal(a.nameReview,false);
+ const conflict=b.window.mioResolveIncidentIdentity(widB);
+ assert.equal(conflict.status,'name-review');
+ assert.equal(conflict.name,'旧表示名');
+ assert.equal(conflict.nameReview,true);
+ assert.equal(conflict.verified,false);
+ assert.equal(conflict.mioId,'','a name mismatch cannot auto-assert a master ID');
+ assert.match(b.el('opsQuickSummary').textContent,/承認済み表示名の差異 1件/);
+ assert.match(b.el('opsQuickSummary').textContent,/既存承認・IDは変更せず要照合/);
+ assert.equal(b.requests.length,1,'name-only review never writes or triggers a second request');
+ assert.equal(b.el('opsGrant').disabled,true);
+});
+test('name review is cleared by read-only snapshot update, not by participant mutation',async()=>{
+ const b=fakeBrowser(),webId='MIO-W-'+'c'.repeat(24);
+ const base={ok:true,writeEnabled:false,totalPending:0,rejectedCount:0,
+  roster:[{mioId:'MIO-0001',name:'新しい表示名',gacha:{checked:true,total:3,remaining:2,special:0}}],
+  approvedBrowsers:[{webId,mioId:'MIO-0001',name:'古い表示名',verified:true}],
+  pending:[],simple:[],grants:[]};
+ b.setSnapshot(base);b.connect();await b.settled();
+ assert.equal(b.window.mioResolveIncidentIdentity(webId).status,'name-review');
+ b.setSnapshot({...base,approvedBrowsers:[{webId,mioId:'MIO-0001',name:'新しい表示名',verified:true}]});
+ b.el('opsReload').click();await b.settled();
+ assert.equal(b.window.mioResolveIncidentIdentity(webId).status,'found');
+ assert.equal(b.window.mioResolveIncidentIdentity(webId).verified,true);
+ assert.doesNotMatch(b.el('opsQuickSummary').textContent,/承認済み表示名の差異/);
+ assert.equal(b.requests.length,2,'both requests are read-only');
+});
