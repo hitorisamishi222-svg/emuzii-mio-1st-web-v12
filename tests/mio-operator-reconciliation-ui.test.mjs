@@ -62,3 +62,29 @@ test('read-only reconciliation cannot enable write buttons or mark identity appr
  assert.match(segment,/ブラウザ一致だけでは本人確認や抽選許可になりません/);
  assert.doesNotMatch(segment,/state\.writeEnabled\s*=|\.disabled\s*=\s*false/);
 });
+
+
+test('approved display-name conflict cannot count as a single verified browser candidate',()=>{
+ const roster=[participant(1),participant(2)];
+ const approvedBrowsers=[
+  {...browser(1),name:'local-secret-name'},
+  {...browser(2),name:'old-display-name'}
+ ];
+ const x=run({roster,approvedBrowsers,totalPending:0,writeEnabled:false,
+  schemaReady:false,writeMode:'locked'});
+ assert.match(x.summary,/端末照合候補：単独 1名 \/ なし 0名 \/ 複数 0名 \/ 表示名要照合 1名/);
+ assert.match(x.summary,/承認済み表示名の差異 1件/);
+ assert.match(x.summary,/管理書込 停止中/);
+ assert.doesNotMatch(x.summary,/old-display-name|local-secret-name/);
+});
+
+test('a matching browser plus a conflicting approved browser cannot be called single',()=>{
+ const approvedBrowsers=[
+  {...browser(1),name:'local-secret-name'},
+  {...browser(1),name:'different-registered-display-name'}
+ ];
+ const x=run({roster:[participant(1)],approvedBrowsers,totalPending:0,
+  schemaReady:false,writeEnabled:false,writeMode:'locked'});
+ assert.match(x.summary,/端末照合候補：単独 0名 \/ なし 0名 \/ 複数 0名 \/ 表示名要照合 1名/);
+ assert.match(x.summary,/承認済み表示名の差異 1件/);
+});
