@@ -59,7 +59,9 @@ function updateBell(count,{failed=false}={}){
 // Resolve identities by exact Web ID only; never guess from matching nicknames.
 window.mioResolveIncidentIdentity=function(webId){
  if(!state||!/^MIO-W-[a-f0-9]{24}$/.test(webId||''))return null;
- const webLinks=Array.isArray(state.webLinks)?state.webLinks:[];
+ // GAS Read returns approvedBrowsers, not webLinks. Only exact Web IDs
+ // may be inspected, and its verified flag never authorizes a session.
+ const webLinks=Array.isArray(state.approvedBrowsers)?state.approvedBrowsers:[];
  const linked=webLinks.filter(x=>x?.webId===webId);
  if(linked.length>1)return {status:'conflict'};
  if(linked.length===1){
