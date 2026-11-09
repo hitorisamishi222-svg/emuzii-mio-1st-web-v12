@@ -7,6 +7,12 @@ const start=ui.indexOf('function updateQuick(){');
 const end=ui.indexOf("\nfor(const [id,target] of",start);
 assert.ok(start>0&&end>start,'actual operator UI contains updateQuick()');
 const segment=ui.slice(start,end);
+// Execute the source's own name normalization helper alongside the extracted
+// read-only summary, so tests fail only for real contract regressions.
+const helperStart=ui.indexOf('function safe(');
+const helperEnd=ui.indexOf('\nfunction node(',helperStart);
+assert.ok(helperStart>=0&&helperEnd>helperStart,'actual operator UI contains safe/nameKey helpers');
+const helpers=ui.slice(helperStart,helperEnd);
 const id=n=>'MIO-'+String(n).padStart(4,'0');
 const participant=n=>({mioId:id(n),name:'local-secret-name',gacha:{remaining:1,checked:true,total:2,special:0}});
 const browser=(n,verified=true)=>({mioId:id(n),verified,webId:'synthetic-browser'});
@@ -16,7 +22,7 @@ const run=state=>{
   el:n=>n==='opsQuickSummary'?summary:n==='opsRemainingSummary'?remaining:null,
   state,selected:null,snapshot:{normalOpen:false}
  };
- vm.runInNewContext(segment+'\nupdateQuick();',ctx);
+ vm.runInNewContext(helpers+'\n'+segment+'\nupdateQuick();',ctx);
  return {summary:summary.textContent,remaining:remaining.textContent};
 };
 test('operator UI displays 8 single / 1 missing / 2 multiple candidates from VERIFIED approved browsers',()=>{
