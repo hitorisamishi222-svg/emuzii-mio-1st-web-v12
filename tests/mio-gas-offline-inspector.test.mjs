@@ -124,3 +124,12 @@ function mioAdminOpsRead_(){}
    '\nconst fakeRoute='+JSON.stringify(action)+';';
  assert.equal(inspect(withoutRoute,'all').adminDispatcherPresent,false);
 });
+
+
+test('admin gate links to same-origin device-only GAS source inspector',()=>{
+ const gate=readFileSync(new URL('../gacha-web-gate.html',import.meta.url),'utf8');
+ assert.match(gate,/<a href="\/gas-live-version-inspector\.html" target="_blank" rel="noopener noreferrer"/);
+ assert.match(gate,/開発Preview専用/);
+ assert.match(gate,/コードをチャットやGitHubへ貼らないでください/);
+ assert.doesNotMatch(gate,/href="https:\/\/[^"]*gas-live-version-inspector\.html"/);
+});
