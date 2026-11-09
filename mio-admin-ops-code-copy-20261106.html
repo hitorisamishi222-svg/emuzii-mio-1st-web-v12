@@ -1071,6 +1071,21 @@ function mioAdminOpsGrant_(ss,d){
  var people=mioAdminOpsOne_(mioAdminOpsPeople_(ss),0,id),name=mioAdminOpsStr_(people.c[1]);
  var sheet=mioAdminOpsSheet_(ss,&#39;emuzii_ガチャ&#39;),g=mioAdminOpsOne_(mioAdminOpsValues_(sheet,17),0,id);
  if(mioAdminOpsName_(g.c[1])!==mioAdminOpsName_(name)||g.c[12]!==&#39;OK&#39;||g.c[13]!==&#39;OK&#39;)throw new Error(&#39;ガチャ管理行に要確認の項目があります&#39;);
+ // A future release cannot rely on UI-only name triage: check the
+ // authoritative approved/verified browser records under the same ScriptLock.
+ // Display-name differences may be legitimate; stop only the *new grant*,
+ // never edit or de-authorize existing browsers, entitlements or history.
+ var grantBrowsers=mioAdminOpsValues_(mioAdminOpsSheet_(ss,&#39;emuzii_Web登録&#39;),21);
+ for(var bi=0;bi&lt;grantBrowsers.length;bi++){
+   var browser=grantBrowsers[bi],linkedId=mioAdminOpsStr_(browser[7]);
+   if(linkedId!==id||mioAdminOpsStr_(browser[5])!==&#39;承認済み&#39;)continue;
+   var currentVerified=mioAdminOpsStr_(browser[11])===&#39;確認済み&#39;&amp;&amp;
+     mioAdminOpsStr_(browser[16])!==&#39;旧端末&#39;&amp;&amp;
+     mioAdminOpsStr_(browser[10])===id&amp;&amp;
+     (!browser[15]||mioAdminOpsStr_(browser[15])===id)&amp;&amp;webIntegrityOk_(browser);
+   if(currentVerified&amp;&amp;mioAdminOpsName_(browser[2])!==mioAdminOpsName_(name))
+     throw new Error(&#39;承認済み端末の表示名と参加者名が異なります。本人照合してから付与してください&#39;);
+ }
  if([5,7,14].some(function(i){return mioAdminOpsStr_(g.c[i])===&#39;&#39;;})||
     !Number.isSafeInteger(Number(g.c[5]))||Number(g.c[5])&lt;0||
     !Number.isSafeInteger(Number(g.c[7]))||Number(g.c[7])&lt;0||
