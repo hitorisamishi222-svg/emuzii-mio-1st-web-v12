@@ -678,3 +678,56 @@ test('name review is cleared by read-only snapshot update, not by participant mu
  assert.doesNotMatch(b.el('opsQuickSummary').textContent,/承認済み表示名の差異/);
  assert.equal(b.requests.length,2,'both requests are read-only');
 });
+
+
+// LIVE_MIO_NAME_CONFLICT_GRANT_GUARD_20261109
+// These tests simulate write-release locally to verify the UI can never send
+// a grant on the mismatched, already-approved browser found in the live ledger.
+test('grant remains blocked for a verified existing browser with a mismatched display name',async()=>{
+ const b=fakeBrowser(),webId='MIO-W-'+'d'.repeat(24);
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,rejectedCount:0,
+  roster:[{mioId:'MIO-0001',name:'現在表示名',gacha:{checked:true,total:3,remaining:2,special:1}}],
+  approvedBrowsers:[{webId,mioId:'MIO-0001',name:'以前の表示名',verified:true}],
+  pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ const choose=flatten(b.el('opsRoster')).find(x=>x.tagName==='button');
+ assert.ok(choose);choose.click();
+ assert.match(b.el('opsPerson').textContent,/表示名・ID要照合（付与停止/);
+ b.el('opsOnsiteGrantVerified').checked=true;
+ b.el('opsOnsiteGrantVerified').events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,true,'owner release must not override the conflict');
+ b.window.confirm=()=>{throw Error('NO_CONFIRM_BEFORE_MANUAL_REVIEW')};
+ await b.el('opsGrant').click();await b.settled();
+ assert.match(b.el('opsStatus').textContent,/付与は停止し/);
+ assert.equal(b.requests.length,1,'no grant request despite a forged enabled click');
+});
+test('new approved-name conflict clears an already checked onsite grant attestation',async()=>{
+ const b=fakeBrowser(),webId='MIO-W-'+'e'.repeat(24),person='同じ表示名';
+ const base={ok:true,writeEnabled:true,totalPending:0,rejectedCount:0,
+  roster:[{mioId:'MIO-0001',name:person,gacha:{checked:true,total:3,remaining:2,special:1}}],
+  approvedBrowsers:[{webId,mioId:'MIO-0001',name:person,verified:true}],
+  pending:[],simple:[],grants:[]};
+ b.setSnapshot(base);b.connect();await b.settled();
+ flatten(b.el('opsRoster')).find(x=>x.tagName==='button').click();
+ b.el('opsOnsiteGrantVerified').checked=true;
+ b.el('opsOnsiteGrantVerified').events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,false,'verified matching names permit review of an onsite grant');
+ b.setSnapshot({...base,approvedBrowsers:[{webId,mioId:'MIO-0001',name:'旧表示名',verified:true}]});
+ b.el('opsReload').click();await b.settled();
+ assert.equal(b.el('opsOnsiteGrantVerified').checked,false,'attestation is not reusable after browser identity changes');
+ assert.equal(b.el('opsGrant').disabled,true);
+ assert.equal(b.requests.length,2,'no mutation when a name conflict appears');
+});
+test('a participant without an approved Web browser still requires onsite attestation',async()=>{
+ const b=fakeBrowser();
+ b.setSnapshot({ok:true,writeEnabled:true,totalPending:0,rejectedCount:0,
+  roster:[{mioId:'MIO-0002',name:'現場で本人確認',gacha:{checked:true,total:2,remaining:1,special:0}}],
+  approvedBrowsers:[],pending:[],simple:[],grants:[]});
+ b.connect();await b.settled();
+ flatten(b.el('opsRoster')).find(x=>x.tagName==='button').click();
+ assert.equal(b.el('opsGrant').disabled,true,'the onsite attestation must still be checked');
+ b.el('opsOnsiteGrantVerified').checked=true;
+ b.el('opsOnsiteGrantVerified').events.get('change')();
+ assert.equal(b.el('opsGrant').disabled,false,'do not block standalone participants solely due to no Web browser');
+ assert.equal(b.requests.length,1,'no live mutation in the synthetic test');
+});
