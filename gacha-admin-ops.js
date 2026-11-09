@@ -118,7 +118,18 @@ function request(action,values={}){
  });
 }
 function uuid(){return [...crypto.getRandomValues(new Uint8Array(16))].map(v=>v.toString(16).padStart(2,'0')).join('')}
-function grantReady(){return !processing&&!pending&&!!state?.writeEnabled&&!!selected?.gacha?.checked&&el('opsOnsiteGrantVerified').checked===true}
+// A previously approved browser can retain a valid MIO-ID while its
+// display name diverges from the roster. Preserve both records and require
+// human review; never enable a new grant merely from a matching ID.
+function grantNameRequiresReview(person=selected,snapshot=state){
+ if(!person||!/^MIO-\d{4}$/.test(person.mioId||'')||!Array.isArray(snapshot?.roster))return true;
+ const masters=snapshot.roster.filter(p=>p?.mioId===person.mioId);
+ if(masters.length!==1||nameKey(masters[0].name)!==nameKey(person.name))return true;
+ return (Array.isArray(snapshot.approvedBrowsers)?snapshot.approvedBrowsers:[])
+  .some(b=>b?.verified===true&&b.mioId===person.mioId&&nameKey(b.name)!==nameKey(person.name));
+}
+function grantReady(){return !processing&&!pending&&!!state?.writeEnabled&&!!selected?.gacha?.checked&&
+ !grantNameRequiresReview()&&el('opsOnsiteGrantVerified').checked===true}
 function blocked(v){processing=v;el('opsReload').disabled=v;el('opsGrant').disabled=!grantReady();el('opsIntakeCreate').disabled=v||!!pending||!state?.writeEnabled;renderPending()}
 async function refresh({automatic=false}={}){
  if(processing||!ready()||(automatic&&(document.hidden||pending||gasCompatibilityBlocked)))return;
@@ -134,9 +145,13 @@ async function refresh({automatic=false}={}){
    const current=(response.roster||[]).find(x=>x.mioId===selected.mioId);
    const previous=selected.gacha;
    const next=current?.gacha;
+   const priorBrowsers=(state?.approvedBrowsers||[]).filter(b=>b?.mioId===selected.mioId);
+   const freshBrowsers=(response.approvedBrowsers||[]).filter(b=>b?.mioId===selected.mioId);
    if(!next||!previous||next.remaining!==previous.remaining||
       next.total!==previous.total||next.special!==previous.special||
-      next.checked!==previous.checked||current.name!==selected.name)
+      next.checked!==previous.checked||current.name!==selected.name||
+      JSON.stringify(priorBrowsers)!==JSON.stringify(freshBrowsers)||
+      grantNameRequiresReview(current,response))
      el('opsOnsiteGrantVerified').checked=false;
   }
   if(selected&&el('opsMemberVerified').checked===true){
@@ -390,7 +405,8 @@ function renderRoster(){
     el('opsMemberVerified').checked=false;
     const g=item.gacha;
     el('opsPerson').textContent=item.name+' / '+item.mioId+
-      (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認');
+      (g?'　総権利 '+g.total+' / 残り '+g.remaining+' / 特別付与 '+g.special:'　ガチャ台帳要確認')+
+      (grantNameRequiresReview(item)?'　⚠️ 表示名・ID要照合（付与停止／既存情報は保持）':'');
     el('opsGrant').disabled=!grantReady();
     updateQuick();renderMemberBrowsers();
   },true));
@@ -465,6 +481,10 @@ async function mutate(action,payload){
 }
 el('opsGrant').addEventListener('click',async()=>{
  const g=selected?.gacha,count=Number(el('opsQuantity').value),reason=el('opsReason').value.trim();
+ if(grantNameRequiresReview()){
+  notice('承認済み端末と参加者の表示名・IDに差異があります。付与は停止し、既存の本人確認・ID・権利を保持したまま管理者が照合してください。',true);
+  return;
+ }
  if(el('opsOnsiteGrantVerified').checked!==true){notice('本人・メンシプ・既存残回数・付与理由の現場確認スイッチを入れてください',true);return}
  if(!g||!g.checked||!Number.isInteger(count)||count<1||count>50||reason.length<2||reason.length>120){
   notice('参加者・付与回数（1〜50）・理由を確認してください。',true);return;
