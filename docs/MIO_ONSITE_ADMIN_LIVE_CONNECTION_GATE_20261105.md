@@ -1,5 +1,41 @@
 # みおシステム：現場個別承認を最短で安全に解放する手順（2026-11-05）
 
+## 【最新版・2026-11-11】分析→方法確認→実作業の必須ゲート
+
+> **この節が最新の実行基準。以下の2026-11-05〜11-06の節にある「公開v15」「PR #79」「管理20関数」「実機確認を再依頼」は過去時点の記録であり、現在の作業指示として使用しない。** この節は新規GAS作成・GAS更新・Vercel環境変数変更・ユーザーデータ変更の承認ではない。
+
+### 1. まず現状を分析し、解決する対象を限定
+
+- 既存本番Vercel `main` は READY（確認SHA `2476fb5609775b1893dafeab2483c278333167b1`）。2026-11-10にガチャ管理画面の保護付き強化版が公開済み。しかし **管理Readの本番成功は未確認**。
+- ユーザー提供の「デプロイを管理」の画像から、既存Apps Scriptプロジェクトのアクティブなウェブアプリに **バージョン16（2026-11-06 19:30）** の表示があった。**この番号を再確認依頼しない。** アクティブ画面のデプロイIDがVercel本番に設定された既存デプロイIDと**同一**かは未確認。
+- 本番 `APPS_SCRIPT_URL` のデプロイIDは過去に確認した既存IDのSHA-256指紋に一致。ただし、**接続先ID一致だけでは公開バージョンとソースの確認にならない。**
+- 管理書込用 `MIO_GACHA_ADMIN_OPS_RELEASE` および `MIO_GACHA_ONSITE_RELEASE` は production で未設定。ガチャ権利・承認・当選履歴を変更しない。
+- 既存本番Sheetには `emuzii_Web管理操作履歴` がなく、付与履歴J1の `Web操作ID` も未設置。**Readは監査未設置でも成立する設計、Writeは停止**。
+- **重大なブランチ安全性:** PR #87（Draft）は2026-11-11時点で `main` と diverged（PRからみて269 ahead / 6 behind、GitHub `mergeable:false`）。**PRをそのままmainへマージしない**。後から入った本番ガチャ画面・SEO・皆勤の修正を無検証で置き換えない。
+
+### 2. 次に実行方法の正しさを判定（公式仕様と照合）
+
+- Google Apps Scriptの**公開バージョンは作成時の不変スナップショット**であり、編集HEADとは別。これは Google公式の [Versions](https://developers.google.com/apps-script/guides/versions) と [Deployments](https://developers.google.com/apps-script/concepts/deployments) による。
+- 必要な**読み取り専用**のAPI手順は、(a) `projects.deployments.get(scriptId,deploymentId)` で同じ公開デプロイと `deploymentConfig.versionNumber` を検証、(b) `projects.getContent(scriptId,versionNumber)` でその**公開版の全ファイル**を取得すること。Google公式 [Deployment GET](https://developers.google.com/apps-script/api/reference/rest/v1/projects.deployments/get) / [Versioned content GET](https://developers.google.com/apps-script/api/reference/rest/v1/projects/getContent) を参照。OAuthスコープは原則 `script.deployments.readonly` と `script.projects.readonly`。これらを呼び出せる正規の権限がなければ**未確認で停止**。旧バックアップ、HEAD、番号だけを代用しない。
+- 保存済み11月6日コードは**比較用原本**として保持するが公開版とは断定しない。差分は既存 `doPost`・共有鍵・ScriptLock・21管理関数・10月皆勤・参加者復旧・ガチャ抽選を全ファイル単位で照合。関数が既存なら重複追加を行わない。
+- 公開版に管理Read分岐が**存在する**なら追加せず、認証・既存ブリッジ・デプロイ対応の原因へ切り替える。**欠けている**なら公開版とエディタHEADの復元可能な私的バックアップを用意し、最小差分だけ提案する。どちらも所有者の明示承認なしに編集・保存・公開はしない。
+- GitHub側の最新版取り込みと本番変更の混同を禁止。`main` から見たPR差分を再評価し、SEO/ガチャ公開部分との競合を解消するまでは**マージ禁止**。PRの回帰CI成功は本番GASの確認に代用しない。
+
+### 3. 条件を満たした作業だけ順番に実行
+
+| 順序 | 内容 | 進める条件・停止線 |
+| --- | --- | --- |
+| A（実施可能） | 本番・PRの差分と接続先の**read-only**監査、最新の公式API手順・公開v16画像の照合 | ユーザーデータ・秘密鍵・実コードをIssueに公開しない |
+| B（未完了） | **同一デプロイID→稼働version→版指定全ソース**の実証、既存全GASファイルの差分/関数衝突確認 | 本人権限での読取証拠がない場合はここで停止 |
+| C（未実施） | 最小復旧差分のレビューとバックアップ。**所有者許可後**にのみ同じ既存デプロイを更新 | 全文無条件置換・新規プロジェクト・新規URL・重複関数は禁止 |
+| D（未実施） | 管理書込OFFのまま、管理者認証付き `webAdminOpsRead` の実成功を確認 | 「認証403」や静的CI成功はRead成功扱いしない |
+| E（未実施） | 監査タブと履歴J1だけの限定スキーマ準備を別途レビュー・許可し、照合後に個別操作を段階解放 | 本人・メンシプ・MIO-ID・既存残数・操作IDの照合必須。他人や既存履歴を変更しない |
+
+**作業順の原則:** 毎回「①メモリ/原本/最新版/未完了の分析 → ②実施方法・公式仕様・危険な差分の検証 → ③許可された最小実作業 → ④仕上がりと本番不変性を照合」。既に合格した同じ検査を理由なく繰り返さず、制約により続行できないときは根拠と必要な証拠だけを報告する。
+
+---
+
+
 ## 2026-11-06 実装準備更新：管理者ボタン操作の4機能
 
 **開発PR #79内でのコード準備。稼働中Web管理画面・GAS・Google Sheetsは未変更。**
