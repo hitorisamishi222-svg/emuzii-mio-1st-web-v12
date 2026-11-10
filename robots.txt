@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /private-docs/
+Disallow: /backups/
+Disallow: /db/
+Disallow: /gas/
+Sitemap: https://emuzii-mio-1st-web-v12.vercel.app/sitemap.xml
