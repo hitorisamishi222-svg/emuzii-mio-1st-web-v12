@@ -400,6 +400,10 @@
     {
       "src": "sitemap.xml",
       "use": "@vercel/static"
+    },
+    {
+      "src": "google3090b8424996f68c.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -585,6 +589,15 @@
       "dest": "/gallery-moderation.html",
       "headers": {
         "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/google3090b8424996f68c.html",
+      "dest": "/google3090b8424996f68c.html",
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "public, max-age=3600"
       }
     },
     {
