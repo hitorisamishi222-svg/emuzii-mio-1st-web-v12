@@ -21,7 +21,9 @@ test('guide starts hidden but can be opened directly without admin login',()=>{
  assert.match(html,/id="opsSetupToggle"/);
  assert.match(js,/setupToggle\.addEventListener\('click'/);
  assert.match(js,/showGuide\(opsGuide\.hidden\)/);
- assert.match(js,/showGuide\(e\.code==='GAS_UPDATE_REQUIRED'\)/);
+ assert.match(js,/gasCompatibilityBlocked=e\.code==='GAS_UPDATE_REQUIRED'/);
+ assert.match(js,/showGuide\(gasCompatibilityBlocked\)/);
+ assert.match(js,/automatic&&\(document\.hidden\|\|pending\|\|gasCompatibilityBlocked\)/);
  assert.match(js,/error\.code=json\.code/);
 });
 test('original gacha switch remains wired; write gate remains closed',()=>{
