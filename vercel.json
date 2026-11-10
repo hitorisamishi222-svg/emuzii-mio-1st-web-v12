@@ -388,6 +388,18 @@
     {
       "src": "assets/mio-undersea-palace-stage.svg",
       "use": "@vercel/static"
+    },
+    {
+      "src": "museum.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "robots.txt",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "sitemap.xml",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -520,6 +532,18 @@
       }
     },
     {
+      "src": "/museum.html",
+      "dest": "/museum.html"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/robots.txt"
+    },
+    {
+      "src": "/sitemap.xml",
+      "dest": "/sitemap.xml"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }
@@ -548,6 +572,69 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/join.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/gacha.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/gacha-web-gate.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/gallery-manage.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/gallery-admin-preview.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/gallery-passkey-register.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/announcements-manage.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
         }
       ]
     }
