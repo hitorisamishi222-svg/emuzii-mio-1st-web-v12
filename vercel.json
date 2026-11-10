@@ -425,11 +425,17 @@
     },
     {
       "src": "/gacha-web-gate.html",
-      "dest": "/gacha-web-gate.html"
+      "dest": "/gacha-web-gate.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
     },
     {
       "src": "/join.html",
-      "dest": "/join.html"
+      "dest": "/join.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
     },
     {
       "src": "/api/enroll-lite",
@@ -517,7 +523,10 @@
     },
     {
       "src": "/gacha.html",
-      "dest": "/gacha.html"
+      "dest": "/gacha.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
     },
     {
       "src": "/",
@@ -542,6 +551,41 @@
     {
       "src": "/sitemap.xml",
       "dest": "/sitemap.xml"
+    },
+    {
+      "src": "/gallery-manage.html",
+      "dest": "/gallery-manage.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/gallery-admin-preview.html",
+      "dest": "/gallery-admin-preview.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/gallery-passkey-register.html",
+      "dest": "/gallery-passkey-register.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/announcements-manage.html",
+      "dest": "/announcements-manage.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/gallery-moderation.html",
+      "dest": "/gallery-moderation.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
     },
     {
       "src": "/(.*)",
