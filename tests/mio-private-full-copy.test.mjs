@@ -37,6 +37,9 @@ test('Vercel public build allowlist cannot expose GAS source, private copy helpe
 });
 test('admin mutations stay disabled unless deliberately released after GAS rollout',()=>{
  const api=from('api-gacha-admin-ops.js');
- assert.match(api,/const writeEnabled=process\.env\.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE/);
+ assert.match(api,/const standardEnabled=process\.env\.MIO_GACHA_ADMIN_OPS_RELEASE===RELEASE/);
+ assert.match(api,/const onsiteEnabled=process\.env\.MIO_GACHA_ONSITE_RELEASE===ONSITE_RELEASE/);
+ assert.match(api,/const writeEnabled=standardEnabled\|\|onsiteEnabled/);
+ assert.match(api,/d\.onSiteVerified!==true/);
  assert.match(api,/d\.action!=='read'&&!writeEnabled/);
 });
