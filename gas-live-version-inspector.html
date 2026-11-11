@@ -33,7 +33,8 @@ ol{padding-left:22px}li{margin:8px 0}[hidden]{display:none!important}.footer{fon
 <section class="box">
 <h2>公開版コードのローカル診断</h2>
 <label for="version">稼働中と確認できた公開バージョン番号</label>
-<input id="version" type="number" min="1" max="1000000" inputmode="numeric" autocomplete="off" placeholder="管理画面に表示された番号">
+<input id="version" type="number" min="1" max="1000000" inputmode="numeric" autocomplete="off" value="16" placeholder="管理画面に表示された番号">
+<p class="sub">以前の管理画面で確認済みの表示は<strong>バージョン16（2026年11月6日19:30）</strong>。入力値は過去の確認値であり、現在のVercel接続先・実デプロイ・ソースの一致を自動証明しません。別版が実際に公開されている場合は数字を修正してください。</p>
 <label for="scope">診断する範囲</label>
 <select id="scope" style="width:100%;border-radius:9px;padding:12px;min-height:48px;background:white;color:#1b324c;font:inherit">
 <option value="doPost" selected>📱 doPost関数だけ（スマホ向け・一次診断）</option>
@@ -61,6 +62,8 @@ const sharedFunctions=['json_','equal_','safeText_','webIntegrityOk_','ensureWeb
 let safeReport='';
 // Only static source triage. Mask comments and string literals. Unknown
 // syntax can fail closed and can never authorize deploy or write operations.
+// Accept BOTH fully-specified historical action orders: Read|Approve|Member
+// and Read|Member|Approve. This does not permit missing/extra actions.
 function maskNonExecutable(source){
  let out='',quote='',line=false,block=false;
  for(let i=0;i<source.length;i++){
@@ -122,7 +125,7 @@ function inspect(raw,scope='all'){
  }
  const where=p=>section.search(p);
  const auth=where(/if\s*\(\s*!secret\s*\|\|\s*!equal_\(d\.secret,secret\)\s*\)/);
- const route=where(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
+ const route=where(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|(?:Member\|Approve|Approve\|Member)\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
  const identity=where(/if\s*\(\s*!\/\^MIO-W-/);
  const lock=where(/LockService\.getScriptLock\s*\(\s*\)/);
  const acquire=where(/if\s*\(\s*!\s*lock\.tryLock\s*\(\s*\d+\s*\)\s*\)\s*return\b/);
