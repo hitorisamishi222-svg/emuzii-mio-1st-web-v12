@@ -69,3 +69,41 @@ test('source-only audit never allows a patch when running published version is u
   assert.equal(out.canSafelyPatch,false);
  }
 });
+
+
+test('older source audit cannot treat a quoted dispatcher as executable',()=>{
+ assert.ok(full.includes(dispatchLine),'legacy GAS route fixture exists');
+ const quoted=full.replace(dispatchLine,'var inertDispatch='+JSON.stringify(dispatchLine)+';');
+ assert.notEqual(quoted,full);
+ const r=auditGas([quoted],moduleOnly);
+ assert.equal(r.status,'STOP');
+ assert.equal(r.canSafelyPatch,false);
+ assert.match(r.issues.join('\n'),/DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW/);
+});
+
+test('older source audit cannot treat a commented dispatcher as executable',()=>{
+ assert.ok(full.includes(dispatchLine));
+ const commented=full.replace(dispatchLine,'// '+dispatchLine);
+ const r=auditGas([commented],moduleOnly);
+ assert.equal(r.status,'STOP');
+ assert.equal(r.canSafelyPatch,false);
+ assert.match(r.issues.join('\n'),/DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW/);
+});
+
+test('older source audit refuses an otherwise intact admin route without ScriptLock release',()=>{
+ assert.ok(full.includes('lock.releaseLock();'));
+ const broken=full.replace('lock.releaseLock();','lock.neverReleaseLock();');
+ const r=auditGas([broken],moduleOnly);
+ assert.equal(r.status,'STOP');
+ assert.equal(r.canSafelyPatch,false);
+ assert.match(r.issues.join('\n'),/SCRIPT_LOCK_GUARD_MISSING_OR_MISPLACED/);
+});
+
+test('older source audit rejects a dispatcher that omits a required admin action',()=>{
+ const missingMember=full.replace(dispatchLine,dispatchLine.replace('Approve|Member|Grant','Approve|Grant'));
+ assert.notEqual(missingMember,full);
+ const r=auditGas([missingMember],moduleOnly);
+ assert.equal(r.status,'STOP');
+ assert.equal(r.canSafelyPatch,false);
+ assert.match(r.issues.join('\n'),/DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW/);
+});
