@@ -253,7 +253,7 @@ test('historical route with a missing member or approve action still fails close
 
 test('owner-observed v16 is a convenience value and never treated as deployment proof',()=>{
  assert.match(html,/<input id="version"[^>]*value="16"/);
- assert.match(html,/公開版の.*自動証明しません/);
+ assert.match(html,/現在のVercel接続先・実デプロイ・ソースの一致を自動証明しません/);
  assert.match(html,/verifiedDeployedVersion:false/);
  assert.match(html,/publicationAllowed:false/);
  assert.match(html,/liveReadConfirmed:false/);
