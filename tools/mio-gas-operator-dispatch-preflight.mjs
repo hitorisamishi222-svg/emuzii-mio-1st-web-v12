@@ -86,7 +86,7 @@ export function preflightOperatorDispatch(files){
  // Do not count names in comments as executable routes. A regex dispatcher
  // must call the operator handler, not merely mention action strings.
  const executable=maskNonExecutable(body);
- const routeMatch=executable.match(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|Member\|Approve\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
+ const routeMatch=executable.match(/if\s*\(\s*\/\^webAdminOps\(\?:Read\|(?:Member\|Approve|Approve\|Member)\|Grant\|Review\|Create\|Intake\)\$\/\.test\(d\.action\)\s*\)\s*return\s+json_\(mioAdminOps_\(/);
  const dispatchAt=routeMatch?executable.indexOf(routeMatch[0]):-1;
  const authAt=executable.search(/if\s*\(\s*!secret\s*\|\|\s*!equal_\(d\.secret,secret\)\s*\)/);
  const participantAt=executable.search(/if\s*\(\s*!\/\^MIO-W-/);
