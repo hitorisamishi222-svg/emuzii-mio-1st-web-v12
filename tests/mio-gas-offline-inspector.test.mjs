@@ -219,3 +219,42 @@ test('comment-only or quoted closing braces cannot complete a truncated doPost',
   assert.equal(r.dispatchStaticallyCompatible,false);
  }
 });
+
+
+test('historical full dispatcher action order passes offline static review',()=>{
+ const inspect=inspectSource();
+ const old='Read|Member|Approve|Grant|Review|Create|Intake';
+ const historical='Read|Approve|Member|Grant|Review|Create|Intake';
+ assert.ok(candidate.includes(old));
+ const oldSource=candidate.replace(old,historical);
+ assert.notEqual(oldSource,candidate);
+ const r=inspect(oldSource,'all');
+ assert.equal(r.adminDispatcherPresent,true);
+ assert.equal(r.staticallyCompatible,true,JSON.stringify(r));
+ assert.equal(r.scriptLockGuardOrderOK,true);
+ assert.equal(r.duplicate.length,0);
+});
+
+test('historical route with a missing member or approve action still fails closed',()=>{
+ const inspect=inspectSource();
+ const historical=candidate.replace('Read|Member|Approve|Grant|Review|Create|Intake',
+    'Read|Approve|Member|Grant|Review|Create|Intake');
+ for(const incomplete of [
+  'Read|Approve|Grant|Review|Create|Intake',
+  'Read|Member|Grant|Review|Create|Intake'
+ ]){
+  const changed=historical.replace('Read|Approve|Member|Grant|Review|Create|Intake',incomplete);
+  const r=inspect(changed,'all');
+  assert.equal(r.adminDispatcherPresent,false);
+  assert.equal(r.staticallyCompatible,false);
+  assert.equal(r.dispatchStaticallyCompatible,false);
+ }
+});
+
+test('owner-observed v16 is a convenience value and never treated as deployment proof',()=>{
+ assert.match(html,/<input id="version"[^>]*value="16"/);
+ assert.match(html,/公開版の.*自動証明しません/);
+ assert.match(html,/verifiedDeployedVersion:false/);
+ assert.match(html,/publicationAllowed:false/);
+ assert.match(html,/liveReadConfirmed:false/);
+});
