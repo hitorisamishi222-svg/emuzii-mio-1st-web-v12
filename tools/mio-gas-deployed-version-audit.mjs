@@ -10,6 +10,9 @@ import {auditGasTarget} from './mio-gas-connection-target-audit.mjs';
 
 // Historical Oct-23 project URL: candidate until deployment API proves linkage.
 export const HISTORICAL_SCRIPT_ID_SHA256='6117bde73c4e4bdebc2e63ed4341513b41da48081bc78f8def8bbb9ff37fa6b1';
+// Confirmed by the owner in Deploy > Manage deployments, 2026-11-06 19:30.
+// Reconcile a newer version with the owner before treating its source as reviewed.
+export const OWNER_OBSERVED_DEPLOYED_VERSION=16;
 
 const sha=s=>createHash('sha256').update(s,'utf8').digest('hex');
 const safeEqual=(a,b)=>typeof a==='string'&&typeof b==='string'&&
@@ -38,7 +41,7 @@ function inspectContent(content,scriptId){
 }
 
 /** Strict schema inspection; synthetic IDs can exercise it without disclosing real IDs. */
-export function checkDeploymentEvidence({scriptId,deployment,published,publishedVersionNumber,head}={},deploymentId){
+export function checkDeploymentEvidence({scriptId,deployment,published,publishedVersionNumber,head,ownerObservedVersionNumber}={},deploymentId){
  if(typeof deploymentId!=='string'||typeof scriptId!=='string')return stop('MISSING_IDENTIFIERS');
  if(!deployment)return {ok:false,status:'DEPLOYMENT_METADATA_PENDING',reason:'NOT_READ',publicationAllowed:false};
  const config=deployment.deploymentConfig;
@@ -46,6 +49,12 @@ export function checkDeploymentEvidence({scriptId,deployment,published,published
     !Number.isSafeInteger(config.versionNumber)||config.versionNumber<1||config.versionNumber>1000000)
    return stop('PROJECT_DEPLOYMENT_OR_VERSION_MISMATCH');
  const version=config.versionNumber;
+ // A valid published snapshot of the WRONG version cannot close this live gate.
+ // The owner-observed version is external evidence, not inferred from HEAD.
+ if(ownerObservedVersionNumber!==undefined&&
+    (!Number.isSafeInteger(ownerObservedVersionNumber)||ownerObservedVersionNumber<1||
+     version!==ownerObservedVersionNumber))
+   return stop('OWNER_OBSERVED_VERSION_MISMATCH');
  const evidence={deployedVersion:version,projectVerified:true,deploymentVerified:true,publicationAllowed:false};
  if(!published)return {ok:false,status:'PUBLISHED_CONTENT_PENDING',reason:'NOT_READ',...evidence};
  if(publishedVersionNumber!==version)return stop('PUBLISHED_VERSION_REQUEST_MISMATCH',evidence);
@@ -69,7 +78,8 @@ export function auditDeployedVersion({appsScriptUrl,scriptId,deployment,publishe
  if(typeof scriptId!=='string'||!safeEqual(sha(scriptId),HISTORICAL_SCRIPT_ID_SHA256))
    return stop('UNKNOWN_SCRIPT_PROJECT_ID');
  const id=/^https:\/\/script\.google\.com\/macros\/s\/([^/]+)\/exec$/.exec(appsScriptUrl)?.[1];
- return checkDeploymentEvidence({scriptId,deployment,published,publishedVersionNumber,head},id);
+ return checkDeploymentEvidence({scriptId,deployment,published,publishedVersionNumber,head,
+  ownerObservedVersionNumber:OWNER_OBSERVED_DEPLOYED_VERSION},id);
 }
 // Local operator may pipe a private JSON input; do not output it or its source.
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
