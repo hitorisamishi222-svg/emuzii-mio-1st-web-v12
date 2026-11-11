@@ -187,3 +187,18 @@ test('real dispatcher remains valid alongside ordinary strings and comments',()=
  assert.equal(report.publicationAllowed,false);
  assert.equal(report.patchAllowed,false);
 });
+
+
+test('historical Approved-before-Member action order stays valid but incomplete lists do not',()=>{
+ const historical=readFileSync(new URL('../GAS_Code_FULL_WEB_OPS_20261030.gs',import.meta.url),'utf8');
+ const route='Read|Approve|Member|Grant|Review|Create|Intake';
+ assert.ok(historical.includes(route));
+ const accepted=check(historical);
+ assert.equal(accepted.ok,true,JSON.stringify(accepted));
+ assert.equal(accepted.publicationAllowed,false);
+ const partial=historical.replace(route,'Read|Approve|Grant|Review|Create|Intake');
+ const denied=check(partial);
+ assert.equal(denied.ok,false);
+ assert.equal(denied.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
+ assert.equal(denied.patchAllowed,false);
+});
