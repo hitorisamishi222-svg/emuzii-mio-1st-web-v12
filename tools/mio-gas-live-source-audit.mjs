@@ -3,6 +3,7 @@
 // Never place production source or secrets in a Git commit or chat.
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {preflightOperatorDispatch} from './mio-gas-operator-dispatch-preflight.mjs';
 const functionNames = s => [...s.matchAll(/^\s*function\s+([\w$]+)\s*\(/gm)].map(x=>x[1]);
 function fnBody(s,name){
  const m=[...s.matchAll(/^\s*function\s+([\w$]+)\s*\(/gm)];
@@ -49,6 +50,18 @@ export function auditGas(sourceFiles,expectedModule){
   report.issues.push('管理命令分岐の順序が不正');
  if(report.issues.length)return report;
  if(dispatch>=0&&report.presentOpsCount===expected.length){
+  // The legacy regex above locates candidates but can match commented or
+  // quoted source. Do not classify as ready until the stricter, read-only
+  // static preflight confirms a real authenticated route, all 21 handlers
+  // and the ScriptLock release path. This is still NOT deployed-version proof.
+  const files=sourceFiles.map((source,i)=>({type:'SERVER_JS',name:'Source'+i,source}));
+  const preflight=preflightOperatorDispatch(files);
+  if(!preflight.ok){
+   report.issues.push('管理分岐の実行可能性・認証順序・ロックを確認できません');
+   report.issues.push('検査理由: '+preflight.reason);
+   report.status='STOP';
+   return report;
+  }
   report.status='READ_ONLY_CONNECTION_TEST_NEXT';
   return report;
  }
