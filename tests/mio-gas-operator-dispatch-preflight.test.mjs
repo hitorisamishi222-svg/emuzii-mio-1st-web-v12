@@ -202,3 +202,24 @@ test('historical Approved-before-Member action order stays valid but incomplete 
  assert.equal(denied.reason,'DISPATCHER_NOT_DETECTED_REQUIRES_MANUAL_REVIEW');
  assert.equal(denied.patchAllowed,false);
 });
+
+
+test('quoted multiline fake function declarations never satisfy live helper requirements',()=>{
+ const missing=combined.replace('function mioAdminOpsSchema_(', 'function renamedSchemaForTest_(');
+ assert.notEqual(missing,combined);
+ const decoy=missing+'\nconst fakeSource = `\nfunction mioAdminOpsSchema_(){}\n`;\n';
+ const result=check(decoy);
+ assert.equal(result.ok,false);
+ assert.equal(result.reason,'ADMIN_HANDLERS_INCOMPLETE_NO_AUTOPATCH');
+ assert.ok(result.missingFunctions.includes('mioAdminOpsSchema_'));
+ assert.equal(result.publicationAllowed,false);
+ assert.equal(result.patchAllowed,false);
+});
+
+test('multiline quoted fake duplicates do not invalidate real GAS declarations',()=>{
+ const source=combined+'\nconst fakeSource = `\nfunction doPost(){}\nfunction mioAdminOpsGrant_(){}\n`;\n';
+ const result=check(source);
+ assert.equal(result.ok,true,JSON.stringify(result));
+ assert.equal(result.publicationAllowed,false);
+ assert.equal(result.patchAllowed,false);
+});
