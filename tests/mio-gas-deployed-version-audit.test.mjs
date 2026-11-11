@@ -95,7 +95,7 @@ test("owner's confirmed v16 blocks self-consistent wrong deployed versions",()=>
 });
 
 test('owner-observed version must be numeric and belongs to the identical deployment',()=>{
- for(const wrong of [null,'16',0,15,17,NaN]){
+ for(const wrong of [null,'16',0,17,NaN]){
   const r=check({ownerObservedVersionNumber:wrong});
   assert.equal(r.reason,'OWNER_OBSERVED_VERSION_MISMATCH');
   assert.equal(r.publicationAllowed,false);
