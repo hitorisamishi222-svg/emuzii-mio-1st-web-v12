@@ -21,7 +21,10 @@ const stop=(reason,details={})=>({ok:false,status:'STOP',reason,readOnly:true,
 const stripComments=text=>text.replace(/\/\*[\s\S]*?\*\//g,'\n')
  .replace(/^[ \t]*\/\/[^\r\n]*/gm,'');
 const declaration=/^[ \t]*(?:async[ \t]+)?function[ \t]+([A-Za-z_$][\w$]*)[ \t]*\(/gm;
-const sourceNames=text=>[...stripComments(text).matchAll(declaration)].map(m=>m[1]);
+// A function name written on a line inside a multiline quoted or template
+// string is NOT a real GAS function, even if the declaration regex matches it.
+// The mask retains source newlines, so declaration anchors remain meaningful.
+const sourceNames=text=>[...maskNonExecutable(stripComments(text)).matchAll(declaration)].map(m=>m[1]);
 
 // A route appearing only inside a quoted string or inline // comment is not
 // an executable dispatcher. Keep regex literals intact for the real route.
