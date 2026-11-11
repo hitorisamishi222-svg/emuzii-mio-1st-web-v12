@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {checkDeploymentEvidence,auditDeployedVersion,HISTORICAL_SCRIPT_ID_SHA256} from '../tools/mio-gas-deployed-version-audit.mjs';
+import {checkDeploymentEvidence,auditDeployedVersion,HISTORICAL_SCRIPT_ID_SHA256,OWNER_OBSERVED_DEPLOYED_VERSION} from '../tools/mio-gas-deployed-version-audit.mjs';
 
 const scriptId='synthetic-script-ID-no-real-participant-or-project',id='synthetic-deployment-ID';
 const deployment={deploymentId:id,deploymentConfig:{scriptId,versionNumber:15,manifestFileName:'appsscript'}};
@@ -74,4 +74,34 @@ test('CLI with malformed evidence exits nonzero without leaking input',()=>{
  assert.equal(res.status,1);
  assert.equal(res.stdout.includes(credential),false);
  assert.match(res.stdout,/"status":"STOP"/);
+});
+
+
+test("owner's confirmed v16 blocks self-consistent wrong deployed versions",()=>{
+ assert.equal(OWNER_OBSERVED_DEPLOYED_VERSION,16);
+ const wrong=check({ownerObservedVersionNumber:OWNER_OBSERVED_DEPLOYED_VERSION});
+ assert.equal(wrong.status,'STOP');
+ assert.equal(wrong.reason,'OWNER_OBSERVED_VERSION_MISMATCH');
+ assert.equal(wrong.publicationAllowed,false);
+ const rightDeployment={deploymentId:id,deploymentConfig:{
+  scriptId,versionNumber:OWNER_OBSERVED_DEPLOYED_VERSION,manifestFileName:'appsscript'
+ }};
+ const right=checkDeploymentEvidence({scriptId,deployment:rightDeployment,
+  published:files(),publishedVersionNumber:OWNER_OBSERVED_DEPLOYED_VERSION,
+  ownerObservedVersionNumber:OWNER_OBSERVED_DEPLOYED_VERSION},id);
+ assert.equal(right.ok,true);
+ assert.equal(right.deployedVersion,16);
+ assert.equal(right.publicationAllowed,false);
+});
+
+test('owner-observed version must be numeric and belongs to the identical deployment',()=>{
+ for(const wrong of [null,'16',0,15,17,NaN]){
+  const r=check({ownerObservedVersionNumber:wrong});
+  assert.equal(r.reason,'OWNER_OBSERVED_VERSION_MISMATCH');
+  assert.equal(r.publicationAllowed,false);
+ }
+ // Even a matching version from a DIFFERENT deployment cannot pass.
+ const wrongId=checkDeploymentEvidence({scriptId,deployment,published:files(),
+  publishedVersionNumber:15,ownerObservedVersionNumber:15},'another-deployment');
+ assert.equal(wrongId.reason,'PROJECT_DEPLOYMENT_OR_VERSION_MISMATCH');
 });
