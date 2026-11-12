@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; font-src 'none'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'">
+<title>翠央｜皆勤カレンダー管理・操作プレビュー</title>
+<style>
+:root{color-scheme:dark;--bg:#06162b;--card:#102c4f;--line:#426c9b;--text:#f2f8ff;--sub:#bbd4e9;--blue:#b1d9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 90% 0%,#24578b 0,#091e37 45%,#06162b 100%);color:var(--text);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}
+main{max-width:750px;margin:0 auto;padding:21px 15px 60px}.eyebrow{font-size:13px;font-weight:750;letter-spacing:.05em;color:#b8d9f7}
+h1{font-size:clamp(23px,5vw,35px);line-height:1.3;margin:6px 0 10px}h2{font-size:19px;margin:0 0 12px}
+p{margin:10px 0}a{color:#d4e8ff}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e5c87e;outline-offset:2px}
+.panel{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:20px;margin:16px 0;box-shadow:0 8px 18px #0002}
+.warning{border-color:#bdad6b;background:#39392c}.warning strong{color:#ffecb3}.muted{color:var(--sub);font-size:13px}
+label{font-weight:650}select,input[type=month]{font:inherit;color:#112e4c;background:white;border-radius:10px;padding:10px 12px;border:2px solid #c7e1f5;min-height:46px;width:100%;max-width:310px}
+button{font:inherit;border:1px solid #c9e7ff;background:var(--blue);color:#143350;border-radius:10px;padding:10px 17px;min-height:44px;font-weight:750;cursor:pointer}
+button.secondary{background:#214368;color:white}button.day{padding:0;min-height:49px;background:#24517b;color:white;border-color:#5e90be;font-size:16px}
+.columns{display:flex;flex-wrap:wrap;align-items:end;gap:12px}.columns>div{flex:1 1 210px}
+.month-row{display:flex;gap:12px;align-items:center;background:#0b2543;border:1px solid #416588;padding:12px;border-radius:11px;margin-top:8px;font-size:14px}
+.month-row input{height:20px;width:20px;accent-color:#c4e4ff;flex:0 0 auto}
+.calendar-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
+.weekday{text-align:center;font-weight:750;font-size:13px;color:#c6dcef;padding:8px 0}
+.pad{min-height:35px}.day{width:100%;aspect-ratio:1/1;max-height:65px}
+.message{min-height:40px;background:#071b31;border:1px solid #416588;border-radius:10px;padding:10px 12px;color:#e0efff}
+footer{margin-top:30px;color:#b8cfe7;font-size:12px}
+@media (max-width:420px){.panel{padding:15px}.calendar{gap:4px}.day{font-size:14px!important;min-height:42px!important}}
+</style>
+<script type="module" src="/mio-attendance-admin-preview.js"></script>
+</head>
+<body><main>
+<header><div class="eyebrow">🐳 翠央1周年｜開発Preview・皆勤管理の画面確認</div>
+<h1>📅 月別皆勤カレンダー</h1>
+<p>10月の記録を残したまま、管理者による月の追加と表示・非表示を確認するための操作プレビューだよ。</p></header>
+<section class="panel warning" aria-label="安全上の注意">
+<strong>⚠️ 実際の皆勤管理画面ではありません</strong>
+<p>この画面は日付表示と管理操作の<strong>見た目・流れだけ</strong>を確認します。実際の出席、確認文字、ガチャ権利、参加者情報は読み込みません。</p>
+<p class="muted">追加・切替はこのタブでのみ有効。再読み込みですべて初期状態に戻ります。サーバー通信、Google SheetsやGASへの書き込み、本番公開はありません。</p>
+</section>
+<section class="panel">
+<h2>表示する月を選択</h2>
+<div class="columns"><div><label for="monthSelect">カレンダー</label><div><select id="monthSelect" aria-label="表示月を選択"></select></div></div>
+<div><label for="addMonth">新しい月の追加（プレビューのみ）</label>
+<form id="addForm"><div class="columns"><input type="month" id="addMonth" min="2020-01" max="2100-12" required>
+<button type="submit">月を追加</button></div></form></div></div>
+<p class="muted">※ 既存10月の入力はこれまでどおり。新しい月では実際の確認文字入力はできません。</p>
+</section>
+<section class="panel"><h2>月の表示・非表示</h2>
+<p class="muted">チェックを外しても記録は消えません。このプレビューでは最後の1か月は表示状態を残します。</p>
+<div id="monthControls"></div>
+<p><button class="secondary" id="reset" type="button">初期状態に戻す</button></p>
+</section>
+<section class="panel">
+<div class="calendar-title"><h2 id="calendarTitle">2026年10月</h2><span id="dayCount" class="muted">31日間</span></div>
+<div id="calendar" class="calendar" role="group" aria-label="日付の表示プレビュー"></div>
+<p class="muted" id="dataNotice">※ 日付枠のみ表示。実際の記録は取得していません。</p>
+</section>
+<div id="notice" class="message" role="status" aria-live="polite">画面上の確認だけです。GAS・台帳への変更はありません。</div>
+<footer>🔒 既存の参加者ID・10月皆勤・承認・ガチャ回数／当選履歴・公開GASを保護。開発ブランチ専用プレビュー。</footer>
+</main></body></html>
