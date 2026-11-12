@@ -30,6 +30,18 @@
       "use": "@vercel/static"
     },
     {
+      "src": "mio-attendance-admin-preview.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-attendance-admin-preview.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "tools/mio-attendance-month-plan.mjs",
+      "use": "@vercel/static"
+    },
+    {
       "src": "gas-live-version-inspector.html",
       "use": "@vercel/static"
     },
@@ -426,6 +438,18 @@
     {
       "src": "/gacha-admin-preview.html",
       "dest": "/gacha-admin-preview.html"
+    },
+    {
+      "src": "/mio-attendance-admin-preview.html",
+      "dest": "/mio-attendance-admin-preview.html"
+    },
+    {
+      "src": "/mio-attendance-admin-preview.js",
+      "dest": "/mio-attendance-admin-preview.js"
+    },
+    {
+      "src": "/tools/mio-attendance-month-plan.mjs",
+      "dest": "/tools/mio-attendance-month-plan.mjs"
     },
     {
       "src": "/gas-live-version-inspector.html",
