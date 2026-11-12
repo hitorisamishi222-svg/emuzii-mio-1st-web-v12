@@ -32,6 +32,8 @@ on:
       - tests/mio-gas-operator-dispatch-preflight.test.mjs
       - tools/mio-gas-live-source-audit.mjs
       - tests/mio-live-source-preflight.test.mjs
+      - tools/mio-attendance-month-plan.mjs
+      - tests/mio-attendance-month-plan.test.mjs
       - gas-live-version-inspector.html
       - tests/mio-gas-offline-inspector.test.mjs
 permissions:
@@ -71,7 +73,9 @@ jobs:
           node --check tools/mio-gas-operator-dispatch-preflight.mjs
           node --check tests/mio-gas-operator-dispatch-preflight.test.mjs
           node --check tools/mio-gas-live-source-audit.mjs
-          node --check tests/mio-live-source-preflight.test.mjs
+          node --check tests/mio-live-source-preflight.test.mjs tests/mio-attendance-month-plan.test.mjs
+          node --check tools/mio-attendance-month-plan.mjs
+          node --check tests/mio-attendance-month-plan.test.mjs
           node --check tests/mio-gas-offline-inspector.test.mjs
       - name: Offline-only read and approved baseline preservation
         run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs tests/mio-audit-schema-migration-plan.test.mjs tests/mio-audit-schema-sheets-preflight.test.mjs tests/mio-operator-reconciliation.test.mjs tests/mio-operator-reconciliation-ui.test.mjs tests/mio-admin-preview-no-network.test.mjs tests/mio-gas-live-invalid-identity-repro.test.mjs tests/mio-gas-operator-dispatch-preflight.test.mjs tests/mio-live-source-preflight.test.mjs tests/mio-gas-offline-inspector.test.mjs
