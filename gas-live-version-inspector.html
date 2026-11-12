@@ -31,6 +31,15 @@ ol{padding-left:22px}li{margin:8px 0}[hidden]{display:none!important}.footer{fon
 </ol>
 <p class="sub">注意：同一プロジェクト・同一デプロイと確定できない場合は入力せず停止。「プロジェクトの履歴」を見るだけなら保存や再デプロイは不要です。</p></section>
 <section class="box">
+<h2>🔐 既存デプロイIDの一致確認</h2>
+<p class="sub">Apps Script「デプロイを管理」に表示されたアクティブなWebアプリのデプロイID、または既存WebアプリURLを貼り付けてください。2026年11月7日に確認済みの既存Vercel接続先の<strong>指紋</strong>と、この端末内でのみ比較します。</p>
+<label for="deploymentIdentity">アクティブなデプロイID／WebアプリURL（外部送信なし）</label>
+<input id="deploymentIdentity" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="デプロイIDまたは /exec のURL">
+<div class="buttons"><button type="button" id="verifyDeployment">🔍 IDだけを照合</button><button type="button" id="clearDeployment" class="secondary">入力を消去</button></div>
+<p id="deploymentResult" class="sub" role="status" aria-live="polite">未照合。デプロイIDの値は診断結果にもコピーされません。</p>
+<p class="sub">一致しても現在のVercel設定・公開バージョン16・実ソースを証明しません。管理Read成功と書き込み解放は別途確認が必要です。</p>
+</section>
+<section class="box">
 <h2>公開版コードのローカル診断</h2>
 <label for="version">稼働中と確認できた公開バージョン番号</label>
 <input id="version" type="number" min="1" max="1000000" inputmode="numeric" autocomplete="off" value="16" placeholder="管理画面に表示された番号">
@@ -55,6 +64,42 @@ ol{padding-left:22px}li{margin:8px 0}[hidden]{display:none!important}.footer{fon
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);
+const EXPECTED_DEPLOYMENT_SHA256='56f7a120a7690ae79c9e6b7d7ba711729b46622c19c1d376a573d2a9738099c4';
+// The SHA-256 pin was matched against the existing production GAS URL on
+// 2026-11-07. Never print the entered deployment ID, URL, or its hash.
+// This is a local *historical connection identity* check, not live API proof.
+async function localDeploymentIdentity(raw,expected=EXPECTED_DEPLOYMENT_SHA256){
+ const input=String(raw||'').trim();
+ const url=/^https:\/\/script\.google\.com\/macros\/s\/([A-Za-z0-9_-]{30,160})\/exec$/.exec(input);
+ const id=url?url[1]:/^[A-Za-z0-9_-]{30,160}$/.test(input)?input:null;
+ if(!id)return 'INVALID_FORMAT';
+ if(typeof crypto==='undefined'||!crypto.subtle||typeof TextEncoder==='undefined')return 'CRYPTO_UNAVAILABLE';
+ try{
+  const bytes=new TextEncoder().encode(id);
+  const result=await crypto.subtle.digest('SHA-256',bytes);
+  const hex=Array.from(new Uint8Array(result)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  return hex===expected?'HISTORICAL_TARGET_MATCH':'TARGET_MISMATCH';
+ }catch{return 'CRYPTO_UNAVAILABLE'}
+}
+async function compareDeployment(){
+ const field=$('deploymentIdentity');
+ const value=field.value;
+ field.value='';
+ $('deploymentResult').textContent='照合中…（IDは送信・保存しません）';
+ const status=await localDeploymentIdentity(value);
+ const safe={
+  HISTORICAL_TARGET_MATCH:'一致：過去に照合済みの既存Vercel接続先と同じデプロイIDです。現在の設定やGAS版16のソースは未検証です。',
+  TARGET_MISMATCH:'不一致：既存の接続先と異なる可能性があります。保存・デプロイ・URL変更はしないでください。',
+  INVALID_FORMAT:'入力形式を確認してください。既存デプロイIDまたは /exec で終わるWebアプリURLだけを受け付けます。',
+  CRYPTO_UNAVAILABLE:'このブラウザでは端末内SHA-256を利用できません。IDを送信せず、この判定を中止しました。'
+ };
+ $('deploymentResult').textContent=safe[status]||'検査を終了しました。';
+}
+$('verifyDeployment').addEventListener('click',compareDeployment);
+$('clearDeployment').addEventListener('click',()=>{
+ $('deploymentIdentity').value='';
+ $('deploymentResult').textContent='未照合。入力は消去しました。';
+});
 const actions=['Read','Member','Approve','Grant','Review','Create','Intake'];
 const helperNames=['Str','Name','Sheet','Schema','Values','One','People','Summary','Request','Log','Existing','WriteLog','RecordGrant'];
 const adminFunctions=['mioAdminOps_',...actions.map(x=>'mioAdminOps'+x+'_'),...helperNames.map(x=>'mioAdminOps'+x+'_')];
@@ -166,6 +211,7 @@ function run(){
 $('run').addEventListener('click',run);
 $('erase').addEventListener('click',()=>{
  $('version').value='';$('published').value='';$('editor').value='';$('scope').value='doPost';
+ $('deploymentIdentity').value='';$('deploymentResult').textContent='未照合。入力は消去しました。';
  $('report').textContent='';$('explanation').textContent='';
  safeReport='';$('output').hidden=true;
 });
