@@ -258,3 +258,55 @@ test('owner-observed v16 is a convenience value and never treated as deployment 
  assert.match(html,/publicationAllowed:false/);
  assert.match(html,/liveReadConfirmed:false/);
 });
+
+
+// MIO_LOCAL_DEPLOYMENT_IDENTITY_20261112
+test('offline deployment comparison accepts only the matching hash, never a guessed URL',async()=>{
+ const {createHash,webcrypto}=await import('node:crypto');
+ const {TextEncoder}=await import('node:util');
+ const id='SYNTHETIC_DEPLOYMENT_IDENTIFIER_123456789012345';
+ const expected=createHash('sha256').update(id).digest('hex');
+ const elements=new Map();
+ const el=name=>{if(!elements.has(name))elements.set(name,{value:'',textContent:'',addEventListener(){}});return elements.get(name)};
+ const check=vm.runInNewContext(scripts[0][1]+'\n;localDeploymentIdentity;',{
+  document:{getElementById:el},crypto:webcrypto,TextEncoder
+ },{timeout:1500});
+ assert.equal(await check(id,expected),'HISTORICAL_TARGET_MATCH');
+ assert.equal(await check('https://script.google.com/macros/s/'+id+'/exec',expected),'HISTORICAL_TARGET_MATCH');
+ assert.equal(await check(id+'DIFFERENT',expected),'TARGET_MISMATCH');
+ assert.equal(await check('https://example.invalid/macros/s/'+id+'/exec',expected),'INVALID_FORMAT');
+ assert.equal(await check('https://script.google.com/macros/s/'+id+'/exec?test=true',expected),'INVALID_FORMAT');
+ assert.equal(await check('short-id',expected),'INVALID_FORMAT');
+});
+
+test('offline deployment UI never outputs or retains the raw submitted ID',async()=>{
+ const {webcrypto}=await import('node:crypto');
+ const {TextEncoder}=await import('node:util');
+ const cells=new Map(),element=name=>{
+  if(!cells.has(name))cells.set(name,{value:'',textContent:'',listeners:{},addEventListener(action,fn){this.listeners[action]=fn},click(){return this.listeners.click?.()}});
+  return cells.get(name);
+ };
+ vm.runInNewContext(scripts[0][1],{document:{getElementById:element},crypto:webcrypto,TextEncoder},{timeout:1500});
+ const privateId='SYNTHETIC_DEPLOYMENT_IDENTIFIER_NEVER_OUTPUT_12345';
+ element('deploymentIdentity').value=privateId;
+ await element('verifyDeployment').click();
+ assert.equal(element('deploymentIdentity').value,'');
+ assert.equal(element('deploymentResult').textContent.includes(privateId),false);
+ assert.match(element('deploymentResult').textContent,/不一致|一致/);
+ element('deploymentIdentity').value=privateId;
+ element('clearDeployment').click();
+ assert.equal(element('deploymentIdentity').value,'');
+ assert.match(element('deploymentResult').textContent,/消去しました/);
+});
+
+test('deployment fingerprint is pinned to the existing offline target helper, without network',()=>{
+ const helper=readFileSync(new URL('../tools/mio-gas-connection-target-audit.mjs',import.meta.url),'utf8');
+ const pin=/KNOWN_LIVE_DEPLOYMENT_FINGERPRINT='([a-f0-9]{64})'/.exec(helper)?.[1];
+ const htmlPin=/EXPECTED_DEPLOYMENT_SHA256='([a-f0-9]{64})'/.exec(html)?.[1];
+ assert.ok(pin);
+ assert.equal(htmlPin,pin);
+ assert.match(html,/id="deploymentIdentity" type="password" autocomplete="off"/);
+ assert.match(html,/connect-src 'none'/);
+ assert.match(html,/field\.value='';/);
+ assert.doesNotMatch(html,/\bfetch\s*\(|\bXMLHttpRequest\b|\bsendBeacon\s*\(/);
+});
