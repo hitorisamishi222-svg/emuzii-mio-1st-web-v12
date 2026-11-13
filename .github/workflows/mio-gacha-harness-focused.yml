@@ -8,6 +8,7 @@ on:
     paths:
       - tests/gacha-legacy-recovery.test.mjs
       - tests/browser-registration-status.test.mjs
+      - tests/mio-mg-admin-browser-approved-recovery.test.mjs
       - .github/workflows/mio-gacha-harness-focused.yml
 
 permissions:
@@ -28,6 +29,7 @@ jobs:
           node --check app.js
           node --check gacha-page.js
           node --check tests/browser-registration-status.test.mjs
+          node --check tests/mio-mg-admin-browser-approved-recovery.test.mjs
           node --check tests/gacha-legacy-recovery.test.mjs
       - name: Run corrected browser and gacha offline regressions
-        run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs
+        run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs
