@@ -6,9 +6,8 @@
  * Usage:
  *   node tools/prepare-gas-scoped-merge.mjs ./Code.gs ./Code.review.gs
  *
- * Merges only the registration-scoped differences between the legacy and
- * reviewed sources. The October attendance, checkin and gacha tail remains
- * identical to the input. Any conflict or change in core actions FAILS CLOSED.
+ * Merges only the differences between the repository's legacy and repaired
+ * sources. A conflict or any change in core event actions FAILS CLOSED.
  * The original Code.gs is never edited.
  */
 import {readFileSync, writeFileSync, mkdtempSync, rmSync} from 'node:fs';
@@ -92,21 +91,7 @@ try{
   const improvedPath=join(temporary,'Code.repaired.gs');
   writeFileSync(oldPath,oldSource,'utf8');
   writeFileSync(currentPath,currentSource,'utf8');
-  // The historic v1.9.6 source also contains an unrelated October
-  // attendance change after checkinAction_. This tool is a REGISTRATION
-  // scoped merge, not permission to replace monthly check-in or gacha code.
-  // Construct a patch target from the reviewed registration prefix plus the
-  // exact baseline protected tail; git merge-file then retains the caller's
-  // independent protected-tail edits byte-for-byte.
-  const baselineTail=protectedTail(oldSource);
-  const repairedTail=protectedTail(newSource);
-  if(!baselineTail||!repairedTail){
-    console.error('Cannot find protected source boundary. No output written.');
-    process.exitCode=5;
-  }else{
-  const repairBoundary=newSource.indexOf('\nfunction checkinAction_(');
-  const scopedRepair=newSource.slice(0,repairBoundary)+baselineTail;
-  writeFileSync(improvedPath,scopedRepair,'utf8');
+  writeFileSync(improvedPath,newSource,'utf8');
   const merge=spawnSync('git',['merge-file','-p','--diff3',currentPath,oldPath,improvedPath],
     {encoding:'utf8',maxBuffer:16*1024*1024});
   if(merge.error||merge.status!==0 || /^(?:<{7}|={7}|>{7})/m.test(merge.stdout||'')){
@@ -127,6 +112,5 @@ try{
       console.log('REVIEW ONLY: wrote '+output);
       console.log('No deployment was made; verify live version and back up all GAS files first.');
     }
-  }
   }
 }finally{rmSync(temporary,{recursive:true,force:true});}
