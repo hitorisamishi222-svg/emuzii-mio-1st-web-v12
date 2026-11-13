@@ -1,0 +1,41 @@
+name: MIO gacha and registration focused regression
+
+on:
+  push:
+    branches:
+      - fix/mio-gacha-regression-harness-20261113
+  pull_request:
+    paths:
+      - tests/gacha-legacy-recovery.test.mjs
+      - tests/browser-registration-status.test.mjs
+      - tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - tests/gas-scoped-merge.test.mjs
+      - tests/gacha-release-visual-scope.test.mjs
+      - .github/workflows/mio-gacha-harness-focused.yml
+
+permissions:
+  contents: read
+
+jobs:
+  focused-harness-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Ensure protected application JS parses without modification
+        run: |
+          node --check app.js
+          node --check gacha-page.js
+          node --check tests/browser-registration-status.test.mjs
+          node --check tests/mio-mg-admin-browser-approved-recovery.test.mjs
+          node --check tests/gas-scoped-merge.test.mjs
+          node --check tests/gacha-release-visual-scope.test.mjs
+          node --check tests/gacha-legacy-recovery.test.mjs
+      - name: Install existing project dependencies for the approved-browser module
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Run corrected browser and gacha offline regressions
+        run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs tests/gas-scoped-merge.test.mjs tests/gacha-release-visual-scope.test.mjs
