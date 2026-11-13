@@ -30,6 +30,8 @@ on:
       - tests/mio-gas-live-invalid-identity-repro.test.mjs
       - tools/mio-gas-operator-dispatch-preflight.mjs
       - tests/mio-gas-operator-dispatch-preflight.test.mjs
+      - scripts/mio-gas-source-preflight.mjs
+      - tests/mio-gas-source-preflight.test.mjs
       - tools/mio-gas-live-source-audit.mjs
       - tests/mio-live-source-preflight.test.mjs
       - tools/mio-attendance-month-plan.mjs
@@ -78,6 +80,8 @@ jobs:
           node --check tests/mio-gas-live-invalid-identity-repro.test.mjs
           node --check tools/mio-gas-operator-dispatch-preflight.mjs
           node --check tests/mio-gas-operator-dispatch-preflight.test.mjs
+          node --check scripts/mio-gas-source-preflight.mjs
+          node --check tests/mio-gas-source-preflight.test.mjs
           node --check tools/mio-gas-live-source-audit.mjs
           node --check tests/mio-live-source-preflight.test.mjs
           node --check tools/mio-attendance-month-plan.mjs
@@ -88,7 +92,7 @@ jobs:
           node --check tests/mio-attendance-admin-preview.test.mjs
           node --check tests/mio-gas-offline-inspector.test.mjs
       - name: Offline-only read and approved baseline preservation
-        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs tests/mio-audit-schema-migration-plan.test.mjs tests/mio-audit-schema-sheets-preflight.test.mjs tests/mio-operator-reconciliation.test.mjs tests/mio-operator-reconciliation-ui.test.mjs tests/mio-admin-preview-no-network.test.mjs tests/mio-gas-live-invalid-identity-repro.test.mjs tests/mio-gas-operator-dispatch-preflight.test.mjs tests/mio-live-source-preflight.test.mjs tests/mio-gas-offline-inspector.test.mjs tests/mio-attendance-month-plan.test.mjs tests/mio-attendance-admin-preview.test.mjs tests/mio-attendance-sheet-schema-plan.test.mjs
+        run: node --test tests/mio-web-admin-october-combined.test.mjs tests/mio-admin-livedata-shape-readonly.test.mjs tests/mio-web-admin-schema-gate.test.mjs tests/mio-gas-connection-target-audit.test.mjs tests/mio-gas-deployed-version-audit.test.mjs tests/mio-audit-schema-migration-plan.test.mjs tests/mio-audit-schema-sheets-preflight.test.mjs tests/mio-operator-reconciliation.test.mjs tests/mio-operator-reconciliation-ui.test.mjs tests/mio-admin-preview-no-network.test.mjs tests/mio-gas-live-invalid-identity-repro.test.mjs tests/mio-gas-operator-dispatch-preflight.test.mjs tests/mio-live-source-preflight.test.mjs tests/mio-gas-offline-inspector.test.mjs tests/mio-attendance-month-plan.test.mjs tests/mio-attendance-admin-preview.test.mjs tests/mio-attendance-sheet-schema-plan.test.mjs tests/mio-gas-source-preflight.test.mjs
 
       - name: Production API gate availability (unauthenticated read-only probe)
         run: node tools/mio-production-admin-readiness-probe.mjs
