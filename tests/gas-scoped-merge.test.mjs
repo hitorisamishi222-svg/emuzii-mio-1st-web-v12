@@ -20,23 +20,31 @@ const launch=(source)=>{
   return {status:result.status,stdout:result.stdout,stderr:result.stderr,out,original};
 };
 
-test('legacy baseline merges to precisely the reviewed repair and never overwrites the input',()=>{
+test('legacy baseline must STOP: repaired candidate also changes the protected October checkin handler',()=>{
+  // Never relabel a protected-tail change as a safe registration-only merge.
+  const tail=source=>source.slice(source.indexOf('\nfunction checkinAction_('));
+  assert.notEqual(tail(expected),tail(legacy),'the candidate changes the protected tail');
   const result=launch(legacy);
-  assert.equal(result.status,0,result.stderr);
-  assert.equal(result.out,expected);
-  assert.equal(result.original,legacy);
+  assert.equal(result.status,5,'unreviewed October checkin changes must fail closed');
+  assert.equal(result.out,null,'no review candidate can be emitted');
+  assert.equal(result.original,legacy,'original Code.gs remains untouched');
 });
-test('independent edits to a protected gacha handler remain byte-for-byte intact',()=>{
+test('independent edits to the protected checkin/gacha tail are never silently overwritten',()=>{
   const needle='function checkinAction_(ss,r,d){';
   assert.equal(legacy.split(needle).length,2);
   const current=legacy.replace(needle,needle+'\n  // Independent operator note: keep old checkin and gacha.');
   const result=launch(current);
-  assert.equal(result.status,0,result.stderr);
-  assert.ok(result.out.includes('// Independent operator note'));
-  const tail=s=>s.slice(s.indexOf('\nfunction checkinAction_('));
-  assert.equal(tail(result.out),tail(current));
+  assert.equal(result.status,5,'changing the protected tail must not be auto-merged');
+  assert.equal(result.out,null);
   assert.equal(result.original,current);
 });
+test('already reviewed repair is a no-op merge and preserves all Code.gs bytes',()=>{
+  const result=launch(expected);
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(result.out,expected);
+  assert.equal(result.original,expected);
+});
+
 test('conflicting edits to the registration block require review, not an automatic overwrite',()=>{
   const needle="if(d.action==='register') {";
   assert.equal(legacy.split(needle).length,2);
