@@ -9,6 +9,8 @@ on:
       - tests/gacha-legacy-recovery.test.mjs
       - tests/browser-registration-status.test.mjs
       - tests/mio-mg-admin-browser-approved-recovery.test.mjs
+      - tests/gas-scoped-merge.test.mjs
+      - tests/gacha-release-visual-scope.test.mjs
       - .github/workflows/mio-gacha-harness-focused.yml
 
 permissions:
@@ -30,8 +32,10 @@ jobs:
           node --check gacha-page.js
           node --check tests/browser-registration-status.test.mjs
           node --check tests/mio-mg-admin-browser-approved-recovery.test.mjs
+          node --check tests/gas-scoped-merge.test.mjs
+          node --check tests/gacha-release-visual-scope.test.mjs
           node --check tests/gacha-legacy-recovery.test.mjs
       - name: Install existing project dependencies for the approved-browser module
         run: npm install --no-audit --no-fund --ignore-scripts
       - name: Run corrected browser and gacha offline regressions
-        run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs
+        run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs tests/gas-scoped-merge.test.mjs tests/gacha-release-visual-scope.test.mjs
