@@ -11,7 +11,7 @@ function fixture(extra={}){return {ok:true,participantId:id,confirmed:true,used:
   normalOpen:true,festOpen:true,normal:{ready:true,prizes:[],message:''},
   fest:{ready:true,prizes:[],message:''},...extra}}
 function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[winner],identity=id){
-  const nodes=new Map(),requests=[];
+  const nodes=new Map(),requests=[],confirmations=[];
   function element(name='div'){
     const handlers=new Map();
     return {id:name,hidden:false,disabled:false,style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},
@@ -23,7 +23,10 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   const context=vm.createContext({
     document:{getElementById:$,querySelectorAll:()=>[],createElement:()=>element(),addEventListener(){},hidden:false},
     location:{hostname:'emuzii-mio-1st-web-v12.vercel.app'},
-    window:{matchMedia:()=>({matches:true}),setInterval(){},addEventListener(){},dispatchEvent(){}},
+    window:{matchMedia:()=>({matches:true}),setInterval(){},addEventListener(){},dispatchEvent(){},
+      // A missing committed result must NEVER automatically spend a right.
+      // The participant explicitly declines the second confirmation in this fixture.
+      confirm:text=>{confirmations.push(String(text));return false;}},
     localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
     fetch:async(_path,{body})=>{
       const request=JSON.parse(body);requests.push(request);
@@ -41,7 +44,7 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   assert.ok(original.includes("void boot();"));
   vm.runInContext(original.replace(/void boot\(\);\s*$/,''),context,{filename:'gacha-page.js'});
   vm.runInContext('participant='+JSON.stringify(id)+';',context);
-  return {context,nodes,requests,saved,$};
+  return {context,nodes,requests,confirmations,saved,$};
 }
 async function click(h){
   const button=h.$('retryDraw');button.handlers.get('click')();
@@ -59,9 +62,11 @@ test('recovery only reads saved draw history and never creates a new draw',async
 test('if a draw never committed, preserve pending ID and do not spend another right',async()=>{
   const h=harness(new Map([[key,JSON.stringify(pending)]]),[]);
   await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history']);
+  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog']);
+  assert.equal(h.confirmations.length,1,'a second explicit confirmation is required');
+  assert.match(h.confirmations[0],/ガチャ券を1回使って抽選/);
   assert.deepEqual(JSON.parse(h.saved.get(key)),pending);
-  assert.match(h.$('drawMessage').textContent,/再抽選せず運営/);
+  assert.match(h.$('drawMessage').textContent,/保留/);
   assert.equal(h.$('retryDraw').hidden,false);
 });
 
