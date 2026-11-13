@@ -61,3 +61,15 @@ test('luxury v2.1 is loaded by presentation page, while real operation stays pro
   assert.match(demo,/previewHost/);
   assert.doesNotMatch(demo,/fetch\(['"]\/api\/gacha/);
 });
+
+test('signed-session status API preserves identity even when approved browser recovery is available',()=>{
+  // A byte-hash pin and a behavioral guard make the intent of the approved
+  // light-cookie recovery explicit without weakening existing GAS protections.
+  const status=text('api-status.js');
+  assert.match(status,/const session=readSession\(req\.headers\.cookie,cfg\.secret\)/);
+  assert.match(status,/recoverFromAdminApprovedLightCookie/);
+  assert.match(status,/if\(recovery\.status==='recovered'\)return res\.status\(200\)\.json\(recovery\.data\)/);
+  assert.match(status,/if\(data\.participantId!==session\.id\)throw Error\('identity mismatch'\)/);
+  assert.match(status,/return res\.status\(401\)\.json\(/);
+  assert.doesNotMatch(status,/bridge\(['"](?:register|approve|grant)['"]/);
+});
