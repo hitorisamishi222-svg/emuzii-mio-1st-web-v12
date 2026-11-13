@@ -31,5 +31,7 @@ jobs:
           node --check tests/browser-registration-status.test.mjs
           node --check tests/mio-mg-admin-browser-approved-recovery.test.mjs
           node --check tests/gacha-legacy-recovery.test.mjs
+      - name: Install existing project dependencies for the approved-browser module
+        run: npm install --no-audit --no-fund --ignore-scripts
       - name: Run corrected browser and gacha offline regressions
         run: node --test tests/browser-registration-status.test.mjs tests/gacha-legacy-recovery.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs
