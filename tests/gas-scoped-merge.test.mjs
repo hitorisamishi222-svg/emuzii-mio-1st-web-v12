@@ -20,22 +20,27 @@ const launch=(source)=>{
   return {status:result.status,stdout:result.stdout,stderr:result.stderr,out,original};
 };
 
-test('legacy baseline must STOP: repaired candidate also changes the protected October checkin handler',()=>{
-  // Never relabel a protected-tail change as a safe registration-only merge.
+test('legacy baseline produces registration-only review candidate with October checkin byte-for-byte intact',()=>{
+  // v1.9.6 is a multi-purpose candidate: its October checkin edits are NOT
+  // allowed to sneak into a registration-only offline review.
   const tail=source=>source.slice(source.indexOf('\nfunction checkinAction_('));
-  assert.notEqual(tail(expected),tail(legacy),'the candidate changes the protected tail');
+  assert.notEqual(tail(expected),tail(legacy),'repaired source has unrelated checkin changes');
   const result=launch(legacy);
-  assert.equal(result.status,5,'unreviewed October checkin changes must fail closed');
-  assert.equal(result.out,null,'no review candidate can be emitted');
+  assert.equal(result.status,0,result.stderr);
+  const registrationPrefix=expected.slice(0,expected.indexOf('\nfunction checkinAction_('));
+  assert.equal(result.out,registrationPrefix+tail(legacy),'only the reviewed prefix may change');
+  assert.equal(tail(result.out),tail(legacy));
   assert.equal(result.original,legacy,'original Code.gs remains untouched');
 });
-test('independent edits to the protected checkin/gacha tail are never silently overwritten',()=>{
+test('independent operator edits in checkin and gacha remain byte-for-byte unchanged by scoped review',()=>{
   const needle='function checkinAction_(ss,r,d){';
   assert.equal(legacy.split(needle).length,2);
   const current=legacy.replace(needle,needle+'\n  // Independent operator note: keep old checkin and gacha.');
   const result=launch(current);
-  assert.equal(result.status,5,'changing the protected tail must not be auto-merged');
-  assert.equal(result.out,null);
+  assert.equal(result.status,0,result.stderr);
+  const tail=source=>source.slice(source.indexOf('\nfunction checkinAction_('));
+  assert.equal(tail(result.out),tail(current));
+  assert.ok(result.out.includes('// Independent operator note'));
   assert.equal(result.original,current);
 });
 test('already reviewed repair is a no-op merge and preserves all Code.gs bytes',()=>{
