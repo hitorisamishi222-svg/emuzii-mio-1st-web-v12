@@ -1,0 +1,22 @@
+name: Emergency live gacha gate
+on:
+  push:
+    branches:
+      - fix/mio-gacha-gate-live-20261030
+  pull_request:
+    paths:
+      - APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs
+      - APPS_SCRIPT_Code_v1.9.6_DISABLE_NAME_ONLY_APPROVE.gs
+      - tests/gacha-gate-live-switch.test.mjs
+      - .github/workflows/gacha-gate-live.yml
+jobs:
+  focused-switch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: node --test tests/gacha-gate-live-switch.test.mjs
