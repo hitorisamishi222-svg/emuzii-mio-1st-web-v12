@@ -1,0 +1,79 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_top"><style>:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#19334f}*{box-sizing:border-box}body{margin:0;background:#edf5fb;padding:16px}.wrap{max-width:1080px;margin:auto}h1{font-size:23px;margin:0}h2{font-size:18px;margin:8px 0}small,.muted{color:#55718b}button,input,select{font:inherit}button,.btn{border:0;border-radius:10px;min-height:42px;padding:9px 14px;background:#195789;color:white;font-weight:700;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}.outline{background:#fff;border:1px solid #407da8;color:#174b72}.card{background:white;border:1px solid #bcd5e8;border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 4px 18px #1c416110}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.tabs button{flex:1;min-width:110px}.tabs .active{background:#0b345c}.status{padding:11px 14px;background:#eff4ff;border-left:4px solid #438cc3;border-radius:8px;white-space:pre-wrap}.error{background:#fff0ee;border-color:#d94f40}.good{background:#e4f8e9;border-color:#368557}.table{overflow:auto;max-height:310px;border:1px solid #d0e1ee;border-radius:10px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #e2edf4;white-space:nowrap}th{position:sticky;top:0;background:#e9f4fb;color:#123650}tr[data-pick]{cursor:pointer}tr[data-pick]:hover{background:#eef7ff}input,select{border:1px solid #9fbed6;background:white;padding:10px;border-radius:9px;min-height:44px;min-width:130px}input[type=number]{width:110px;min-width:70px}input[type=checkbox]{min-height:16px;min-width:16px}label{display:block;font-weight:700;margin:8px 0}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:660px){.two{grid-template-columns:1fr}}.hidden{display:none!important}.chip{padding:4px 9px;border-radius:30px;background:#e5f2fb;color:#315574;font-size:13px;font-weight:700}.warn{color:#9c4c16}</style></head><body><div class="wrap"><header class="row"><div><h1>🐳 ガチャ緊急管理</h1><small>10月30日対応｜Google共有権限・2人限定</small></div><button id="reload" class="outline" type="button">↻ 更新</button><span class="chip" id="gate">受付設定取得中…</span></header>
+<p id="status" role="status" class="status">管理データを読み込み中…</p>
+<nav class="row tabs"><button type="button" data-tab="pending" class="active">① 承認・付与</button><button type="button" data-tab="rights">② 残回数</button><button type="button" data-tab="history">③ 当選結果</button></nav>
+<section id="pending" class="panel">
+ <div class="card"><h2>新規・承認待ちの端末</h2><p class="muted">名前を選んで、購入証拠と本人確認後に承認します。ガチャをONにする操作はありません。</p><div class="table"><table><thead><tr><th>名前</th><th>状態</th><th>メンシプ</th><th>紐づけ先</th><th>選択</th></tr></thead><tbody id="pendingBody"></tbody></table></div></div>
+ <div class="card"><h2>本人確認・ガチャ口数を確定</h2><p id="chosen" class="status">まず上の一覧から申請を選んでください。</p>
+  <div class="two"><div><label for="master">紐づけ先MIO-ID</label><select id="master"><option value="">申請者を選択してください</option></select></div><div><label for="m1">1ヶ月型・累計口数</label><input id="m1" type="number" min="0" max="50" value="0"><label for="m3">3ヶ月型・累計口数</label><input id="m3" type="number" min="0" max="50" value="0"></div></div>
+  <p class="muted">「追加口数」ではなく<strong>累計口数</strong>を入力。同じ値を再送しても二重付与しない設計です。名前が同じだけでは本人確認になりません。</p>
+  <label><input id="verified" type="checkbox"> メンシプ購入画面・本人を管理者が確認済み</label>
+  <button id="approve" type="button" disabled>🔐 承認・回数を確定</button>
+  <p class="warn">既存の別ID・同名重複・ログインID不一致がある場合は処理せず、元の台帳で確認してください。</p>
+ </div></section>
+<section id="rights" class="panel hidden"><div class="card"><h2>参加者別のガチャ残回数</h2><label for="rightSearch">名前・MIO-ID検索</label><input id="rightSearch" placeholder="名前または MIO-0000" type="search"><div class="table"><table><thead><tr><th>名前</th><th>ID</th><th>1ヶ月型</th><th>3ヶ月型</th><th>総権利</th><th>残回数</th><th>確認</th></tr></thead><tbody id="rightsBody"></tbody></table></div></div></section>
+<section id="history" class="panel hidden"><div class="card"><h2>抽選結果（全員・最新順）</h2><label for="historySearch">名前・景品・MIO-ID検索</label><input id="historySearch" type="search" placeholder="検索"><div class="table"><table><thead><tr><th>日時</th><th>名前</th><th>通常／ラキフェス</th><th>当選景品</th><th>ID</th><th>状態</th></tr></thead><tbody id="historyBody"></tbody></table></div></div></section>
+<p class="muted">この画面はGoogle Apps Scriptのダイアログで動作します。管理者権限はサーバー側でも毎回検証し、全員の抽選結果は読み取り専用です。</p></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);let data=null,selected=null,busy=false;
+function say(txt,err=false){$('status').textContent=txt;$('status').className='status'+(err?' error':'');}
+function node(tag,text){const e=document.createElement(tag);e.textContent=String(text??'');return e;}
+function table(body,cols,rows,action){const b=$(body);b.replaceChildren();if(!rows.length){const tr=node('tr','');const td=node('td','該当データがありません');td.colSpan=cols;b.append(tr);tr.append(td);return}for(const r of rows){const tr=document.createElement('tr');for(const s of action? r[0]:r){tr.append(node('td',s))}if(action){tr.dataset.pick='yes';const td=document.createElement('td');const btn=node('button','選択');btn.type='button';btn.className='outline';btn.onclick=()=>action(r[1]);td.append(btn);tr.append(td);tr.addEventListener('click',e=>{if(e.target!==btn)action(r[1])})}b.append(tr)}}
+function filteredRows(needle,rows){const q=String(needle||'').trim().toLowerCase();return !q?rows:rows.filter(r=>Object.values(r).some(v=>String(v||'').toLowerCase().includes(q)));}
+function showRights(){if(!data)return;const rows=filteredRows($('rightSearch').value,data.rights);table('rightsBody',7,rows.map(r=>[r.name,r.id,r.m1,r.m3,r.total,r.remaining,r.check]));}
+function showHistory(){if(!data)return;const rows=filteredRows($('historySearch').value,data.history);table('historyBody',6,rows.map(r=>[r.date.replace('T',' ').slice(0,16),r.name,r.mode,r.prize,r.id,r.result]));}
+function selectRegistration(r){
+ selected=r;
+ const matches=data.rights.filter(x=>x.name===r.name);
+ $('chosen').textContent='申請者：'+r.name+'\n現在：'+r.approval+' ／ '+r.membership+'\nWeb登録ID：'+r.webId;
+ const select=$('master');select.replaceChildren();
+ const o=node('option','新しいMIO-IDを発行（既存IDがない人のみ）');o.value='NEW';select.append(o);
+ for(const x of data.masters){const op=node('option',x.id+'｜'+x.name);op.value=x.id;select.append(op)}
+ if(r.masterId&&data.masters.some(x=>x.id===r.masterId))select.value=r.masterId;
+ else if(matches.length===1)select.value=matches[0].id;
+ else select.value='NEW';
+ updateCount();
+ $('verified').checked=false;
+ $('approve').disabled=false;
+}
+function updateCount(){
+ const r=data?.rights?.find(x=>x.id===$('master').value);
+ $('m1').value=r?r.m1:0;$('m3').value=r?r.m3:0;
+}
+function showPending(){
+ if(!data)return;
+ const rows=data.registrations.filter(r=>r.approval==='承認待ち'||r.approval==='承認済み'&&r.membership!=='確認済み');
+ table('pendingBody',5,rows.map(r=>[[r.name,r.approval,r.membership,r.masterId||'未照合'],r]),selectRegistration);
+}
+async function load(){
+ if(busy)return;busy=true;$('reload').disabled=true;say('管理者と台帳を確認しています…');
+ google.script.run.withSuccessHandler(d=>{
+   busy=false;$('reload').disabled=false;
+   if(!d||!d.ok){say('読み込みデータが不正です',true);return}
+   data=d;selected=null;$('approve').disabled=true;
+   $('gate').textContent='通常：'+(d.normalOpen?'ON':'OFF')+' ／ ラキフェス：'+(d.festOpen?'ON':'OFF');
+   say('✅ '+d.actor+' の管理者確認済み。承認待ち・残回数・当選結果を読み込みました。');
+   showPending();showRights();showHistory();
+ }).withFailureHandler(e=>{busy=false;$('reload').disabled=false;say('管理者認証・通信に失敗しました：'+(e?.message||'確認不可'),true)}).gachaRapidSnapshot();
+}
+$('reload').onclick=load;
+$('master').onchange=updateCount;
+$('rightSearch').oninput=showRights;$('historySearch').oninput=showHistory;
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('hidden',x.id!==b.dataset.tab))});
+$('approve').onclick=()=>{
+ if(busy||!data||!selected||!$('verified').checked){say('本人確認チェックを入れてください',true);return}
+ const m1=Number($('m1').value),m3=Number($('m3').value);
+ const targetId=$('master').value,r=data.rights.find(x=>x.id===targetId);
+ if(!targetId||!Number.isSafeInteger(m1)||!Number.isSafeInteger(m3)||m1<0||m3<0){say('MIO-IDと口数を確認してください',true);return}
+ if(!confirm(selected.name+' さんを本人確認済みとして承認し、1ヶ月型'+m1+'口・3ヶ月型'+m3+'口（累計）にしますか？'))return;
+ busy=true;$('approve').disabled=true;
+ google.script.run.withSuccessHandler(result=>{
+  busy=false;say('✅ '+result.name+' さんの承認が完了。購入分累計'+result.purchasedDraws+'回換算／ボーナス含む総権利'+result.totalRights+'回／残り'+result.remaining+'回。ガチャ公開設定は変更していません。');
+  $('verified').checked=false;load();
+ }).withFailureHandler(e=>{
+   busy=false;$('approve').disabled=false;
+   say('⚠️ 完了を確認できません：'+(e?.message||'エラー')+'\n二重付与を防ぐため元台帳を読み直してから操作してください。',true);
+ }).gachaRapidApproveAndGrant({webId:selected.webId,name:selected.name,targetId:targetId,m1:m1,m3:m3,expectedM1:r?r.m1:0,expectedM3:r?r.m3:0,verified:true});
+};
+load();
+</script></body></html>
