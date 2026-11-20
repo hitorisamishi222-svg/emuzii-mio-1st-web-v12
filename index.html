@@ -77,6 +77,25 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 .seo-discovery details{margin:14px 0;border-top:1px solid #d0eaff38;padding-top:11px}
 .seo-discovery summary{cursor:pointer;font-weight:700}
 </style>
+<style id="mioBirthdayCountdownStyle">
+#mioBirthdayCountdown{position:relative;overflow:hidden;text-align:center;padding:16px 14px 22px;background:radial-gradient(circle at 12% 22%,#fff8 0 4px,transparent 5px),radial-gradient(circle at 85% 65%,#fff9 0 7px,transparent 8px),radial-gradient(ellipse at 50% 0%,#fff 0%,#e8f8ff 35%,transparent 76%),linear-gradient(140deg,#b5e6ff,#e7faff,#90d2ff);border-bottom:2px solid #8fd6f7;color:#174a7d;box-shadow:inset 0 -5px 0 #ffffff75}
+#mioBirthdayCountdown::before,#mioBirthdayCountdown::after{content:"✧";position:absolute;top:21px;color:#397fb8;font-size:32px;opacity:.65;pointer-events:none}
+#mioBirthdayCountdown::before{left:8%}#mioBirthdayCountdown::after{right:8%}
+#mioBirthdayCountdown .birthday-kicker{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.16em;color:#1f5c8e;margin:0;background:#ffffffb8;border:1px solid #8accec;border-radius:999px;padding:5px 11px}
+#mioBirthdayCountdown .birthday-motif{display:flex;align-items:center;justify-content:space-between;gap:2px;width:100%;margin:5px 0 3px;font-size:clamp(32px,4vw,38px);line-height:1.2}
+#mioBirthdayCountdown .birthday-motif span{flex:0 0 auto}
+#mioBirthdayCountdown .birthday-motif span:nth-child(even){font-size:clamp(40px,4.8vw,47px)}
+@media(max-width:600px){#mioBirthdayCountdown .birthday-motif span:nth-child(n+8){display:none}}
+@media(min-width:601px) and (max-width:900px){#mioBirthdayCountdown .birthday-motif span:nth-child(n+12){display:none}}
+#mioBirthdayCountdown h2{font-family:"Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;letter-spacing:.05em;font-weight:850;font-size:clamp(20px,4vw,29px);line-height:1.35;margin:4px 0 10px;color:#174a7d}
+#mioBirthdayCountdown .birthday-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;max-width:370px;margin:auto}
+#mioBirthdayCountdown .birthday-tile{background:linear-gradient(160deg,#fff,#ecfaff);border:2px solid #82c7f1;border-radius:19px;padding:8px 2px 6px;min-width:0;box-shadow:0 4px 0 #87c3ea,0 6px 12px #2267a018}
+#mioBirthdayCountdown .birthday-value{display:block;font-size:clamp(25px,6vw,36px);line-height:1.1;font-variant-numeric:tabular-nums;font-family:"Arial Rounded MT Bold","Yu Gothic",sans-serif;color:#15528c;font-weight:900}
+#mioBirthdayCountdown .birthday-unit{font-size:11px;font-weight:750;color:#275d87}
+#mioBirthdayCountdown .birthday-date{font-size:12px;font-weight:700;color:#24577c;margin:13px 0 0}
+#mioBirthdayCountdown [hidden]{display:none!important}
+@media(max-width:420px){#mioBirthdayCountdown::before,#mioBirthdayCountdown::after{font-size:18px;top:13px}#mioBirthdayCountdown::before{left:3%}#mioBirthdayCountdown::after{right:3%}}
+</style>
 </head>
 <body class="next-integrated next-experience">
 <a class="skip-link" href="#main">本文へ移動</a>
@@ -86,6 +105,40 @@ body>main,body>.wrap,body>.mio-art-banner,body>.site-header,body>.bottom-nav,bod
 <nav class="desktop-nav" aria-label="メインメニュー"><a href="#events">イベント</a><a href="#music">記念曲</a><a href="#progress">参加状況</a><a href="/gacha.html">ガチャ</a><a href="/gallery.html">翠央っ子ギャラリー</a></nav>
 </div></header>
 <main id="main">
+<section id="mioBirthdayCountdown" aria-labelledby="mioBirthdayTitle">
+<p class="birthday-kicker">MIO BIRTHDAY COUNTDOWN</p>
+<div class="birthday-motif" aria-hidden="true"><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span><span>🐳</span><span>💎</span></div>
+<h2 id="mioBirthdayTitle">翠央のお誕生日まで</h2>
+<div class="birthday-grid" id="mioBirthdayGrid" role="timer" aria-label="誕生日までの残り時間" aria-live="off">
+<div class="birthday-tile"><strong id="mioBirthdayDays" class="birthday-value">--</strong><span class="birthday-unit">日</span></div>
+<div class="birthday-tile"><strong id="mioBirthdayHours" class="birthday-value">--</strong><span class="birthday-unit">時間</span></div>
+<div class="birthday-tile"><strong id="mioBirthdayMinutes" class="birthday-value">--</strong><span class="birthday-unit">分</span></div>
+<div class="birthday-tile"><strong id="mioBirthdaySeconds" class="birthday-value">--</strong><span class="birthday-unit">秒</span></div>
+</div>
+<p class="birthday-date"><time datetime="2026-12-13T00:00:00+09:00">2026年12月13日（日）</time> ✦ みんなでお祝いしよう！</p>
+<noscript><p>12月13日（日）0時までのカウントダウンです。</p></noscript>
+</section>
+<script>
+(function(){
+  const target=Date.parse('2026-12-13T00:00:00+09:00');
+  const end=target+86400000;
+  const title=document.getElementById('mioBirthdayTitle');
+  const grid=document.getElementById('mioBirthdayGrid');
+  const fields=['Days','Hours','Minutes','Seconds'].map(k=>document.getElementById('mioBirthday'+k));
+  function tick(){
+    const now=Date.now();
+    if(now>=target){
+      grid.hidden=true;
+      title.textContent=now<end?'翠央、お誕生日おめでとう！':'翠央のお誕生日をお祝いしました ✦';
+      return;
+    }
+    const seconds=Math.ceil((target-now)/1000);
+    const values=[Math.floor(seconds/86400),Math.floor(seconds%86400/3600),Math.floor(seconds%3600/60),seconds%60];
+    values.forEach((v,i)=>{fields[i].textContent=String(v).padStart(2,'0')});
+  }
+  tick();setInterval(tick,250);
+})();
+</script>
 <section class="mio-hero cinematic-hero" aria-label="翠央1周年の記念トップ画面">
 <picture class="hero-picture" aria-hidden="true"><source media="(max-width: 700px)" srcset="/assets/mio-bg-princess.jpg"><img src="/assets/mio-bg-princess.jpg" alt="" fetchpriority="high" decoding="async"></picture>
 <div class="hero-shade" aria-hidden="true"></div><div class="cinema-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
