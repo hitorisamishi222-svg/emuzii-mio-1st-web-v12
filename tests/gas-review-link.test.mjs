@@ -3,7 +3,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {stageReviewLink,finalizeReviewLink} from '../review-link-core.mjs';
+import {stageReviewLink,finalizeReviewLink,reviewFingerprint} from '../review-link-core.mjs';
 import {setLightSessionCookie} from '../registration-light-session.js';
 
 const webId='MIO-W-'+'a'.repeat(24),mioId='MIO-9999',name='TEST-ONLY';
@@ -73,4 +73,18 @@ test('interruption before approved status does not authorize session or repeat a
 test('core and real GAS scripts integrated with signed light session, lost response and protected records',async()=>{const f=fixture(),before=f.protectedState();let a=null,lose=true;const review={browser_id:webId,name,name_key:name,token_hash:tokenHash,reason:'同名登録あり・本人確認待ち',normal_exists:false};const store={readReview:async()=>review,getApproval:async()=>a,stage:async v=>a={...v,state:'staged'},complete:async()=>a.state='complete'};
  const callGAS=async(action,d)=>{if(action==='status'){const r=f.sheets[web].rows[2];return {ok:true,participantId:r[0],name:r[2],status:r[5],progress:{attendanceConfirmedDays:[],attendanceLockedDays:[],gacha:{confirmed:true,total:2,remaining:2}}}}const res=f.call(action,d);if(action==='mioReviewLinkApprove'&&lose){lose=false;throw Error('lost-response')}return res};
  await stageReviewLink({...target,operationId,onSiteVerified:true,memberConfirmed:true},{store,callGAS,actor});assert.equal(f.sheets[web].rows.length,2);const finish=()=>finalizeReviewLink({cookie:setLightSessionCookie(webId,token,secret),lightSecret:secret,store,callGAS});await assert.rejects(finish(),/lost-response/);assert.equal(a.state,'staged');assert.equal((await finish()).status,'recovered');assert.equal(a.state,'complete');assert.equal(f.sheets[audit].rows.length,2);assert.equal(f.sheets[web].rows.length,3);assert.deepEqual(f.protectedState(),before);
+});
+test('stored operator decision and actual GAS adapter: no linked browser, two existing rights, safe first visit',async()=>{
+ const f=fixture(),before=f.protectedState();let a=null;
+ const review={browser_id:webId,name,name_key:name,token_hash:tokenHash,reason:'同名登録あり・本人確認待ち',normal_exists:false};
+ const decision={...target,operationId,memberConfirmed:true,actor:'owner-instruction:'+'1'.repeat(64),fingerprint:reviewFingerprint(review)};
+ const calls=[];
+ const store={readReview:async()=>review,getHistorical:async()=>decision,getApproval:async()=>a,stage:async v=>a={...v,state:'staged'},complete:async()=>a.state='complete'};
+ const callGAS=async(action,d)=>{calls.push(action);if(action==='status'){const r=f.sheets[web].rows[2];return {ok:true,participantId:r[0],name:r[2],status:r[5],progress:{attendanceConfirmedDays:[],attendanceLockedDays:[],gacha:{confirmed:true,total:2,remaining:2}}}}return f.call(action,d)};
+ const finish=()=>finalizeReviewLink({cookie:setLightSessionCookie(webId,token,secret),lightSecret:secret,store,callGAS});
+ assert.equal((await finalizeReviewLink({cookie:'',lightSecret:secret,store,callGAS})).status,'no-light-cookie');assert.deepEqual(calls,[]);
+ f.flags.release=false;await assert.rejects(finish(),/gas-schema-locked/);assert.equal(a,null);assert.deepEqual(f.protectedState(),before);
+ f.flags.release=true;assert.equal((await finish()).status,'recovered');assert.equal(a.state,'complete');assert.equal(a.actor,decision.actor);
+ assert.equal(f.sheets[web].rows.length,3);assert.equal(f.sheets[audit].rows.length,2);assert.equal(f.call('mioReviewLinkRead').roster[0].gacha.remaining,2);
+ await finish();assert.equal(f.sheets[web].rows.length,3);assert.equal(f.sheets[audit].rows.length,2);assert.deepEqual(f.protectedState(),before);
 });
