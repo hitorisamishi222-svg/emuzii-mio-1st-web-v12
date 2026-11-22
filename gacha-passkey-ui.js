@@ -2,7 +2,8 @@
 (()=>{
  const status=document.getElementById('passkeyStatus'),loginBtn=document.getElementById('passkeyLogin'),registerBtn=document.getElementById('passkeyRegister');
  if(!status||!loginBtn||!registerBtn)return;
- const say=(s)=>status.textContent=s;
+ const say=s=>status.textContent=s;
+ const registerLabel=registerBtn.textContent,loginLabel=loginBtn.textContent;
  const decode=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));
  const encode=v=>btoa(String.fromCharCode(...new Uint8Array(v))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
  const creation=o=>typeof PublicKeyCredential.parseCreationOptionsFromJSON==='function'?PublicKeyCredential.parseCreationOptionsFromJSON(o):{
@@ -32,37 +33,58 @@
   say('✅ Face IDで管理者としてログインしました。');
  }
  function buttons(disabled){loginBtn.disabled=disabled;registerBtn.disabled=disabled}
- loginBtn.onclick=async()=>{
-  buttons(true);say('Face IDで本人確認しています…');
+ let prepared=null,busy=false;
+ function reset(){
+  prepared=null;
+  registerBtn.textContent=registerLabel;
+  loginBtn.textContent=loginLabel;
+ }
+ function describe(e,phase){
+  if(e?.name==='NotAllowedError')return phase+'：端末認証が完了しませんでした。再度準備して試してください。';
+  if(e?.name==='SecurityError')return phase+'：ブラウザが認証元を許可しませんでした。';
+  if(e?.name==='InvalidStateError')return phase+'：既存パスキーを確認してください。';
+  return phase+'：'+(e?.message||'認証を完了できません');
+ }
+ async function step(kind){
+  if(busy)return;
+  const registering=kind==='register',btn=registering?registerBtn:loginBtn;
+  const adminCode=registering?$('code').value:'';
+  if(registering&&adminCode.length<20){reset();say('初回登録は管理者コードを入力してください。');return}
+  busy=true;buttons(true);
+  let phase='サーバー認証準備';
   try{
-   const start=await post('loginOptions');
-   const credential=await navigator.credentials.get({publicKey:authentication(start.options)});
+   const ready=prepared&&prepared.kind===kind&&prepared.code===adminCode&&Date.now()<prepared.expires;
+   if(!ready){
+    reset();say('サーバーで認証を準備しています…');
+    const start=await post(registering?'registerOptions':'loginOptions',registering?{code:adminCode}:{});
+    const options=registering?creation(start.options):authentication(start.options);
+    prepared={kind,code:adminCode,options,expires:Date.now()+45000};
+    btn.textContent=registering?'Face IDを登録する（確認）':'Face IDで本人確認する';
+    say(registering?'準備完了。もう一度ボタンを押すと、この端末を管理者として登録します。':'準備完了。もう一度ボタンを押して端末認証してください。');
+    return;
+   }
+   const options=prepared.options;
+   reset();
+   phase='端末認証';
+   say('端末のFace ID・パスキー認証を待っています…');
+   // The second, independent native click initiates WebAuthn directly:
+   // no confirm dialog, fetch, timer, or awaited operation precedes it.
+   const credential=await (registering?navigator.credentials.create({publicKey:options}):navigator.credentials.get({publicKey:options}));
    if(!credential)throw Error('認証がキャンセルされました');
-   await post('loginVerify',{credential:authJSON(credential)});
-   await refreshGate();
-  }catch(e){say('Face IDログイン：'+e.message);buttons(false)}
-  finally{buttons(false)}
- };
- registerBtn.onclick=async()=>{
-  const adminCode=$('code').value;
-  if(adminCode.length<20){say('初回登録は管理者コードを入力してください。');return}
-  if(!confirm('この端末のFace ID・パスキーをガチャ管理者として登録しますか？'))return;
-  buttons(true);say('パスキーを登録しています…');
-  try{
-   const start=await post('registerOptions',{code:adminCode});
-   const credential=await navigator.credentials.create({publicKey:creation(start.options)});
-   if(!credential)throw Error('登録がキャンセルされました');
-   await post('registerVerify',{code:adminCode,credential:regJSON(credential)});
-   await refreshGate();
-  }catch(e){say('Face ID登録：'+e.message)}
-  finally{buttons(false)}
- };
+   phase='サーバー認証確認';say('端末認証を受け取りました。サーバーで確認中…');
+   await post(registering?'registerVerify':'loginVerify',registering?{code:adminCode,credential:regJSON(credential)}:{credential:authJSON(credential)});
+   phase='管理画面の接続';await refreshGate();
+  }catch(e){reset();say(describe(e,phase))}
+  finally{busy=false;buttons(false)}
+ }
+ loginBtn.onclick=()=>step('login');
+ registerBtn.onclick=()=>step('register');
  const supported=window.isSecureContext&&typeof PublicKeyCredential!=='undefined'&&!!navigator.credentials;
  if(!supported){say('この端末・ブラウザはパスキー非対応です。管理者コードでログインできます。');buttons(true);return}
  buttons(true);
  post('status').then(s=>{
   buttons(false);
-  if(s.authenticated)refreshGate();
-  else say('初回は管理者コードを入力し「Face IDを登録」。次回からFace IDでログインできます。');
+  if(s.authenticated)refreshGate().catch(e=>say(describe(e,'管理画面の接続')));
+  else say('初回は管理者コードを入力し「Face IDを登録」。準備後、もう一度押して端末認証します。');
  }).catch(()=>{buttons(true);say('Face IDは現在準備中です。これまでの管理者コードは使用できます。')});
 })();
