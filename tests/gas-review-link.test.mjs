@@ -28,10 +28,10 @@ class Sheet {
  };}
 }
 function fixture(){
- const flags={release:true,locked:true,next:null};
+ const flags={release:true,locked:true,next:null,ownerTarget:''};
  const lock={hasLock:()=>flags.locked};
  const context=vm.createContext({
-  PropertiesService:{getScriptProperties:()=>({getProperty:()=>flags.release?'verified-existing-review-link-v1':''})},
+  PropertiesService:{getScriptProperties:()=>({getProperty:key=>key==='MIO_REVIEW_LINK_GAS_RELEASE'&&flags.release?'verified-existing-review-link-v1':key==='MIO_OWNER_REVIEW_LINK_GAS_TARGET'?flags.ownerTarget:''})},
   SpreadsheetApp:{flush(){}},equal_:(a,b)=>a===b,safeText_:v=>v,
   // These are simulated host helpers, not a substitute for a deployed GAS test.
   loginIdFormat_:v=>{const clean=String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return /^MIO[A-Z0-9]{8}$/.test(clean)?clean.slice(3):clean},loginIdDisplay_:v=>`MIO-${v.slice(0,4)}-${v.slice(4)}`,newLoginId_:()=> 'ABCD1234',
@@ -58,6 +58,7 @@ test('actual GAS adapter scoped read returns rights; readonly',()=>{const f=fixt
 test('missing audit tab refuses all mutations, no automatic creation',()=>{const f=fixture();delete f.sheets[audit];assert.equal(f.call('mioReviewLinkRead').auditReady,false);assert.throws(f.prepare,/監査台帳/);assert.equal(f.sheets[web].rows.length,2)});
 test('actual column mismatch refuses write',()=>{const f=fixture();f.sheets[gacha].rows[0][7]='wrong';assert.equal(f.call('mioReviewLinkRead').schemaReady,false);assert.throws(f.prepare,/監査台帳/)});
 test('specific GAS release remains off until verified',()=>{const f=fixture();f.flags.release=false;assert.equal(f.call('mioReviewLinkRead').releaseReady,false);assert.throws(f.prepare,/停止中/);assert.equal(f.sheets[web].rows.length,2)});
+test('owner-only GAS target refuses other operations and preserves unrelated records',()=>{const f=fixture(),before=f.protectedState();f.flags.release=false;f.flags.ownerTarget=webId+':'+mioId+':'+operationId;assert.equal(f.call('mioReviewLinkRead').releaseReady,false);assert.equal(f.call('mioReviewLinkRead',{...target,operationId}).releaseReady,true);assert.throws(()=>f.prepare({...write,operationId:'0'.repeat(32)}),/停止中/);assert.throws(()=>f.prepare({...write,mioId:'MIO-9998'}),/停止中/);assert.equal(f.prepare().status,'承認待ち');assert.equal(f.approve().status,'承認済み');assert.equal(f.approve().replayed,true);assert.equal(f.call('mioReviewLinkRead',{...target,operationId}).roster[0].gacha.remaining,2);assert.deepEqual(f.protectedState(),before)});
 test('lock and unknown action both fail closed',()=>{const f=fixture();assert.throws(()=>f.call('webAdminOpsGrant',write),/未対応/);f.flags.locked=false;assert.throws(f.prepare,/排他/)});
 test('mismatched or duplicate roster cannot prepare',()=>{const f=fixture();assert.throws(()=>f.prepare({...write,name:'WRONG'}),/参加者/);f.sheets[people].rows.push([mioId,name,...blank(8)]);assert.throws(f.prepare,/参加者/)});
 test('different browser even when not approved is protected',()=>{const f=fixture();f.sheets[web].rows[1][7]=mioId;assert.throws(f.prepare,/別の既存ブラウザ/);assert.equal(f.sheets[web].rows.length,2)});

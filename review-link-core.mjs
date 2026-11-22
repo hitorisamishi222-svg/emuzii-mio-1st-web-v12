@@ -18,6 +18,14 @@ export function releaseOK(env){
  (env.MIO_GACHA_ADMIN_OPS_RELEASE==='verified-existing-gas-ops-20261030'||
   env.MIO_GACHA_ONSITE_RELEASE==='operator-verified-onsite-20261105');
 }
+// A single pre-existing, audited owner decision may be released separately
+// without enabling general gacha administration. Never accept a client ID.
+export function ownerReleaseOperation(env){
+ return env.VERCEL_ENV==='production'&&env.MIO_REVIEW_LINK_RELEASE==='verified-review-link-v1'&&
+ env.MIO_HISTORICAL_APPROVAL_RELEASE==='verified-historical-approval-v1'&&
+ env.MIO_AUTO_RECOVER_VERIFIED_TWO==='enabled'&&op.test(env.MIO_OWNER_REVIEW_LINK_OPERATION||'')?
+ env.MIO_OWNER_REVIEW_LINK_OPERATION:null;
+}
 function validateInput(x){
  if(!x||!browser.test(x.webId)||!master.test(x.mioId)||!op.test(x.operationId)||
  typeof x.name!=='string'||!x.name.trim()||x.name.length>40||/[\x00-\x1f]/.test(x.name)||
@@ -38,7 +46,7 @@ function rosterProof(gas,a){
  if(pending.length>1||pending.some(r=>r.webId!==a.webId||r.mioId!==a.mioId||r.name!==a.name||r.status!=='承認待ち'))fail('pending-browser-conflict');
  return {g,alreadyApproved:related.length===1};
 }
-const target=a=>({webId:a.webId,mioId:a.mioId,name:a.name});
+const target=a=>({webId:a.webId,mioId:a.mioId,name:a.name,operationId:a.operationId});
 const ownerDecision=a=>/^owner-instruction:[a-f0-9]{64}$/.test(a||'');
 const passkeyDecision=a=>/^passkey:[a-f0-9]{64}$/.test(a||'');
 const sameDecision=(a,b)=>a&&b&&['webId','mioId','name','operationId','actor','fingerprint'].every(k=>a[k]===b[k]);
@@ -57,7 +65,8 @@ export async function stageReviewLink(input,{store,callGAS,actor,now=Date.now()}
 
 // Invoked only from the original browser's ordinary status request. No public
 // body parameters select a person, token, MIO-ID, or approval.
-export async function finalizeReviewLink({cookie,lightSecret,store,callGAS,now=Date.now()}){
+export async function finalizeReviewLink({cookie,lightSecret,store,callGAS,now=Date.now(),ownerOperation=null}){
+ if(ownerOperation!==null&&!op.test(ownerOperation))fail('owner-release-invalid');
  const session=readLightSession(cookie,lightSecret);
  if(!session)return {status:'no-light-cookie'};
  let a=await store.getApproval(session.id);
@@ -67,6 +76,7 @@ export async function finalizeReviewLink({cookie,lightSecret,store,callGAS,now=D
  if(!a&&typeof store.getHistorical==='function'){
   const h=await store.getHistorical(session.id);
   if(h){
+   if(ownerOperation!==null&&(!ownerDecision(h.actor)||h.operationId!==ownerOperation))return {status:'no-approval'};
    const r=await store.readReview(session.id);
    if(!r||r.normal_exists||r.browser_id!==h.webId||r.name!==h.name||r.reason!=='同名登録あり・本人確認待ち'||r.token_hash!==digest(session.token)||reviewFingerprint(r)!==h.fingerprint)fail('review-proof-failed');
    if(ownerDecision(h.actor)){
@@ -81,6 +91,7 @@ export async function finalizeReviewLink({cookie,lightSecret,store,callGAS,now=D
   }
  }
  if(!a)return {status:'no-approval'};
+ if(ownerOperation!==null&&(!ownerDecision(a.actor)||a.operationId!==ownerOperation))return {status:'no-approval'};
  if(a.webId!==session.id||!master.test(a.mioId)||!op.test(a.operationId)||
  !['staged','complete'].includes(a.state)||(!passkeyDecision(a.actor)&&!ownerDecision(a.actor)))fail('approval-conflict');
  if(ownerDecision(a.actor)&&(!store.getHistorical||!sameDecision(a,await store.getHistorical(session.id))))fail('owner-decision-missing');

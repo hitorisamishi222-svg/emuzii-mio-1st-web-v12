@@ -10,12 +10,14 @@ const gitBlobSha=name=>{
   return createHash('sha1').update(Buffer.from('blob '+buffer.length+'\0')).update(buffer).digest('hex');
 };
 
-test('visual-only candidate retains exact production GAS, authenticated bridge and draw API',()=>{
+test('review-link candidate retains exact production GAS, authenticated bridge and draw API',()=>{
   const expected=new Map([
     ['APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs','6dd7e5fc938fb0150c5067760f37972613f3075b'],
     ['api-gacha.js','8ecaad8f735119145bec1823f3bb27dc8224f4a7'],
     ['bridge.js','b3311e007eb94c40e11d8d64faca68061e7266ba'],
-    ['api-status.js','5b390d05edf1bf9e8cbb008c38838cbb3573517f']
+    // This is an auth-integration release, not the old visual-only release.
+    // Pin the separately reviewed status wrapper from PR #94, not a wildcard.
+    ['api-status.js','ad3f7dfb6aa0e0fb8ad4af5b1d6f743fa5db4b25']
   ]);
   for(const [filename,hash] of expected){
     assert.equal(gitBlobSha(filename),hash,filename+' must stay byte-for-byte unchanged');
@@ -49,7 +51,7 @@ test('luxury v2.1 is loaded by presentation page, while real operation stays pro
   const html=text('gacha.html');
   assert.match(html,/href="\/gacha-deluxe-v21\.css"/);
   assert.match(html,/src="\/gacha-deluxe-v21\.js"/);
-  assert.match(html,/src="\/gacha-page\.js"/);
+  assert.match(html,/src="\/gacha-page\.js(?:\?[^\"]*)?"/);
   assert.match(html,/src="\/gacha-effects-v19\.js"/);
   const demo=text('gacha-deluxe-v21.js');
   assert.match(demo,/new URLSearchParams\(location\.search\)\.get\('deluxeDemo'\)!=='1'/);

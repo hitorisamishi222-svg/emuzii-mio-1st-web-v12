@@ -2,7 +2,8 @@
 import pg from 'pg';
 const {Pool}=pg;
 import {normalizeName,validateEnrollment} from './registration-light-store.js';
-import {releaseOK,reviewFingerprint} from './review-link-core.mjs';
+import {releaseOK,ownerReleaseOperation,reviewFingerprint} from './review-link-core.mjs';
+import {historicalApprovalRelease} from './historical-approval-core.mjs';
 import {reviewLinkStore} from './review-link-store.js';
 let pool;
 function database(){
@@ -52,12 +53,13 @@ export async function statusV201(browserId,tokenHash,{db=database()}={}){
  if(!row||row.token_hash!==tokenHash)throw Error('unauthorized');
  // Keep the original review record intact. Only completed, exact, audited
  // link records can project an approved view. Missing migration fails closed.
- if(review.rows.length===1&&!normal.rows.length&&releaseOK(process.env)){
+ const general=releaseOK(process.env),ownerOperation=ownerReleaseOperation(process.env);
+ if(review.rows.length===1&&!normal.rows.length&&(general||ownerOperation)){
   try{
    const store=reviewLinkStore(db),exact=await store.readReview(browserId);
    const a=await store.getApproval(browserId);
    const h=/^owner-instruction:[a-f0-9]{64}$/.test(a?.actor||'')?await reviewLinkStore(db).getHistorical(browserId):null;
-   const auditOK=/^passkey:[a-f0-9]{64}$/.test(a?.actor||'')||(h&&['webId','mioId','name','operationId','actor','fingerprint'].every(k=>a[k]===h[k]));
+   const auditOK=(general&&/^passkey:[a-f0-9]{64}$/.test(a?.actor||''))||(historicalApprovalRelease(process.env)&&h&&(general||a.operationId===ownerOperation)&&['webId','mioId','name','operationId','actor','fingerprint'].every(k=>a[k]===h[k]));
    if(exact&&!exact.normal_exists&&exact.browser_id===row.browser_id&&exact.token_hash===tokenHash&&exact.name===row.name&&a?.state==='complete'&&a.fingerprint===reviewFingerprint(exact)&&a.name===row.name&&
       /^MIO-\d{4}$/.test(a.mioId)&&auditOK)
     return {ok:true,participantId:row.browser_id,name:row.name,status:'承認済み',pendingReview:false,
