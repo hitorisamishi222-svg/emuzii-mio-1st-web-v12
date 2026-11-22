@@ -119,6 +119,19 @@ main{max-width:760px}
 
 
 
+<section id="reviewLinkPanel">
+ <h2>既存申請の仮承認・本登録</h2>
+ <p>仮承認と本登録で権利は変わりません。本人端末の正規認証情報が照合された時に本登録へ切り替えます。既存参加者・ガチャ・当選履歴はそのままです。</p>
+ <form id="reviewLinkForm">
+  <label>Web参加ID <input id="reviewLinkWeb" required pattern="MIO-W-[a-f0-9]{24}" autocomplete="off"></label>
+  <label>既存MIO-ID <input id="reviewLinkMaster" required pattern="MIO-[0-9]{4}" autocomplete="off"></label>
+  <label>申請と台帳の正確な名前 <input id="reviewLinkName" required maxlength="40" autocomplete="off"></label>
+  <label><input id="reviewLinkVerified" type="checkbox" required> 本人・既存ID・メンシプを管理者が確認済み</label>
+  <button type="submit" id="reviewLinkSubmit">過去データの運営承認を保存</button>
+  <button type="button" id="reviewLinkStatus">反映状態を確認</button>
+ </form>
+ <p id="reviewLinkNotice" role="status" aria-live="polite">Face ID認証後に操作してください。</p>
+</section>
 </main><script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -168,4 +181,5 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/review-link-ui.js" defer></script></body></html>
+

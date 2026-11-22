@@ -2,6 +2,8 @@
 import pg from 'pg';
 const {Pool}=pg;
 import {normalizeName,validateEnrollment} from './registration-light-store.js';
+import {releaseOK,reviewFingerprint} from './review-link-core.mjs';
+import {reviewLinkStore} from './review-link-store.js';
 let pool;
 function database(){
  if(!process.env.MIO_REGISTRATION_DATABASE_URL)throw Error('db not configured');
@@ -45,9 +47,22 @@ export async function registerV201(input,{db=database()}={}){
 export async function statusV201(browserId,tokenHash,{db=database()}={}){
  validateEnrollment({browserId,tokenHash,name:'-',loginId:''});
  const normal=await db.query('SELECT browser_id,token_hash,name,status,integrated_participant_id,approved_by,approved_at FROM mio_registration_v2 WHERE browser_id=$1',[browserId]);
- const review=await db.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
+ const review=await db.query('SELECT browser_id,token_hash,name,name_key,reason FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
  const row=review.rows[0]||normal.rows[0];
  if(!row||row.token_hash!==tokenHash)throw Error('unauthorized');
+ // Keep the original review record intact. Only completed, exact, audited
+ // link records can project an approved view. Missing migration fails closed.
+ if(review.rows.length===1&&!normal.rows.length&&releaseOK(process.env)){
+  try{
+   const a=await reviewLinkStore(db).getApproval(browserId);
+   const h=/^owner-instruction:[a-f0-9]{64}$/.test(a?.actor||'')?await reviewLinkStore(db).getHistorical(browserId):null;
+   const auditOK=/^passkey:[a-f0-9]{64}$/.test(a?.actor||'')||(h&&['webId','mioId','name','operationId','actor','fingerprint'].every(k=>a[k]===h[k]));
+   if(a?.state==='complete'&&a.fingerprint===reviewFingerprint(row)&&a.name===row.name&&
+      /^MIO-\d{4}$/.test(a.mioId)&&auditOK)
+    return {ok:true,participantId:row.browser_id,name:row.name,status:'承認済み',pendingReview:false,
+     attendanceGrantVerified:true,integratedParticipantId:a.mioId};
+  }catch{/* unchanged pending review */}
+ }
  const pendingReview=!!review.rows.length;
  const approved=normal.rows[0];
  const grantVerified=!pendingReview&&row.status==='承認済み'&&
@@ -60,3 +75,4 @@ export async function statusV201(browserId,tokenHash,{db=database()}={}){
   attendanceGrantVerified:grantVerified,
   integratedParticipantId:grantVerified?approved.integrated_participant_id:null};
 }
+
