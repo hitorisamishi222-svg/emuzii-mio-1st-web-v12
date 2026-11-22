@@ -1,5 +1,13 @@
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 import {recoverFromAdminApprovedLightCookie} from './mio-admin-approved-light-recovery.js';
+import {recoverStagedReview} from './review-link-recovery.js';
+
+async function recover(req,res){
+  let r;
+  try{r=await recoverFromAdminApprovedLightCookie({req,res,config:process.env});}catch{r={status:'failed'};}
+  if(r.status==='recovered')return r;
+  return recoverStagedReview({req,res,config:process.env});
+}
 
 export default async function handler(req,res){
   const cfg=prepare(req,res);
@@ -8,7 +16,7 @@ export default async function handler(req,res){
   if(!session){
     let recovery;
     try{
-      recovery=await recoverFromAdminApprovedLightCookie({req,res,config:process.env});
+      recovery=await recover(req,res);
     }catch{
       recovery={status:'failed'};
     }
@@ -29,7 +37,7 @@ export default async function handler(req,res){
     // Only the independently verified, allowlisted light session can recover.
     let recovery;
     try{
-      recovery=await recoverFromAdminApprovedLightCookie({req,res,config:process.env});
+      recovery=await recover(req,res);
     }catch{
       recovery={status:'failed'};
     }
@@ -37,3 +45,4 @@ export default async function handler(req,res){
     return res.status(502).json({ok:false,error:'⚠️ 一時的な通信エラーの可能性があります。ページを再読み込みして、もう一度お試しください。再登録は不要です。登録情報・ガチャ回数・当選履歴は、この再確認操作では変更されません。改善しない場合は管理者にご連絡ください。'});
   }
 }
+

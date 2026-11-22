@@ -84,6 +84,12 @@ const protectedTail=(source)=>{
   const start=source.indexOf('\nfunction checkinAction_(');
   return start<0?null:source.slice(start);
 };
+// The repaired archive also contains an independent attendance change.
+// Never include that change in a registration-only patch.
+const repairHeadEnd=newSource.indexOf('\nfunction checkinAction_(');
+const legacyTail=protectedTail(oldSource);
+if(repairHeadEnd<0||!legacyTail){console.error('Cannot isolate registration patch.');process.exit(3);}
+const scopedRepair=newSource.slice(0,repairHeadEnd)+legacyTail;
 const temporary=mkdtempSync(join(tmpdir(),'mio-gas-merge-'));
 try{
   const oldPath=join(temporary,'Code.legacy.gs');
@@ -91,7 +97,7 @@ try{
   const improvedPath=join(temporary,'Code.repaired.gs');
   writeFileSync(oldPath,oldSource,'utf8');
   writeFileSync(currentPath,currentSource,'utf8');
-  writeFileSync(improvedPath,newSource,'utf8');
+  writeFileSync(improvedPath,scopedRepair,'utf8');
   const merge=spawnSync('git',['merge-file','-p','--diff3',currentPath,oldPath,improvedPath],
     {encoding:'utf8',maxBuffer:16*1024*1024});
   if(merge.error||merge.status!==0 || /^(?:<{7}|={7}|>{7})/m.test(merge.stdout||'')){

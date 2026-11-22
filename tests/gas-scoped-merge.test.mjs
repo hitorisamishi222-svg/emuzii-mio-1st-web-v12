@@ -20,10 +20,13 @@ const launch=(source)=>{
   return {status:result.status,stdout:result.stdout,stderr:result.stderr,out,original};
 };
 
-test('legacy baseline merges to precisely the reviewed repair and never overwrites the input',()=>{
+test('legacy baseline merges only the reviewed registration repair and preserves protected tail',()=>{
   const result=launch(legacy);
   assert.equal(result.status,0,result.stderr);
-  assert.equal(result.out,expected);
+  const marker='\nfunction checkinAction_(';
+  const tail=s=>s.slice(s.indexOf(marker));
+  assert.notEqual(tail(legacy),tail(expected),'archive includes an independent protected change');
+  assert.equal(result.out,expected.slice(0,expected.indexOf(marker))+tail(legacy));
   assert.equal(result.original,legacy);
 });
 test('independent edits to a protected gacha handler remain byte-for-byte intact',()=>{
