@@ -1,0 +1,22 @@
+name: MIO registration test harness focus
+on:
+  pull_request:
+    paths:
+      - 'tests/browser-registration-status.test.mjs'
+      - 'tests/mio-mg-admin-browser-approved-recovery.test.mjs'
+      - '.github/workflows/mio-registration-harness-focus.yml'
+  push:
+    branches:
+      - feature/mio-regression-test-harness-20261106
+jobs:
+  verify-current-session-and-denial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing test dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify registration read-only status and authorised-browser regression
+        run: node --test tests/browser-registration-status.test.mjs tests/mio-mg-admin-browser-approved-recovery.test.mjs
