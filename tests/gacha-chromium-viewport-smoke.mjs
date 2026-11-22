@@ -161,7 +161,9 @@ try{
   assert.ok(Math.abs(smallClosed.y-smallBefore.y)<2&&Math.abs(smallClosed.scroll-smallBefore.scroll)<2,
     '375px iPhone prize closing must not move viewport');
   console.log('PASS: 375x812 iPhone viewport, button visible, prize open/close no page motion');
-  assert.equal(requests.filter(url=>/\/api\/gacha|\/api\/status/.test(url)).length,0,'demo must not request live API');
+  const liveApiRequests=requests.filter(url=>/\/api\/gacha|\/api\/status/.test(url));
+  console.log('LIVE_API_REQUEST_DIAGNOSTIC '+JSON.stringify(liveApiRequests));
+  assert.equal(liveApiRequests.length,0,'demo must not request live API');
   console.log('PASS: '+(remoteOrigin?'Vercel preview CDN':'local')+' Chrome 390x844, 27 JPEGs, 2 prize reveals, close, no page motion, no live APIs');
   console.log(JSON.stringify({before,first,closed,second,requests:requests.length}));
 }finally{

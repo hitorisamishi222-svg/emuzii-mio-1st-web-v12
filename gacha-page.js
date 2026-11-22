@@ -7,24 +7,58 @@ function parse(text){try{return text?JSON.parse(text):{}}catch{return {ok:false,
 async function post(path,body={}){
   const retryableRead=path==='/api/status'||(path==='/api/gacha'&&['catalog','history'].includes(body.action));
   for(let attempt=0;attempt<3;attempt++){
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    // A lost reply must not hold the draw UI indefinitely. Aborting the browser
+    // request does NOT cancel a possibly committed GAS draw: keep its drawId.
+    const deadline=controller?setTimeout(()=>controller.abort(),retryableRead?15000:35000):null;
     try{
-      const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body)});
+      const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'same-origin',cache:'no-store',body:JSON.stringify(body),...(controller?{signal:controller.signal}:{})});
       const d=parse(await r.text());
       if(!r.ok){const e=Error(d.error||'通信に失敗しました');e.status=r.status;throw e}
       return d
     }catch(e){
-      const transient=e.status===502||e.status===504||
+      const transient=[408,429,500,502,503,504].includes(e.status)||
         (e.status===409&&/処理中|連携先に接続できません|連携処理を完了できませんでした|タイムアウト/.test(String(e.message||'')))||
-        (e.status==null&&e instanceof TypeError);
+        (e.status==null&&(e instanceof TypeError||e.name==='AbortError'));
       if(!retryableRead||!transient||attempt===2)throw e;
       await new Promise(resolve=>setTimeout(resolve,1800*(attempt+1)+Math.random()*2200));
+    }finally{
+      if(deadline!==null)clearTimeout(deadline);
     }
   }
 }
 function note(t){$('drawMessage').textContent=t||''}
-function remember(){try{return JSON.parse(localStorage.getItem(pendingKey())||'null')}catch{return null}}
+function remember(){
+  // Corrupt or unreadable local storage must not be treated as "no pending draw".
+  // Never invent a fresh drawId when a previous request may have committed.
+  try{
+    const raw=localStorage.getItem(pendingKey());
+    if(raw===null)return null;
+    const value=JSON.parse(raw);
+    return value&&typeof value==='object'?value:{drawId:'',mode:''};
+  }catch{return {drawId:'',mode:''}}
+}
 function forget(){try{localStorage.removeItem(pendingKey())}catch{}}
 function safeImage(url){return typeof url==='string'&&/^https:\/\//i.test(url)?url:''}
+
+// One pending ID is the only safe recovery token: a lost reply may have been committed.
+const retryLabel='▶ もう一度ガチャを回す';
+const connectionMessage='回線の状態が不安定です。抽選結果とガチャ券を確認して、もう一度ガチャを回してください。';
+const returnedMessage='回線の状態が悪いため、再抽選いたします。尚、1回分のガチャ券は戻っています。下の「もう一度ガチャを回す」を押してください。';
+function validPending(p){return !!p&&/^[a-f0-9]{32}$/.test(p.drawId||'')&&['通常','ラキフェス'].includes(p.mode)}
+function validCount(v){return (typeof v==='number'||(typeof v==='string'&&/^(0|[1-9][0-9]*)$/.test(v)))&&Number.isSafeInteger(Number(v))&&Number(v)>=0}
+function validHistoryWinner(x,p){return x&&x.drawId===p.drawId&&x.mode===p.mode&&typeof x.prize==='string'&&!!x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0}
+function validDrawResponse(d,p){return !!d&&d.ok===true&&d.participantId===participant&&d.drawId===p.drawId&&d.mode===p.mode&&
+ typeof d.prize==='string'&&!!d.prize.trim()&&Number.isSafeInteger(Number(d.ordinal))&&Number(d.ordinal)>0&&
+ validCount(d.remaining)}
+function noTicketSpent(c,p){return validPending(p)&&Number.isSafeInteger(p.beforeRemaining)&&Number.isSafeInteger(p.beforeUsed)&&
+ c?.participantId===participant&&c.confirmed===true&&validCount(c.remaining)&&validCount(c.used)&&Number(c.remaining)===p.beforeRemaining&&Number(c.used)===p.beforeUsed}
+function showRetry(){const retry=$('retryDraw');retry.hidden=false;retry.disabled=busy;retry.textContent=retryLabel;
+ $('drawNormal').disabled=true;$('drawFest').disabled=true;$('reloadGacha').disabled=true}
+function showRecoveredWinner(x,p){renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
+ prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),image:String(x.image||''),replayed:true});
+ forget();$('retryDraw').hidden=true;$('reloadGacha').disabled=false;note('前回の当選結果を表示しています。ガチャ券の二重消費はありません。')}
+
 function rarityKey(v){const r=String(v||'').toUpperCase();return r.includes('UR')?'ur':r.includes('SR')?'sr':r==='R'||r.includes('レア')?'r':'n'}
 function clearEffects(){const stage=$('gachaStage');stage?.classList.remove('draw-active','royal-charge','royal-release','royal-climax','royal-sequence-complete','reveal','rarity-n','rarity-r','rarity-sr','rarity-ur');document.querySelectorAll('.gacha-particle,.gacha-flash,.gacha-ring').forEach(x=>x.remove())}
 function particles(count,kind){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const stage=$('gachaStage');if(!stage)return;for(let i=0;i<count;i++){const x=document.createElement('i');x.className=`gacha-particle ${kind}`;x.style.setProperty('--x',`${Math.random()*100}%`);x.style.setProperty('--dx',`${(Math.random()-.5)*260}px`);x.style.setProperty('--delay',`${Math.random()*.35}s`);x.style.setProperty('--dur',`${1.05+Math.random()*1.25}s`);x.textContent=Math.random()>.46?'✦':Math.random()>.5?'◆':'★';stage.append(x);setTimeout(()=>x.remove(),3000)}}
@@ -48,59 +82,108 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function renderCatalog(target,c){target.replaceChildren();const p=document.createElement('p');p.className='catalog-status';p.textContent=c.message;target.append(p);for(const x of c.prizes||[]){const row=document.createElement('div');row.className='prize';const image=safeImage(x.image);if(image){const img=document.createElement('img');img.src=image;img.alt=x.name||'';img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});row.append(img)}const meta=document.createElement('div');const n=document.createElement('strong');n.textContent=x.name;const s=document.createElement('span');s.textContent=`${x.rarity?x.rarity+' · ':''}${x.chance}%`;meta.append(n,s);row.append(meta);target.append(row)}}
 function renderResult(d){lastResult=d;const stage=$('gachaStage'),card=$('drawResultCard'),img=$('drawResultImage');stage.classList.toggle('is-fest',d.mode==='ラキフェス');revealEffect(d.rarity,d.mode);card.hidden=false;card.classList.remove('result-pop');void card.offsetWidth;card.classList.add('result-pop');$('drawRarity').textContent=d.rarity||'';$('drawPrizeName').textContent=d.prize||'当選';$('drawOrdinal').textContent=`${d.ordinal}回目${d.replayed?'（確認済み結果）':''}`;const image=safeImage(d.image);if(image){img.src=image;img.alt=d.prize||'当選景品';img.hidden=false;img.onerror=()=>{img.hidden=true}}else{img.hidden=true;img.removeAttribute('src')}window.dispatchEvent(new CustomEvent('mio:gacha-result-shown',{detail:{rarity:d.rarity,mode:d.mode}}));/* The winner appears over the fixed machine; do not scroll. */}
 function setButtons(c){
-  if(!$('drawResultCard').hidden){$('drawNormal').disabled=true;$('drawFest').disabled=true;return;}
-  if(busy){note('ガチャ情報の更新中です。少し待ってからもう一度押してください。');return;}
-  if(confirming){note('抽選の確認画面で操作を完了してください。');return;}
-  const pending=remember(),start=Number(c.festAvailableFrom)||5,normalOpen=c.normalOpen===true,festOpen=c.festOpen===true;
-  // Always explain why a button is locked, including on iOS where disabled taps do nothing.
-  const reason=!c.confirmed?'管理者の承認待ち':Number(c.remaining)<1?'残り回数がありません':pending?'前回のガチャを再開してください':!normalOpen&&!festOpen?'管理画面で受付停止中':!c.normal?.ready&&!c.fest?.ready?'景品が未設定':'';
+  const pending=remember(),resultVisible=!$('drawResultCard').hidden;
+  if(resultVisible){
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').hidden=true;return;
+  }
+  if(pending){
+    showRetry();
+    if(!validPending(pending)){
+      $('retryDraw').disabled=true;
+      note('前回の抽選記録を確認しています。券を追加消費せず、安全に確認するためお待ちください。');
+    }
+    return
+  }
+  $('retryDraw').hidden=true;
+  $('reloadGacha').disabled=false;
+  if(busy||confirming){$('drawNormal').disabled=true;$('drawFest').disabled=true;return}
+  const start=Number(c.festAvailableFrom)||5,normalOpen=c.normalOpen===true,festOpen=c.festOpen===true;
+  const reason=!c.confirmed?'管理者の承認待ち':Number(c.remaining)<1?'残り回数がありません':!normalOpen&&!festOpen?'管理画面で受付停止中':!c.normal?.ready&&!c.fest?.ready?'景品が未設定':'';
   for(const id of ['drawNormal','drawFest']){$(id).setAttribute('aria-description',reason||'抽選できます');$(id).title=reason||'';}
-  $('drawNormal').disabled=!!pending||!normalOpen||!c.confirmed||c.remaining<1||!c.normal.ready;
-  $('drawFest').disabled=!!pending||!festOpen||!c.confirmed||c.remaining<1||!c.festUnlocked||!c.fest.ready;
+  $('drawNormal').disabled=!normalOpen||!c.confirmed||c.remaining<1||!c.normal.ready;
+  $('drawFest').disabled=!festOpen||!c.confirmed||c.remaining<1||!c.festUnlocked||!c.fest.ready;
   $('drawNormal').textContent=normalOpen?'メンシプガチャを引く':'メンシプガチャ（停止中）';
   $('drawFest').textContent=!festOpen?'ラキフェス（停止中）':c.festUnlocked?'ラキフェスを引く':`${start}回目から解放`;
-  $('retryDraw').hidden=!pending;$('retryDraw').textContent='▶ 前回のガチャを再開する'
 }
 function statusText(c){if(c.gateConfigured===false)return '管理者のガチャ公開設定が接続されていません。運営に連絡してください。';const start=Number(c.festAvailableFrom)||5,next=Number(c.nextOrdinal)||1;if(!c.confirmed)return 'メンシプ購入の確認をお待ちください。';if(c.remaining<1)return 'ガチャ権利をすべて使用済みです。';if(!c.normalOpen&&!c.festOpen)return 'メンシプガチャ／ラキフェスは現在停止中です。';if(!c.normal.ready&&!c.fest.ready)return '景品設定中です。';if(!c.festEntitled)return c.normalOpen?`メンシプガチャを利用できます。総ガチャ権利${start}回以上でラキフェス対象になります。`:'メンシプガチャは現在停止中です。';if(!c.festUnlocked)return c.normalOpen?`ラキフェス対象です。あと${Math.max(0,start-next)}回メンシプガチャを引くと、${start}回目からラキフェスを選べます。`:'メンシプガチャは現在停止中です。';if(c.normalOpen&&c.festOpen)return `${start}回目以降です。メンシプガチャ／ラキフェスを選んで抽選できます。`;if(c.festOpen)return 'ラキフェスのみ受付中です。';return 'メンシプガチャのみ受付中です。'}
 async function loadCatalog(includeHistory=true){
   if(busy)return false;
   busy=true;
+  let healthy=false;
   try{
     const c=await post('/api/gacha',{action:'catalog'});
+    if(c.ok!==true||!c.participantId||!validCount(c.remaining)||!validCount(c.used)||
+       (participant&&c.participantId!==participant)||typeof c.normal!=='object'||!c.normal||
+       typeof c.fest!=='object'||!c.fest||!Array.isArray(c.normal.prizes)||!Array.isArray(c.fest.prizes))
+      throw Error('catalog unavailable');
     lastCatalog=c;participant=c.participantId;$('drawPanel').hidden=false;
     $('drawRemaining').textContent=`ガチャ残り ${c.remaining}回 ／ 使用済み ${c.used}回`;
-    renderCatalog($('normalPrizes'),c.normal);renderCatalog($('festPrizes'),c.fest);
-    setButtons(c);
+    renderCatalog($('normalPrizes'),c.normal);
+    renderCatalog($('festPrizes'),c.fest);
     const pending=remember();
-    note(pending?'前回のガチャが途中で止まっています。下の「前回のガチャを再開する」を押してね。':statusText(c));
-    if(!includeHistory)return true;
+    if(!includeHistory){
+      note(pending?connectionMessage:statusText(c));
+      healthy=true;
+      return true
+    }
     const h=await post('/api/gacha',{action:'history'});
-    // A completed draw may have reached GAS even when its browser reply failed.
-    // Only release the device-local pending lock after confirming the SAME
-    // draw ID and mode in this authenticated user's committed history.
-    if(pending&&h.participantId===participant&&Array.isArray(h.history)){
-      const matching=h.history.filter(x=>x.drawId===pending.drawId&&x.mode===pending.mode&&
-        typeof x.prize==='string'&&x.prize.trim()&&Number.isSafeInteger(Number(x.ordinal))&&Number(x.ordinal)>0);
-      if(matching.length===1){
-        forget();
-        note('前回の当選結果を確認できました。当選履歴に保存済みです。通常のガチャに戻れます。');
+    if(h.ok!==true||h.participantId!==participant||!Array.isArray(h.history))throw Error('history unavailable');
+    if(pending){
+      if(!validPending(pending)){
+        note('前回の抽選記録を確認しています。ガチャ券は勝手に消費しません。');
+        showRetry();$('retryDraw').disabled=true;
+      }else{
+        const rows=h.history.filter(x=>x.drawId===pending.drawId);
+        if(rows.length===1&&validHistoryWinner(rows[0],pending)){
+          // Even when the response to draw was lost, the confirmed winner is visible.
+          showRecoveredWinner(rows[0],pending);
+        }else{
+          showRetry();
+          // "Returned" is shown only after BOTH authenticated history and
+          // entitlement counters show that the previous draw has not spent a right.
+          note(rows.length===0&&noTicketSpent(c,pending)?returnedMessage:connectionMessage);
+        }
       }
+    }else if($('drawResultCard').hidden){
+      note(statusText(c));
     }
     $('drawHistory').replaceChildren();
-    if(!h.history?.length){
-      const li=document.createElement('li');li.className='muted';li.textContent='まだ当選履歴はありません。';$('drawHistory').append(li)
+    if(!h.history.length){
+      const li=document.createElement('li');li.className='muted';
+      li.textContent='まだ当選履歴はありません。';$('drawHistory').append(li);
     }else for(const x of h.history){
       const li=document.createElement('li');li.className=`history-item ${x.mode==='ラキフェス'?'fest-history':''}`;
       const image=safeImage(x.image);
       if(image){const img=document.createElement('img');img.src=image;img.alt='';img.loading='lazy';img.addEventListener('error',()=>img.remove(),{once:true});li.append(img)}
       const text=document.createElement('span'),title=document.createElement('strong'),sub=document.createElement('small');
       title.textContent=x.prize;sub.textContent=`${x.ordinal}回目 · ${x.mode}${x.rarity?' · '+x.rarity:''}${x.date?' · '+fmtDate(x.date):''}`;
-      text.append(title,sub);li.append(text);$('drawHistory').append(li)
+      text.append(title,sub);li.append(text);$('drawHistory').append(li);
     }
+    healthy=true;
     return true
   }catch(e){
-    $('drawPanel').hidden=false;$('drawNormal').disabled=true;$('drawFest').disabled=true;note(e.message);return false
-  }finally{busy=false;if(lastCatalog&&!confirming)setButtons(lastCatalog)}
+    $('drawPanel').hidden=false;
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;
+    if(remember()){
+      showRetry();
+      if(!validPending(remember()))$('retryDraw').disabled=true;
+      note(connectionMessage);
+    }else if(!$('drawResultCard').hidden){
+      note('当選結果は表示済みです。景品を閉じた後に残回数を更新してください。');
+    }else note('通信が不安定です。回線がつながったら「設定・当選履歴を更新」を押してください。');
+    return false
+  }finally{
+    busy=false;
+    if(healthy&&lastCatalog&&!confirming)setButtons(lastCatalog);
+    else{
+      $('drawNormal').disabled=true;$('drawFest').disabled=true;
+      if(remember()){
+        $('retryDraw').hidden=false;
+        $('retryDraw').disabled=!validPending(remember());
+        $('retryDraw').textContent=retryLabel;
+      }
+    }
+  }
 }
 async function execute(pending){
   if(isPreview){note('テスト版では実抽選できません。演出デモを利用してください。');return;}
@@ -113,64 +196,63 @@ async function execute(pending){
   note(reduceMotion?'演出を短縮しています。抽選結果を確認しています…':fest?'✨ ラキフェス開演…ステージが覚醒しています！':'💎 クリスタル共鳴中…抽選しています！');
   
   try{
-    const d=await post('/api/gacha',{action:'draw',...pending});
+    const d=await post('/api/gacha',{action:'draw',drawId:pending.drawId,mode:pending.mode});
+    if(!validDrawResponse(d,pending))throw Error('draw receipt incomplete');
     const wait=skipRequested?0:Math.max(0,minMs-(performance.now()-started));if(wait)await new Promise(resolve=>{const timer=setTimeout(()=>{skipWaitResolve=null;resolve()},wait);skipWaitResolve=()=>{clearTimeout(timer);skipWaitResolve=null;resolve()}});
-    renderResult(d);forget();
-    note(`${d.ordinal}回目の結果を保存しました。残り ${Math.max(0,Number(d.remaining??0))}回。`);
-    refreshAfter=true
+    renderResult(d);forget();$('retryDraw').hidden=true;$('reloadGacha').disabled=false;
+    $('drawRemaining').textContent=`ガチャ残り ${d.remaining}回（確定）`;
+    note(`${d.ordinal}回目の当選結果を表示しています。残り ${d.remaining}回。`);
+    refreshAfter=false
   }catch(e){
-    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(`${e.message}。管理画面の設定を再確認しています。`);$('retryDraw').hidden=false;refreshAfter=true
+    clearEffects();window.dispatchEvent(new Event('mio:gacha-animation-error'));note(connectionMessage);showRetry();refreshAfter=true
   }finally{
     clearAnimationTimers();$('crystal').classList.remove('spinning');$('gachaStage').classList.remove('draw-active','royal-charge','royal-release','royal-climax');busy=false;$('skipDraw').hidden=true;$('skipDraw').disabled=true;$('retryDraw').disabled=false;
     if(refreshAfter)await loadCatalog();else if(lastCatalog)setButtons(lastCatalog)
   }
 }
-// The old retry button re-sent action:'draw'. That can create a new draw if
-// the first request never committed. Recover ONLY from existing signed history.
-// A missing or old result stays pending; never spend another right implicitly.
+// The previous response may be lost after GAS committed a prize. First check
+// authenticated history; only on an EXPLICIT retry tap may we resend the SAME
+// drawId. GAS ScriptLock and drawId lookup prevent a second committed draw.
 async function recoverPrevious(p){
   if(isPreview||busy)return;
-  if(!p||!/^[a-f0-9]{32}$/.test(p.drawId)||!['通常','ラキフェス'].includes(p.mode)){
-    note('前回のガチャの記録を確認できませんでした。何度も押さず、運営に画面を見せてください。');
+  if(!validPending(p)){
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;
+    $('retryDraw').hidden=false;$('retryDraw').disabled=true;
+    note('前回の抽選記録を確認できません。ガチャ券は減らさず、記録の確認が必要です。');
     return;
   }
   busy=true;$('drawNormal').disabled=true;$('drawFest').disabled=true;$('retryDraw').disabled=true;
-  let recovered=false,resume=false;
-  note('前回のガチャの結果を確認しています。');
+  let found=false,retrySameId=false;
+  note('前回の当選結果とガチャ券を確認しています…');
   try{
-    const history=await post('/api/gacha',{action:'history'});
-    if(history.participantId!==participant||!Array.isArray(history.history))throw Error('当選履歴の本人確認に失敗しました');
-    const rows=history.history.filter(x=>x.drawId===p.drawId);
-    if(rows.length===0){
-      // No committed result for this exact ID. Reusing this ID is idempotent on
-      // the GAS backend (ScriptLock + drawId lookup before an append).
-      // Require an explicit second confirmation before spending a right.
+    const h=await post('/api/gacha',{action:'history'});
+    if(h.ok!==true||h.participantId!==participant||!Array.isArray(h.history))throw Error('history unavailable');
+    const rows=h.history.filter(x=>x.drawId===p.drawId);
+    if(rows.length===1&&validHistoryWinner(rows[0],p)){
+      showRecoveredWinner(rows[0],p);found=true;
+    }else if(rows.length===0){
       const c=await post('/api/gacha',{action:'catalog'});
-      if(c.participantId!==participant||c.confirmed!==true||
-         !Number.isSafeInteger(Number(c.remaining))||Number(c.remaining)<1||
-         !Number.isSafeInteger(Number(c.used))||Number(c.used)<0)
-        throw Error('前回の抽選と残り回数を運営が確認中です');
-      resume=window.confirm('前回のガチャの続きを再開します。\n\nすでに当選していれば、同じ結果を表示します。\nまだ当選が決まっていなければ、ガチャ券を1回使って抽選します。\n\n続けますか？');
-      if(!resume)note('今回は再開せずに保留しました。続けるときは「前回のガチャを再開する」を押してね。');
-    }else if(rows.length===1&&rows[0].mode===p.mode&&typeof rows[0].prize==='string'&&rows[0].prize.trim()&&
-      Number.isSafeInteger(Number(rows[0].ordinal))&&Number(rows[0].ordinal)>=1){
-      const x=rows[0];
-      renderResult({participantId:participant,drawId:p.drawId,mode:p.mode,
-        prize:x.prize,ordinal:Number(x.ordinal),rarity:String(x.rarity||''),
-        image:String(x.image||''),replayed:true});
-      forget();recovered=true;
-      note('前回の当選結果を確認できたよ！景品を閉じると次のガチャに進めます。');
+      if(c.ok!==true||c.participantId!==participant||c.confirmed!==true||
+         !validCount(c.remaining)||!validCount(c.used))
+        throw Error('entitlement not confirmed');
+      // Even if current remaining is zero, a previously COMMITTED draw could be
+      // older than the 50-history display window. GAS checks the SAME drawId
+      // before any ticket availability check and returns the original winner.
+      // If uncommitted and no tickets remain, GAS refuses a new draw safely.
+      retrySameId=true;
     }else{
-      throw Error('前回の抽選履歴に不整合があります');
+      note('前回の当選履歴を確認中です。ガチャ券を二重に使わず、もう一度確認できます。');
+      showRetry();
     }
   }catch(e){
-    $('retryDraw').hidden=false;
-    note((e?.message||'当選結果を確認できませんでした')+'。同じ抽選IDを保持しています。運営へご連絡ください。');
+    note(connectionMessage);
+    showRetry();
   }finally{
-    busy=false;$('retryDraw').disabled=false;
-    if(recovered)void loadCatalog();
-    else if(resume)void execute(p);
-    else if(lastCatalog)setButtons(lastCatalog);
+    busy=false;
+    if(found){$('retryDraw').hidden=true;$('reloadGacha').disabled=false;
+      $('drawRemaining').textContent='前回の当選結果を確認しました。景品を閉じると残回数を更新します。';}
+    else if(retrySameId){void execute(p);}
+    else{if(lastCatalog)setButtons(lastCatalog);if(validPending(remember()))$('retryDraw').disabled=false;}
   }
 }
 function confirmDraw(mode){
@@ -234,7 +316,13 @@ async function start(mode){
   let approved=false;
   try{approved=await confirmDraw(mode)}finally{confirming=false}
   if(!approved){setButtons(c);note(statusText(c));return}
-  const p={drawId:makeId(),mode};
+  // Another tab may have started a draw while this confirmation was visible.
+  // Never issue a second drawId if a pending one appeared during the dialog.
+  if(remember()){
+    showRetry();note('別の画面で開始したガチャの結果を先に確認します。もう一度ガチャを回すを押してください。');
+    return;
+  }
+  const p={drawId:makeId(),mode,beforeRemaining:Number(c.remaining),beforeUsed:Number(c.used)};
   try{localStorage.setItem(pendingKey(),JSON.stringify(p))}catch{
     note('端末に抽選確認情報を保存できないため開始しません。');
     setButtons(c);
@@ -266,10 +354,19 @@ function refreshOpenState(){
   void loadCatalog(false);
 }
 window.setInterval(refreshOpenState,30000);
-window.addEventListener('mio:gacha-prize-closed',()=>{if(lastCatalog&&!busy)setButtons(lastCatalog)});
+window.addEventListener('mio:gacha-prize-closed',()=>{if(isPreview)return; if(!busy){$('drawNormal').disabled=true;$('drawFest').disabled=true;void loadCatalog()}});
 window.addEventListener('focus',refreshOpenState);
 document.addEventListener('visibilitychange',refreshOpenState);
 window.addEventListener('pageshow',refreshOpenState);
-async function boot(){if(isPreview){$('previewNotice').hidden=false;$('gachaUserMessage').textContent='プレビューでは実抽選・参加者情報・景品情報を読み込みません。';$('drawPanel').hidden=false;$('drawRemaining').textContent='プレビュー表示（抽選停止中）';$('drawNormal').disabled=true;$('drawFest').disabled=true;$('drawNormal').textContent='メンシプガチャ（プレビュー）';$('drawFest').textContent='ラキフェス（プレビュー）';$('drawMessage').textContent='筐体と画面レイアウトの確認用です。抽選はできません。';$('gachaCatalogModes').hidden=true;$('retryDraw').hidden=true;$('reloadGacha').hidden=true;$('gachaHistoryTitle').hidden=true;$('drawHistory').hidden=true;$('gachaHistoryNote').hidden=true;return;}try{const s=await post('/api/status');participant=s.participantId;$('gachaUser').hidden=false;$('gachaApproval').textContent=s.status||'';$('gachaName').textContent=(s.name||'')+' さん';$('gachaId').textContent='登録ID：'+s.participantId;if(s.status!=='承認済み'){throw Error('管理者の登録承認後にガチャを利用できます。')}$('gachaUserMessage').textContent='ガチャ情報を読み込んでいます…';const loaded=await loadCatalog();$('gachaUserMessage').textContent=loaded?'ガチャ情報を表示しました。':'ガチャ設定を取得できませんでした。下の「設定・当選履歴を更新」から再試行してください。'}catch(e){$('gachaUserMessage').textContent=e.status===401?'このブラウザには登録時の認証情報がありません。LINE・Xから開いている場合は、メニューの「ブラウザで開く」から登録時のSafari・Chromeなどで開き直してください。再登録は不要です。':e.message;$('gachaUserMessage').classList.add('error')}}
+window.addEventListener('storage',event=>{
+  if(event.key!==pendingKey()||!participant||busy||!$('drawResultCard').hidden)return;
+  if(remember()){showRetry();note(connectionMessage)}
+  else{
+    // The other tab finished its transaction; do not enable stale draw buttons.
+    $('drawNormal').disabled=true;$('drawFest').disabled=true;
+    void loadCatalog();
+  }
+});
+async function boot(){if(isPreview){$('previewNotice').hidden=false;$('gachaUserMessage').textContent='プレビューでは実抽選・参加者情報・景品情報を読み込みません。';$('drawPanel').hidden=false;$('drawRemaining').textContent='プレビュー表示（抽選停止中）';$('drawNormal').disabled=true;$('drawFest').disabled=true;$('drawNormal').textContent='メンシプガチャ（プレビュー）';$('drawFest').textContent='ラキフェス（プレビュー）';$('drawMessage').textContent='筐体と画面レイアウトの確認用です。抽選はできません。';$('gachaCatalogModes').hidden=true;$('retryDraw').hidden=true;$('reloadGacha').hidden=true;$('gachaHistoryTitle').hidden=true;$('drawHistory').hidden=true;$('gachaHistoryNote').hidden=true;return;}try{const s=await post('/api/status');participant=s.participantId;$('gachaUser').hidden=false;$('gachaApproval').textContent=s.status||'';$('gachaName').textContent=(s.name||'')+' さん';$('gachaId').textContent='登録ID：'+s.participantId;if(s.status!=='承認済み'){throw Error('管理者の登録承認後にガチャを利用できます。')}$('gachaUserMessage').textContent='ガチャ情報を読み込んでいます…';const loaded=await loadCatalog();$('gachaUserMessage').textContent=loaded?'ガチャ情報を表示しました。':validPending(remember())?'回線が不安定です。前回の抽選IDは保護しています。下の「もう一度ガチャを回す」で再開できます。':remember()?'前回の抽選記録を安全に確認しています。新しいガチャ券は消費しません。':'回線が不安定です。下の「設定・当選履歴を更新」から再試行してください。'}catch(e){$('gachaUserMessage').textContent=e.status===401?'このブラウザには登録時の認証情報がありません。LINE・Xから開いている場合は、メニューの「ブラウザで開く」から登録時のSafari・Chromeなどで開き直してください。再登録は不要です。':e.message;$('gachaUserMessage').classList.add('error')}}
 void boot();
 

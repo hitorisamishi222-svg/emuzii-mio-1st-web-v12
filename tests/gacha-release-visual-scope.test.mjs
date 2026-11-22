@@ -15,16 +15,19 @@ test('visual-only candidate retains exact production GAS, authenticated bridge a
     ['APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs','6dd7e5fc938fb0150c5067760f37972613f3075b'],
     ['api-gacha.js','8ecaad8f735119145bec1823f3bb27dc8224f4a7'],
     ['bridge.js','b3311e007eb94c40e11d8d64faca68061e7266ba'],
-    ['api-status.js','5b390d05edf1bf9e8cbb008c38838cbb3573517f']
+    ['api-status.js','92193c59bdb97d96a7fcb94e9b2e7edd5867c0f1']
   ]);
   for(const [filename,hash] of expected){
     assert.equal(gitBlobSha(filename),hash,filename+' must stay byte-for-byte unchanged');
   }
 });
 
-test('presentation-only page retains baseline draw endpoint without new GAS contract',()=>{
+test('network-safe draw continues using authenticated existing API without new GAS contract',()=>{
   const page=text('gacha-page.js');
-  assert.match(page,/post\('\/api\/gacha',\{action:'draw',\.\.\.pending\}\)/);
+  assert.match(page,/post\('\/api\/gacha',\{action:'draw',drawId:pending\.drawId,mode:pending\.mode\}\)/);
+  assert.match(page,/async function recoverPrevious\(p\)/);
+  assert.match(page,/const rows=h\.history\.filter\(x=>x\.drawId===p\.drawId\)/);
+  assert.match(page,/retrySameId=true/);
   assert.match(page,/async function execute\(pending\)/);
   assert.doesNotMatch(page,/from ['"]\.\/gacha-contract\.js['"]/);
   assert.doesNotMatch(page,/action:'recover'/);
@@ -49,7 +52,7 @@ test('luxury v2.1 is loaded by presentation page, while real operation stays pro
   const html=text('gacha.html');
   assert.match(html,/href="\/gacha-deluxe-v21\.css"/);
   assert.match(html,/src="\/gacha-deluxe-v21\.js"/);
-  assert.match(html,/src="\/gacha-page\.js"/);
+  assert.match(html,/src="\/gacha-page\.js(?:\?[^\"]*)?"/);
   assert.match(html,/src="\/gacha-effects-v19\.js"/);
   const demo=text('gacha-deluxe-v21.js');
   assert.match(demo,/new URLSearchParams\(location\.search\)\.get\('deluxeDemo'\)!=='1'/);

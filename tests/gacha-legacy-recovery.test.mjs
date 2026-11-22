@@ -15,7 +15,7 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
   function element(name='div'){
     const handlers=new Map();
     return {id:name,hidden:false,disabled:false,style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},
-      setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},remove(){},
+      setAttribute(){},removeAttribute(){},replaceChildren(){},append(){},after(){},remove(){},
       scrollIntoView(){throw Error('recovery may not scroll')},
       addEventListener:(event,cb)=>handlers.set(event,cb),handlers,get offsetWidth(){return 2}};
   }
@@ -27,13 +27,19 @@ function harness(saved=new Map([[key,JSON.stringify(pending)]]),historyRows=[win
     localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)},
     fetch:async(_path,{body})=>{
       const request=JSON.parse(body);requests.push(request);
-      if(request.action==='draw')throw Error('RECOVERY MUST NEVER RE-DRAW');
+      if(request.action==='draw'){
+        assert.equal(request.drawId,drawId,'retry must always reuse the same draw ID');
+        historyRows.push({...winner,drawId:request.drawId,mode:request.mode});
+        const data={ok:true,participantId:identity,drawId:request.drawId,mode:request.mode,
+          prize:winner.prize,ordinal:winner.ordinal,rarity:winner.rarity,image:winner.image,remaining:2};
+        return {ok:true,status:200,text:async()=>JSON.stringify(data)};
+      }
       const response=request.action==='history'
         ?{ok:true,participantId:identity,history:historyRows}
         :request.action==='catalog'?fixture():{ok:false,error:'Unexpected action'};
       return {ok:response.ok,status:response.ok?200:409,text:async()=>JSON.stringify(response)};
     },
-    setTimeout,clearTimeout,performance:{now:()=>50},Event:class{constructor(type){this.type=type}},
+    setTimeout:fn=>{queueMicrotask(fn);return 1},clearTimeout(){},performance:{now:()=>50},Event:class{constructor(type){this.type=type}},
     CustomEvent:class{constructor(type,opts){this.type=type;this.detail=opts?.detail}},
     crypto:{randomUUID:()=>drawId},Date,JSON,Number,Math,Promise
   });
@@ -50,19 +56,20 @@ async function click(h){
 
 test('recovery only reads saved draw history and never creates a new draw',async()=>{
   const h=harness();await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog','history']);
+  assert.deepEqual(h.requests.map(x=>x.action),['history']);
   assert.equal(h.saved.has(key),false);
   assert.equal(h.$('drawPrizeName').textContent,'保存済み景品');
   assert.equal(h.$('drawResultCard').hidden,false);
 });
 
-test('if a draw never committed, preserve pending ID and do not spend another right',async()=>{
+test('when not yet committed, one explicit retry spends at most one ticket under same draw ID',async()=>{
   const h=harness(new Map([[key,JSON.stringify(pending)]]),[]);
   await click(h);
-  assert.deepEqual(h.requests.map(x=>x.action),['history']);
-  assert.deepEqual(JSON.parse(h.saved.get(key)),pending);
-  assert.match(h.$('drawMessage').textContent,/再抽選せず運営/);
-  assert.equal(h.$('retryDraw').hidden,false);
+  assert.deepEqual(h.requests.map(x=>x.action),['history','catalog','draw']);
+  assert.equal(h.requests.filter(x=>x.action==='draw').length,1);
+  assert.equal(h.saved.has(key),false);
+  assert.equal(h.$('drawPrizeName').textContent,winner.prize);
+  assert.equal(h.$('retryDraw').hidden,true);
 });
 
 test('reject mismatched participant identity even if draw ID matches',async()=>{
@@ -70,7 +77,7 @@ test('reject mismatched participant identity even if draw ID matches',async()=>{
   await click(h);
   assert.deepEqual(h.requests.map(x=>x.action),['history']);
   assert.equal(h.saved.has(key),true);
-  assert.match(h.$('drawMessage').textContent,/本人確認/);
+  assert.match(h.$('drawMessage').textContent,/回線の状態が不安定/);
 });
 
 test('reject wrong mode, duplicate IDs or broken ordinal without dropping pending draw',async()=>{
@@ -88,4 +95,5 @@ test('invalid stored draw ID never performs an API request',async()=>{
   await click(h);
   assert.deepEqual(h.requests,[]);
   assert.deepEqual(JSON.parse(h.saved.get(key)),broken);
+  assert.equal(h.$('retryDraw').disabled,true);
 });
