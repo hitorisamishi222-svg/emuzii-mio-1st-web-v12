@@ -48,6 +48,9 @@ test('Neon identity disagreement cannot use an approved GAS row',async()=>{
 test('other unapproved browsers cannot use this one-browser recovery',async()=>{
  const h=makeHarness({session:{id:'MIO-W-'+'f'.repeat(24),token:'a'.repeat(64)}});
  const r=await recoverFromAdminApprovedLightCookie({req:{headers:{cookie:''}},res:h.res,config,dependencies:h.dependencies});
- assert.equal(r.status,'not-approved-browser');
+ // Unknown browsers are denied unless BOTH the reviewed Neon identity and
+ // the GAS entitlement pass; synthetic pending Neon proof cannot bypass that.
+ assert.equal(r.status,'not-admin-approved-for-gacha');
  assert.equal(h.calls.length,0);
+ assert.equal(h.headers.length,0,'no session cookie may be issued');
 });
