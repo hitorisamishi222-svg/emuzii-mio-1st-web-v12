@@ -44,3 +44,23 @@ CREATE TABLE IF NOT EXISTS mio_access_audit_v1 (
  occurred_at timestamptz NOT NULL DEFAULT now()
 );
 -- Separate administrator-controlled bootstrap required: issuer 'mio' is NOT auto-created.
+
+-- Challenge table: claim code and room sessions are bound to one-time nonces.
+-- Server must do UPDATE ... WHERE used_at IS NULL AND expires_at>now() RETURNING ...
+-- in the same transaction that approves a claim or protected room request.
+CREATE TABLE IF NOT EXISTS mio_access_challenges_v1 (
+ challenge_id uuid PRIMARY KEY,
+ issuer_id text NOT NULL REFERENCES mio_access_issuers_v1(issuer_id),
+ nonce_hash char(64) NOT NULL UNIQUE,
+ purpose text NOT NULL CHECK(purpose IN ('claim','room')),
+ request_hash char(64) NOT NULL,
+ bound_code_hash char(64),
+ bound_session_hash char(64),
+ expires_at timestamptz NOT NULL,
+ used_at timestamptz,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ CONSTRAINT purpose_bound CHECK (
+  (purpose='claim' AND bound_code_hash IS NOT NULL AND bound_session_hash IS NULL) OR
+  (purpose='room' AND bound_session_hash IS NOT NULL AND bound_code_hash IS NULL)
+ )
+);
