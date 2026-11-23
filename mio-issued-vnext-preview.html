@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#071a35">
+<title>MIO 大型アップデート｜隔離UI試作</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif;color:#eef8ff;background:#071a35}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 30% 0%,#124b85,transparent 55%),linear-gradient(160deg,#07172d,#072447);min-height:100svh}
+main{max-width:720px;margin:auto;padding:24px 16px 90px}h1{font-size:clamp(24px,6vw,36px);line-height:1.35}h2{font-size:22px;margin:0 0 12px}
+p{line-height:1.7}.eyebrow{color:#aadfff;letter-spacing:.16em;font-weight:800;font-size:12px}
+.notice{border:2px solid #ffe0a4;background:#372e24;color:#fff4df;border-radius:14px;padding:12px 16px;font-weight:700}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:18px 0}
+.tabs button{background:#17416c;color:#ecf7ff;border:1px solid #6195bf;border-radius:12px;padding:12px 5px;font-size:13px;font-weight:800}
+.tabs button[aria-selected=true]{color:#072546;background:#c4ecff;border-color:#c4ecff}
+section.panel{padding:22px 18px;border-radius:20px;background:#0c2b50;border:1px solid #6fb0e478;box-shadow:0 14px 38px #0003}
+section.panel[hidden],div[hidden]{display:none!important}
+label{display:block;font-weight:700;margin:15px 0 7px}input,select{width:100%;min-height:48px;border-radius:10px;border:1px solid #b1defb;background:#f9fcff;color:#0a2844;padding:12px;font:inherit}
+button.action{width:100%;min-height:48px;margin:14px 0 0;background:#ffe4a5;color:#152943;border:0;border-radius:12px;font:800 15px/1.35 inherit;cursor:pointer;padding:12px}
+button.action.alt{background:#96d8f5;color:#07284d}.danger{background:#eeadac!important}
+.output{white-space:pre-line;overflow-wrap:anywhere;background:#071c39;padding:16px;border:1px solid #5a9ecb;border-radius:12px;min-height:62px;margin-top:16px}
+.muted{color:#c4d9e9;font-size:14px}.rooms{display:grid;gap:12px}.room{border:1px solid #8bc5ef;border-radius:15px;padding:17px;background:#15395d}.room h3{margin:0 0 5px}.room p{margin:0}.status{color:#d8efff;font-weight:700}
+a{color:#b7e6ff}footer{margin-top:28px;font-size:13px;color:#b5c9d8}
+</style></head><body><main>
+<p class="eyebrow">MIO MUSEUM · LARGE UPDATE / OFFLINE DEMO</p>
+<h1>🐳 みお発行ID・管理画面</h1>
+<p class="notice">隔離UI試作です。ここで入力しても、実際のID発行・会員登録・ログイン・ガチャの変更は一切行われません。利用者の本物のIDや招待コードは入力しないでください。</p>
+<div class="tabs" role="tablist" aria-label="試作画面"><button type="button" aria-selected="true" data-page="admin">① みお管理</button><button type="button" aria-selected="false" data-page="join">② ID登録</button><button type="button" aria-selected="false" data-page="rooms">③ 3つの部屋</button></div>
+<section class="panel" id="admin">
+ <h2>みお管理｜発行・再発行</h2><p class="muted">これは画面の操作感だけを試せるダミー。発行者の正式認証は開発中です。</p>
+ <label for="issuer">発行者</label><select id="issuer"><option value="mio">みお（デモ用）</option></select>
+ <label for="master">登録者ID</label><input id="master" value="DEMO-USER-001" readonly>
+ <label for="rank">登録ランク</label><select id="rank"><option value="fan">一般歌推し</option><option value="member">メンシプ</option></select>
+ <div id="expiryBox" hidden><label for="expiry">メンシプの有効期限</label><input id="expiry" type="date"></div>
+ <button class="action" id="issue">デモ用のIDを発行</button>
+ <button class="action alt" id="reissue">機種変更として再発行（旧IDを無効化）</button>
+ <button class="action danger" id="stop">このダミー登録を停止</button>
+ <div class="output" id="issueResult" role="status" aria-live="polite">デモIDはまだ発行されていません。</div>
+</section>
+<section class="panel" id="join" hidden>
+ <h2>リスナー｜初回登録</h2>
+ <p class="muted">発行者を選択して、みおから受け取った発行IDを入力する想定です。ここではデモIDのみ動作します。</p>
+ <label for="joinIssuer">発行者を選択</label><select id="joinIssuer"><option value="">選択してください</option><option value="mio">みお</option></select>
+ <label for="issuedCode">発行ID（デモ専用）</label><input id="issuedCode" placeholder="DEMO-ONLY-..." autocomplete="off" spellcheck="false">
+ <button class="action" id="claim">ID照合・ログインの流れを試す</button>
+ <div class="output" id="joinResult" role="status" aria-live="polite">初回登録の動作イメージを確認できます。</div>
+</section>
+<section class="panel" id="rooms" hidden>
+ <h2>ミュージアム｜3つの部屋</h2><p class="muted">表示はデモ用。正式版ではサーバーで会員ランクと端末鍵を確認します。</p>
+ <div class="rooms">
+  <div class="room"><h3>🌸 一般公開の部屋</h3><p>誰でもアクセスできます。</p><p class="status" id="roomPublic">入室可能</p></div>
+  <div class="room"><h3>🎤 一般歌推しの部屋</h3><p>みお発行IDで登録した人が入室できます。</p><p class="status" id="roomFan">ログインが必要</p></div>
+  <div class="room"><h3>💎 メンシプ限定の部屋</h3><p>有効なメンシプ会員だけが入室できます。</p><p class="status" id="roomMember">メンシプ確認が必要</p></div>
+ </div>
+</section>
+<footer>旧MIO-ID・皆勤・ガチャ・当選履歴は、この隔離UI試作では参照も変更もしません。<br><a href="/">現在の本番トップに戻る</a></footer>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const panels=['admin','join','rooms'];
+const state={code:'',used:false,logged:false,rank:'fan',memberUntil:'',generation:0,stopped:false};
+const now=()=>new Date();
+const setOutput=(id,text)=>$(id).textContent=text;
+function show(id){
+ panels.forEach(p=>$(p).hidden=p!==id);
+ document.querySelectorAll('[data-page]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.page===id)));
+ if(id==='rooms')refreshRooms();
+}
+document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.page)));
+$('rank').addEventListener('change',()=>{$('expiryBox').hidden=$('rank').value!=='member'});
+function demoToken(){const bytes=crypto.getRandomValues(new Uint8Array(12));return 'DEMO-ONLY-'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
+function issue(kind){
+ if($('rank').value==='member' && (!$('expiry').value || new Date($('expiry').value+'T23:59:59')<=now())){setOutput('issueResult','有効なメンシプ期限を入力してください。');return}
+ state.code=demoToken();state.used=false;state.logged=false;state.stopped=false;
+ state.rank=$('rank').value;state.memberUntil=$('expiry').value;state.generation++;
+ setOutput('issueResult',(kind==='reissue'?'旧デモIDとログインを無効化しました。\n':'')+
+  '発行者：みお\nランク：'+(state.rank==='member'?'メンシプ':'一般歌推し')+
+  '\n発行ID：'+state.code+'\n※これは無効なデモIDです。本物の登録には使用できません。');
+ $('joinIssuer').value='mio';$('issuedCode').value=state.code;
+ refreshRooms();
+}
+$('issue').onclick=()=>issue('new');
+$('reissue').onclick=()=>issue('reissue');
+$('stop').onclick=()=>{state.code='';state.used=false;state.logged=false;state.stopped=true;setOutput('issueResult','デモ登録を停止しました。実際の会員データは変更されません。');refreshRooms()};
+$('claim').onclick=()=>{
+ if($('joinIssuer').value!=='mio'){setOutput('joinResult','発行者を選んでください。');return}
+ if(!state.code||state.stopped||$('issuedCode').value!==state.code||state.used){
+  setOutput('joinResult','この発行IDは無効か、すでに使用されています。（デモ判定）');return
+ }
+ state.used=true;state.logged=true;
+ setOutput('joinResult','デモ登録完了。発行IDは使い切りになりました。\nログイン端末：このデモ画面1つだけ。\n実際の登録や端末鍵認証はまだ行われていません。');
+ refreshRooms();
+};
+function refreshRooms(){
+ $('roomPublic').textContent='入室可能';
+ $('roomFan').textContent=state.logged?'入室可能（デモ）':'ログインが必要';
+ const valid=state.rank==='member'&&state.memberUntil&&new Date(state.memberUntil+'T23:59:59')>now();
+ $('roomMember').textContent=state.logged&&valid?'入室可能（デモ）':'メンシプ資格が必要';
+}
+refreshRooms();
+</script></main></body></html>
