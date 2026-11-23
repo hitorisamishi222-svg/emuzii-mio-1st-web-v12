@@ -14,11 +14,13 @@ CREATE TABLE IF NOT EXISTS mio_access_accounts_v1 (
  member_until timestamptz,
  status text NOT NULL CHECK (status IN ('active','revoked')),
  generation bigint NOT NULL CHECK (generation>=1),
+ device_public_jwk jsonb,
  device_thumbprint text CHECK (device_thumbprint IS NULL OR device_thumbprint ~ '^sha256:[a-f0-9]{64}$'),
  session_hash char(64) UNIQUE,
  session_expires_at timestamptz,
  updated_at timestamptz NOT NULL DEFAULT now(),
  CONSTRAINT bound_pair CHECK ((device_thumbprint IS NULL) = (session_hash IS NULL)),
+ CONSTRAINT public_key_pair CHECK (device_public_jwk IS NULL OR device_thumbprint IS NOT NULL),
  CONSTRAINT member_must_expire CHECK(rank<>'member' OR member_until IS NOT NULL)
 );
 CREATE TABLE IF NOT EXISTS mio_access_invites_v1 (
@@ -55,7 +57,18 @@ CREATE TABLE IF NOT EXISTS mio_access_challenges_v1 (
  purpose text NOT NULL CHECK(purpose IN ('claim','room')),
  request_hash char(64) NOT NULL,
  bound_code_hash char(64),
+ bound_device_thumbprint text CHECK (bound_device_thumbprint IS NULL OR bound_device_thumbprint ~ '^sha256:[a-f0-9]{64}
+ expires_at timestamptz NOT NULL,
+ used_at timestamptz,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ CONSTRAINT purpose_bound CHECK (
+  (purpose='claim' AND bound_code_hash IS NOT NULL AND bound_device_thumbprint IS NOT NULL AND bound_room IS NULL AND bound_session_hash IS NULL) OR
+  (purpose='room' AND bound_session_hash IS NOT NULL AND bound_room IS NOT NULL AND bound_code_hash IS NULL AND bound_device_thumbprint IS NULL)
+ )
+);
+),
  bound_session_hash char(64),
+ bound_room text CHECK(bound_room IS NULL OR bound_room IN ('fan','member')),
  expires_at timestamptz NOT NULL,
  used_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now(),
