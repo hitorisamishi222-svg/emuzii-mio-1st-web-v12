@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS mio_yuri_recovery_v1 (
  token_hash char(64) NOT NULL CHECK (token_hash ~ '^[a-f0-9]{64}$'),
  expires_at timestamptz NOT NULL,
  redeemed_at timestamptz,
+ revoked_at timestamptz,
  session_expires_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -15,3 +16,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS mio_yuri_one_active_code_v1
 
 -- Existing isolated deployments may need only the additive column.
 ALTER TABLE mio_yuri_recovery_v1 ADD COLUMN IF NOT EXISTS session_expires_at timestamptz;
+
+-- Idempotent, additive migration for existing recovery records.
+-- Keep the old unique index: retiring a code closes its unredeemed slot;
+-- revoked_at distinguishes administrative reissue from a real redemption.
+ALTER TABLE mio_yuri_recovery_v1 ADD COLUMN IF NOT EXISTS revoked_at timestamptz;

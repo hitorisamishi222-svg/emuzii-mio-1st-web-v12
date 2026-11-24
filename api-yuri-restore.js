@@ -14,7 +14,7 @@ export async function redeemYuriCode({code,db=dbPool(),callGAS=bridge}){
  const {codeHash,token,tokenHash}=credentialsFromCode(code);
  const first=await db.query('SELECT recovery_hash FROM mio_yuri_recovery_v1 '+
    'WHERE recovery_hash=$1 AND browser_id=$2 AND master_id=$3 '+
-   'AND token_hash=$4 AND redeemed_at IS NULL AND expires_at>now()',
+   'AND token_hash=$4 AND redeemed_at IS NULL AND revoked_at IS NULL AND expires_at>now()',
    [codeHash,TARGET.webId,TARGET.mioId,tokenHash]);
  if(first.rows.length!==1)throw Error('CODE_EXPIRED_OR_USED');
  const gasHash=await approvedYuriGASHash(db);
@@ -23,9 +23,10 @@ export async function redeemYuriCode({code,db=dbPool(),callGAS=bridge}){
  const client=await db.connect();
  try{
   await client.query('BEGIN');
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[TARGET.webId]);
   const consumed=await client.query("UPDATE mio_yuri_recovery_v1 SET redeemed_at=now(),session_expires_at=now()+interval '90 days' "+
    'WHERE recovery_hash=$1 AND browser_id=$2 AND master_id=$3 '+
-   'AND token_hash=$4 AND redeemed_at IS NULL AND expires_at>now() RETURNING recovery_hash',
+   'AND token_hash=$4 AND redeemed_at IS NULL AND revoked_at IS NULL AND expires_at>now() RETURNING recovery_hash',
    [codeHash,TARGET.webId,TARGET.mioId,tokenHash]);
   if(consumed.rows.length!==1)throw Error('CODE_EXPIRED_OR_USED');
   const approved=await client.query('SELECT n.browser_id FROM mio_registration_v2 n '+
@@ -36,6 +37,13 @@ export async function redeemYuriCode({code,db=dbPool(),callGAS=bridge}){
    'AND n.approved_at IS NOT NULL FOR UPDATE OF n',
    [TARGET.webId,gasHash,TARGET.name,TARGET.mioId]);
   if(approved.rows.length!==1)throw Error('NEON_APPROVAL_MISMATCH');
+  // One recovery login device at a time. Keep a prior live session until
+  // the new code is successfully redeemed, then retire the older sessions.
+  await client.query('UPDATE mio_yuri_recovery_v1 '+
+   'SET session_expires_at=now(),revoked_at=COALESCE(revoked_at,now()) '+
+   'WHERE browser_id=$1 AND master_id=$2 AND recovery_hash<>$3 '+
+   'AND redeemed_at IS NOT NULL AND session_expires_at>now()',
+   [TARGET.webId,TARGET.mioId,codeHash]);
   await client.query('COMMIT');
   return {token,status,entitlement};
  }catch(e){await client.query('ROLLBACK');throw e}

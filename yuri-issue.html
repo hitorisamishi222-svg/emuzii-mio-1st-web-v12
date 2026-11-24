@@ -16,20 +16,20 @@ small{color:#c5dceb}
 </style></head><body><main>
 <h1>🐳 みお管理｜ユーリさんのログイン復旧</h1>
 <p><strong>対象：</strong>ユーリ／MIO-0017</p>
-<p>運営コードで本人確認済みの端末用復旧コードを発行します。ガチャ2回を新たに付与したり、過去の記録を変更したりしません。</p>
+<p>管理者コードで復旧IDを何度でも発行できます。新しく発行すると、以前の未使用IDは自動的に無効になります。ガチャの残回数や履歴は変更しません。</p>
 <form id="form" autocomplete="off">
 <label for="adminCode">みおのガチャ管理者コード</label>
 <input id="adminCode" type="password" autocomplete="off" required>
-<button id="issue" type="submit">ユーリさん専用コードを発行</button></form>
+<button id="issue" type="submit">復旧IDを発行・再発行する</button></form>
 <p id="status" role="status" aria-live="polite"></p>
 <div id="result" hidden><p><strong>ユーリさんにだけ個別送信するコード</strong></p>
 <pre id="code"></pre><button id="copy" type="button">コードをコピー</button>
-<p><small>有効期限：48時間。ユーリさんは1回だけ入力できます。URL・SNS公開投稿には載せないでください。</small></p>
+<p><small>新しいIDだけが有効です。以前のIDは使えなくなります。有効期限：48時間／1回限り。URL・公開投稿には載せず、ユーリさんに個別送信してください。</small></p>
 <p><a href="/device-restore">ユーリさん用の入力画面</a></p></div>
 </main><script>
 const form=document.getElementById('form'),issue=document.getElementById('issue'),status=document.getElementById('status'),result=document.getElementById('result'),code=document.getElementById('code');
 form.addEventListener('submit',async e=>{
- e.preventDefault();if(issue.disabled)return;issue.disabled=true;result.hidden=true;status.textContent='正本のガチャ残り2回と運営承認を確認しています…';
+ e.preventDefault();if(issue.disabled)return;issue.disabled=true;status.textContent='既存のガチャ権利と管理者承認を確認しています…';
  try{
   const adminCode=document.getElementById('adminCode').value;
   const r=await fetch('/api/yuri-issue',{method:'POST',credentials:'same-origin',cache:'no-store',
@@ -37,10 +37,15 @@ form.addEventListener('submit',async e=>{
   document.getElementById('adminCode').value='';
   const d=await r.json();
   if(!r.ok||d.ok!==true)throw Error(d.error||'発行できません');
-  if(d.drawsRemaining!==2)throw Error('ガチャ残回数の再確認が必要です');
+  if(!/^MIO-REC-[a-f0-9]{32}$/.test(d.recoveryCode||'')||
+     !Number.isSafeInteger(d.drawsRemaining)||d.drawsRemaining<0)
+    throw Error('発行結果の確認が必要です');
   code.textContent=d.recoveryCode;result.hidden=false;
-  status.textContent='発行完了。ユーリさんにだけコードを送ってください。';
- }catch(err){status.textContent=err.message;issue.disabled=false}
+  status.textContent='発行完了。以前の未使用ID '+Number(d.replacedCount||0)+
+   '件を無効化しました。ガチャ残数：'+d.drawsRemaining+
+   '回。今表示しているIDだけをユーリさんへ送ってください。';
+ }catch(err){status.textContent=err.message+'（発行できなかった場合、前のIDは維持されます）'}
+ finally{issue.disabled=false}
 });
 document.getElementById('copy').onclick=async()=>{
  try{await navigator.clipboard.writeText(code.textContent);status.textContent='コピーしました。ユーリさんにだけ送ってください。'}
