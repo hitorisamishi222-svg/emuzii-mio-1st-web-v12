@@ -1,0 +1,28 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>翠央｜端末ログイン復旧</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif}
+body{margin:0;min-height:100svh;background:linear-gradient(150deg,#091530,#163f6d);color:#f0faff;padding:20px}
+main{max-width:490px;margin:6vh auto;padding:24px;border:1px solid #7fb6e0;border-radius:24px;background:#0d2b50}
+h1{font-size:25px;margin:0 0 20px}p{line-height:1.8}label{display:block;margin:24px 0 8px}
+input{box-sizing:border-box;width:100%;font:inherit;min-height:50px;border-radius:12px;padding:12px;color:#12243c;background:#fff;border:0}
+button{font:inherit;display:block;width:100%;min-height:52px;margin-top:20px;background:#fff0a4;color:#0d2b50;border:0;border-radius:12px;font-weight:bold}
+button:disabled{opacity:.6}#message{font-weight:700;min-height:65px;white-space:pre-line}a{color:#9fe4ff}
+</style></head><body><main>
+<h1>🐳 端末ログイン復旧</h1>
+<p>運営から受け取った<strong>1回限りの復旧コード</strong>を入力してください。元のガチャ回数や履歴は変更されません。</p>
+<form id="form" autocomplete="off"><label for="code">運営発行の復旧コード</label><input id="code" name="code" type="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="MIO-REC-..." maxlength="40" required><button type="submit" id="submit">この端末でログインする</button></form>
+<p id="message" role="status" aria-live="polite"></p>
+<p><a href="/">サイトトップへ戻る</a></p>
+</main><script>
+const form=document.getElementById('form'),button=document.getElementById('submit'),message=document.getElementById('message');
+form.addEventListener('submit',async e=>{e.preventDefault();if(button.disabled)return;button.disabled=true;message.textContent='認証しています…';
+ try{const code=document.getElementById('code').value.trim().toLowerCase().replace(/^mio-rec-/,'MIO-REC-');
+  const r=await fetch('/api/yuri-restore',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+  const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'ログインを確認できません');
+  document.getElementById('code').value='';message.textContent='ログイン情報を保存しました。参加状況を開きます。';location.replace('/');
+ }catch(err){message.textContent=err.message+'\n同じ登録をやり直す必要はありません。';button.disabled=false}
+});
+</script></body></html>
