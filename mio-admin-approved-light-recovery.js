@@ -49,10 +49,24 @@ export async function recoverFromAdminApprovedLightCookie({req,res,config,depend
     try{verified=await callGAS('status',{participantId:session.id,tokenHash})}
     catch{return {status:'gas-unavailable'}}
     const gacha=verified?.progress?.gacha;
+    // Current GAS exposes aggregated attendance booleans rather than arrays.
+    // Permit that shape ONLY for the owner's exact, freshly approved Yuri
+    // recovery, after independent Neon approval and signed light-cookie proof.
+    // Do not extend this compatibility to other applicants or pending reviews.
+    const legacyAttendanceShape=
+      Array.isArray(verified?.progress?.attendanceConfirmedDays)&&
+      Array.isArray(verified?.progress?.attendanceLockedDays);
+    const exactCurrentYuriShape=
+      session.id==='MIO-W-b502544b66bbb759c52114d1'&&
+      light.integratedParticipantId==='MIO-0017'&&light.name==='ユーリ'&&
+      typeof verified?.progress?.attendanceAchieved==='boolean'&&
+      typeof verified?.progress?.attendanceTodayDone==='boolean'&&
+      Number.isSafeInteger(verified?.progress?.fa)&&verified.progress.fa>=0&&
+      gacha?.total===2&&Number.isSafeInteger(gacha?.remaining)&&
+      gacha.remaining>=0&&gacha.remaining<=2;
     if(!verified||verified.ok!==true||verified.participantId!==session.id||
        verified.name!==light.name||verified.status!=='承認済み'||
-       !verified.progress||!Array.isArray(verified.progress.attendanceConfirmedDays)||
-       !Array.isArray(verified.progress.attendanceLockedDays)||
+       !verified.progress||(!legacyAttendanceShape&&!exactCurrentYuriShape)||
        gacha?.confirmed!==true||
        !Number.isSafeInteger(Number(gacha.total))||Number(gacha.total)<1||
        !Number.isSafeInteger(Number(gacha.remaining))||Number(gacha.remaining)<0)
