@@ -1,7 +1,7 @@
 // One-time owner-authorized device recovery; no public enrollment or grant.
 import pg from 'pg';
 import {bridge,sessionCookie} from './bridge.js';
-import {setLightSessionCookie} from './registration-light-session.js';
+import {approvedYuriGASHash} from './mio-yuri-recovery-session.mjs';
 import {TARGET,credentialsFromCode,assertVerifiedStatus} from './mio-yuri-recovery-core.mjs';
 let pool;
 function dbPool(){
@@ -17,12 +17,13 @@ export async function redeemYuriCode({code,db=dbPool(),callGAS=bridge}){
    'AND token_hash=$4 AND redeemed_at IS NULL AND expires_at>now()',
    [codeHash,TARGET.webId,TARGET.mioId,tokenHash]);
  if(first.rows.length!==1)throw Error('CODE_EXPIRED_OR_USED');
- const status=await callGAS('status',{participantId:TARGET.webId,tokenHash});
+ const gasHash=await approvedYuriGASHash(db);
+ const status=await callGAS('status',{participantId:TARGET.webId,tokenHash:gasHash});
  const entitlement=assertVerifiedStatus(status);
  const client=await db.connect();
  try{
   await client.query('BEGIN');
-  const consumed=await client.query('UPDATE mio_yuri_recovery_v1 SET redeemed_at=now() '+
+  const consumed=await client.query("UPDATE mio_yuri_recovery_v1 SET redeemed_at=now(),session_expires_at=now()+interval '90 days' "+
    'WHERE recovery_hash=$1 AND browser_id=$2 AND master_id=$3 '+
    'AND token_hash=$4 AND redeemed_at IS NULL AND expires_at>now() RETURNING recovery_hash',
    [codeHash,TARGET.webId,TARGET.mioId,tokenHash]);
@@ -33,7 +34,7 @@ export async function redeemYuriCode({code,db=dbPool(),callGAS=bridge}){
    "AND n.status='承認済み' AND n.integrated_participant_id=$4 "+
    "AND n.approved_by='owner-authorized-recovery-20261124' "+
    'AND n.approved_at IS NOT NULL FOR UPDATE OF n',
-   [TARGET.webId,tokenHash,TARGET.name,TARGET.mioId]);
+   [TARGET.webId,gasHash,TARGET.name,TARGET.mioId]);
   if(approved.rows.length!==1)throw Error('NEON_APPROVAL_MISMATCH');
   await client.query('COMMIT');
   return {token,status,entitlement};
@@ -57,10 +58,7 @@ export default async function handler(req,res){
   return res.status(503).json({ok:false,error:'管理者による再確認が必要です'});
  try{
   const {token,entitlement}=await redeemYuriCode({code});
-  res.setHeader('Set-Cookie',[
-   sessionCookie(TARGET.webId,token,process.env.APPS_SCRIPT_SECRET),
-   setLightSessionCookie(TARGET.webId,token,process.env.MIO_LIGHT_SESSION_SECRET)
-  ]);
+  res.setHeader('Set-Cookie',sessionCookie(TARGET.webId,token,process.env.APPS_SCRIPT_SECRET));
   return res.status(200).json({ok:true,restored:true,remaining:entitlement.remaining,next:'/'});
  }catch{
   return res.status(403).json({ok:false,error:'コードを確認できません。運営に再発行を依頼してください。'});

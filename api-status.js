@@ -1,3 +1,4 @@
+import {yuriRecoveryGASHash} from './mio-yuri-recovery-session.mjs';
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 import {recoverFromAdminApprovedLightCookie} from './mio-admin-approved-light-recovery.js';
 
@@ -20,7 +21,8 @@ export default async function handler(req,res){
     });
   }
   try{
-    const data=await bridge('status',{participantId:session.id,tokenHash:hash(session.token)});
+    const delegated=await yuriRecoveryGASHash(session).catch(()=>null);
+    const data=await bridge('status',{participantId:session.id,tokenHash:delegated||hash(session.token)});
     if(data.participantId!==session.id)throw Error('identity mismatch');
     if(data.status==='承認済み')res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
     return res.status(200).json(data);

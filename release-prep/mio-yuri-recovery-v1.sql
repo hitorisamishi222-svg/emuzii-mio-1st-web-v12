@@ -7,7 +7,11 @@ CREATE TABLE IF NOT EXISTS mio_yuri_recovery_v1 (
  token_hash char(64) NOT NULL CHECK (token_hash ~ '^[a-f0-9]{64}$'),
  expires_at timestamptz NOT NULL,
  redeemed_at timestamptz,
+ session_expires_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS mio_yuri_one_active_code_v1
  ON mio_yuri_recovery_v1(browser_id) WHERE redeemed_at IS NULL;
+
+-- Existing isolated deployments may need only the additive column.
+ALTER TABLE mio_yuri_recovery_v1 ADD COLUMN IF NOT EXISTS session_expires_at timestamptz;
