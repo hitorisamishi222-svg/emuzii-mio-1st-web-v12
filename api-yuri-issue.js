@@ -19,13 +19,31 @@ export async function issueYuriCode({database=db(),callGAS=bridge,newCode='MIO-R
  const real=await callGAS('status',{participantId:TARGET.webId,tokenHash:gasHash});
  const rights=assertVerifiedStatus(real);
  const {codeHash,tokenHash}=credentialsFromCode(newCode);
- const result=await database.query('INSERT INTO mio_yuri_recovery_v1 '+
-  '(recovery_hash,browser_id,master_id,token_hash,expires_at) '+
-  "VALUES($1,$2,$3,$4,now()+interval '48 hours') "+
-  'ON CONFLICT DO NOTHING RETURNING expires_at',
-  [codeHash,TARGET.webId,TARGET.mioId,tokenHash]);
- if(result.rows.length!==1)throw Error('RECOVERY_CODE_ALREADY_ACTIVE');
- return {code:newCode,expiresAt:result.rows[0].expires_at,drawsRemaining:rights.remaining};
+ // Serialize reissues across serverless instances. The existing unique index
+ // still guarantees at most one unredeemed recovery code for this browser.
+ const client=await database.connect();
+ try{
+  await client.query('BEGIN');
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[TARGET.webId]);
+  // Older unredeemed IDs are retired, never claimed: revoked_at records why.
+  // redeemed_at is also set solely to release the legacy partial unique index.
+  // If INSERT fails, ROLLBACK restores the previously valid code.
+  const retired=await client.query(
+   'UPDATE mio_yuri_recovery_v1 SET redeemed_at=now(),revoked_at=now(),session_expires_at=NULL '+
+   'WHERE browser_id=$1 AND master_id=$2 AND redeemed_at IS NULL AND revoked_at IS NULL '+
+   'RETURNING recovery_hash',[TARGET.webId,TARGET.mioId]);
+  const result=await client.query('INSERT INTO mio_yuri_recovery_v1 '+
+   '(recovery_hash,browser_id,master_id,token_hash,expires_at) '+
+   "VALUES($1,$2,$3,$4,now()+interval '48 hours') RETURNING expires_at",
+   [codeHash,TARGET.webId,TARGET.mioId,tokenHash]);
+  if(result.rows.length!==1)throw Error('RECOVERY_CODE_ISSUE_FAILED');
+  await client.query('COMMIT');
+  return {code:newCode,expiresAt:result.rows[0].expires_at,
+   drawsRemaining:rights.remaining,replacedCount:retired.rows.length};
+ }catch(e){
+  await client.query('ROLLBACK');
+  throw e;
+ }finally{client.release()}
 }
 export default async function handler(req,res){
  res.setHeader('Cache-Control','private, no-store');
@@ -44,7 +62,7 @@ export default async function handler(req,res){
  try{
   const r=await issueYuriCode();
   return res.status(200).json({ok:true,target:'ユーリ / MIO-0017',
-   recoveryCode:r.code,expiresAt:r.expiresAt,drawsRemaining:r.drawsRemaining});
+   recoveryCode:r.code,expiresAt:r.expiresAt,drawsRemaining:r.drawsRemaining,replacedCount:r.replacedCount});
  }catch(e){
   console.warn('MIO scoped owner recovery unavailable',e?.code||e?.message||'error');
   return deny(res,409,'復旧コードを発行できません。認証連携の状態を管理者が確認してください');

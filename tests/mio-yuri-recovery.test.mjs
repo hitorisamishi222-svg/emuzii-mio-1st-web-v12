@@ -19,6 +19,9 @@ function mockDb({found=true,approved=true,session=true,alreadyConsumed=false}={}
   if(sql.startsWith('SELECT recovery_hash'))return {rows:found?[{recovery_hash:newCred.codeHash}]:[]};
   if(sql.startsWith('SELECT n.token_hash AS gas_hash FROM mio_yuri_recovery_v1'))return {rows:session?[{gas_hash:oldHash}]:[]};
   if(sql.startsWith('SELECT n.token_hash AS gas_hash FROM mio_registration_v2'))return {rows:approved?[{gas_hash:oldHash}]:[]};
+  if(sql.startsWith('SELECT pg_advisory_xact_lock'))return {rows:[]};
+  if(sql.startsWith('UPDATE mio_yuri_recovery_v1')&&sql.includes('SET redeemed_at=now(),revoked_at=now()'))return {rows:[]};
+  if(sql.startsWith('UPDATE mio_yuri_recovery_v1')&&sql.includes('SET session_expires_at=now()'))return {rows:[]};
   if(sql.startsWith('UPDATE mio_yuri_recovery_v1')){
    if(consumed)return {rows:[]};
    consumed=true;
@@ -43,6 +46,7 @@ test('a new recovery token delegates only to the original exact approved GAS has
  const db=mockDb();
  assert.equal(await yuriRecoveryGASHash({id:TARGET.webId,token:newCred.token},{db}),oldHash);
  assert.ok(db.calls[0].sql.includes('t.redeemed_at IS NOT NULL'));
+ assert.ok(db.calls[0].sql.includes('t.revoked_at IS NULL'));
  assert.ok(db.calls[0].sql.includes('t.session_expires_at>now()'));
  assert.ok(db.calls[0].sql.includes('rv.token_hash=n.token_hash'));
 });
