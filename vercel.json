@@ -370,6 +370,10 @@
       "use": "@vercel/static"
     },
     {
+      "src": "mio-issued-vnext-preview.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "api-activate-attendance.js",
       "use": "@vercel/node"
     },
@@ -455,6 +459,15 @@
       "dest": "/join.html",
       "headers": {
         "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-issued-vnext-preview.html",
+      "dest": "/mio-issued-vnext-preview.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff"
       }
     },
     {
