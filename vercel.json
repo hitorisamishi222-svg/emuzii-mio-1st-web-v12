@@ -404,6 +404,14 @@
     {
       "src": "google3090b8424996f68c.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-yuri-restore.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "yuri-restore.html",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -598,6 +606,23 @@
         "Content-Type": "text/html; charset=utf-8",
         "X-Robots-Tag": "noindex, nofollow",
         "Cache-Control": "public, max-age=3600"
+      }
+    },
+    {
+      "src": "/device-restore",
+      "dest": "/yuri-restore.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "private, no-store",
+        "Referrer-Policy": "no-referrer"
+      }
+    },
+    {
+      "src": "/api/yuri-restore",
+      "dest": "/api-yuri-restore.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
       }
     },
     {
