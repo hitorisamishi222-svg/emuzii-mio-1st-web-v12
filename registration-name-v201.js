@@ -48,14 +48,27 @@ export async function statusV201(browserId,tokenHash,{db=database()}={}){
  const review=await db.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
  const row=review.rows[0]||normal.rows[0];
  if(!row||row.token_hash!==tokenHash)throw Error('unauthorized');
- const pendingReview=!!review.rows.length;
+ // An owner-approved, *exact same browser and credential* registration can
+ // supersede a pending-name-review record without deleting its audit history.
+ // A name match alone, or a different token, never grants a legacy session.
  const approved=normal.rows[0];
- const grantVerified=!pendingReview&&row.status==='承認済み'&&
+ const pending=review.rows[0];
+ const reviewedAndApproved=!!pending&&!!approved&&
+   pending.browser_id===approved.browser_id&&
+   pending.token_hash===approved.token_hash&&
+   pending.name===approved.name&&
+   approved.status==='承認済み'&&
+   /^MIO-[0-9]{4}$/.test(String(approved.integrated_participant_id||''))&&
+   typeof approved.approved_by==='string'&&approved.approved_by.trim().length>0&&
+   !!approved.approved_at;
+ const pendingReview=!!pending&&!reviewedAndApproved;
+ const effectiveRow=reviewedAndApproved?approved:row;
+ const grantVerified=!pendingReview&&effectiveRow.status==='承認済み'&&
   /^MIO-[0-9]{4}$/.test(String(approved?.integrated_participant_id||''))&&
   typeof approved?.approved_by==='string'&&approved.approved_by.trim().length>0&&
   !!approved.approved_at;
- return {ok:true,participantId:row.browser_id,name:row.name,
-  status:pendingReview?'本人確認待ち':row.status,pendingReview,
+ return {ok:true,participantId:effectiveRow.browser_id,name:effectiveRow.name,
+  status:pendingReview?'本人確認待ち':effectiveRow.status,pendingReview,
   // Internal server-side signals only: public light enrollment response does not expose them.
   attendanceGrantVerified:grantVerified,
   integratedParticipantId:grantVerified?approved.integrated_participant_id:null};
