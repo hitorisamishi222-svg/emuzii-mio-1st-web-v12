@@ -1,0 +1,49 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>MIO 運営専用｜ユーリ端末復旧コード発行</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",system-ui,sans-serif}
+body{margin:0;min-height:100svh;background:linear-gradient(150deg,#071830,#194b70);color:#f1f9ff;padding:20px}
+main{max-width:550px;margin:5vh auto;border:1px solid #80b4e0;border-radius:22px;background:#103456;padding:24px}
+h1{font-size:24px}p{line-height:1.7}label{display:block;margin:20px 0 8px}
+input,button{box-sizing:border-box;width:100%;font:inherit;min-height:48px;padding:12px;border-radius:12px}
+input{background:#fff;color:#17354d;border:0}
+button{background:#fbe2a2;color:#143151;border:0;font-weight:800;margin-top:15px;cursor:pointer}button:disabled{opacity:.6}
+pre{white-space:pre-wrap;word-break:break-all;background:#081a33;padding:15px;border-radius:10px}
+#status{white-space:pre-line;min-height:56px}
+small{color:#c5dceb}
+</style></head><body><main>
+<h1>🐳 みお管理｜ユーリさんのログイン復旧</h1>
+<p><strong>対象：</strong>ユーリ／MIO-0017</p>
+<p>運営コードで本人確認済みの端末用復旧コードを発行します。ガチャ2回を新たに付与したり、過去の記録を変更したりしません。</p>
+<form id="form" autocomplete="off">
+<label for="adminCode">みおのガチャ管理者コード</label>
+<input id="adminCode" type="password" autocomplete="off" required>
+<button id="issue" type="submit">ユーリさん専用コードを発行</button></form>
+<p id="status" role="status" aria-live="polite"></p>
+<div id="result" hidden><p><strong>ユーリさんにだけ個別送信するコード</strong></p>
+<pre id="code"></pre><button id="copy" type="button">コードをコピー</button>
+<p><small>有効期限：48時間。ユーリさんは1回だけ入力できます。URL・SNS公開投稿には載せないでください。</small></p>
+<p><a href="/device-restore">ユーリさん用の入力画面</a></p></div>
+</main><script>
+const form=document.getElementById('form'),issue=document.getElementById('issue'),status=document.getElementById('status'),result=document.getElementById('result'),code=document.getElementById('code');
+form.addEventListener('submit',async e=>{
+ e.preventDefault();if(issue.disabled)return;issue.disabled=true;result.hidden=true;status.textContent='正本のガチャ残り2回と運営承認を確認しています…';
+ try{
+  const adminCode=document.getElementById('adminCode').value;
+  const r=await fetch('/api/yuri-issue',{method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'issue',adminCode})});
+  document.getElementById('adminCode').value='';
+  const d=await r.json();
+  if(!r.ok||d.ok!==true)throw Error(d.error||'発行できません');
+  if(d.drawsRemaining!==2)throw Error('ガチャ残回数の再確認が必要です');
+  code.textContent=d.recoveryCode;result.hidden=false;
+  status.textContent='発行完了。ユーリさんにだけコードを送ってください。';
+ }catch(err){status.textContent=err.message;issue.disabled=false}
+});
+document.getElementById('copy').onclick=async()=>{
+ try{await navigator.clipboard.writeText(code.textContent);status.textContent='コピーしました。ユーリさんにだけ送ってください。'}
+ catch{status.textContent='コードを選択してコピーしてください。'}
+};
+</script></body></html>

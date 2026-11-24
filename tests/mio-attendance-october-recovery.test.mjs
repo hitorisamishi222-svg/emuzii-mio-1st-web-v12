@@ -106,7 +106,8 @@ test('retains original 2026 October backend identity and routes, without writing
  assert.doesNotMatch(js,/attendanceDay\.value=String\(Math\.min\(31,Math\.max\(1,now\.getMonth/);
  assert.equal(cfg.routes.find(x=>x.src==='/api/checkin')?.dest,'/api-checkin.js');
  const server=file('api-checkin.js');
- assert.match(server,/bridge\('checkin',\{participantId:s\.id,tokenHash:hash\(s\.token\),keyword,day\}\)/);
+ assert.match(server,/const delegated=await yuriRecoveryGASHash\(s\)\.catch\(\(\)=>null\)/);
+ assert.match(server,/bridge\('checkin',\{participantId:s\.id,tokenHash:delegated\|\|hash\(s\.token\),keyword,day\}\)/);
  assert.equal(cfg.builds.some(x=>x.src==='api-checkin.js'),true);
  assert.doesNotMatch(js,/localStorage\.clear\(\)|attendanceConfirmedDays\.clear\(\)|sessionStorage\.clear\(\)/);
 });

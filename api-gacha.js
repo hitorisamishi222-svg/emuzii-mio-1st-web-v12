@@ -1,3 +1,4 @@
+import {yuriRecoveryGASHash} from './mio-yuri-recovery-session.mjs';
 import {prepare,bridge,readSession,hash,sessionCookie} from './bridge.js';
 
 export default async function handler(req,res){
@@ -12,7 +13,8 @@ export default async function handler(req,res){
  if(!['catalog','draw','history'].includes(body.action))return res.status(400).json({ok:false,error:'操作を確認してください'});
  if(body.action==='draw'&&(!/^[a-f0-9]{32}$/.test(body.drawId||'')||!['通常','ラキフェス'].includes(body.mode)))return res.status(400).json({ok:false,error:'抽選要求が不正です'});
  try{
-  const identity={participantId:session.id,tokenHash:hash(session.token)};
+  const delegated=await yuriRecoveryGASHash(session).catch(()=>null);
+  const identity={participantId:session.id,tokenHash:delegated||hash(session.token)};
   const data=await bridge(body.action,{...identity,...(body.action==='draw'?{drawId:body.drawId,mode:body.mode}:{})});
   if(data.participantId!==session.id)throw Error('登録を確認できません');
   res.setHeader('Set-Cookie',sessionCookie(session.id,session.token,cfg.secret));
