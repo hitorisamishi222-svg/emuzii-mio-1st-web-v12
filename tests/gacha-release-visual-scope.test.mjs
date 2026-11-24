@@ -10,15 +10,17 @@ const gitBlobSha=name=>{
   return createHash('sha1').update(Buffer.from('blob '+buffer.length+'\0')).update(buffer).digest('hex');
 };
 
-// Pin source files to verified production main at 2476fb560977 (2026-11-10).
-// The previously pinned api-status.js blob predates approved light-session
-// recovery. This remains a strict SHA check, not removal of the guard.
-test('visual-only candidate retains exact production GAS, authenticated bridge and draw API',()=>{
+// November 24 operator-approved single-participant emergency auth change.
+// Pin the exact reviewed auth sources: approved GAS & bridge unchanged; gacha,
+// status and checkin may only delegate a signed, DB-verified Yuri session.
+// Strict SHA checks remain in force; this is NOT a generic bypass.
+test('approved scoped emergency release pins unmodified GAS and exact reviewed auth APIs',()=>{
   const expected=new Map([
     ['APPS_SCRIPT_Code_v1.9.1_LOGIN_ID.gs','6dd7e5fc938fb0150c5067760f37972613f3075b'],
-    ['api-gacha.js','8ecaad8f735119145bec1823f3bb27dc8224f4a7'],
+    ['api-gacha.js','3789850fb3ab11449103bf55840f96ed0f93f523'],
     ['bridge.js','b3311e007eb94c40e11d8d64faca68061e7266ba'],
-    ['api-status.js','92193c59bdb97d96a7fcb94e9b2e7edd5867c0f1']
+    ['api-status.js','319492d11bcf79e68e15109fbae675c961d5e439'],
+    ['api-checkin.js','8edbf3bd6be999d75c8e7bcf27e41aa064098054']
   ]);
   for(const [filename,hash] of expected){
     assert.equal(gitBlobSha(filename),hash,filename+' must stay byte-for-byte unchanged');
