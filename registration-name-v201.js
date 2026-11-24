@@ -1,15 +1,16 @@
 // v2.0.1: concurrency-safe name reservation, separated from legacy MIO entitlements.
-import pg from 'pg';
-const {Pool}=pg;
 import {normalizeName,validateEnrollment} from './registration-light-store.js';
-let pool;
-function database(){
+let poolPromise;
+async function database(){
  if(!process.env.MIO_REGISTRATION_DATABASE_URL)throw Error('db not configured');
- if(!pool)pool=new Pool({connectionString:process.env.MIO_REGISTRATION_DATABASE_URL,ssl:{rejectUnauthorized:true},max:3,connectionTimeoutMillis:5000});
- return pool;
+ if(!poolPromise)poolPromise=import('pg')
+  .then(({default:pg})=>new pg.Pool({connectionString:process.env.MIO_REGISTRATION_DATABASE_URL,ssl:{rejectUnauthorized:true},max:3,connectionTimeoutMillis:5000}))
+  .catch(e=>{poolPromise=null;throw e});
+ return poolPromise;
 }
-export async function registerV201(input,{db=database()}={}){
+export async function registerV201(input,{db=null}={}){
  const x=validateEnrollment(input);
+ db ||= await database();
  const client=await db.connect();
  try{
   await client.query('BEGIN');
@@ -42,8 +43,9 @@ export async function registerV201(input,{db=database()}={}){
  }catch(err){await client.query('ROLLBACK');throw err}
  finally{client.release()}
 }
-export async function statusV201(browserId,tokenHash,{db=database()}={}){
+export async function statusV201(browserId,tokenHash,{db=null}={}){
  validateEnrollment({browserId,tokenHash,name:'-',loginId:''});
+ db ||= await database();
  const normal=await db.query('SELECT browser_id,token_hash,name,status,integrated_participant_id,approved_by,approved_at FROM mio_registration_v2 WHERE browser_id=$1',[browserId]);
  const review=await db.query('SELECT browser_id,token_hash,name FROM mio_name_review_v201 WHERE browser_id=$1',[browserId]);
  const row=review.rows[0]||normal.rows[0];
