@@ -153,3 +153,31 @@ test('L1 visitor can read public gallery without signed browser session',async()
  assert.deepEqual(await checkAccess({db,resource:RESOURCE.SITE,token:null,deviceProof:null,pepper,now}),{allowed:true,level:1});
  assert.deepEqual(await checkAccess({db,resource:RESOURCE.PUBLIC_GALLERY,token:null,deviceProof:null,pepper,now}),{allowed:true,level:1});
 });
+
+test('reissue invalidates previous unused ID but preserves the active device session',async()=>{
+ const db=fakeDB({existing:true});
+ const first=await issuerRegisterAccess(issueArgs(db));
+ const prior=db.state.invite;
+ const second=await issuerRegisterAccess(issueArgs(db,{operationId:'12345678-1234-4123-8123-123456789013'}));
+ assert.equal(prior.status,'revoked');
+ assert.equal(db.state.invite.status,'issued');
+ assert.notEqual(first.code,second.code);
+ assert.equal(second.replacedCount,1);
+ assert.equal(db.state.accountSession,'original-session-is-untouched');
+ await assert.rejects(claimIssuedAccess({db,displayName:name,code:first.code,deviceProof:proof,pepper,now}),/INVALID_OR_USED_CODE/);
+});
+
+test('server protects protected room by current session and device, not UI visibility',async()=>{
+ const {newSession}=await import('../mio-level-access-vnext.mjs');
+ const c=newSession(pepper);
+ const current={master_id:masterId,level:3,status:'active',member_until:'2026-12-31',
+  session_hash:c.sessionHash,session_expires_at:'2026-12-05',device_thumbprint:proof.fingerprint};
+ const db={query:async()=>({rows:[current]})};
+ const accepted=await checkAccess({db,resource:RESOURCE.MEMBER_GACHA,token:c.token,deviceProof:proof,pepper,now});
+ assert.equal(accepted.allowed,true);assert.equal(accepted.masterId,masterId);
+ const wrong=await checkAccess({db,resource:RESOURCE.MEMBER_GACHA,token:c.token,
+  deviceProof:{...proof,fingerprint:'sha256:'+'e'.repeat(64)},pepper,now});
+ assert.equal(wrong.allowed,false);
+ const expired=await checkAccess({db,resource:RESOURCE.MEMBER_GACHA,token:c.token,deviceProof:proof,pepper,now:new Date('2027-01-01')});
+ assert.equal(expired.allowed,false);
+});
