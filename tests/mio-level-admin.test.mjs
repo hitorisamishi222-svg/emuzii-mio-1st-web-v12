@@ -103,7 +103,8 @@ test('existing Web management page hosts accessible recovery controls and safe r
  assert.ok(routes.routes.find(x=>x.src==='/api/mio-level-admin'));
  assert.ok(routes.builds.find(x=>x.src==='api-mio-level-admin.js'));
  const api=read('api-mio-level-admin.js');
- assert.match(api,/MIO_LEVEL_ADMIN_RELEASE!==RELEASE/);
+ assert.match(api,/MIO_LEVEL_ADMIN_RELEASE===RELEASE&&process\.env\.VERCEL_ENV==='production'/);
+ assert.match(api,/if\(!productionRelease&&!previewSynthetic\)/);
  assert.match(api,/sessionOK\(req\)/);
  assert.match(api,/authorizedCode\(d.adminCode/);
  assert.doesNotMatch(api,/function.*grantGacha/i);
