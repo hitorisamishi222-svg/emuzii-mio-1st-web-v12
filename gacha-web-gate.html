@@ -54,6 +54,7 @@ main{max-width:760px}
 @media(max-width:520px){.ops-grid{grid-template-columns:1fr}.ops-summary{align-items:flex-start}}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
+<p><a href="#mioRecoveryPanel" style="display:block;padding:13px 16px;border:1px solid #9ed9f4;border-radius:12px;background:#17476f;color:#fff1c5;font-weight:800;text-decoration:none">🔑 最優先：復旧ID・機種変更の管理へ</a></p>
 <section><h2>🔑 Face ID・パスキー</h2><p><small>初回だけ管理者コードで登録。次からはFace IDでログインできます。</small></p><button id="passkeyLogin" disabled>Face IDでログイン</button><button id="passkeyRegister" disabled style="margin-top:10px;background:#184d71;color:#f3f9ff;border:1px solid #83afce">この端末のFace IDを登録</button><p id="passkeyStatus" role="status" aria-live="polite">Face IDの利用状況を確認しています…</p></section>
 <section id="switches"><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
 <section id="normalSection" class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>

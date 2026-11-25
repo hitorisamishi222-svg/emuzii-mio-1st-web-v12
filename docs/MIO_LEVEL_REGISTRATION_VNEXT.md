@@ -49,3 +49,38 @@
 セッションが消えた場合、端末鍵が残っていれば再認証。ブラウザの保存データ全消去で鍵も失った場合はみおのID再発行。旧セッションの安全な失効を毎APIで確認してから一般化する。
 
 公式基準：OWASP Authorization Cheat Sheet（deny by default、every request）、OWASP Session Management Cheat Sheet（server-side session invalidation）。
+
+
+## 復旧ID最優先｜Web管理センター統合（11月25日）
+
+本人指示：新規レベル拡張よりも、みおがスマホのWeb管理画面で既存会員の復旧IDを発行・再発行できることを最優先。専用の新規管理アプリは作らない。
+
+### 実装済み（隔離PR #101）
+
+- 既存の gacha-web-gate.html の最上部に復旧ID管理のショートカット、参加者一覧直下に「復旧ID発行・機種変更」フォームを配置。
+- 参加者一覧で人を選ぶと名前・既存MIO-IDを自動入力する。Lv.1/Lv.2/Lv.3、Lv.3期限、メンシプ確認、本人確認、管理者コード/Face IDを入力できる。
+- mio-level-admin-panel.js は発行・再発行を1件ずつ確認し、成功した最新IDを本人への個別連絡用に1回だけ表示する。ブラウザのlocalStorage、URL、アクセスログにコードを置かない。
+- api-mio-level-admin.js はサーバーで管理者コード/Face IDを再認証し、既存GASの webAdminOpsRead に登録された MIO-ID と名前を正確に突合する。クライアントが申告する「確認済み」だけでIDや権限を決めない。同名・台帳不一致・メンシプ未確認は失敗。
+- 使い切り復旧ID、過去IDの失効、再発行のDBトランザクション、失敗時ROLLBACK、既存MIO-IDの権利保持は mio-level-registration-vnext.mjs を利用。
+- レベル変更は**新端末での登録成功まで保留**。発行時点で旧端末を突然ログアウトさせない。
+- ユーリさん向け本番の緊急復旧画面/owner/yuri-issueへのリンクは引き続き残す。
+
+### 本番接続を止めているゲート
+
+Vercel本番環境には2026-11-25時点で MIO_LEVEL_* 設定がなく、上記共通APIは NOT_RELEASED を返す設計。隔離実装の存在を稼働中の一般復旧機能とは説明しない。
+
+本番導入には以下が必要：
+
+1. 本番以外の隔離PostgreSQLで release-prep/mio-level-vnext-schema.sql を実行し、既存データとは隔離して並行発行/使用済ID/巻戻しを検証。
+2. サーバーで検証したみおのowner_user_idに合わせ、正規のissuerレコードをセキュアに初期化。使い回し可能な管理コードそのものは保存しない。
+3. Vercelに MIO_LEVEL_DATABASE_URL、MIO_LEVEL_ACCESS_PEPPER（48文字以上）、MIO_LEVEL_OWNER_USER_ID を安全に設定。MIO_LEVEL_ADMIN_RELEASE='vnext-verified' は**すべてのゲート合格後に限る**。
+4. 登録者本人の「名前＋復旧ID」画面とWebCrypto端末鍵/署名の実検証を完成。現在の claimIssuedAccess だけでは、外部から自己申告した署名証明を信用してよいわけではない。
+5. 元の既存IDを使う皆勤、メンシプガチャ、歌推し/メンシプギャラリーAPIの全入口にレベル・端末世代・署名照合を統合してから公開。限定素材を静的公開URLで配信しない。
+6. 本番データのコピー・追加ガチャ付与・既存ログイン失効・旧URL変更は不要かつ禁止。保留中の他の認証復旧機能を勝手に停止しない。
+
+### 検証・合否
+
+- 自動テストは隔離モック中心。実GASと隔離DB/端末での連結動作は未検証。
+- 完成の判定：みおのWeb管理画面で対象者を選択 → 本人照合 → 復旧ID発行 → 本人が名前＋IDで本登録 → 対象レベルのコンテンツが表示 → 旧コード無効 → ガチャ・皆勤の確定履歴は元のMIO-IDを参照し一切増減しない。
+- OWASPのAuthentication/Session Management Cheat Sheets、PostgreSQLのtransaction-level advisory lockingを参照。復旧IDは単回使用・失効・サーバー監査が原則。
+
