@@ -403,8 +403,9 @@ function renderRoster(){
     selected=item;
     // Read-only handoff to the large-upgrade recovery panel. Server re-checks
     // the canonical GAS roster; browser selection grants no authority.
-    window.dispatchEvent(new CustomEvent('mio:admin-person-selected',
-      {detail:{name:item.name,mioId:item.mioId}}));
+    if(typeof CustomEvent==='function'&&typeof window.dispatchEvent==='function')
+      window.dispatchEvent(new CustomEvent('mio:admin-person-selected',
+        {detail:{name:item.name,mioId:item.mioId}}));
     el('opsOnsiteGrantVerified').checked=false;
     el('opsMemberVerified').checked=false;
     const g=item.gacha;

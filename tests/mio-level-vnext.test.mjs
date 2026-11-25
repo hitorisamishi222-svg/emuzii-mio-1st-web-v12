@@ -93,7 +93,7 @@ function fakeDB({existing=false,failInsert=false,invite=null,wrongName=false}={}
   if(sql.startsWith('SELECT master_id FROM mio_level_invites_v1')){
    return {rows:state.invite?.status==='issued'&&state.invite.code_hash===args[0]?[{master_id:masterId}]:[]};
   }
-  if(sql.startsWith('SELECT invite_id,master_id,generation,expires_at FROM mio_level_invites_v1')){
+  if(sql.startsWith('SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until FROM mio_level_invites_v1')){
    return {rows:state.invite?.status==='issued'&&state.invite.code_hash===args[0]?[state.invite]:[]};
   }
   if(sql.startsWith("UPDATE mio_level_invites_v1 SET status='claimed'")){
