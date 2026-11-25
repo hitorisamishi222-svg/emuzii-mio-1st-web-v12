@@ -428,6 +428,34 @@
     {
       "src": "mio-level-admin-panel.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-mio-level-claim.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api-mio-level-qa.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "mio-recovery-vnext.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-recovery-vnext.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-recovery-vnext.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-recovery-qa.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "mio-recovery-qa.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -669,6 +697,64 @@
     {
       "src": "/mio-level-admin-panel.js",
       "dest": "/mio-level-admin-panel.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/api/mio-level-claim",
+      "dest": "/api-mio-level-claim.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/api/mio-level-qa",
+      "dest": "/api-mio-level-qa.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-recovery-vnext.html",
+      "dest": "/mio-recovery-vnext.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "Referrer-Policy": "no-referrer",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-recovery-vnext.js",
+      "dest": "/mio-recovery-vnext.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-recovery-vnext.css",
+      "dest": "/mio-recovery-vnext.css",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-recovery-qa.html",
+      "dest": "/mio-recovery-qa.html",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "Referrer-Policy": "no-referrer",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-recovery-qa.js",
+      "dest": "/mio-recovery-qa.js",
       "headers": {
         "Cache-Control": "private, no-store",
         "X-Robots-Tag": "noindex, nofollow"

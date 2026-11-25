@@ -84,3 +84,13 @@ Vercel本番環境には2026-11-25時点で MIO_LEVEL_* 設定がなく、上記
 - 完成の判定：みおのWeb管理画面で対象者を選択 → 本人照合 → 復旧ID発行 → 本人が名前＋IDで本登録 → 対象レベルのコンテンツが表示 → 旧コード無効 → ガチャ・皆勤の確定履歴は元のMIO-IDを参照し一切増減しない。
 - OWASPのAuthentication/Session Management Cheat Sheets、PostgreSQLのtransaction-level advisory lockingを参照。復旧IDは単回使用・失効・サーバー監査が原則。
 
+
+
+## Previewでの合成データ試験（2026-11-25）
+
+- `mio-level-preview-scope.mjs` は既存PRブランチ、Vercel Previewの正確なホスト/Origin、既存Neon隔離ブランチのホストを全て照合する。Productionと他ブランチでは無効。
+- Previewの管理画面は `MIO-9998 / Synthetic QA A` と `MIO-9999 / Synthetic QA B` のみを許可し、GASには接続しない。Vercel SSOで保護されたPreview内の合成試験専用。
+- `mio-recovery-vnext.html` と `/api/mio-level-claim` はこのPreview専用登録経路。端末鍵はIndexedDBに保存し、登録APIがチャレンジ署名を検証する。OS/ブラウザは最小限の表示ヒントとして保存する。
+- `mio-recovery-qa.html` はPreviewのNode APIから隔離Neonへ複数接続し、異なるbackend PID、並列発行、再発行、別人IDの維持、二重登録、既存端末セッション維持を試験する。
+- 必須Preview変数は `MIO_LEVEL_ADMIN_RELEASE=preview-synthetic`, `MIO_LEVEL_PREVIEW_SYNTHETIC=1`, `MIO_LEVEL_OWNER_USER_ID=preview-synthetic-owner`, `MIO_LEVEL_DATABASE_URL`（既存の `gallery-admin-isolated` のみ）, `MIO_LEVEL_ACCESS_PEPPER`（Preview専用のランダム値）。全て対象ブランチ限定。
+- 本番では引き続き未リリース。GASの実稼働コードに読み取り専用の `webAdminOpsRead` があるか、本人・MIO-ID照合が成立するか、既存皆勤/ガチャ/ギャラリーAPIが権限を強制するかは別ゲート。合成Previewの成功を実会員の完成扱いにしない。

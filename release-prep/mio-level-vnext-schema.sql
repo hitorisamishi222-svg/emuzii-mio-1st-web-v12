@@ -54,6 +54,23 @@ CREATE TABLE IF NOT EXISTS mio_level_audit_v1 (
  generation bigint NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS mio_level_challenges_v1 (
+ id text PRIMARY KEY,
+ record jsonb NOT NULL,
+ expires_at timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mio_level_challenges_expiry_v1
+ ON mio_level_challenges_v1(expires_at);
+CREATE TABLE IF NOT EXISTS mio_level_rate_v1 (
+ rate_key char(64) NOT NULL,
+ bucket bigint NOT NULL,
+ hits integer NOT NULL CHECK(hits>0),
+ expires_at timestamptz NOT NULL,
+ PRIMARY KEY(rate_key,bucket)
+);
+CREATE INDEX IF NOT EXISTS mio_level_rate_expiry_v1
+ ON mio_level_rate_v1(expires_at);
 -- Separate release prerequisite: actual account master_id and issuer must be
 -- verified against GAS roster & owner login. No issuer or member rows auto-seeded.
 -- Gallery media for levels 2/3 must be served via authorized APIs, not /public URLs.
+

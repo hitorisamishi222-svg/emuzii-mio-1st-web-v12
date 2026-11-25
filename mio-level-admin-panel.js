@@ -9,6 +9,7 @@ const status=(message)=>{$('mioRecoveryStatus').textContent=message};
 const cleanResult=()=>{
  $('mioRecoveryOutput').value='';
  $('mioRecoveryResult').hidden=true;
+ $('mioRecoveryPreviewLinks').hidden=true;
 };
 const target=()=>({masterId:$('mioRecoveryMasterId').value.trim(),
  displayName:$('mioRecoveryName').value.trim().normalize('NFKC')});
@@ -43,7 +44,7 @@ function newOperationId(){return crypto.randomUUID()}
 async function read(){
  if(busy)return;
  busy=true;verified=false;cleanResult();redraw();
- status('GASの参加者台帳と発行状態を照合しています…');
+ status('参加者台帳と発行状態を照合しています…');
  try{
   const id=target();
   if(!/^MIO-(?:[0-9]{4}|[A-Z0-9]{4}-[A-Z0-9]{4})$/.test(id.masterId)||!id.displayName)
@@ -54,7 +55,7 @@ async function read(){
    throw Error('GAS台帳の名前とMIO-IDを確認できません。同名者・別IDへの発行は停止します。');
   verified=true;lastTarget=id;
   const old=data.current;
-  status('本人確認候補：'+id.displayName+' / '+id.masterId+
+  status((data.previewSynthetic?'隔離用の合成参加者：':'本人確認候補：')+id.displayName+' / '+id.masterId+
    '\n現在の共通登録：'+(old?('Lv.'+old.level+' / '+old.status+' / 世代'+old.generation):'未登録')+
    '\n※本人・資格・元IDをみおが最終確認してから発行してください。');
  }catch(e){status(e.message)}
@@ -85,6 +86,7 @@ async function issue(){
    throw Error('発行結果が一致しません。再発行する前に管理台帳を確認してください。');
   $('mioRecoveryOutput').value=d.recoveryId;
   $('mioRecoveryResult').hidden=false;
+  $('mioRecoveryPreviewLinks').hidden=!d.previewSynthetic;
   status('発行完了。旧未使用ID '+d.replacedCount+
    '件が失効しました。\n新しいIDだけを本人へ個別送信してください。');
   $('mioRecoveryConfirmed').checked=false;
@@ -122,3 +124,4 @@ window.addEventListener('mio:admin-person-selected',event=>{
 });
 redraw();
 })();
+

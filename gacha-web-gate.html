@@ -88,7 +88,7 @@ main{max-width:760px}
   <div id="mioRecoveryPanel" class="ops-card" aria-labelledby="mioRecoveryHeading">
    <h3 id="mioRecoveryHeading">🔑 復旧ID発行・機種変更（大型更新）</h3>
    <p class="ops-caption">上の参加者一覧から対象者を選択。みおが本人確認して最新の復旧IDを発行します。旧未使用IDは失効し、過去の皆勤・ガチャ・当選履歴は変更しません。</p>
-   <p class="ops-caption">現在は隔離試験中。正式接続が完了するまで発行はできません。ユーリさんの既存緊急復旧は <a href="/owner/yuri-issue" style="color:#bfe8ff">専用の発行画面</a> を利用してください。</p>
+   <p class="ops-caption">復旧IDは対象者を照合してから個別に発行します。ユーリさんの既存緊急復旧は <a href="/owner/yuri-issue" style="color:#bfe8ff">専用の発行画面</a> を利用してください。</p>
    <div class="ops-grid">
     <div class="ops-field"><label for="mioRecoveryMasterId">登録済みMIO-ID</label>
      <input id="mioRecoveryMasterId" class="ops-control ops-number" placeholder="MIO-0000" autocomplete="off" maxlength="14" required></div>
@@ -108,11 +108,12 @@ main{max-width:760px}
     <input id="mioRecoveryAdminCode" class="ops-control ops-number" type="password" autocomplete="off"></div>
    <button type="button" class="ops-secondary" id="mioRecoveryRead">登録・復旧状態を照合</button>
    <button type="button" id="mioRecoveryIssue" disabled>復旧IDを発行・再発行する</button>
-   <div class="ops-message" id="mioRecoveryStatus" role="status" aria-live="polite">隔離試験中：実ID発行は未接続です。</div>
+   <div class="ops-message" id="mioRecoveryStatus" role="status" aria-live="polite">管理者認証後に対象者を照合してください。</div>
    <div id="mioRecoveryResult" hidden><label for="mioRecoveryOutput">本人にだけ個別送信する最新の復旧ID</label>
     <input id="mioRecoveryOutput" class="ops-control ops-number" type="text" readonly autocomplete="off">
     <button type="button" id="mioRecoveryCopy" class="ops-secondary">最新IDをコピー</button>
     <p class="ops-caption">使い切り・有効期限48時間。以前の未使用IDは使えなくなります。公開投稿やURLには書かないでください。</p>
+    <p id="mioRecoveryPreviewLinks" class="ops-caption" hidden>隔離試験：<a href="/mio-recovery-vnext.html" style="color:#bfe8ff">本人登録画面</a> · <a href="/mio-recovery-qa.html" style="color:#bfe8ff">DB並列試験</a></p>
    </div>
   </div>
   <div id="opsMemberSection" class="ops-card"><h3 class="ops-section-title">承認済み参加者のメンシプ購入確認</h3>
@@ -200,3 +201,4 @@ $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
 </script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/mio-level-admin-panel.js" defer></script></body></html>
+
