@@ -87,7 +87,7 @@ function fakeDB({existing=false,failInsert=false,invite=null,wrongName=false}={}
   if(sql.startsWith('INSERT INTO mio_level_accounts_v1')){state.existing=true;return {rows:[]}};
   if(sql.startsWith('INSERT INTO mio_level_invites_v1')){
    if(state.failInsert)throw Error('SYNTHETIC_INSERT_FAILURE');
-   state.invite={invite_id:args[0],master_id:args[1],generation:args[3],code_hash:args[4],status:'issued',expires_at:args[6]};
+   state.invite={invite_id:args[0],master_id:args[1],issuer_id:args[2],generation:args[3],code_hash:args[4],status:'issued',expires_at:args[5],level:args[6],member_until:args[7]};
    return {rows:[]};
   }
   if(sql.startsWith('SELECT master_id FROM mio_level_invites_v1')){
@@ -180,4 +180,18 @@ test('server protects protected room by current session and device, not UI visib
  assert.equal(wrong.allowed,false);
  const expired=await checkAccess({db,resource:RESOURCE.MEMBER_GACHA,token:c.token,deviceProof:proof,pepper,now:new Date('2027-01-01')});
  assert.equal(expired.allowed,false);
+});
+
+test('reissuing staged access never changes active account level until device claim',async()=>{
+ const db=fakeDB({existing:true});
+ const issued=await issuerRegisterAccess(issueArgs(db,{level:3,memberUntil:'2026-12-31',
+  memberEvidence,operationId:'12345678-1234-4123-8123-123456789014'}));
+ assert.equal(issued.level,3);
+ assert.equal(db.state.invite.level,3);
+ assert.ok(!db.calls.some(x=>x.sql.startsWith('UPDATE mio_level_accounts_v1 SET display_name=')),
+   'existing active membership must never change simply because a code was issued');
+ await claimIssuedAccess({db,displayName:name,code:issued.code,deviceProof:proof,pepper,now});
+ const claim=db.calls.find(x=>x.sql.startsWith("UPDATE mio_level_accounts_v1 SET status='active'"));
+ assert.equal(claim.args[8],3);
+ assert.equal(claim.args[9].toISOString(),'2026-12-31T00:00:00.000Z');
 });

@@ -30,14 +30,15 @@ export async function issuerRegisterAccess({db,actor,issuerId,masterId,displayNa
   await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[masterId]);
   const issuer=(await client.query('SELECT owner_user_id,active FROM mio_level_issuers_v1 WHERE issuer_id=$1 FOR UPDATE',[issuerId])).rows[0];
   issuerOwned(actor,issuer);
-  const existing=(await client.query('SELECT master_id,generation FROM mio_level_accounts_v1 WHERE master_id=$1 FOR UPDATE',[masterId])).rows[0];
+  const existing=(await client.query('SELECT master_id,generation,status FROM mio_level_accounts_v1 WHERE master_id=$1 FOR UPDATE',[masterId])).rows[0];
   const operation=(await client.query('SELECT operation_id FROM mio_level_audit_v1 WHERE operation_id=$1',[operationId])).rows;
   if(operation.length)throw Error('DUPLICATE_OPERATION');
   let generation=0;
   if(existing){
    generation=Number(existing.generation);
-   await client.query('UPDATE mio_level_accounts_v1 SET display_name=$2,level=$3,member_until=$4,issuer_id=$5,updated_at=now() WHERE master_id=$1',
-    [masterId,name,level,expiry,issuerId]);
+   // Reissuing an ID must NOT change the current user's room rights.
+   // The new requested level is staged on the invitation until claim.
+   if(existing.status==='revoked')throw Error('REVOKED_ACCOUNT_REQUIRES_REVIEW');
   }else{
    await client.query("INSERT INTO mio_level_accounts_v1(master_id,display_name,issuer_id,level,member_until,status,generation) VALUES($1,$2,$3,$4,$5,'pending',0)",
     [masterId,name,issuerId,level,expiry]);
@@ -46,8 +47,8 @@ export async function issuerRegisterAccess({db,actor,issuerId,masterId,displayNa
   // previously generated one but forgot to share it. Do not revoke the
   // currently successful device session until the new claim succeeds.
   const revoked=await client.query("UPDATE mio_level_invites_v1 SET status='revoked',revoked_at=now() WHERE master_id=$1 AND status='issued' RETURNING invite_id",[masterId]);
-  await client.query("INSERT INTO mio_level_invites_v1(invite_id,master_id,issuer_id,generation,code_hash,status,expires_at) VALUES($1,$2,$3,$4,$5,'issued',$6)",
-   [randomUUID(),masterId,issuerId,generation+1,codeHash,new Date(now.getTime()+48*3600_000)]);
+  await client.query("INSERT INTO mio_level_invites_v1(invite_id,master_id,issuer_id,generation,code_hash,status,expires_at,level,member_until) VALUES($1,$2,$3,$4,$5,'issued',$6,$7,$8)",
+   [randomUUID(),masterId,issuerId,generation+1,codeHash,new Date(now.getTime()+48*3600_000),level,expiry]);
   await client.query("INSERT INTO mio_level_audit_v1(operation_id,master_id,issuer_id,actor_id,event,generation) VALUES($1,$2,$3,$4,'issue',$5)",
    [operationId,masterId,issuerId,actor.userId,generation+1]);
   return {replacedCount:revoked.rows.length,generation:generation+1};
@@ -69,7 +70,7 @@ export async function claimIssuedAccess({db,displayName,code,deviceProof,deviceI
   const peek=(await client.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status='issued'",[digest])).rows[0];
   if(!peek)throw Error('INVALID_OR_USED_CODE');
   await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[peek.master_id]);
-  const item=(await client.query("SELECT invite_id,master_id,generation,expires_at FROM mio_level_invites_v1 WHERE code_hash=$1 AND status='issued' FOR UPDATE",[digest])).rows[0];
+  const item=(await client.query("SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until FROM mio_level_invites_v1 WHERE code_hash=$1 AND status='issued' FOR UPDATE",[digest])).rows[0];
   if(!item||item.master_id!==peek.master_id||new Date(item.expires_at)<=now)throw Error('INVALID_OR_USED_CODE');
   const account=(await client.query('SELECT master_id,display_name,generation,status FROM mio_level_accounts_v1 WHERE master_id=$1 FOR UPDATE',[item.master_id])).rows[0];
   if(!account||account.status==='revoked'||safeName(account.display_name)!==name||Number(item.generation)!==Number(account.generation)+1)
@@ -78,8 +79,8 @@ export async function claimIssuedAccess({db,displayName,code,deviceProof,deviceI
   const expiresAt=new Date(now.getTime()+30*86400_000);
   const claimed=await client.query("UPDATE mio_level_invites_v1 SET status='claimed',claimed_at=now() WHERE invite_id=$1 AND status='issued' RETURNING invite_id",[item.invite_id]);
   if(claimed.rows.length!==1)throw Error('INVITE_RACE');
-  const result=await client.query("UPDATE mio_level_accounts_v1 SET status='active',generation=$2,device_thumbprint=$3,device_public_jwk=$4,session_hash=$5,session_expires_at=$6,browser_hint=$7,os_hint=$8,device_registered_at=now(),updated_at=now() WHERE master_id=$1 RETURNING master_id",
-   [item.master_id,item.generation,thumbprint,deviceProof.publicJwk||null,sessionHash,expiresAt,browser,os]);
+  const result=await client.query("UPDATE mio_level_accounts_v1 SET status='active',generation=$2,device_thumbprint=$3,device_public_jwk=$4,session_hash=$5,session_expires_at=$6,browser_hint=$7,os_hint=$8,level=$9,member_until=$10,issuer_id=$11,device_registered_at=now(),updated_at=now() WHERE master_id=$1 RETURNING master_id",
+   [item.master_id,item.generation,thumbprint,deviceProof.publicJwk||null,sessionHash,expiresAt,browser,os,item.level,item.member_until,item.issuer_id]);
   if(result.rows.length!==1)throw Error('ACCOUNT_UPDATE_FAILED');
   return {masterId:item.master_id,sessionToken:token,sessionExpiresAt:expiresAt.toISOString()};
  });

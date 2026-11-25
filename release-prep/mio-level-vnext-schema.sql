@@ -33,11 +33,14 @@ CREATE TABLE IF NOT EXISTS mio_level_invites_v1 (
  master_id text NOT NULL REFERENCES mio_level_accounts_v1(master_id),
  issuer_id text NOT NULL REFERENCES mio_level_issuers_v1(issuer_id),
  generation bigint NOT NULL CHECK(generation>=1),
+ level smallint NOT NULL CHECK(level BETWEEN 1 AND 3),
+ member_until timestamptz,
  code_hash char(64) UNIQUE NOT NULL,
  status text NOT NULL CHECK(status IN ('issued','claimed','revoked')),
  expires_at timestamptz NOT NULL,
  claimed_at timestamptz,
  revoked_at timestamptz,
+ CONSTRAINT mio_pending_member_expiry CHECK(level<>3 OR member_until IS NOT NULL),
  created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS mio_level_one_unused_code_v1

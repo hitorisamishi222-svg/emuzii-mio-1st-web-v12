@@ -420,6 +420,14 @@
     {
       "src": "yuri-issue.html",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api-mio-level-admin.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "mio-level-admin-panel.js",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -645,6 +653,22 @@
     {
       "src": "/api/yuri-issue",
       "dest": "/api-yuri-issue.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/api/mio-level-admin",
+      "dest": "/api-mio-level-admin.js",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "src": "/mio-level-admin-panel.js",
+      "dest": "/mio-level-admin-panel.js",
       "headers": {
         "Cache-Control": "private, no-store",
         "X-Robots-Tag": "noindex, nofollow"
