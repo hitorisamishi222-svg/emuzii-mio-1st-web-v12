@@ -25,10 +25,13 @@ export async function runPreviewQa({db,pepper}) {
   const results=[];
   const clients=await Promise.all([db.connect(),db.connect()]);
   try {
+    // Hold simultaneous transactions so Neon/PgBouncer transaction pooling pins
+    // distinct server backends instead of reusing one PID sequentially.
+    await Promise.all(clients.map(c=>c.query('BEGIN')));
     const [a,b]=await Promise.all(clients.map(c=>c.query('SELECT pg_backend_pid() AS pid')));
     assert(String(a.rows[0].pid)!==String(b.rows[0].pid),'separate-postgres-backend-pids');
-    results.push('独立DB接続: 別々のPostgreSQL PIDを確認');
-  } finally {clients.forEach(c=>c.release());}
+    results.push('独立DB接続: 同時トランザクションで別々のPostgreSQL PIDを確認');
+  } finally {await Promise.all(clients.map(c=>c.query('ROLLBACK').catch(()=>{})));clients.forEach(c=>c.release());}
 
   const issue=(masterId,displayName)=>issuerRegisterAccess({db,actor,issuerId:'mio',masterId,
     displayName,level:2,rosterProof:{source:'gas-verified',unique:true,masterId,displayName},pepper});
@@ -63,7 +66,7 @@ export async function runPreviewQa({db,pepper}) {
   const oldSession=account.session_hash;
   await issue(ids[0][0],ids[0][1]);
   const after=(await db.query('SELECT generation,session_hash FROM mio_level_accounts_v1 WHERE master_id=$1',[ids[0][0]])).rows[0];
-  assert(Number(after.generation)===1&&after.session_hash===oldSession,'reissue-does-not-evict-current-device');
+  assert(Number(after.generation)===Number(account.generation)&&after.session_hash===oldSession,'reissue-does-not-evict-current-device');
   results.push('再発行: 登録済み端末セッションは維持');
   return {ok:true,results};
 }
