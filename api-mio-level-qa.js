@@ -67,7 +67,7 @@ export async function runPreviewQa({db,pepper}) {
   const oldSession=account.session_hash;
   await issue(ids[0][0],ids[0][1]);
   const after=(await db.query('SELECT generation,session_hash FROM mio_level_accounts_v1 WHERE master_id=$1',[ids[0][0]])).rows[0];
-  assert(Number(after.generation)===1&&after.session_hash===oldSession,'reissue-does-not-evict-current-device');
+  assert(Number(after.generation)===priorGenerationA+1&&after.session_hash===oldSession,'reissue-does-not-evict-current-device');
   results.push('再発行: 登録済み端末セッションは維持');
   return {ok:true,results};
 }
