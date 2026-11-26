@@ -8,7 +8,7 @@ const actor={source:'server-session',role:'owner',userId:'mio-owner'};
 const users=[['MIO-0017','ユーリ'],['MIO-0018','別の参加者']];
 const now=new Date('2026-11-25T00:00:00.000Z');
 function fakeDb(){
- const usersDb=new Map(),invites=new Map(),queries=[];
+ const usersDb=new Map(),invites=new Map(),pending=new Map(),queries=[];
  const query=async(sql,args=[])=>{
   queries.push({sql,args});
   if(['BEGIN','COMMIT','ROLLBACK'].includes(sql)||sql.startsWith('SELECT pg_advisory_xact_lock'))return {rows:[]};
@@ -38,6 +38,13 @@ function fakeDb(){
   }
   if(sql.startsWith('SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until,status FROM mio_level_invites_v1')){
    const row=invites.get(args[0]);return {rows:row?.status==='issued'?[row]:[]};
+  }
+  if(sql.startsWith('SELECT invite_id,master_id,generation,device_thumbprint,session_hash,session_expires_at,status,expires_at FROM mio_level_pending_claims_v1')){
+   const row=pending.get(args[0]);return {rows:row?[row]:[]};
+  }
+  if(sql.startsWith('INSERT INTO mio_level_pending_claims_v1')){
+   const [invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,expires_at]=args;
+   pending.set(invite_id,{invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,status:'pending',expires_at});return {rows:[]};
   }
   if(sql.startsWith("UPDATE mio_level_invites_v1 SET status='claimed'")){
    const row=[...invites.values()].find(x=>x.invite_id===args[0]&&x.status==='issued');
