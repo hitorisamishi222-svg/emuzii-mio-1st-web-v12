@@ -93,7 +93,7 @@ function fakeDB({existing=false,failInsert=false,invite=null,wrongName=false}={}
   if(sql.startsWith('SELECT master_id FROM mio_level_invites_v1')){
    return {rows:state.invite?.status==='issued'&&state.invite.code_hash===args[0]?[{master_id:masterId}]:[]};
   }
-  if(sql.startsWith('SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until FROM mio_level_invites_v1')){
+  if(sql.startsWith('SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until,status FROM mio_level_invites_v1')){
    return {rows:state.invite?.status==='issued'&&state.invite.code_hash===args[0]?[state.invite]:[]};
   }
   if(sql.startsWith("UPDATE mio_level_invites_v1 SET status='claimed'")){
@@ -130,7 +130,8 @@ test('claim requires exact pre-approved name and device signature, then changes 
  assert.equal(result.masterId,masterId);
  assert.match(result.sessionToken,/^[a-f0-9]{64}$/);
  // The claim must serialize by master ID before locking a redeemable invite.
- assert.ok(db.calls.some(x=>x.sql.startsWith('UPDATE mio_level_accounts_v1 SET status=')));
+ assert.ok(db.calls.some(x=>x.sql.startsWith('INSERT INTO mio_level_pending_claims_v1')));
+ assert.equal(db.state.accountSession,'original-session-is-untouched');
  assert.equal(db.calls.filter(x=>/gacha|attendance/.test(x.sql)).length,0);
 });
 test('wrong name and reused issued ID reject without granting a new session',async()=>{
@@ -191,7 +192,6 @@ test('reissuing staged access never changes active account level until device cl
  assert.ok(!db.calls.some(x=>x.sql.startsWith('UPDATE mio_level_accounts_v1 SET display_name=')),
    'existing active membership must never change simply because a code was issued');
  await claimIssuedAccess({db,displayName:name,code:issued.code,deviceProof:proof,pepper,now});
- const claim=db.calls.find(x=>x.sql.startsWith("UPDATE mio_level_accounts_v1 SET status='active'"));
- assert.equal(claim.args[8],3);
- assert.equal(claim.args[9].toISOString(),'2026-12-31T00:00:00.000Z');
+ assert.equal(db.state.invite.level,3);
+ assert.equal(db.state.accountSession,'original-session-is-untouched');
 });

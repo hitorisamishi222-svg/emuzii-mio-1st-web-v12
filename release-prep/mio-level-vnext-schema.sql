@@ -70,6 +70,24 @@ CREATE TABLE IF NOT EXISTS mio_level_rate_v1 (
 );
 CREATE INDEX IF NOT EXISTS mio_level_rate_expiry_v1
  ON mio_level_rate_v1(expires_at);
+CREATE TABLE IF NOT EXISTS mio_level_pending_claims_v1 (
+ invite_id uuid PRIMARY KEY REFERENCES mio_level_invites_v1(invite_id),
+ master_id text NOT NULL REFERENCES mio_level_accounts_v1(master_id),
+ generation bigint NOT NULL CHECK(generation>=1),
+ device_thumbprint text NOT NULL CHECK(device_thumbprint ~ '^sha256:[a-f0-9]{64}$'),
+ device_public_jwk jsonb,
+ session_hash char(64) NOT NULL UNIQUE,
+ session_expires_at timestamptz NOT NULL,
+ browser_hint varchar(40) NOT NULL,
+ os_hint varchar(40) NOT NULL,
+ status text NOT NULL CHECK(status IN ('pending','active')),
+ expires_at timestamptz NOT NULL,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ activated_at timestamptz,
+ CONSTRAINT mio_pending_claim_activation CHECK((status='active')=(activated_at IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS mio_level_pending_claims_expiry_v1
+ ON mio_level_pending_claims_v1(expires_at) WHERE status='pending';
 -- Separate release prerequisite: actual account master_id and issuer must be
 -- verified against GAS roster & owner login. No issuer or member rows auto-seeded.
 -- Gallery media for levels 2/3 must be served via authorized APIs, not /public URLs.

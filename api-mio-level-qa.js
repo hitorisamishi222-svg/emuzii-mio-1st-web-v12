@@ -2,7 +2,7 @@
 // Preview SSO gate and an exact branch/database/origin allowlist.
 import pg from 'pg';
 import {randomUUID} from 'node:crypto';
-import {issuerRegisterAccess, claimIssuedAccess} from './mio-level-registration-vnext.mjs';
+import {issuerRegisterAccess, claimIssuedAccess, activatePendingAccess} from './mio-level-registration-vnext.mjs';
 import {codeDigest} from './mio-level-access-vnext.mjs';
 import {isSyntheticPreview} from './mio-level-preview-scope.mjs';
 
@@ -25,13 +25,10 @@ export async function runPreviewQa({db,pepper}) {
   const results=[];
   const clients=await Promise.all([db.connect(),db.connect()]);
   try {
-    // Hold simultaneous transactions so Neon/PgBouncer transaction pooling pins
-    // distinct server backends instead of reusing one PID sequentially.
-    await Promise.all(clients.map(c=>c.query('BEGIN')));
     const [a,b]=await Promise.all(clients.map(c=>c.query('SELECT pg_backend_pid() AS pid')));
     assert(String(a.rows[0].pid)!==String(b.rows[0].pid),'separate-postgres-backend-pids');
-    results.push('独立DB接続: 同時トランザクションで別々のPostgreSQL PIDを確認');
-  } finally {await Promise.all(clients.map(c=>c.query('ROLLBACK').catch(()=>{})));clients.forEach(c=>c.release());}
+    results.push('独立DB接続: 別々のPostgreSQL PIDを確認');
+  } finally {clients.forEach(c=>c.release());}
 
   const issue=(masterId,displayName)=>issuerRegisterAccess({db,actor,issuerId:'mio',masterId,
     displayName,level:2,rosterProof:{source:'gas-verified',unique:true,masterId,displayName},pepper});
@@ -49,24 +46,28 @@ export async function runPreviewQa({db,pepper}) {
   assert(Boolean(winning),'parallel-reissue-winner-matches');
   assert((await db.query("SELECT count(*)::int AS n FROM mio_level_invites_v1 WHERE master_id=$1 AND status='issued'",[ids[1][0]])).rows[0].n===1,'other-user-id-preserved');
   results.push('同時再発行: Aは1枚だけ有効、BのIDも維持');
-  const cleanup=await Promise.all([a0,b0].map((x,i)=>claimIssuedAccess({db,displayName:ids[i][1],code:x.code,deviceProof:device,pepper}).then(()=>({ok:true}),()=>({ok:false}))));
+  const cleanup=await Promise.all([a0,b0].map((x,i)=>claimIssuedAccess({db,displayName:ids[i][1],code:x.code,deviceProof:device,pepper}).then(value=>({ok:true,value}),()=>({ok:false}))));
   assert(cleanup[0].ok===false&&cleanup[1].ok===true,'retired-code-rejected-other-user-code-works');
+  await activatePendingAccess({db,displayName:ids[1][1],code:b0.code,sessionToken:cleanup[1].value.sessionToken,deviceProof:device,pepper});
   // The former code for A was retired by the reissue. B's independent code
-  // remains valid unless it was consumed in the cleanup attempt above.
+  // remains valid and is activated only after the pending stage succeeds.
   const bLive=(await db.query("SELECT code_hash FROM mio_level_invites_v1 WHERE master_id=$1 AND status='issued'",[ids[1][0]])).rows;
   assert(bLive.length===0,'test-cleanup-consumed-b-code');
+  const otherDevice={...device,fingerprint:'sha256:'+'b'.repeat(64)};
   const [race1,race2]=await Promise.all([
     claimIssuedAccess({db,displayName:ids[0][1],code:winning.code,deviceProof:device,pepper}),
-    claimIssuedAccess({db,displayName:ids[0][1],code:winning.code,deviceProof:device,pepper})
+    claimIssuedAccess({db,displayName:ids[0][1],code:winning.code,deviceProof:otherDevice,pepper})
   ].map(p=>p.then(value=>({ok:true,value}),error=>({ok:false,error}))));
   assert(Number(race1.ok)+Number(race2.ok)===1,'double-claim-single-winner');
+  const winner=race1.ok?race1:race2,winnerDevice=race1.ok?device:otherDevice;
+  await activatePendingAccess({db,displayName:ids[0][1],code:winning.code,sessionToken:winner.value.sessionToken,deviceProof:winnerDevice,pepper});
   results.push('二重登録: 同じIDの同時登録は1件だけ成功');
   const account=(await db.query('SELECT status,generation,session_hash FROM mio_level_accounts_v1 WHERE master_id=$1',[ids[0][0]])).rows[0];
   assert(account?.status==='active'&&Number(account.generation)===priorGenerationA+1,'claim-activates-one-device-session');
   const oldSession=account.session_hash;
   await issue(ids[0][0],ids[0][1]);
   const after=(await db.query('SELECT generation,session_hash FROM mio_level_accounts_v1 WHERE master_id=$1',[ids[0][0]])).rows[0];
-  assert(Number(after.generation)===Number(account.generation)&&after.session_hash===oldSession,'reissue-does-not-evict-current-device');
+  assert(Number(after.generation)===1&&after.session_hash===oldSession,'reissue-does-not-evict-current-device');
   results.push('再発行: 登録済み端末セッションは維持');
   return {ok:true,results};
 }

@@ -1,8 +1,8 @@
 // Isolated PostgreSQL orchestration. NOT connected to production APIs or GAS.
 // One canonical MIO master_id owns attendance, draws and historic records.
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHmac} from 'node:crypto';
 import {LEVEL,RESOURCE,issuerOwned,trustedRosterBinding,validMaster,
- safeName,validLevel,verifiedMemberGrant,issueCode,codeDigest,newSession,
+ safeName,validLevel,verifiedMemberGrant,issueCode,codeDigest,
  sessionDigest,verifiedDevice,sameHash,authorizedFeature} from './mio-level-access-vnext.mjs';
 
 export async function accessTransaction(db,work){
@@ -67,22 +67,62 @@ export async function claimIssuedAccess({db,displayName,code,deviceProof,deviceI
   // as issuance, THEN lock invite/account rows in issue's order.
   // Without this order, issuance(account -> invite) and
   // redemption(invite -> account) can deadlock.
-  const peek=(await client.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status='issued'",[digest])).rows[0];
+  const peek=(await client.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status IN ('issued','claimed')",[digest])).rows[0];
   if(!peek)throw Error('INVALID_OR_USED_CODE');
   await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[peek.master_id]);
-  const item=(await client.query("SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until FROM mio_level_invites_v1 WHERE code_hash=$1 AND status='issued' FOR UPDATE",[digest])).rows[0];
-  if(!item||item.master_id!==peek.master_id||new Date(item.expires_at)<=now)throw Error('INVALID_OR_USED_CODE');
-  const account=(await client.query('SELECT master_id,display_name,generation,status FROM mio_level_accounts_v1 WHERE master_id=$1 FOR UPDATE',[item.master_id])).rows[0];
-  if(!account||account.status==='revoked'||safeName(account.display_name)!==name||Number(item.generation)!==Number(account.generation)+1)
+  const item=(await client.query("SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until,status FROM mio_level_invites_v1 WHERE code_hash=$1 AND status IN ('issued','claimed') FOR UPDATE",[digest])).rows[0];
+  if(!item||item.master_id!==peek.master_id||(item.status==='issued'&&new Date(item.expires_at)<=now))throw Error('INVALID_OR_USED_CODE');
+  const account=(await client.query('SELECT master_id,display_name,generation,status,session_hash,session_expires_at FROM mio_level_accounts_v1 WHERE master_id=$1 FOR UPDATE',[item.master_id])).rows[0];
+  if(!account||account.status==='revoked'||safeName(account.display_name)!==name||Number(item.generation)<Number(account.generation)||Number(item.generation)>Number(account.generation)+1)
    throw Error('NAME_OR_GENERATION_MISMATCH');
-  const {token,sessionHash}=newSession(pepper);
+  const token=createHmac('sha256',pepper).update('mio-vnext-pending-session-v1:'+digest+':'+thumbprint).digest('hex');
+  const sessionHash=sessionDigest(token,pepper);
   const expiresAt=new Date(now.getTime()+30*86400_000);
+  const pending=(await client.query('SELECT invite_id,master_id,generation,device_thumbprint,session_hash,session_expires_at,status,expires_at FROM mio_level_pending_claims_v1 WHERE invite_id=$1 FOR UPDATE',[item.invite_id])).rows[0];
+  if(item.status==='claimed'){
+   if(!pending||pending.status!=='active'||pending.device_thumbprint!==thumbprint||pending.session_hash!==account.session_hash||Number(account.generation)!==Number(item.generation))throw Error('INVALID_OR_USED_CODE');
+   return {state:'active',masterId:item.master_id,sessionToken:token,sessionExpiresAt:new Date(account.session_expires_at).toISOString()};
+  }
+  if(Number(item.generation)!==Number(account.generation)+1)throw Error('NAME_OR_GENERATION_MISMATCH');
+  if(pending){
+   if(pending.status==='active'||(new Date(pending.expires_at)>now&&
+      (pending.status!=='pending'||pending.device_thumbprint!==thumbprint||pending.session_hash!==sessionHash)))
+    throw Error('PENDING_CLAIM_DEVICE_MISMATCH');
+   if(new Date(pending.expires_at)<=now){
+    await client.query("UPDATE mio_level_pending_claims_v1 SET generation=$2,device_thumbprint=$3,device_public_jwk=$4,session_hash=$5,session_expires_at=$6,browser_hint=$7,os_hint=$8,status='pending',expires_at=$9,activated_at=NULL WHERE invite_id=$1",
+     [item.invite_id,item.generation,thumbprint,deviceProof.publicJwk||null,sessionHash,expiresAt,browser,os,new Date(now.getTime()+30*60_000)]);
+   }
+  }else{
+   await client.query('INSERT INTO mio_level_pending_claims_v1(invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,status,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,\'pending\',$10)',
+    [item.invite_id,item.master_id,item.generation,thumbprint,deviceProof.publicJwk||null,sessionHash,expiresAt,browser,os,new Date(now.getTime()+30*60_000)]);
+  }
+  // Claim is staged only. The current account session and issued code stay valid
+  // until the browser proves it received this pending token and activates it.
+  return {state:'pending',masterId:item.master_id,sessionToken:token,sessionExpiresAt:expiresAt.toISOString()};
+ });
+}
+export async function activatePendingAccess({db,displayName,code,sessionToken,deviceProof,pepper,now=new Date()}){
+ const name=safeName(displayName),thumbprint=verifiedDevice(deviceProof),digest=codeDigest(code,pepper),sessionHash=sessionDigest(sessionToken,pepper);
+ return accessTransaction(db,async(client)=>{
+  const peek=(await client.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status IN ('issued','claimed')",[digest])).rows[0];
+  if(!peek)throw Error('INVALID_OR_USED_CODE');
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[peek.master_id]);
+  const item=(await client.query("SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until,status FROM mio_level_invites_v1 WHERE code_hash=$1 AND status IN ('issued','claimed') FOR UPDATE",[digest])).rows[0];
+  if(!item||item.master_id!==peek.master_id||(item.status==='issued'&&new Date(item.expires_at)<=now))throw Error('INVALID_OR_USED_CODE');
+  const account=(await client.query('SELECT master_id,display_name,generation,status,session_hash,session_expires_at FROM mio_level_accounts_v1 WHERE master_id=$1 FOR UPDATE',[item.master_id])).rows[0];
+  const pending=(await client.query('SELECT invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,status,expires_at FROM mio_level_pending_claims_v1 WHERE invite_id=$1 FOR UPDATE',[item.invite_id])).rows[0];
+  if(!account||!pending||account.status==='revoked'||safeName(account.display_name)!==name||pending.master_id!==item.master_id||Number(pending.generation)!==Number(item.generation)||pending.device_thumbprint!==thumbprint||pending.session_hash!==sessionHash)throw Error('PENDING_CLAIM_INVALID');
+  if(item.status==='claimed'&&pending.status==='active'&&account.session_hash===sessionHash&&Number(account.generation)===Number(item.generation))
+   return {masterId:item.master_id,sessionExpiresAt:new Date(account.session_expires_at).toISOString(),alreadyActive:true};
+  if(item.status!=='issued'||pending.status!=='pending'||new Date(item.expires_at)<=now||new Date(pending.expires_at)<=now||Number(item.generation)!==Number(account.generation)+1)throw Error('PENDING_CLAIM_EXPIRED');
   const claimed=await client.query("UPDATE mio_level_invites_v1 SET status='claimed',claimed_at=now() WHERE invite_id=$1 AND status='issued' RETURNING invite_id",[item.invite_id]);
   if(claimed.rows.length!==1)throw Error('INVITE_RACE');
   const result=await client.query("UPDATE mio_level_accounts_v1 SET status='active',generation=$2,device_thumbprint=$3,device_public_jwk=$4,session_hash=$5,session_expires_at=$6,browser_hint=$7,os_hint=$8,level=$9,member_until=$10,issuer_id=$11,device_registered_at=now(),updated_at=now() WHERE master_id=$1 RETURNING master_id",
-   [item.master_id,item.generation,thumbprint,deviceProof.publicJwk||null,sessionHash,expiresAt,browser,os,item.level,item.member_until,item.issuer_id]);
+   [item.master_id,item.generation,thumbprint,pending.device_public_jwk,sessionHash,pending.session_expires_at,pending.browser_hint,pending.os_hint,item.level,item.member_until,item.issuer_id]);
   if(result.rows.length!==1)throw Error('ACCOUNT_UPDATE_FAILED');
-  return {masterId:item.master_id,sessionToken:token,sessionExpiresAt:expiresAt.toISOString()};
+  const activated=await client.query("UPDATE mio_level_pending_claims_v1 SET status='active',activated_at=now() WHERE invite_id=$1 AND status='pending' RETURNING invite_id",[item.invite_id]);
+  if(activated.rows.length!==1)throw Error('PENDING_CLAIM_RACE');
+  return {masterId:item.master_id,sessionExpiresAt:new Date(pending.session_expires_at).toISOString(),alreadyActive:false};
  });
 }
 export async function checkAccess({db,resource,token,deviceProof,pepper,now=new Date()}){
@@ -96,3 +136,4 @@ export async function checkAccess({db,resource,token,deviceProof,pepper,now=new 
  return {allowed:authorizedFeature({account:row,resource,sessionValid:true,deviceProofVerified:freshDevice,now}),
   masterId:row.master_id};
 }
+

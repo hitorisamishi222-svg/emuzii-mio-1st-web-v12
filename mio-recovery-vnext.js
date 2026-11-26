@@ -23,7 +23,13 @@ form.addEventListener('submit',async e=>{
   const keys=await deviceKey();const publicJwk=await crypto.subtle.exportKey('jwk',keys.publicKey);
   const c=await post({action:'challenge',name,code,publicJwk});
   const signature=base64url(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},keys.privateKey,new TextEncoder().encode(c.message)));
-  await post({action:'claim',name,code,id:c.id,signature,browser:browserHint(),os:osHint()});
+  const staged=await post({action:'claim',name,code,id:c.id,signature,browser:browserHint(),os:osHint()});
+  if(staged.stage==='pending'){
+   status.textContent='端末を仮登録しました。今の端末を維持したまま切替を確認しています…';
+   const activateChallenge=await post({action:'challenge',name,code,publicJwk});
+   const activateSignature=base64url(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},keys.privateKey,new TextEncoder().encode(activateChallenge.message)));
+   await post({action:'activate',name,code,id:activateChallenge.id,signature:activateSignature});
+  }
   completed=true;form.reset();$('code').type='password';$('show').textContent='IDを表示';$('show').setAttribute('aria-pressed','false');for(const el of form.elements)el.disabled=true;
   status.textContent='登録が完了しました。';
  }catch(e){status.textContent=e.message==='TRY_LATER'?'時間をおいて再度お試しください。':'登録を確認できませんでした。名前・ID・通信状態を確認してください。既に登録済みの場合はみおにご相談ください。';}

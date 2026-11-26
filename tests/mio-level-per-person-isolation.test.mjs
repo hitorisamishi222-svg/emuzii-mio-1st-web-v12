@@ -36,7 +36,7 @@ function fakeDb(){
   if(sql.startsWith('SELECT master_id FROM mio_level_invites_v1')){
    const row=invites.get(args[0]);return {rows:row?.status==='issued'?[{master_id:row.master_id}]:[]};
   }
-  if(sql.startsWith('SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until FROM mio_level_invites_v1')){
+  if(sql.startsWith('SELECT invite_id,master_id,issuer_id,generation,expires_at,level,member_until,status FROM mio_level_invites_v1')){
    const row=invites.get(args[0]);return {rows:row?.status==='issued'?[row]:[]};
   }
   if(sql.startsWith("UPDATE mio_level_invites_v1 SET status='claimed'")){
@@ -91,7 +91,8 @@ test('B can redeem after A code reissue; A can redeem latest independently',asyn
  const rA=await claimIssuedAccess({db,displayName:users[0][1],code:a2.code,
   deviceProof:proof,pepper,now});
  assert.equal(rA.masterId,'MIO-0017');
- assert.equal(db.usersDb.get('MIO-0018').status,'active');
- assert.equal(db.usersDb.get('MIO-0017').status,'active');
- assert.notEqual(db.usersDb.get('MIO-0018').session_hash,db.usersDb.get('MIO-0017').session_hash);
+ assert.equal(db.usersDb.get('MIO-0018').status,'pending');
+ assert.equal(db.usersDb.get('MIO-0017').status,'pending');
+ assert.equal(db.invites.get(codeDigest(b1.code,pepper)).status,'issued');
+ assert.equal(db.invites.get(codeDigest(a2.code,pepper)).status,'issued');
 });

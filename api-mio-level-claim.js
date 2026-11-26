@@ -2,7 +2,7 @@
 // separate release gates and legacy API authorization integration are done.
 import pg from 'pg';
 import {createClaimApi, pgChallengeStore, pgLimiter} from './mio-claim-api-vnext.mjs';
-import {claimIssuedAccess} from './mio-level-registration-vnext.mjs';
+import {claimIssuedAccess, activatePendingAccess} from './mio-level-registration-vnext.mjs';
 import {codeDigest} from './mio-level-access-vnext.mjs';
 import {isSyntheticPreview, isSyntheticTestId} from './mio-level-preview-scope.mjs';
 
@@ -39,14 +39,20 @@ export default async function handler(req, res) {
     origin:url, pepper, enabled:true, clock:Date.now,
     claimIssuedAccess: async args => {
       const digest = codeDigest(args.code, pepper);
-      const row = (await db.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status='issued'",[digest])).rows[0];
+      const row = (await db.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status IN ('issued','claimed')",[digest])).rows[0];
       if (!row || !isSyntheticTestId(row.master_id)) throw Error('PREVIEW_SYNTHETIC_ID_REQUIRED');
       return claimIssuedAccess(args);
+    },
+    activatePendingAccess: async args => {
+      const digest = codeDigest(args.code, pepper);
+      const row = (await db.query("SELECT master_id FROM mio_level_invites_v1 WHERE code_hash=$1 AND status IN ('issued','claimed')",[digest])).rows[0];
+      if (!row || !isSyntheticTestId(row.master_id)) throw Error('PREVIEW_SYNTHETIC_ID_REQUIRED');
+      return activatePendingAccess(args);
     }});
   const forwarded = String(req.headers['x-forwarded-for'] || 'preview-client').split(',')[0].trim();
   const out = await api({method:req.method, requestOrigin:origin,
     contentType:req.headers['content-type'], body:req.body,
-    clientId:forwarded || 'preview-client'});
+    clientId:forwarded || 'preview-client',cookies:req.headers.cookie});
   for (const [key,value] of Object.entries(out.headers || {})) res.setHeader(key,value);
   return res.status(out.status).json(out.body);
 }
