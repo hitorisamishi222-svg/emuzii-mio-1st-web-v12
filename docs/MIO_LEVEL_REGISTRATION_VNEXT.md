@@ -128,3 +128,12 @@ Vercel本番環境には2026-11-25時点で MIO_LEVEL_* 設定がなく、上記
 - 確認できた両ソースのブリッジ入口は `status/catalog/draw/history/checkin`。従来認証は `MIO-W-...` と64桁tokenHashを要求し、操作対象はGAS内の参加者・Web登録台帳に照合する。
 - 新セッションの `master_id=MIO-####` から既存ガチャ・皆勤台帳へ直接渡す専用アクションは、この参照ソースでは確認できなかった。したがって既存 `participantId` やtokenHashを推測・代用する実装は禁止。
 - GAS本番HEADの読み取り照合が済むまで、既存GAS変更・新ブリッジ・本番復旧ID発行は保留。次の接続実装は、正本で一意にMIO-IDを解決するサーバー専用境界と、履歴・残回数を変更しない読み取り試験から開始する。
+
+
+## 読み取り確認：現行GASと旧APIの接続ゲート（2026-11-26）
+
+- 本番スプレッドシートから開くApps Scriptの現在HEADを読み取り確認。HEADの `doPost` には認証済み `webAdminOpsRead` の入口がある。`MIO_ReviewLink_20261123.gs` に操作用処理も存在するが、既存デプロイ v19（2026-11-22）はそのHEADより前の版。HEAD上にあるだけのアクションを稼働中として扱わない。
+- 既存 `bridge.js` は `mio_session` を読み、`MIO-W-<24桁hex>` のparticipantIdと既存tokenHashでGASへ接続する。`api-checkin.js` と `api-gacha.js` はこの本人識別を前提とする。
+- vNext claimは `__Host-mio_vnext_session` とMIO-ID（例 `MIO-1234`）を使う。現状、MIO-IDから既存GAS participantIdへの認証済み対応付け、および新端末をGAS側で安全に引き継ぐ処理はない。`webAdminOpsRead` は参照専用で、この紐付けを行わない。
+- したがってvNextセッションを旧APIへそのまま渡してはいけない。既存IDを使ったGAS本人性検証・端末切替の正式な操作経路を確定し、実GASで登録→皆勤→ガチャ→再発行の履歴不変を確認するまで、旧API連携も本番リリースも未合格とする。重複参加者作成、履歴コピー、旧端末の先行失効は行わない。
+- 現行GASソースは本人指示どおり閲覧照合のみ。編集・保存・デプロイはしていない。
