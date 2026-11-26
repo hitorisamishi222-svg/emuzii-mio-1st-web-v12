@@ -18,6 +18,8 @@ on:
       - 'tests/gacha-legacy-recovery.test.mjs'
       - 'tests/gacha-chromium-viewport-smoke.mjs'
       - 'tests/gacha-preview-cdn-smoke.mjs'
+      - 'tests/gacha-preview-guard.mjs'
+      - 'tests/gacha-preview-guard.test.mjs'
       - '.github/workflows/gacha-luxury-visual-release.yml'
   pull_request:
     paths:
@@ -35,6 +37,8 @@ on:
       - 'tests/gacha-legacy-recovery.test.mjs'
       - 'tests/gacha-chromium-viewport-smoke.mjs'
       - 'tests/gacha-preview-cdn-smoke.mjs'
+      - 'tests/gacha-preview-guard.mjs'
+      - 'tests/gacha-preview-guard.test.mjs'
       - '.github/workflows/gacha-luxury-visual-release.yml'
 jobs:
   visual-only:
@@ -51,30 +55,14 @@ jobs:
           node --check gacha-effects-v19.js
       - name: Visual and no-draw test suite
         run: node --test tests/gacha-overlay-flow.test.mjs tests/gacha-prize-demo-mapping.test.mjs tests/gacha-release-visual-scope.test.mjs tests/gacha-legacy-recovery.test.mjs
-      - name: Verify published preview CDN assets (read-only)
-        run: node tests/gacha-preview-cdn-smoke.mjs
-      - name: Diagnose previous remote preview response without writing data
-        continue-on-error: true
-        run: |
-          url='https://emuzii-mio-1st-web-v12-ao6gup7ge-gtgz8867jh-3139.vercel.app/gacha.html?deluxeDemo=1'
-          code=$(curl -sSL --max-time 18 -o /tmp/gacha-preview-response.html -w '%{http_code}' "$url" || true)
-          echo "PREVIEW_RESPONSE_STATUS=$code"
-          if [ -f /tmp/gacha-preview-response.html ]; then
-            wc -c /tmp/gacha-preview-response.html
-            if grep -Eiq 'Authentication Required|VERCEL_AUTH|_vercel_sso_nonce|Deployment Protection' /tmp/gacha-preview-response.html; then
-              echo 'PREVIEW_ACCESS_DIAGNOSTIC=protected-or-auth-wall'
-            else
-              echo 'PREVIEW_ACCESS_DIAGNOSTIC=no-known-auth-wall'
-            fi
-          fi
-      - name: Real headless Chrome iPhone viewport, image, overlay, second-spin test
+      - name: Verified preview boundary regression tests
+        run: node --test tests/gacha-preview-guard.test.mjs
+      - name: Real headless Chrome iPhone viewport, image, overlay, second-spin test (local files only)
         run: |
           command -v google-chrome || command -v chromium
           node tests/gacha-chromium-viewport-smoke.mjs
-      - name: Same Chrome user flow against REAL preview CDN (no signed-in accounts)
-        env:
-          GACHA_BROWSER_ORIGIN: https://emuzii-mio-1st-web-v12-git-release-gacha-54b53b-gtgz8867jh-3139.vercel.app/
-        run: node tests/gacha-chromium-viewport-smoke.mjs
+      - name: CDN verification status
+        run: echo 'CDN_SMOKE=not_run_in_pull_request; requires exact current preview metadata and trusted authorization'
       - name: Save before/reveal/close/second-draw screenshots
         if: always()
         uses: actions/upload-artifact@v4
