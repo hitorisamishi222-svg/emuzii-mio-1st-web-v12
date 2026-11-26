@@ -6,16 +6,8 @@ import {tmpdir} from 'node:os';
 import {join,resolve,sep,extname} from 'node:path';
 import http from 'node:http';
 
-const remoteOrigin=process.env.GACHA_BROWSER_ORIGIN||'';
-if(remoteOrigin){
-  const u=new URL(remoteOrigin);
-  assert.equal(u.protocol,'https:','remote smoke requires HTTPS');
-  assert.equal(u.hostname,'emuzii-mio-1st-web-v12-git-release-gacha-54b53b-gtgz8867jh-3139.vercel.app',
-    'only the gacha release PREVIEW may be accessed; never production');
-  assert.equal(u.pathname,'/','remote smoke accepts origin only');
-  assert.equal(u.search,'');
-  assert.equal(u.hash,'');
-}
+if(process.env.GACHA_BROWSER_ORIGIN) throw Error('REMOTE_PREVIEW_SMOKE_DISABLED: use the verified CDN smoke from a trusted runner');
+const remoteOrigin='';
 const cwd=process.cwd();
 const tmp=await mkdtemp(join(tmpdir(),'mio-gacha-browser-'));
 const browsers=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'];
