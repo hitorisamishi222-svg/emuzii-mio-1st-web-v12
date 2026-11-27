@@ -15,13 +15,15 @@ const denied=(reason)=>({managed:true,allowed:false,reason});
 
 /**
  * Resolve a legacy signed cookie to a cutover-managed account.
- * A missing Web ID row means a pre-vNext legacy session; callers must still
- * require the existing GAS bridge to authenticate that session.
+ * A missing Web ID row means a pre-vNext legacy session; callers must set
+ * gasAuthenticated only after the existing GAS bridge verified that session.
  */
-export async function authorizeLegacyFeature({db,session,resource,now=new Date()}){
+export async function authorizeLegacyFeature({db,session,resource,gasAuthenticated=false,now=new Date()}){
   const required=REQUIREMENT[resource];
   if(required===undefined)return denied('UNKNOWN_RESOURCE');
   if(required===1)return {managed:false,allowed:true,reason:'PUBLIC_RESOURCE'};
+  // Do not let a legacy-only row miss become a cookie-only authorization path.
+  if(gasAuthenticated!==true)return denied('LEGACY_GAS_AUTH_REQUIRED');
   if(!session||typeof session.id!=='string'||!WEB_ID.test(session.id)||
      typeof session.token!=='string'||!TOKEN.test(session.token))return denied('LEGACY_SESSION_REQUIRED');
 
@@ -32,8 +34,7 @@ export async function authorizeLegacyFeature({db,session,resource,now=new Date()
     FROM mio_level_legacy_sessions_v1 s
     JOIN mio_level_accounts_v1 a ON a.master_id=s.master_id
     WHERE s.web_id=$1`,[session.id])).rows;
-  // Existing GAS-only members are grandfathered. The caller still validates
-  // the cookie/token against GAS before using this fallback.
+  // Existing GAS-only members are grandfathered only after the GAS check above.
   if(rows.length===0)return {managed:false,allowed:true,reason:'LEGACY_GAS_ONLY'};
   if(rows.length!==1)return denied('LEGACY_IDENTITY_AMBIGUOUS');
   const row=rows[0];
