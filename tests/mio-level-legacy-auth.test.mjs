@@ -25,14 +25,17 @@ test('public resources do not require a legacy session or database lookup',async
 });
 
 test('pre-vNext legacy sessions are delegated to the existing GAS authentication path',async()=>{
- const result=await authorizeLegacyFeature({db:dbFor(null),session:session(),resource:'attendance',now});
+ const unauthenticated=await authorizeLegacyFeature({db:dbFor(null),session:session(),resource:'attendance',now});
+ assert.equal(unauthenticated.allowed,false);
+ assert.equal(unauthenticated.reason,'LEGACY_GAS_AUTH_REQUIRED');
+ const result=await authorizeLegacyFeature({db:dbFor(null),session:session(),resource:'attendance',gasAuthenticated:true,now});
  assert.deepEqual(result,{managed:false,allowed:true,reason:'LEGACY_GAS_ONLY'});
 });
 
 test('active mapped level-2 session can use attendance but not member gacha',async()=>{
  const db=dbFor(row());
- const allowed=await authorizeLegacyFeature({db,session:session(),resource:'attendance',now});
- const denied=await authorizeLegacyFeature({db,session:session(),resource:'member_gacha',now});
+ const allowed=await authorizeLegacyFeature({db,session:session(),resource:'attendance',gasAuthenticated:true,now});
+ const denied=await authorizeLegacyFeature({db,session:session(),resource:'member_gacha',gasAuthenticated:true,now});
  assert.equal(allowed.allowed,true);
  assert.equal(allowed.level,2);
  assert.equal(denied.allowed,false);
@@ -46,7 +49,7 @@ test('token mismatch, revoked account, stale generation and uncommitted cutover 
   [{account_generation:5},'LEGACY_SESSION_STALE'],
   [{state:'pending'},'CUTOVER_NOT_COMMITTED']
  ]){
-  const result=await authorizeLegacyFeature({db:dbFor(row(overrides)),session:session(),resource:'attendance',now});
+  const result=await authorizeLegacyFeature({db:dbFor(row(overrides)),session:session(),resource:'attendance',gasAuthenticated:true,now});
   assert.equal(result.allowed,false);
   assert.equal(result.reason,reason);
  }
@@ -55,14 +58,14 @@ test('token mismatch, revoked account, stale generation and uncommitted cutover 
 test('expired member level falls back to fan level on mapped session',async()=>{
  const result=await authorizeLegacyFeature({db:dbFor(row({level:3,account_level:3,
   member_until:'2026-11-01T00:00:00.000Z',account_member_until:'2026-11-01T00:00:00.000Z'})),
-  session:session(),resource:'member_gallery',now});
+  session:session(),resource:'member_gallery',gasAuthenticated:true,now});
  assert.equal(result.allowed,false);
  assert.equal(result.reason,'LEVEL_REQUIRED');
 });
 
 test('unknown resource and malformed session fail closed',async()=>{
  const unknown=await authorizeLegacyFeature({db:dbFor(row()),session:session(),resource:'admin'});
- const malformed=await authorizeLegacyFeature({db:dbFor(row()),session:{id:'MIO-W-invalid',token},resource:'attendance'});
+ const malformed=await authorizeLegacyFeature({db:dbFor(row()),session:{id:'MIO-W-invalid',token},resource:'attendance',gasAuthenticated:true});
  assert.equal(unknown.reason,'UNKNOWN_RESOURCE');
  assert.equal(malformed.reason,'LEGACY_SESSION_REQUIRED');
 });
