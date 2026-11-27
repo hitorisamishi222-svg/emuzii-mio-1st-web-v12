@@ -137,3 +137,14 @@ Vercel本番環境には2026-11-25時点で MIO_LEVEL_* 設定がなく、上記
 - vNext claimは `__Host-mio_vnext_session` とMIO-ID（例 `MIO-1234`）を使う。現状、MIO-IDから既存GAS participantIdへの認証済み対応付け、および新端末をGAS側で安全に引き継ぐ処理はない。`webAdminOpsRead` は参照専用で、この紐付けを行わない。
 - したがってvNextセッションを旧APIへそのまま渡してはいけない。既存IDを使ったGAS本人性検証・端末切替の正式な操作経路を確定し、実GASで登録→皆勤→ガチャ→再発行の履歴不変を確認するまで、旧API連携も本番リリースも未合格とする。重複参加者作成、履歴コピー、旧端末の先行失効は行わない。
 - 現行GASソースは本人指示どおり閲覧照合のみ。編集・保存・デプロイはしていない。
+
+
+## 2026-11-27 隔離側セッション認可の土台
+
+- PR内に `mio-level-legacy-auth-vnext.mjs` と6件の単体テストを追加。保護機能ではGAS認証済みフラグがなければ拒否し、旧GASのみの会員は既存GAS照合後にのみ旧経路へ委譲する。
+- 隔離スキーマ案に `mio_level_legacy_sessions_v1` を追加し、指定Neon隔離ブランチ `br-bold-credit-b7y6frdo` にだけ適用。旧GASセッションの一意な対応付けと世代、権限、端末指紋、操作IDを保存する候補。
+- Neonの合成データ検証で同一MIO-IDに有効セッションを二つ作れないことを確認し、検証用の参加者・発行者・セッション行が全て0件に戻ったことを確認。
+- 単体テスト6/6合格、PRのRegistration regression tests成功、最新Vercel PreviewはREADY。合格範囲は補助モジュール・隔離DB制約・Preview buildに限る。
+- この補助モジュールは `api-checkin.js` / `api-gacha.js` / `api-status.js` / ギャラリーへまだ接続していない。vNext claimからGAS端末切替への操作も未実装。Lv権限、ログイン維持、皆勤・ガチャ・限定素材の総合連携は未合格。
+- Productionの `MIO_LEVEL_*` 設定は未設定でPreview限定。 `APPS_SCRIPT_SECRET` のProduction値も未設定。GAS HEADには切替のstatus/commit/cancel APIがなく、version 19はHEADより前。
+- Draftを維持。本番GAS・本番Neon・本番Vercelには変更なし。
