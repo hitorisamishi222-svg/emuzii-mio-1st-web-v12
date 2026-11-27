@@ -13,12 +13,12 @@ export default async function handler(req,res){
    const gasStatus=await bridge('status',identity);
    await authorizeLegacyApiFeature({db,session:s,gasStatus,resource:'attendance'});
   }
-  const d=await bridge('checkin',{...identity,keyword,day});
+  const d=await bridge('checkin',{participantId:s.id,tokenHash:delegated||hash(s.token),keyword,day});
   if(d.participantId!==s.id)throw Error('登録を確認できません');
   res.setHeader('Set-Cookie',sessionCookie(s.id,s.token,cfg.secret));res.status(200).json(d);
  }catch(e){
   if(e.message==='FEATURE_LEVEL_REQUIRED')return res.status(403).json({ok:false,error:'皆勤賞はレベル2以上の登録が必要です'});
   if(e.message==='LEVEL_AUTH_UNAVAILABLE')return res.status(503).json({ok:false,error:'認証を確認できません。時間をおいて再試行してください'});
   res.status(409).json({ok:false,error:e.message||'確認できませんでした'});
- }}
+ }
 }
