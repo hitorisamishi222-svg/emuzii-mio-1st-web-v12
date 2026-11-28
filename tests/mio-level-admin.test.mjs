@@ -88,6 +88,18 @@ test('normal reader cannot become owner by adding claimed server proof or level'
  assert.equal(restrictedRosterView([{mioId:'MIO-0017',name:'ユーリ',secret:'hidden'}])[0].secret,undefined);
  assert.deepEqual(verifiedMembershipEvidence({level:2,masterId:d.masterId}),{memberEvidence:null,memberUntil:null});
 });
+test('owner history exposes only safe states for one roster-verified participant',async()=>{
+ const db={query:async sql=>sql.includes('FROM mio_level_invites_v1')?{rows:[
+  {level:2,status:'issued',expires_at:'2026-11-24T00:00:00Z',claimed_at:null,created_at:'2026-11-22T00:00:00Z'},
+  {level:3,status:'claimed',expires_at:'2026-12-24T00:00:00Z',claimed_at:'2026-11-23T00:00:00Z',created_at:'2026-11-22T01:00:00Z'},
+  {level:2,status:'issued',expires_at:'2026-12-24T00:00:00Z',claimed_at:null,created_at:'2026-11-24T00:00:00Z'},
+  {level:2,status:'revoked',expires_at:'2026-12-24T00:00:00Z',claimed_at:null,created_at:'2026-11-24T01:00:00Z'}
+ ]}:{rows:[]}};
+ const data=await processOwnerOperation({d:{action:'read',masterId:'MIO-0017'},db,
+  actor:owner,pepper,now:new Date('2026-11-25T00:00:00Z'),callGAS:server});
+ assert.deepEqual(data.history.map(x=>x.status),['expired','used','issued','revoked']);
+ assert.ok(data.history.every(x=>!Object.hasOwn(x,'code')&&!Object.hasOwn(x,'code_hash')));
+});
 test('existing Web management page hosts accessible recovery controls and safe route',()=>{
  const html=read('gacha-web-gate.html'),script=read('mio-level-admin-panel.js');
  const routes=JSON.parse(read('vercel.json'));
@@ -97,6 +109,12 @@ test('existing Web management page hosts accessible recovery controls and safe r
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.ok(html.includes('<script src="/mio-level-admin-panel.js" defer>'));
  assert.ok(script.includes("window.addEventListener('mio:admin-person-selected'"));
+ assert.ok(html.includes('id="mioRecoveryHistory"'));
+ assert.match(script,/mioRecoveryMasterId'\)\.value=''/);
+ assert.match(script,/mioRecoveryName'\)\.value=''/);
+ assert.match(script,/renderHistory\(state\.history\|\|\[\]\)/);
+ assert.match(script,/busy=false/);
+ assert.match(script,/発行結果を確定できません/);
  assert.match(script,/confirm\(/);
  assert.match(script,/\/api\/mio-level-admin/);
  assert.match(script,/cleanResult\(\)/);
