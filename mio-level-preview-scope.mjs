@@ -5,7 +5,7 @@ export const MIO_PREVIEW_BRANCH = 'feature/mio-three-level-registration-vnext-20
 // Vercel's stable branch alias differs from VERCEL_URL (the immutable deployment URL).
 // Permit only the observed alias for this existing project and branch.
 export const MIO_PREVIEW_ALIAS_HOST = 'emuzii-mio-1st-web-v12-git-feature-mio-t-85aa48-gtgz8867jh-3139.vercel.app';
-const ALLOWED_TEST_IDS = new Set(['MIO-9998', 'MIO-9999']);
+const ALLOWED_TEST_IDS = new Set(Array.from({length:10},(_,i)=>`MIO-${String(9990+i)}`));
 
 export function isSyntheticPreview(env, { host, origin } = {}) {
   const acceptedHosts = new Set([env?.VERCEL_URL, MIO_PREVIEW_ALIAS_HOST].filter(Boolean));
@@ -31,10 +31,11 @@ export function isSyntheticTestId(masterId) {
 export function syntheticRoster() {
   return {
     ok: true,
-    roster: [
-      {mioId: 'MIO-9998', name: 'Synthetic QA A', needsReview: false},
-      {mioId: 'MIO-9999', name: 'Synthetic QA B', needsReview: false}
-    ],
+    roster: Array.from({length:10},(_,i)=>({
+      mioId:`MIO-${String(9990+i)}`,
+      name:`Synthetic QA ${String(i+1).padStart(2,'0')}`,
+      needsReview:false
+    })),
     approvedBrowsers: [
       {mioId: 'MIO-9999', verified: true, member: '確認済み'}
     ]
