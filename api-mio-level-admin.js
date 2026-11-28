@@ -37,14 +37,23 @@ export async function processOwnerOperation({
   const roster=restrictedRosterView(live.roster);
   // Do not leak device credentials or gacha entitlements in this API.
   const master=typeof d.masterId==='string'?d.masterId:'';
-  let current=null;
+  let current=null,history=[];
   if(master&&roster.some(p=>p.mioId===master)){
    const x=await db.query('SELECT master_id,level,status,generation,member_until,device_registered_at FROM mio_level_accounts_v1 WHERE master_id=$1',[master]);
    if(x.rows.length===1)current={masterId:x.rows[0].master_id,level:x.rows[0].level,
     status:x.rows[0].status,generation:Number(x.rows[0].generation),
     memberUntil:x.rows[0].member_until,deviceRegisteredAt:x.rows[0].device_registered_at};
+   const h=await db.query('SELECT level,status,expires_at,claimed_at,created_at FROM mio_level_invites_v1 WHERE master_id=$1 ORDER BY created_at DESC LIMIT 20',[master]);
+   history=h.rows.map(row=>({
+    level:Number(row.level),
+    status:row.status==='claimed'?'used':row.status==='revoked'?'revoked':
+     new Date(row.expires_at)<=now?'expired':'issued',
+    expiresAt:new Date(row.expires_at).toISOString(),
+    claimedAt:row.claimed_at?new Date(row.claimed_at).toISOString():null,
+    createdAt:new Date(row.created_at).toISOString()
+   }));
   }
-  return {ok:true,roster,current};
+  return {ok:true,roster,current,history};
  }
  const input=ownerOperationInput(d);
  const live=await liveRoster(callGAS);
