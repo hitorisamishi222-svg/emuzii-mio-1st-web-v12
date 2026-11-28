@@ -401,6 +401,11 @@ function renderRoster(){
  for(const item of all){
   div.append(button(item.name+' ('+item.mioId+')'+(item.needsReview?' ⚠️ 台帳要確認':''),()=>{
     selected=item;
+    // Read-only handoff to the large-upgrade recovery panel. Server re-checks
+    // the canonical GAS roster; browser selection grants no authority.
+    if(typeof CustomEvent==='function'&&typeof window.dispatchEvent==='function')
+      window.dispatchEvent(new CustomEvent('mio:admin-person-selected',
+        {detail:{name:item.name,mioId:item.mioId}}));
     el('opsOnsiteGrantVerified').checked=false;
     el('opsMemberVerified').checked=false;
     const g=item.gacha;

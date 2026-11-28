@@ -54,6 +54,7 @@ main{max-width:760px}
 @media(max-width:520px){.ops-grid{grid-template-columns:1fr}.ops-summary{align-items:flex-start}}
 </style></head><body><main>
 <h1>🐳 ガチャ受付管理</h1>
+<p><a href="#mioRecoveryPanel" style="display:block;padding:13px 16px;border:1px solid #9ed9f4;border-radius:12px;background:#17476f;color:#fff1c5;font-weight:800;text-decoration:none">🔑 最優先：復旧ID・機種変更の管理へ</a></p>
 <section><h2>🔑 Face ID・パスキー</h2><p><small>初回だけ管理者コードで登録。次からはFace IDでログインできます。</small></p><button id="passkeyLogin" disabled>Face IDでログイン</button><button id="passkeyRegister" disabled style="margin-top:10px;background:#184d71;color:#f3f9ff;border:1px solid #83afce">この端末のFace IDを登録</button><p id="passkeyStatus" role="status" aria-live="polite">Face IDの利用状況を確認しています…</p></section>
 <section id="switches"><label for="code">管理者コード</label><input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="管理者コードを入力"><button id="connect" style="margin-top:14px">現在の受付状態を確認</button></section>
 <section id="normalSection" class="switch"><div><h2>💎 通常ガチャ</h2><small id="normalStatus">未確認</small></div><button id="normal" disabled>確認中</button></section>
@@ -84,6 +85,41 @@ main{max-width:760px}
   <label class="ops-filter" for="opsOnlyRemaining"><input id="opsOnlyRemaining" type="checkbox">残回数がある参加者だけ表示</label>
   <p id="opsRemainingSummary" class="ops-caption">残回数を照合中</p>
   <div id="opsRoster" class="ops-list"></div><p id="opsPerson" class="ops-message">参加者を選択してください</p>
+  <div id="mioRecoveryPanel" class="ops-card" aria-labelledby="mioRecoveryHeading">
+   <h3 id="mioRecoveryHeading">🔑 復旧ID発行・機種変更（大型更新）</h3>
+   <p class="ops-caption">上の参加者一覧から対象者を選択。みおが本人確認して最新の復旧IDを発行します。旧未使用IDは失効し、過去の皆勤・ガチャ・当選履歴は変更しません。</p>
+   <p class="ops-caption">復旧IDは対象者を照合してから個別に発行します。ユーリさんの既存緊急復旧は <a href="/owner/yuri-issue" style="color:#bfe8ff">専用の発行画面</a> を利用してください。</p>
+   <div class="ops-grid">
+    <div class="ops-field"><label for="mioRecoveryMasterId">登録済みMIO-ID</label>
+     <input id="mioRecoveryMasterId" class="ops-control ops-number" placeholder="MIO-0000" autocomplete="off" maxlength="14" required></div>
+    <div class="ops-field"><label for="mioRecoveryName">ColorSing名</label>
+     <input id="mioRecoveryName" class="ops-control ops-number" maxlength="80" autocomplete="off" required></div>
+   </div>
+   <div class="ops-grid">
+    <div class="ops-field"><label for="mioRecoveryLevel">利用レベル</label>
+     <select id="mioRecoveryLevel" class="ops-control"><option value="1">Lv.1 公開閲覧</option>
+      <option value="2" selected>Lv.2 歌推し・皆勤</option><option value="3">Lv.3 メンシプ・ガチャ</option></select></div>
+    <div class="ops-field" id="mioRecoveryUntilGroup" hidden><label for="mioRecoveryUntil">メンシプの確認済み期限</label>
+     <input id="mioRecoveryUntil" type="date" class="ops-control ops-number"></div>
+   </div>
+   <label class="ops-filter" id="mioRecoveryMemberGroup" hidden><input type="checkbox" id="mioRecoveryMemberVerified">メンシプ資格・有効期限を確認した</label>
+   <label class="ops-filter"><input type="checkbox" id="mioRecoveryConfirmed">対象者の本人・元MIO-ID・利用レベルをみおが確認した</label>
+   <div class="ops-field"><label for="mioRecoveryAdminCode">管理者コード（Face ID認証済みなら空欄可）</label>
+    <input id="mioRecoveryAdminCode" class="ops-control ops-number" type="password" autocomplete="off"></div>
+   <button type="button" class="ops-secondary" id="mioRecoveryRead">登録・復旧状態を照合</button>
+   <button type="button" id="mioRecoveryIssue" disabled>復旧IDを発行・再発行する</button>
+   <div class="ops-message" id="mioRecoveryStatus" role="status" aria-live="polite">管理者認証後に対象者を照合してください。</div>
+   <div id="mioRecoveryResult" hidden><label for="mioRecoveryOutput">本人にだけ個別送信する最新の復旧ID</label>
+    <input id="mioRecoveryOutput" class="ops-control ops-number" type="text" readonly autocomplete="off">
+    <button type="button" id="mioRecoveryCopy" class="ops-secondary">最新IDをコピー</button>
+    <p class="ops-caption">使い切り・有効期限48時間。以前の未使用IDは使えなくなります。公開投稿やURLには書かないでください。</p>
+    <p id="mioRecoveryPreviewLinks" class="ops-caption" hidden>隔離試験：<a href="/mio-recovery-vnext.html" style="color:#bfe8ff">本人登録画面</a> · <a href="/mio-recovery-qa.html" style="color:#bfe8ff">DB並列試験</a></p>
+   </div>
+   <div class="ops-card" aria-labelledby="mioRecoveryHistoryHeading">
+    <h4 id="mioRecoveryHistoryHeading">発行履歴（対象者ごと・最新20件）</h4>
+    <div id="mioRecoveryHistory" class="ops-list" role="status" aria-live="polite"><p>対象者を照合すると履歴を表示します。</p></div>
+   </div>
+  </div>
   <div id="opsMemberSection" class="ops-card"><h3 class="ops-section-title">承認済み参加者のメンシプ購入確認</h3>
    <p class="ops-caption">上で参加者を選択すると、その人の承認済みブラウザを表示します。既存登録や当選履歴、ガチャ券には変更しません。</p>
    <label class="ops-filter" for="opsMemberVerified"><input type="checkbox" id="opsMemberVerified">本人・既存ブラウザ・メンシプ購入内容を管理者が確認した</label>
@@ -168,4 +204,5 @@ async function change(mode){
 $('normal').onclick=()=>change('通常');
 $('fest').onclick=()=>change('ラキフェス');
 redraw();
-</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script></body></html>
+</script><script src="/gacha-passkey-ui.js" defer></script><script src="/gacha-admin-ops.js" defer></script><script src="/mio-level-admin-panel.js" defer></script></body></html>
+
