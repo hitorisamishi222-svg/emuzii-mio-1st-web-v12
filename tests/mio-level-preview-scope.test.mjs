@@ -21,5 +21,8 @@ test('only the named Preview branch, host, origin, and isolated Neon branch are 
 test('synthetic roster and IDs cannot select real participants',()=>{
  assert.equal(isSyntheticTestId('MIO-9998'),true);
  assert.equal(isSyntheticTestId('MIO-0017'),false);
- assert.deepEqual(syntheticRoster().roster.map(x=>x.mioId),['MIO-9998','MIO-9999']);
+ assert.deepEqual(syntheticRoster().roster.map(x=>x.mioId),
+  Array.from({length:10},(_,i)=>`MIO-${String(9990+i)}`));
+ assert.equal(syntheticRoster().roster.length,10);
+ assert.ok(syntheticRoster().roster.every(x=>isSyntheticTestId(x.mioId)));
 });
