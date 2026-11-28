@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {issuerRegisterAccess,claimIssuedAccess} from '../mio-level-registration-vnext.mjs';
+import {issuerRegisterAccess,claimIssuedAccess,activatePendingAccess} from '../mio-level-registration-vnext.mjs';
 import {codeDigest} from '../mio-level-access-vnext.mjs';
 
 const pepper='isolated-per-participant-proof-pepper-with-more-than-48-characters';
@@ -42,6 +42,9 @@ function fakeDb(){
   if(sql.startsWith('SELECT invite_id,master_id,generation,device_thumbprint,session_hash,session_expires_at,status,expires_at FROM mio_level_pending_claims_v1')){
    const row=pending.get(args[0]);return {rows:row?[row]:[]};
   }
+  if(sql.startsWith('SELECT invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,status,expires_at FROM mio_level_pending_claims_v1')){
+   const row=pending.get(args[0]);return {rows:row?[row]:[]};
+  }
   if(sql.startsWith('INSERT INTO mio_level_pending_claims_v1')){
    const [invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,expires_at]=args;
    pending.set(invite_id,{invite_id,master_id,generation,device_thumbprint,device_public_jwk,session_hash,session_expires_at,browser_hint,os_hint,status:'pending',expires_at});return {rows:[]};
@@ -53,7 +56,11 @@ function fakeDb(){
   if(sql.startsWith("UPDATE mio_level_accounts_v1 SET status='active'")){
    const row=usersDb.get(args[0]);
    row.status='active';row.generation=args[1];row.session_hash=args[4];row.level=args[8];
-   return {rows:[{master_id:args[0]}]};
+   row.session_expires_at=args[5];return {rows:[{master_id:args[0]}]};
+  }
+  if(sql.startsWith("UPDATE mio_level_pending_claims_v1 SET status='active'")){
+   const row=pending.get(args[0]);if(!row||row.status!=='pending')return {rows:[]};
+   row.status='active';return {rows:[{invite_id:args[0]}]};
   }
   throw Error('Unexpected test SQL: '+sql.slice(0,150));
  };
@@ -102,4 +109,34 @@ test('B can redeem after A code reissue; A can redeem latest independently',asyn
  assert.equal(db.usersDb.get('MIO-0017').status,'pending');
  assert.equal(db.invites.get(codeDigest(b1.code,pepper)).status,'issued');
  assert.equal(db.invites.get(codeDigest(a2.code,pepper)).status,'issued');
+});
+
+test('ten recipients can be issued consecutively and activated in a different order',async()=>{
+ const db=fakeDb();
+ const people=Array.from({length:10},(_,i)=>[
+  `MIO-${String(9990+i)}`,`Synthetic QA ${String(i+1).padStart(2,'0')}`
+ ]);
+ const receipts=[];
+ for(let i=0;i<people.length;i++){
+  const operationId=`12345678-1234-4123-8123-${String(123456789100+i)}`;
+  receipts.push(await issue(db,...people[i],operationId));
+ }
+ const live=[...db.invites.values()].filter(row=>row.status==='issued');
+ assert.equal(live.length,10);
+ assert.equal(new Set(live.map(row=>row.master_id)).size,10);
+ const order=[8,2,9,1,7,0,5,3,6,4];
+ for(const index of order){
+  const person=people[index],receipt=receipts[index];
+  const pending=await claimIssuedAccess({db,displayName:person[1],code:receipt.code,
+   deviceProof:proof,pepper,now});
+  assert.equal(pending.state,'pending');
+  assert.equal(pending.masterId,person[0]);
+  const activated=await activatePendingAccess({db,displayName:person[1],code:receipt.code,
+   sessionToken:pending.sessionToken,deviceProof:proof,pepper,now});
+  assert.equal(activated.masterId,person[0]);
+  assert.equal(db.usersDb.get(person[0]).status,'active');
+  assert.equal(db.invites.get(codeDigest(receipt.code,pepper)).status,'claimed');
+ }
+ assert.equal([...db.usersDb.values()].filter(row=>row.status==='active').length,10);
+ assert.equal([...db.invites.values()].filter(row=>row.status==='claimed').length,10);
 });
